@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
-		4F3E0CEF2A846CE80068F901 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEE2A846CE80068F901 /* ContentView.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
 		4F3E0CFF2A846CE90068F901 /* PingbearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CFE2A846CE90068F901 /* PingbearTests.swift */; };
@@ -56,6 +55,10 @@
 		4F3E0D602A86FD200068F901 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D5F2A86FD200068F901 /* Home.swift */; };
 		4F3E0D612A86FD200068F901 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D5F2A86FD200068F901 /* Home.swift */; };
 		4F3E0D622A86FD200068F901 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D5F2A86FD200068F901 /* Home.swift */; };
+		4F3E0D652A8949260068F901 /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D642A8949260068F901 /* Landing.swift */; };
+		4F3E0D682A895AE40068F901 /* Colour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D672A895AE40068F901 /* Colour.swift */; };
+		4F3E0D6A2A8A8F310068F901 /* Contacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D692A8A8F310068F901 /* Contacts.swift */; };
+		4F3E0D6C2A8A95370068F901 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D6B2A8A95370068F901 /* Chat.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -78,7 +81,6 @@
 /* Begin PBXFileReference section */
 		4F3E0CE92A846CE80068F901 /* Pingbear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pingbear.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearApp.swift; sourceTree = "<group>"; };
-		4F3E0CEE2A846CE80068F901 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F3E0CF02A846CE90068F901 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4F3E0CF22A846CE90068F901 /* Pingbear.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Pingbear.entitlements; sourceTree = "<group>"; };
 		4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -93,6 +95,10 @@
 		4F3E0D5B2A86FC010068F901 /* NameEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameEntry.swift; sourceTree = "<group>"; };
 		4F3E0D5F2A86FD200068F901 /* Home.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Home.swift; sourceTree = "<group>"; };
 		4F3E0D632A8702FE0068F901 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		4F3E0D642A8949260068F901 /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
+		4F3E0D672A895AE40068F901 /* Colour.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colour.swift; sourceTree = "<group>"; };
+		4F3E0D692A8A8F310068F901 /* Contacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Contacts.swift; sourceTree = "<group>"; };
+		4F3E0D6B2A8A95370068F901 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,9 +177,9 @@
 			isa = PBXGroup;
 			children = (
 				4F3E0D632A8702FE0068F901 /* Info.plist */,
+				4F3E0D662A895ACA0068F901 /* Extensions */,
 				4F3E0D522A86F87C0068F901 /* Views */,
 				4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */,
-				4F3E0CEE2A846CE80068F901 /* ContentView.swift */,
 				4F3E0CF02A846CE90068F901 /* Assets.xcassets */,
 				4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */,
 				4F3E0CF22A846CE90068F901 /* Pingbear.entitlements */,
@@ -210,12 +216,23 @@
 		4F3E0D522A86F87C0068F901 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4F3E0D642A8949260068F901 /* Landing.swift */,
 				4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */,
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4F3E0D5F2A86FD200068F901 /* Home.swift */,
+				4F3E0D692A8A8F310068F901 /* Contacts.swift */,
+				4F3E0D6B2A8A95370068F901 /* Chat.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		4F3E0D662A895ACA0068F901 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				4F3E0D672A895AE40068F901 /* Colour.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -383,10 +400,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F3E0D6A2A8A8F310068F901 /* Contacts.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
-				4F3E0CEF2A846CE80068F901 /* ContentView.swift in Sources */,
+				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
+				4F3E0D6C2A8A95370068F901 /* Chat.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
+				4F3E0D652A8949260068F901 /* Landing.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 			);
@@ -553,6 +573,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = YYP83W9W72;
 				ENABLE_HARDENED_RUNTIME = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
@@ -592,6 +613,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = YYP83W9W72;
 				ENABLE_HARDENED_RUNTIME = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;

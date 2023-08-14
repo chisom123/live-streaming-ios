@@ -11,7 +11,7 @@ struct VerificationView: View {
     @State private var isAuthenticated = false
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack {
             TextField("Enter verification code", text: $verificationCode)
                 .keyboardType(.numberPad)
                 .padding()
@@ -23,7 +23,7 @@ struct VerificationView: View {
                     .padding()
             }
             
-            Button("Verify Code") {
+            Button("Continue") {
                 self.verifyCode()
             }
             .padding()
@@ -31,9 +31,9 @@ struct VerificationView: View {
             .foregroundColor(.white)
             .cornerRadius(8)
             
-            NavigationLink(destination: NameEntryView(), isActive: $isAuthenticated) {
+            NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $isAuthenticated) {
                 EmptyView()
-            }.isDetailLink(false)  // To avoid any potential navigation issues
+            }.isDetailLink(false)
         }
         .padding()
     }
@@ -49,7 +49,6 @@ struct VerificationView: View {
                 return
             }
             
-            // Successfully authenticated
             self.isAuthenticated = true
         }
     }

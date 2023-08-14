@@ -35,7 +35,7 @@ struct PingbearApp: App {
 
     var body: some Scene {
         WindowGroup {
-            PhoneEntryView()
+            LandingView()
         }
     }
 }
