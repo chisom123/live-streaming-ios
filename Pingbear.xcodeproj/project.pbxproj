@@ -57,8 +57,6 @@
 		4F3E0D622A86FD200068F901 /* Home.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D5F2A86FD200068F901 /* Home.swift */; };
 		4F3E0D652A8949260068F901 /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D642A8949260068F901 /* Landing.swift */; };
 		4F3E0D682A895AE40068F901 /* Colour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D672A895AE40068F901 /* Colour.swift */; };
-		4F3E0D6A2A8A8F310068F901 /* Contacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D692A8A8F310068F901 /* Contacts.swift */; };
-		4F3E0D6C2A8A95370068F901 /* Chat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D6B2A8A95370068F901 /* Chat.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,8 +95,6 @@
 		4F3E0D632A8702FE0068F901 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4F3E0D642A8949260068F901 /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
 		4F3E0D672A895AE40068F901 /* Colour.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colour.swift; sourceTree = "<group>"; };
-		4F3E0D692A8A8F310068F901 /* Contacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Contacts.swift; sourceTree = "<group>"; };
-		4F3E0D6B2A8A95370068F901 /* Chat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chat.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -221,8 +217,6 @@
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4F3E0D5F2A86FD200068F901 /* Home.swift */,
-				4F3E0D692A8A8F310068F901 /* Contacts.swift */,
-				4F3E0D6B2A8A95370068F901 /* Chat.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -400,11 +394,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F3E0D6A2A8A8F310068F901 /* Contacts.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
-				4F3E0D6C2A8A95370068F901 /* Chat.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Landing.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,

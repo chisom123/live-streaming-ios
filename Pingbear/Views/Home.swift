@@ -1,39 +1,116 @@
-//
-//  HomeView.swift
-//  Pingbear
-//
-//  Created by Ezi Agu on 20/05/1402 AP.
-//
-
 import SwiftUI
+import Contacts
+import FirebaseFirestore
+import FirebaseAuth
+
+struct AppUser {
+    var id: String // UID of the user
+    var name: String
+    var phoneNumber: String
+}
 
 struct HomeView: View {
-    @State private var showContactsView = false
-    @State private var selectedContact: Contact? // This will hold the selected contact from ContactsView
+    
+    @State private var logoutSuccess = false
+    @State private var appUsers: [AppUser] = []
+
+    func normalizePhoneNumber(_ number: String) -> String {
+        return number.filter { $0.isNumber }
+    }
+
+    func fetchContacts() {
+        guard let currentUserID = Auth.auth().currentUser?.uid else {
+            print("Failed to get current user ID")
+            return
+        }
+
+        let db = Firestore.firestore()
+        db.collection("users").document(currentUserID).getDocument { (document, error) in
+            if let error = error {
+                print("Error getting current user document: \(error)")
+                return
+            }
+            guard let document = document, let currentUserData = document.data(), let currentUserPhoneNumber = currentUserData["phoneNumber"] as? String else {
+                print("Error fetching current user phone number")
+                return
+            }
+
+            DispatchQueue.global().async {
+                let store = CNContactStore()
+                store.requestAccess(for: .contacts) { (granted, error) in
+                    if let error = error {
+                        print("Failed to request access: \(error)")
+                        return
+                    }
+                    if granted {
+                        let keys = [CNContactPhoneNumbersKey as CNKeyDescriptor]
+                        let request = CNContactFetchRequest(keysToFetch: keys)
+                        do {
+                            try store.enumerateContacts(with: request, usingBlock: { (contact, stopPointer) in
+                                for phoneNumber in contact.phoneNumbers {
+                                    let number = phoneNumber.value.stringValue
+                                    let normalizedNumber = self.normalizePhoneNumber(number)
+                                    let db = Firestore.firestore()
+                                    db.collection("users").whereField("phoneNumber", isEqualTo: normalizedNumber).getDocuments { (snapshot, error) in
+                                        if let error = error {
+                                            print("Error getting documents: \(error)")
+                                        } else {
+                                            DispatchQueue.main.async {
+                                                for document in snapshot!.documents {
+                                                    let friendID = document.documentID
+                                                    if let phoneNumber = document.data()["phoneNumber"] as? String, phoneNumber != currentUserPhoneNumber {
+                                                        if let name = document.data()["name"] as? String {
+                                                            let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
+                                                            self.appUsers.append(user)
+                                                            db.collection("users").document(currentUserID).collection("friends").document(friendID).getDocument { (document, error) in
+                                                                if document?.exists == false {
+                                                                    db.collection("users").document(currentUserID).collection("friends").document(friendID).setData(["uid": friendID])
+                                                                    db.collection("users").document(friendID).collection("friends").document(currentUserID).setData(["uid": currentUserID])
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                        } catch let error {
+                            print("Failed to enumerate contacts: \(error)")
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     var body: some View {
         VStack {
-            Text("Welcome to Home!")
-                .padding()
-
-            Button("Show Contacts") {
-                showContactsView.toggle()
+            // Display list of contacts with app installed
+            List(appUsers, id: \.id) { user in
+                Text(user.name)
+            }
+            .onAppear {
+                fetchContacts()
+            }
+            
+            Button("Logout") {
+                do {
+                    try Auth.auth().signOut()
+                    self.logoutSuccess = true
+                } catch let signOutError as NSError {
+                    print("Error signing out: %@", signOutError)
+                }
             }
             .padding()
             .background(Color.blue)
             .foregroundColor(.white)
             .cornerRadius(8)
-            
-            // Handle Chat initiation here
-            if let contact = selectedContact {
-                // Here you'd implement and show your ChatView.
-                Text("Chat with \(contact.givenName) \(contact.familyName)")
-                    .padding()
-            }
+            .fullScreenCover(isPresented: $logoutSuccess, content: {
+                LandingView()
+            })
         }
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showContactsView) {
-            ContactsView(isShown: $showContactsView, selectedContact: $selectedContact)  // Pass the binding to the ContactsView
-        }
     }
 }

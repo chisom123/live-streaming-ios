@@ -8,6 +8,11 @@ struct NameEntryView: View {
     @State private var errorMessage: String? = nil
     @State private var navigateToHome = false
 
+    func normalizePhoneNumber(_ number: String) -> String {
+        return number.filter { $0.isNumber }
+    }
+
+
     var body: some View {
         VStack(spacing: 20) {
             TextField("Enter your name", text: $name)
@@ -43,10 +48,11 @@ struct NameEntryView: View {
         }
         
         let db = Firestore.firestore()
+        let normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
         
         db.collection("users").document(userID).setData([
             "name": name,
-            "phoneNumber": phoneNumber
+            "phoneNumber": normalizedPhoneNumber
         ]) { error in
             if let error = error {
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
@@ -55,4 +61,5 @@ struct NameEntryView: View {
             }
         }
     }
+
 }
