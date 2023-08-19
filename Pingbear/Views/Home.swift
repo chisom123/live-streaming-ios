@@ -3,7 +3,7 @@ import Contacts
 import FirebaseFirestore
 import FirebaseAuth
 
-struct AppUser {
+struct AppUser: Identifiable {
     var id: String // UID of the user
     var name: String
     var phoneNumber: String
@@ -13,6 +13,7 @@ struct HomeView: View {
     
     @State private var logoutSuccess = false
     @State private var appUsers: [AppUser] = []
+    @State private var currentIndex: Int = 0
 
     func normalizePhoneNumber(_ number: String) -> String {
         return number.filter { $0.isNumber }
@@ -86,31 +87,106 @@ struct HomeView: View {
     }
 
     var body: some View {
-        VStack {
-            // Display list of contacts with app installed
-            List(appUsers, id: \.id) { user in
-                Text(user.name)
-            }
-            .onAppear {
-                fetchContacts()
-            }
-            
-            Button("Logout") {
-                do {
-                    try Auth.auth().signOut()
-                    self.logoutSuccess = true
-                } catch let signOutError as NSError {
-                    print("Error signing out: %@", signOutError)
+        VerticalPager(pageCount: appUsers.count, currentIndex: $currentIndex) {
+            ForEach(appUsers, id: \.id) { user in
+                ZStack {
+                    Color.white.edgesIgnoringSafeArea(.all) // You can change this to any background color you like
+                    Image("teddy-bear") // replace "your-image-name" with your image's name
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 175, height: 175) // change width and height according to your needs
+                    VStack(alignment: .leading) {
+                        Text(user.name)
+                            .font(.system(size: 16, weight: .bold, design: .default)) // Updated
+                            .padding(.leading, 30)
+                            .padding(.top, 40)
+                            .foregroundColor(.black)
+                        Text("Tap to view")
+                            .font(.system(size: 16, weight: .bold, design: .default)) // Updated
+                            .padding(.leading, 30)
+                            .padding(.top, 8)
+                            .foregroundColor(Color(hex: "#1199FF"))
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(8)
-            .fullScreenCover(isPresented: $logoutSuccess, content: {
-                LandingView()
-            })
         }
-        .navigationBarBackButtonHidden(true)
+        .onAppear {
+            fetchContacts()
+        }
+        .navigationBarHidden(true)
+        .overlay(
+            VStack {
+                Spacer()
+                HStack {
+                    Button(action: {
+                        // Your action for the left button
+                    }) {
+                        Image("Settings") // Replace with your image name
+                            .resizable()
+                            .frame(width: 45, height: 45)
+                            .padding(.leading, 30)
+                            .padding(.bottom, 20)
+                    }
+                    Spacer()
+                    Button(action: {
+                        // Your action for the right button
+                    }) {
+                        Image("Folder") // Replace with your image name
+                            .resizable()
+                            .frame(width: 45, height: 45)
+                            .padding(.trailing, 30)
+                            .padding(.bottom, 20)
+                    }
+                }
+            }
+        )
+    }
+
+
+
+
+}
+
+struct VerticalPager<Content: View>: View {
+    let pageCount: Int
+    @Binding var currentIndex: Int
+    let content: Content
+
+    @GestureState private var translation: CGFloat = 0
+
+    init(pageCount: Int, currentIndex: Binding<Int>, @ViewBuilder content: () -> Content) {
+        self.pageCount = pageCount
+        self._currentIndex = currentIndex
+        self.content = content()
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            LazyVStack(spacing: 0) {
+                self.content.frame(width: geometry.size.width, height: geometry.size.height)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.primary.opacity(0.000000001))
+            .offset(y: -CGFloat(self.currentIndex) * geometry.size.height)
+            .offset(y: self.translation)
+            .animation(.interactiveSpring(response: 0.3), value: currentIndex)
+            .animation(.interactiveSpring(), value: translation)
+            .gesture(
+                DragGesture(minimumDistance: 1).updating(self.$translation) { value, state, _ in
+                    state = value.translation.height
+                }.onEnded { value in
+                    let offset = -Int(value.translation.height)
+                    if abs(offset) > 20 {
+                        let newIndex = currentIndex + min(max(offset, -1), 1)
+                        if newIndex >= 0 && newIndex < pageCount {
+                            self.currentIndex = newIndex
+                        }
+                    }
+                }
+            )
+        }
     }
 }
+
