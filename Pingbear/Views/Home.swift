@@ -2,6 +2,7 @@ import SwiftUI
 import Contacts
 import FirebaseFirestore
 import FirebaseAuth
+import UIKit
 
 struct AppUser: Identifiable {
     var id: String // UID of the user
@@ -9,12 +10,24 @@ struct AppUser: Identifiable {
     var phoneNumber: String
 }
 
+extension UIDevice {
+    static var isNotched: Bool {
+        let bottom = UIApplication.shared.keyWindow?.safeAreaInsets.bottom ?? 0
+        return bottom > 0
+    }
+}
+
+
 struct HomeView: View {
     
     @State private var logoutSuccess = false
     @State private var appUsers: [AppUser] = []
     @State private var currentIndex: Int = 0
 
+    var topPadding: CGFloat {
+        return UIDevice.isNotched ? 75 : 50
+    }
+    
     func normalizePhoneNumber(_ number: String) -> String {
         return number.filter { $0.isNumber }
     }
@@ -99,7 +112,7 @@ struct HomeView: View {
                         Text(user.name)
                             .font(.system(size: 16, weight: .bold, design: .default)) // Updated
                             .padding(.leading, 30)
-                            .padding(.top, 40)
+                            .padding(.top, self.topPadding)
                             .foregroundColor(.black)
                         Text("Tap to view")
                             .font(.system(size: 16, weight: .bold, design: .default)) // Updated
@@ -109,6 +122,9 @@ struct HomeView: View {
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onTapGesture {
+                    print("Tapped on user: \(user.name)")
                 }
             }
         }
@@ -143,10 +159,6 @@ struct HomeView: View {
             }
         )
     }
-
-
-
-
 }
 
 struct VerticalPager<Content: View>: View {
@@ -187,6 +199,7 @@ struct VerticalPager<Content: View>: View {
                 }
             )
         }
+        .edgesIgnoringSafeArea(.all)
     }
 }
 
