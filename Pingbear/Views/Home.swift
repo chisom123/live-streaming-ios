@@ -1,7 +1,6 @@
 import SwiftUI
 import Contacts
-import FirebaseFirestore
-import FirebaseAuth
+import Firebase
 import UIKit
 
 struct AppUser: Identifiable {
@@ -17,91 +16,18 @@ extension UIDevice {
     }
 }
 
-
 struct HomeView: View {
     
     @State private var logoutSuccess = false
-    @State private var appUsers: [AppUser] = []
-    @State private var currentIndex: Int = 0
+    @StateObject private var viewModel = HomeViewModel()
 
     var topPadding: CGFloat {
         return UIDevice.isNotched ? 75 : 50
     }
     
-    func normalizePhoneNumber(_ number: String) -> String {
-        return number.filter { $0.isNumber }
-    }
-
-    func fetchContacts() {
-        guard let currentUserID = Auth.auth().currentUser?.uid else {
-            print("Failed to get current user ID")
-            return
-        }
-
-        let db = Firestore.firestore()
-        db.collection("users").document(currentUserID).getDocument { (document, error) in
-            if let error = error {
-                print("Error getting current user document: \(error)")
-                return
-            }
-            guard let document = document, let currentUserData = document.data(), let currentUserPhoneNumber = currentUserData["phoneNumber"] as? String else {
-                print("Error fetching current user phone number")
-                return
-            }
-
-            DispatchQueue.global().async {
-                let store = CNContactStore()
-                store.requestAccess(for: .contacts) { (granted, error) in
-                    if let error = error {
-                        print("Failed to request access: \(error)")
-                        return
-                    }
-                    if granted {
-                        let keys = [CNContactPhoneNumbersKey as CNKeyDescriptor]
-                        let request = CNContactFetchRequest(keysToFetch: keys)
-                        do {
-                            try store.enumerateContacts(with: request, usingBlock: { (contact, stopPointer) in
-                                for phoneNumber in contact.phoneNumbers {
-                                    let number = phoneNumber.value.stringValue
-                                    let normalizedNumber = self.normalizePhoneNumber(number)
-                                    let db = Firestore.firestore()
-                                    db.collection("users").whereField("phoneNumber", isEqualTo: normalizedNumber).getDocuments { (snapshot, error) in
-                                        if let error = error {
-                                            print("Error getting documents: \(error)")
-                                        } else {
-                                            DispatchQueue.main.async {
-                                                for document in snapshot!.documents {
-                                                    let friendID = document.documentID
-                                                    if let phoneNumber = document.data()["phoneNumber"] as? String, phoneNumber != currentUserPhoneNumber {
-                                                        if let name = document.data()["name"] as? String {
-                                                            let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
-                                                            self.appUsers.append(user)
-                                                            db.collection("users").document(currentUserID).collection("friends").document(friendID).getDocument { (document, error) in
-                                                                if document?.exists == false {
-                                                                    db.collection("users").document(currentUserID).collection("friends").document(friendID).setData(["uid": friendID])
-                                                                    db.collection("users").document(friendID).collection("friends").document(currentUserID).setData(["uid": currentUserID])
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            })
-                        } catch let error {
-                            print("Failed to enumerate contacts: \(error)")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     var body: some View {
-        VerticalPager(pageCount: appUsers.count, currentIndex: $currentIndex) {
-            ForEach(appUsers, id: \.id) { user in
+        VerticalPager(pageCount: viewModel.appUsers.count, currentIndex: $viewModel.currentIndex) {
+            ForEach(viewModel.appUsers, id: \.id) { user in
                 ZStack {
                     Color.white.edgesIgnoringSafeArea(.all) // You can change this to any background color you like
                     Image("teddy-bear") // replace "your-image-name" with your image's name
@@ -110,12 +36,12 @@ struct HomeView: View {
                         .frame(width: 175, height: 175) // change width and height according to your needs
                     VStack(alignment: .leading) {
                         Text(user.name)
-                            .font(.system(size: 16, weight: .bold, design: .default)) // Updated
+                            .font(.system(size: 16, weight: .bold, design: .default))
                             .padding(.leading, 30)
                             .padding(.top, self.topPadding)
                             .foregroundColor(.black)
                         Text("Tap to view")
-                            .font(.system(size: 16, weight: .bold, design: .default)) // Updated
+                            .font(.system(size: 16, weight: .bold, design: .default))
                             .padding(.leading, 30)
                             .padding(.top, 8)
                             .foregroundColor(Color(hex: "#1199FF"))
@@ -124,12 +50,12 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .onTapGesture {
-                    print("Tapped on user: \(user.name)")
+                    viewModel.selectUser(user)
                 }
             }
         }
         .onAppear {
-            fetchContacts()
+            viewModel.fetchContacts()
         }
         .navigationBarHidden(true)
         .overlay(
@@ -158,6 +84,13 @@ struct HomeView: View {
                 }
             }
         )
+        .sheet(isPresented: $viewModel.isChatViewPresented, onDismiss: {
+            viewModel.isChatViewPresented = false
+        }) {
+            if let selectedUser = viewModel.selectedUser {
+                ChatView(viewModel: ChatModel(), friend: selectedUser)
+            }
+        }
     }
 }
 
@@ -202,4 +135,3 @@ struct VerticalPager<Content: View>: View {
         .edgesIgnoringSafeArea(.all)
     }
 }
-

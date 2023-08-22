@@ -51,7 +51,7 @@ struct NameEntryView: View {
         let normalizedPhoneNumber = normalizePhoneNumber(phoneNumber)
         
         db.collection("users").document(userID).setData([
-//            "name": name,
+            "name": name,
             "phoneNumber": normalizedPhoneNumber
         ]) { error in
             if let error = error {
