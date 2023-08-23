@@ -3,7 +3,7 @@ import Contacts
 import Firebase
 import UIKit
 
-struct AppUser: Identifiable {
+struct AppUser: Identifiable, Equatable {
     var id: String // UID of the user
     var name: String
     var phoneNumber: String
@@ -73,7 +73,7 @@ struct HomeView: View {
                     }
                     Spacer()
                     Button(action: {
-                        // Your action for the right button
+                        viewModel.activeSheet = .searchView
                     }) {
                         Image("Search") // Replace with your image name
                             .resizable()
@@ -84,11 +84,12 @@ struct HomeView: View {
                 }
             }
         )
-        .sheet(isPresented: $viewModel.isChatViewPresented, onDismiss: {
-            viewModel.isChatViewPresented = false
-        }) {
-            if let selectedUser = viewModel.selectedUser {
-                ChatView(viewModel: ChatModel(), friend: selectedUser)
+        .sheet(item: $viewModel.activeSheet) { sheet in
+            switch sheet {
+            case .chatView:
+                ChatView(viewModel: ChatModel(), friend: viewModel.selectedUser!)
+            case .searchView:
+                SearchView(selectedUserIndex: $viewModel.selectedUserIndex, isPresented: .constant(true), users: viewModel.appUsers)
             }
         }
     }

@@ -5,8 +5,26 @@ import Contacts
 class HomeViewModel: ObservableObject {
     @Published var appUsers: [AppUser] = []
     @Published var isChatViewPresented: Bool = false
+    @Published var isSearchViewPresented: Bool = false
     @Published var selectedUser: AppUser?
     @Published var currentIndex: Int = 0
+    @Published var activeSheet: ActiveSheet? = nil
+    @Published var selectedUserIndex: Int? = nil {
+        didSet {
+            if let index = selectedUserIndex {
+                currentIndex = index
+                selectUser(appUsers[index])
+            }
+        }
+    }
+    
+    enum ActiveSheet: Identifiable {
+        case chatView, searchView
+
+        var id: Int {
+            hashValue
+        }
+    }
     
     private func normalizePhoneNumber(_ number: String) -> String {
         return number.filter { $0.isNumber }
@@ -81,6 +99,6 @@ class HomeViewModel: ObservableObject {
 
     func selectUser(_ user: AppUser) {
         selectedUser = user
-        isChatViewPresented = true
+        activeSheet = .chatView
     }
 }
