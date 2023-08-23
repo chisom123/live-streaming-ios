@@ -75,7 +75,7 @@ struct HomeView: View {
                     Button(action: {
                         // Your action for the right button
                     }) {
-                        Image("Folder") // Replace with your image name
+                        Image("Search") // Replace with your image name
                             .resizable()
                             .frame(width: 45, height: 45)
                             .padding(.trailing, 30)
