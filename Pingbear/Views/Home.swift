@@ -63,7 +63,7 @@ struct HomeView: View {
                 Spacer()
                 HStack {
                     Button(action: {
-                        // Your action for the left button
+                        viewModel.showBearsView()
                     }) {
                         Image("Settings") // Replace with your image name
                             .resizable()
@@ -84,12 +84,14 @@ struct HomeView: View {
                 }
             }
         )
-        .sheet(item: $viewModel.activeSheet) { sheet in
+        .fullScreenCover(item: $viewModel.activeSheet) { sheet in
             switch sheet {
             case .chatView:
                 ChatView(viewModel: ChatModel(), friend: viewModel.selectedUser!)
             case .searchView:
                 SearchView(selectedUserIndex: $viewModel.selectedUserIndex, isPresented: .constant(true), users: viewModel.appUsers)
+            case .bearsView:
+                   BearsView()
             }
         }
     }

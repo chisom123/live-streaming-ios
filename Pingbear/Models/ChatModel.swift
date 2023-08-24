@@ -2,7 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestoreSwift
 
-struct Message: Identifiable {
+struct Message: Equatable, Identifiable {
     var id: String?
     var senderID: String
     var timestamp: Timestamp
