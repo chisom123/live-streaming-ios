@@ -34,10 +34,9 @@ struct ChatView: View {
     var body: some View {
         VStack {
             HStack {
-                Image("transparent-logo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 30, height: 30)
+                Text("Here 2s ago")
+                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    .foregroundColor(.black)
                     .padding(.leading, 20)
                     .padding(.top, 20)
                 
