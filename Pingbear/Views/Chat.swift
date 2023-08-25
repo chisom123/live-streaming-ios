@@ -17,9 +17,18 @@ struct ChatView: View {
 
     func formatDate(_ timestamp: Timestamp) -> String {
         let date = timestamp.dateValue()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE dd MMM"
-        return formatter.string(from: date)
+        let today = Date()
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today)!
+        
+        if Calendar.current.isDate(date, inSameDayAs: today) {
+            return "Today"
+        } else if Calendar.current.isDate(date, inSameDayAs: yesterday) {
+            return "Yesterday"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEE dd MMM"
+            return formatter.string(from: date)
+        }
     }
 
     var body: some View {
