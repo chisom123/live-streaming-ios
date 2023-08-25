@@ -85,14 +85,18 @@ struct ChatView: View {
                     .cornerRadius(5)
 
                 Button(action: {
+                    if message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        return
+                    }
                     viewModel.sendMessage(to: friend, content: message)
                     self.message = ""
                 }) {
                     Image(systemName: "arrow.up")
-                        .foregroundColor(Color(hex: "#1199FF"))
+                        .foregroundColor(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .init(white: 0.75) : Color(hex: "#1199FF"))
                         .font(.system(size: 19, weight: .bold))
                 }
                 .padding(5)
+
             }
             .padding()
         }
