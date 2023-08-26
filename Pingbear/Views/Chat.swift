@@ -39,7 +39,7 @@ struct ChatView: View {
                 }) {
                     Image("Close")
                         .resizable()
-                        .frame(width: 35, height: 35)
+                        .frame(width: 40, height: 40)
                         .padding(.leading, 20)
                         .padding(.top, 20)
                 }
@@ -47,7 +47,7 @@ struct ChatView: View {
                 Spacer()
                 
                 Text("Here 2s ago")
-                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    .font(.system(size: 17, weight: .semibold, design: .default))
                     .foregroundColor(.black)
                     .padding(.trailing, 20)
                     .padding(.top, 20)
@@ -136,9 +136,9 @@ struct MessageView: View {
                 VStack {
                     HStack {
                         Text(message.content)
-                            .font(.system(size: 15, weight: .semibold, design: .default))
+                            .font(.system(size: 16, weight: .semibold, design: .default))
                             .foregroundColor(Color.black)
-                            .lineSpacing(8)
+                            .lineSpacing(9)
 
                         Spacer()
 

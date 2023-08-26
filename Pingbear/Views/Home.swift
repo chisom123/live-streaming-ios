@@ -33,15 +33,15 @@ struct HomeView: View {
                     Image("teddy-bear") // replace "your-image-name" with your image's name
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 175, height: 175) // change width and height according to your needs
+                        .frame(width: 180, height: 180) // change width and height according to your needs
                     VStack(alignment: .leading) {
                         Text(user.name)
-                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(.leading, 30)
                             .padding(.top, self.topPadding)
                             .foregroundColor(.black)
                         Text("Tap to view")
-                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(.leading, 30)
                             .padding(.top, 8)
                             .foregroundColor(Color(hex: "#1199FF"))
@@ -67,7 +67,7 @@ struct HomeView: View {
                     }) {
                         Image("Settings") // Replace with your image name
                             .resizable()
-                            .frame(width: 45, height: 45)
+                            .frame(width: 50, height: 50)
                             .padding(.leading, 30)
                             .padding(.bottom, 20)
                     }
@@ -77,7 +77,7 @@ struct HomeView: View {
                     }) {
                         Image("Search") // Replace with your image name
                             .resizable()
-                            .frame(width: 45, height: 45)
+                            .frame(width: 50, height: 50)
                             .padding(.trailing, 30)
                             .padding(.bottom, 20)
                     }

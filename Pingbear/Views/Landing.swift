@@ -20,7 +20,7 @@ struct LandingView: View {
                     Spacer()
 
                     Text("By continuing, you agree to Pingbear's Terms \n of Service and Privacy Policy.")
-                        .font(.system(size: 15, weight: .semibold, design: .default))
+                        .font(.system(size: 16, weight: .semibold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(13)
                         .foregroundColor(.black)

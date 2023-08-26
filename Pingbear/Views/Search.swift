@@ -19,25 +19,26 @@ struct SearchView: View {
     var body: some View {
         VStack {
             HStack {
-                Spacer()
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
                 }) {
-                    Image(systemName: "xmark")
+                    Image("Close")
                         .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .padding(.top, 30)
-                        .padding(.trailing, 30)
-                        .foregroundColor(.black)
+                        .frame(width: 40, height: 40)
+                        .padding(.leading, 20)
+                        .padding(.top, 20)
                 }
+                
+                Spacer()
             }
+            
             TextField("Search Friends", text: $searchText)
                 .padding()
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(10)
+                .background(Color(hex: "#e8e8e8"))
+                .foregroundColor(Color(hex: "#000"))
+                .cornerRadius(5)
                 .padding([.leading, .trailing], 20)
-                .padding(.top, 10)
+                .padding(.top, 30)
             List(filteredUsers, id: \.id) { user in
                 Text(user.name)
                     .onTapGesture {
