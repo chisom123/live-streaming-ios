@@ -34,23 +34,23 @@ struct ChatView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Here 2s ago")
-                    .font(.system(size: 16, weight: .semibold, design: .default))
-                    .foregroundColor(.black)
-                    .padding(.leading, 20)
-                    .padding(.top, 20)
-                
-                Spacer()
-                
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image("Close")
                         .resizable()
                         .frame(width: 35, height: 35)
-                        .padding(.trailing, 20)
+                        .padding(.leading, 20)
                         .padding(.top, 20)
                 }
+                
+                Spacer()
+                
+                Text("Here 2s ago")
+                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    .foregroundColor(.black)
+                    .padding(.trailing, 20)
+                    .padding(.top, 20)
             }
 
             ScrollView {
