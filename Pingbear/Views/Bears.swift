@@ -51,7 +51,7 @@ struct BearsView: View {
                 
                 ScrollView {
                     HStack {
-                        Text("Store")
+                        Text("Shop")
                             .font(.system(size: 24, weight: .bold, design: .default))
                             .foregroundColor(Color(hex: "#000"))
                             .padding(.leading, 20) // Add padding to the left side
