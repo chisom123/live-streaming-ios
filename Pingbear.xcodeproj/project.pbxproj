@@ -62,6 +62,11 @@
 		4F3E0D792A951FFA0068F901 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D782A951FFA0068F901 /* ChatModel.swift */; };
 		4F3E0D7B2A963C370068F901 /* Search.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D7A2A963C360068F901 /* Search.swift */; };
 		4F3E0D7D2A977E140068F901 /* Bears.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D7C2A977E140068F901 /* Bears.swift */; };
+		4F3E0D7F2A9B595F0068F901 /* Pbill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D7E2A9B595F0068F901 /* Pbill.swift */; };
+		4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */; };
+		4F3E0D832A9BA19D0068F901 /* BearsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */; };
+		4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D842A9BC9570068F901 /* Bear.swift */; };
+		4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +110,10 @@
 		4F3E0D782A951FFA0068F901 /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
 		4F3E0D7A2A963C360068F901 /* Search.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Search.swift; sourceTree = "<group>"; };
 		4F3E0D7C2A977E140068F901 /* Bears.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bears.swift; sourceTree = "<group>"; };
+		4F3E0D7E2A9B595F0068F901 /* Pbill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pbill.swift; sourceTree = "<group>"; };
+		4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PbillViewModel.swift; sourceTree = "<group>"; };
+		4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BearsViewModel.swift; sourceTree = "<group>"; };
+		4F3E0D842A9BC9570068F901 /* Bear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bear.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */,
 				4F3E0D2F2A86F6BF0068F901 /* FirebaseDatabase in Frameworks */,
 				4F3E0D3D2A86F6BF0068F901 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				4F3E0D352A86F6BF0068F901 /* FirebaseFirestore in Frameworks */,
@@ -231,6 +241,7 @@
 				4F3E0D732A927FBC0068F901 /* Chat.swift */,
 				4F3E0D7A2A963C360068F901 /* Search.swift */,
 				4F3E0D7C2A977E140068F901 /* Bears.swift */,
+				4F3E0D7E2A9B595F0068F901 /* Pbill.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -248,6 +259,9 @@
 			children = (
 				4F3E0D762A9512D60068F901 /* HomeViewModel.swift */,
 				4F3E0D782A951FFA0068F901 /* ChatModel.swift */,
+				4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */,
+				4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */,
+				4F3E0D842A9BC9570068F901 /* Bear.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -296,6 +310,7 @@
 				4F3E0D4C2A86F6BF0068F901 /* FirebaseRemoteConfigSwift */,
 				4F3E0D4E2A86F6BF0068F901 /* FirebaseStorage */,
 				4F3E0D502A86F6BF0068F901 /* FirebaseStorageCombine-Community */,
+				4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -371,6 +386,7 @@
 			mainGroup = 4F3E0CE02A846CE80068F901;
 			packageReferences = (
 				4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -419,9 +435,12 @@
 			files = (
 				4F3E0D7B2A963C370068F901 /* Search.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
+				4F3E0D832A9BA19D0068F901 /* BearsViewModel.swift in Sources */,
+				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
 				4F3E0D772A9512D60068F901 /* HomeViewModel.swift in Sources */,
 				4F3E0D7D2A977E140068F901 /* Bears.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
+				4F3E0D7F2A9B595F0068F901 /* Pbill.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F3E0D792A951FFA0068F901 /* ChatModel.swift in Sources */,
@@ -429,6 +448,7 @@
 				4F3E0D742A927FBD0068F901 /* Chat.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
+				4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -802,6 +822,14 @@
 				minimumVersion = 10.0.0;
 			};
 		};
+		4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -939,6 +967,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseStorageCombine-Community";
+		};
+		4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
+			productName = SDWebImageSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
