@@ -3,17 +3,58 @@ import Firebase
 import FirebaseAuth
 import CountryPicker
 
+struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
+    
+    @Binding var selectedCountry: Country?
+    
+    func makeUIViewController(context: UIViewControllerRepresentableContext<CountryPickerViewControllerWrapper>) -> CountryPickerViewController {
+        let countryPicker = CountryPickerViewController()
+        countryPicker.selectedCountry = ""
+        countryPicker.delegate = context.coordinator
+        
+        return countryPicker
+    }
+
+    func updateUIViewController(_ uiViewController: CountryPickerViewController, context: UIViewControllerRepresentableContext<CountryPickerViewControllerWrapper>) {
+        
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, CountryPickerDelegate {
+        var parent: CountryPickerViewControllerWrapper
+
+        init(_ parent: CountryPickerViewControllerWrapper) {
+            self.parent = parent
+        }
+
+        func countryPicker(didSelect country: Country) {
+            parent.selectedCountry = country
+        }
+    }
+}
+
 struct PhoneEntryView: View {
     @State private var phoneNumber: String = ""
     @State private var verificationID: String? = nil
     @State private var errorMessage: String? = nil
     @State private var showVerificationView = false
+    @State private var selectedCountry: Country?
+    @State private var showCountryPicker = false
 
-    // Country codes and their display names
-    let countryCodes = ["+1": "USA", "+44": "UK", "+91": "India", "+61": "Australia", /* add more country codes and names as needed */ ]
-    
-    // This will be used to prefill the user's country code
-    @State private var selectedCountryCode: String = "+1" // default to USA, for example
+    init() {
+        if let countryCode = NSLocale.current.regionCode,
+           let country = CountryManager.shared.getCountries().first(where: { $0.isoCode == countryCode }) {
+            self._selectedCountry = State(initialValue: country)
+        }
+
+        // Customize the close button of the country picker
+        let closeButton = DismissButtonStyle.title(title: "Close", textColor: UIColor(hex: "#1199FF"), font: UIFont.systemFont(ofSize: 16, weight: .bold))
+
+        CountryManager.shared.config.closeButtonStyle = closeButton
+    }
 
     var body: some View {
         VStack {
@@ -25,22 +66,35 @@ struct PhoneEntryView: View {
                 .padding(.bottom, 40)
                 .padding(.horizontal)
             
-            // Country code dropdown
-            Picker("Select Country Code", selection: $selectedCountryCode) {
-                ForEach(countryCodes.sorted(by: { $0.value < $1.value }), id: \.key) { (key: String, value: String) in
-                    Text("\(value) (\(key))").tag(key)
-                }
-            }
-            .pickerStyle(MenuPickerStyle())
-
-            // Phone number entry with selected country code
             HStack {
-                Text(selectedCountryCode)
+                // Country Picker Button
+                Button(action: {
+                    showCountryPicker.toggle()
+                }) {
+                    if let country = selectedCountry {
+                        Text("\(country.isoCode.getFlag()) +\(country.phoneCode)")
+                    } else {
+                        Text("🇬🇧 +44")
+                    }
+                }
+                .sheet(isPresented: $showCountryPicker) {
+                    CountryPickerViewControllerWrapper(selectedCountry: $selectedCountry)
+                }
+                .padding()   // Adjust the padding to match the TextField's
+                .background(Color(hex: "#F5F5F5"))
+                .foregroundColor(Color(hex: "#000"))
+                .cornerRadius(5)
+                .font(.system(size: 16, weight: .medium, design: .default))
+
+                // Phone Number TextField
                 TextField("Enter phone number", text: $phoneNumber)
                     .keyboardType(.phonePad)
+                    .padding()
+                    .background(Color(hex: "#F5F5F5"))
+                    .foregroundColor(Color(hex: "#000"))
+                    .cornerRadius(5)
+                    .font(.system(size: 16, weight: .medium, design: .default))
             }
-            .padding()
-            .border(Color.gray, width: 0.5)
 
             if let error = errorMessage {
                 Text(error)
@@ -48,23 +102,23 @@ struct PhoneEntryView: View {
                     .font(.system(size: 15, weight: .semibold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 10)
+                    .padding(.top, 20)
                     .padding(.horizontal)
             }
 
-            Button("Continue") {
-                // Update phone number with selected country code
-                let fullNumber = selectedCountryCode + phoneNumber
-                self.sendVerificationCode(phoneNumber: fullNumber)
+            Button(action: {
+                self.sendVerificationCode()
+            }) {
+                Text("Continue")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
             }
-            .padding(EdgeInsets(top: 18, leading: 0, bottom: 18, trailing: 0))
-            .frame(maxWidth: .infinity)
-            .background(Color(hex: "#1199FF"))
-            .foregroundColor(Color(hex: "#fff"))
-            .font(.system(size: 18, weight: .bold, design: .default))
-            .cornerRadius(200)
-            .padding(.horizontal)
-            .padding(.bottom, 20)
+            .padding(.top, 20)
 
             NavigationLink(destination: VerificationView(phoneNumber: phoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
                 EmptyView()
@@ -72,17 +126,17 @@ struct PhoneEntryView: View {
         }
         .padding()
         .navigationBarBackButtonHidden(true)
-        .onAppear {
-            // On appearance of the view, detect user's locale to prefill the country code
-            if let countryCode = Locale.current.regionCode,
-               let phoneCode = countryCodes.first(where: { $0.value == countryCode })?.key {
-                selectedCountryCode = phoneCode
-            }
-        }
     }
 
-    func sendVerificationCode(phoneNumber: String) {
-        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { (verificationID, error) in
+    func sendVerificationCode() {
+        guard let country = selectedCountry else {
+            errorMessage = "Please select a country."
+            return
+        }
+
+        let fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
+
+        PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { (verificationID, error) in
             if let error = error {
                 self.errorMessage = error.localizedDescription
                 return
