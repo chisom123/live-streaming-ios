@@ -2,7 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestoreSwift
 
-struct Message: Equatable, Identifiable {
+struct Message: Equatable, Identifiable, Hashable {
     var id: String?
     var senderID: String
     var timestamp: Timestamp
@@ -22,6 +22,8 @@ struct Message: Equatable, Identifiable {
 
 class ChatModel: ObservableObject {
     @Published var messages: [Message] = []
+    
+    private var apiCaller = APICaller.shared
     private let db = Firestore.firestore()
     
     func sendMessage(to recipient: AppUser, content: String) {
@@ -50,7 +52,28 @@ class ChatModel: ObservableObject {
         }
     }
 
-    
+    func getConversationHistory(recipientId: String) -> String {
+        var history = ""
+        for message in messages {
+            if message.senderID == recipientId {
+                history += "Friend: \(message.content)\n"
+            } else {
+                history += "Me: \(message.content)\n"
+            }
+        }
+        return history
+    }
+
+    func getSuggestedReply(history: String, completion: @escaping (String) -> Void) {
+        apiCaller.getResponse(input: history) { result in
+            switch result {
+            case .success(let suggestion):
+                completion(suggestion)
+            case .failure(let error):
+                print("Error getting suggested reply: \(error.localizedDescription)")
+            }
+        }
+    }
     
     func fetchMessages(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }

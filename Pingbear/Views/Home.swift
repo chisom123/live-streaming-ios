@@ -65,7 +65,7 @@ struct HomeView: View {
                     Button(action: {
                         viewModel.showBearsView()
                     }) {
-                        Image("Settings") // Replace with your image name
+                        Image("Shop") // Replace with your image name
                             .resizable()
                             .frame(width: 50, height: 50)
                             .padding(.leading, 30)

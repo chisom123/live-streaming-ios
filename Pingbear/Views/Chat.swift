@@ -77,11 +77,13 @@ struct ChatView: View {
                 }
                 .padding(10)
 
-                TextField("Type here", text: $message)
+                TextField("", text: $message, axis: .vertical)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))
-                    .foregroundColor(Color(hex: "#000"))
                     .cornerRadius(5)
+                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    .foregroundColor(Color.black)
+                    .lineSpacing(9)
 
                 Button(action: {
                     if message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -92,12 +94,18 @@ struct ChatView: View {
                 }) {
                     Image(systemName: "arrow.up")
                         .foregroundColor(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .init(white: 0.75) : Color(hex: "#1199FF"))
-                        .font(.system(size: 19, weight: .bold))
+                        .font(.system(size: 20, weight: .bold))
                 }
                 .padding(5)
 
             }
             .padding()
+        }
+        .onChange(of: viewModel.messages) { _ in
+            let history = viewModel.getConversationHistory(recipientId: friend.id)
+            viewModel.getSuggestedReply(history: history) { suggestion in
+                self.message = suggestion
+            }
         }
         .onAppear {
             viewModel.fetchMessages(for: friend)
