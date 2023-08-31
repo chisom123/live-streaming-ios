@@ -37,6 +37,7 @@ struct SearchView: View {
                 .background(Color(hex: "#F5F5F5"))
                 .foregroundColor(Color(hex: "#000"))
                 .cornerRadius(5)
+                .font(.system(size: 16, weight: .medium, design: .default))
                 .padding([.leading, .trailing], 20)
                 .padding(.top, 30)
 
