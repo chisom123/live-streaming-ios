@@ -22,8 +22,21 @@ struct BearsView: View {
                             .padding(.leading, 20)
                             .padding(.top, 20)
                     }
-                    Spacer()
+                    
+                    Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    
+                    // Add your new button here:
+                    Button(action: {
+                        // Your button action goes here.
+                    }) {
+                        Image("Settings") // Replace with your button image name.
+                            .resizable()
+                            .frame(width: 40, height: 40)
+                            .padding(.trailing, 20)
+                            .padding(.top, 20)
+                    }
                 }
+
                 
                 VStack {
                     Button(action: {
