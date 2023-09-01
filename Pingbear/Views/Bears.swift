@@ -1,5 +1,7 @@
 import SwiftUI
 import SDWebImageSwiftUI
+import FirebaseAuth
+
 
 struct BearsView: View {
     
