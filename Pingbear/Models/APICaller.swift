@@ -26,7 +26,7 @@ final class APICaller {
         
         Task {
             do {
-                if let response = try await client?.sendMessage(text: input, systemText: "Your role is to provide Me with a text-message response using the conversation history as context") {
+                if let response = try await client?.sendMessage(text: "Chat history: \(input)", systemText: "You are a text-messaging assistant chatbot. Using the chat history as context, craft one continuation text for User-A to send to User-B. Focus on capturing the distinct nuances and tonality of User-A's communication style. The message should feel like a seamless extension of their earlier conversations") {
                     completion(.success(response))
                 } else {
                     completion(.failure(NSError(domain: "", code: 404, userInfo: [NSLocalizedDescriptionKey: "Response was nil"])))

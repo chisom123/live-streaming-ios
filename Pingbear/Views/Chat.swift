@@ -69,13 +69,16 @@ struct ChatView: View {
 
             HStack {
                 Button(action: {
-                    self.message = ""
+                    let history = viewModel.getConversationHistory(recipientId: friend.id)
+                    viewModel.getSuggestedReply(history: history) { suggestion in
+                        self.message = suggestion
+                    }
                 }) {
-                    Image(systemName: "trash")
-                        .foregroundColor(.init(white: 0.75))
-                        .font(.system(size: 19, weight: .bold))
+                    Image(systemName: "plus")
+                        .foregroundColor(Color(hex: "#EEAA00"))
+                        .font(.system(size: 22, weight: .bold))
                 }
-                .padding(10)
+                .padding(5)
 
                 TextField("", text: $message, axis: .vertical)
                     .padding()
@@ -94,18 +97,12 @@ struct ChatView: View {
                 }) {
                     Image(systemName: "arrow.up")
                         .foregroundColor(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .init(white: 0.75) : Color(hex: "#1199FF"))
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.system(size: 22, weight: .bold))
                 }
                 .padding(5)
 
             }
             .padding()
-        }
-        .onChange(of: viewModel.messages) { _ in
-            let history = viewModel.getConversationHistory(recipientId: friend.id)
-            viewModel.getSuggestedReply(history: history) { suggestion in
-                self.message = suggestion
-            }
         }
         .onAppear {
             viewModel.fetchMessages(for: friend)

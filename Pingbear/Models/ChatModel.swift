@@ -54,11 +54,11 @@ class ChatModel: ObservableObject {
 
     func getConversationHistory(recipientId: String) -> String {
         var history = ""
-        for message in messages {
+        for message in messages.reversed() {
             if message.senderID == recipientId {
-                history += "Friend: \(message.content)\n"
+                history += "User-B: \(message.content)\n"
             } else {
-                history += "Me: \(message.content)\n"
+                history += "User-A: \(message.content)\n"
             }
         }
         return history
@@ -68,7 +68,10 @@ class ChatModel: ObservableObject {
         apiCaller.getResponse(input: history) { result in
             switch result {
             case .success(let suggestion):
-                completion(suggestion)
+                let refinedSuggestion = suggestion
+                    .replacingOccurrences(of: "User-A: ", with: "")
+                    .replacingOccurrences(of: "User-B: ", with: "")
+                completion(refinedSuggestion)
             case .failure(let error):
                 print("Error getting suggested reply: \(error.localizedDescription)")
             }
