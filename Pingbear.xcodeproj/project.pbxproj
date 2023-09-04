@@ -72,6 +72,7 @@
 		4F3E0D902A9F77DA0068F901 /* ChatGPTSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D8F2A9F77DA0068F901 /* ChatGPTSwift */; };
 		4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D922AA094FB0068F901 /* GrowingTextView */; };
 		4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D952AA0DED80068F901 /* CountryPicker */; };
+		4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9D2AA605500068F901 /* MyBears.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +121,7 @@
 		4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BearsViewModel.swift; sourceTree = "<group>"; };
 		4F3E0D842A9BC9570068F901 /* Bear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bear.swift; sourceTree = "<group>"; };
 		4F3E0D8C2A9F65000068F901 /* APICaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APICaller.swift; sourceTree = "<group>"; };
+		4F3E0D9D2AA605500068F901 /* MyBears.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBears.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,6 +254,7 @@
 				4F3E0D7A2A963C360068F901 /* Search.swift */,
 				4F3E0D7C2A977E140068F901 /* Bears.swift */,
 				4F3E0D7E2A9B595F0068F901 /* Pbill.swift */,
+				4F3E0D9D2AA605500068F901 /* MyBears.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -465,6 +468,7 @@
 				4F3E0D792A951FFA0068F901 /* ChatModel.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Landing.swift in Sources */,
 				4F3E0D742A927FBD0068F901 /* Chat.swift in Sources */,
+				4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F3E0D8D2A9F65000068F901 /* APICaller.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,

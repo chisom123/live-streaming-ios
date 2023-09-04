@@ -72,7 +72,8 @@ class HomeViewModel: ObservableObject {
                                                     let friendID = document.documentID
                                                     if let phoneNumber = document.data()["phoneNumber"] as? String, phoneNumber != currentUserPhoneNumber {
                                                         if let name = document.data()["name"] as? String {
-                                                            let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
+                                                            let icon = document.data()["icon"] as? String
+                                                            let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber, icon: icon)
                                                             self.appUsers.append(user)
                                                             db.collection("users").document(currentUserID).collection("friends").document(friendID).getDocument { (document, error) in
                                                                 if document?.exists == false {

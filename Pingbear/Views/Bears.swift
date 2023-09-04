@@ -7,6 +7,7 @@ struct BearsView: View {
     
     @Environment(\.presentationMode) var presentationMode
     @State private var isPbillViewPresented: Bool = false
+    @State private var isMyBearsViewPresented: Bool = false
     @ObservedObject private var viewModel = BearsViewModel()
     
     var body: some View {
@@ -48,9 +49,9 @@ struct BearsView: View {
                             Text("You have \(viewModel.pBills) P-Bills")
                                 .font(.system(size: 16, weight: .semibold, design: .default))
                                 .foregroundColor(.black)
-                            
+
                             Spacer()
-                            
+
                             Text("Buy P-Bills")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#1199FF"))
@@ -58,13 +59,34 @@ struct BearsView: View {
                         .padding([.top, .bottom], 20)
                         .padding([.leading, .trailing], 20)
                     }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
                 }
-                .background(Color(hex: "#F5F5F5"))
-                .cornerRadius(5)
                 .padding(.top, 30)
                 .padding([.leading, .trailing], 20)
+
                 
                 ScrollView {
+                    Button(action: {
+                        self.isMyBearsViewPresented = true
+                    }) {
+                        HStack {
+                            Text("My Bears")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+
+                            Spacer()
+
+                        }
+                        .padding([.top, .bottom], 20)
+                        .padding([.leading, .trailing], 20)
+                    }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
+                    .padding(.top, 15)
+                    .padding([.leading, .trailing], 20)
+                    
+                    
                     HStack {
                         Text("Shop")
                             .font(.system(size: 24, weight: .bold, design: .default))
@@ -78,7 +100,11 @@ struct BearsView: View {
                     VStack(spacing: 25) {
                         ForEach(viewModel.bears, id: \.id) { bear in
                             Button(action: {
-                                // Purchase action or navigate to bear details
+                                if viewModel.pBills >= bear.price {
+                                    viewModel.purchaseBear(bear)
+                                } else {
+                                    print("You aint got the facilities for that big man")
+                                }
                             }) {
                                 HStack {
                                     // Display the bear image
@@ -123,6 +149,9 @@ struct BearsView: View {
             }
             .fullScreenCover(isPresented: $isPbillViewPresented, content: {
                 PbillView()
+            })
+            .fullScreenCover(isPresented: $isMyBearsViewPresented, content: {
+                MyBearsView()
             })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

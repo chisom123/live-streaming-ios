@@ -2,11 +2,13 @@ import SwiftUI
 import Contacts
 import Firebase
 import UIKit
+import SDWebImageSwiftUI
 
 struct AppUser: Identifiable, Equatable {
     var id: String // UID of the user
     var name: String
     var phoneNumber: String
+    var icon: String? // The URL of the user's icon
 }
 
 extension UIDevice {
@@ -30,10 +32,20 @@ struct HomeView: View {
             ForEach(viewModel.appUsers, id: \.id) { user in
                 ZStack {
                     Color.white.edgesIgnoringSafeArea(.all) // You can change this to any background color you like
-                    Image("teddy-bear") // replace "your-image-name" with your image's name
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 180, height: 180) // change width and height according to your needs
+
+                    if let iconURL = user.icon, !iconURL.isEmpty {
+                        WebImage(url: URL(string: iconURL))
+                            .resizable()
+                            .placeholder(Image("teddy-bear")) // Use teddy bear image as a placeholder while the actual image loads.
+                            .scaledToFit()
+                            .frame(width: 180, height: 180)
+                    } else {
+                        Image("teddy-bear") // Use teddy bear image if no icon exists.
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 180, height: 180)
+                    }
+                    
                     VStack(alignment: .leading) {
                         Text(user.name)
                             .font(.system(size: 18, weight: .bold, design: .default))
