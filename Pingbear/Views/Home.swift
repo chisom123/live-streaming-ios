@@ -33,18 +33,24 @@ struct HomeView: View {
                 ZStack {
                     Color.white.edgesIgnoringSafeArea(.all) // You can change this to any background color you like
 
-                    if let iconURL = user.icon, !iconURL.isEmpty {
-                        WebImage(url: URL(string: iconURL))
-                            .resizable()
-                            .placeholder(Image("teddy-bear")) // Use teddy bear image as a placeholder while the actual image loads.
-                            .scaledToFit()
-                            .frame(width: 180, height: 180)
-                    } else {
-                        Image("teddy-bear") // Use teddy bear image if no icon exists.
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 180, height: 180)
-                    }
+                    ZStack {
+                            RoundedRectangle(cornerRadius: 2000) // Gray container
+                                .fill(Color(hex: "#F5F5F5"))
+                                .frame(width: 220, height: 220) // A bit bigger than the bear image
+
+                            if let iconURL = user.icon, !iconURL.isEmpty {
+                                WebImage(url: URL(string: iconURL))
+                                    .resizable()
+                                    .placeholder(Image("teddy-bear")) // Use teddy bear image as a placeholder while the actual image loads.
+                                    .scaledToFit()
+                                    .frame(width: 150, height: 150)
+                            } else {
+                                Image("teddy-bear") // Use teddy bear image if no icon exists.
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 150, height: 150)
+                            }
+                        }
                     
                     VStack(alignment: .leading) {
                         Text(user.name)
