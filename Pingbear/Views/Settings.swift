@@ -85,6 +85,24 @@ struct SettingsView: View {
                     }
                     .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
+    
+                    Button(action: {
+                        if let url = URL(string: "mailto:pingbearapp@gmail.com") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        HStack {
+                            Text("Contact Us")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#ababab"))
+                            Spacer()
+                        }
+                        .padding([.top, .bottom], 20)
+                        .padding([.leading, .trailing], 20)
+                    }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
+                    
                     
                     // Log Out Button
                     Button(action: {
