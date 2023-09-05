@@ -69,22 +69,6 @@ struct SettingsView: View {
                     }
                     .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
-
-                    // My Friends Button
-                    Button(action: {
-                        // Add your action for Button 3 here
-                    }) {
-                        HStack {
-                            Text("My Friends")
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#1199FF"))
-                            Spacer()
-                        }
-                        .padding([.top, .bottom], 20)
-                        .padding([.leading, .trailing], 20)
-                    }
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
     
                     Button(action: {
                         if let url = URL(string: "mailto:pingbearapp@gmail.com") {
