@@ -50,6 +50,25 @@ class ChatModel: ObservableObject {
                 print("Message successfully written!")
             }
         }
+        
+        let db = Firestore.firestore()
+
+        // Inside sendMessage method after successfully writing the message
+        let batch = db.batch()
+
+        // Set sender's last message timestamp with merge set to true
+        batch.setData(["lastMessageTimestamp": Timestamp(date: Date())], forDocument: db.collection("users").document(user.uid), merge: true)
+
+        // Set recipient's last message timestamp with merge set to true
+        batch.setData(["lastMessageTimestamp": Timestamp(date: Date())], forDocument: db.collection("users").document(recipient.id), merge: true)
+
+        batch.commit() { err in
+            if let err = err {
+                print("Error writing batch \(err)")
+            } else {
+                print("Batch write succeeded.")
+            }
+        }
     }
 
     func getConversationHistory(recipientId: String) -> String {

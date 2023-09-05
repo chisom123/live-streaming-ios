@@ -3,12 +3,14 @@ import Contacts
 import Firebase
 import UIKit
 import SDWebImageSwiftUI
+import FirebaseFirestore
 
 struct AppUser: Identifiable, Equatable {
     var id: String // UID of the user
     var name: String
     var phoneNumber: String
     var icon: String? // The URL of the user's icon
+    var lastMessageTimestamp: Timestamp?
 }
 
 extension UIDevice {
@@ -73,7 +75,7 @@ struct HomeView: View {
             }
         }
         .onAppear {
-            viewModel.fetchContacts()
+            viewModel.fetchFriends()
         }
         .navigationBarHidden(true)
         .overlay(
