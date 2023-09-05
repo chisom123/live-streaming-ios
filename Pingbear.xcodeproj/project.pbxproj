@@ -73,6 +73,8 @@
 		4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D922AA094FB0068F901 /* GrowingTextView */; };
 		4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D952AA0DED80068F901 /* CountryPicker */; };
 		4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9D2AA605500068F901 /* MyBears.swift */; };
+		4F3E0DA02AA777240068F901 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9F2AA777240068F901 /* Settings.swift */; };
+		4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA12AA782DE0068F901 /* ChangeName.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,6 +124,8 @@
 		4F3E0D842A9BC9570068F901 /* Bear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bear.swift; sourceTree = "<group>"; };
 		4F3E0D8C2A9F65000068F901 /* APICaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APICaller.swift; sourceTree = "<group>"; };
 		4F3E0D9D2AA605500068F901 /* MyBears.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBears.swift; sourceTree = "<group>"; };
+		4F3E0D9F2AA777240068F901 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
+		4F3E0DA12AA782DE0068F901 /* ChangeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeName.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -255,6 +259,8 @@
 				4F3E0D7C2A977E140068F901 /* Bears.swift */,
 				4F3E0D7E2A9B595F0068F901 /* Pbill.swift */,
 				4F3E0D9D2AA605500068F901 /* MyBears.swift */,
+				4F3E0D9F2AA777240068F901 /* Settings.swift */,
+				4F3E0DA12AA782DE0068F901 /* ChangeName.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -461,6 +467,7 @@
 				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
 				4F3E0D772A9512D60068F901 /* HomeViewModel.swift in Sources */,
 				4F3E0D7D2A977E140068F901 /* Bears.swift in Sources */,
+				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F3E0D7F2A9B595F0068F901 /* Pbill.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
@@ -473,6 +480,7 @@
 				4F3E0D8D2A9F65000068F901 /* APICaller.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */,
+				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

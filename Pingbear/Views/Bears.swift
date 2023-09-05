@@ -8,6 +8,7 @@ struct BearsView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isPbillViewPresented: Bool = false
     @State private var isMyBearsViewPresented: Bool = false
+    @State private var isSettingsViewPresented: Bool = false
     @ObservedObject private var viewModel = BearsViewModel()
     
     var body: some View {
@@ -30,7 +31,7 @@ struct BearsView: View {
                     
                     // Add your new button here:
                     Button(action: {
-                        // Your button action goes here.
+                        self.isSettingsViewPresented = true
                     }) {
                         Image("Settings") // Replace with your button image name.
                             .resizable()
@@ -152,6 +153,9 @@ struct BearsView: View {
             })
             .fullScreenCover(isPresented: $isMyBearsViewPresented, content: {
                 MyBearsView()
+            })
+            .fullScreenCover(isPresented: $isSettingsViewPresented, content: {
+                SettingsView()
             })
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

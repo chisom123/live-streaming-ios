@@ -38,7 +38,7 @@ struct NameEntryView: View {
             if let error = errorMessage {
                 Text(error)
                     .foregroundColor(Color(hex: "#CC2255"))
-                    .font(.system(size: 15, weight: .semibold, design: .default))
+                    .font(.system(size: 15, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .padding(.bottom, 10)

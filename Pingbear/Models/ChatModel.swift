@@ -77,7 +77,6 @@ class ChatModel: ObservableObject {
             }
         }
     }
-    
     func fetchMessages(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }
         
