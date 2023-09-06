@@ -68,38 +68,21 @@ struct ChatView: View {
             .padding(.bottom, 5)
 
             HStack {
-                Button(action: {
-                    let history = viewModel.getConversationHistory(recipientId: friend.id)
-                    viewModel.getSuggestedReply(history: history) { suggestion in
-                        self.message = suggestion
-                    }
-                }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(Color(hex: "#EEAA00"))
-                        .font(.system(size: 22, weight: .bold))
-                }
-                .padding(5)
 
-                TextField("", text: $message, axis: .vertical)
-                    .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .font(.system(size: 16, weight: .semibold, design: .default))
-                    .foregroundColor(Color.black)
-                    .lineSpacing(9)
-
-                Button(action: {
-                    if message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        return
+                TextField("Send a message", text: $message, onCommit: {
+                    if !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        viewModel.sendMessage(to: friend, content: message)
+                        DispatchQueue.main.async {
+                            self.message = ""
+                        }
                     }
-                    viewModel.sendMessage(to: friend, content: message)
-                    self.message = ""
-                }) {
-                    Image(systemName: "arrow.up")
-                        .foregroundColor(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .init(white: 0.75) : Color(hex: "#1199FF"))
-                        .font(.system(size: 22, weight: .bold))
-                }
-                .padding(5)
+                })
+                .submitLabel(.send)
+                .padding()
+                .background(Color(hex: "#F5F5F5"))
+                .cornerRadius(5)
+                .font(.system(size: 16, weight: .semibold, design: .default))
+                .foregroundColor(Color.black)
 
             }
             .padding()
