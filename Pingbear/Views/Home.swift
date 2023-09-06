@@ -43,7 +43,6 @@ struct HomeView: View {
                             if let iconURL = user.icon, !iconURL.isEmpty {
                                 WebImage(url: URL(string: iconURL))
                                     .resizable()
-                                    .placeholder(Image("teddy-bear")) // Use teddy bear image as a placeholder while the actual image loads.
                                     .scaledToFit()
                                     .frame(width: 150, height: 150)
                             } else {

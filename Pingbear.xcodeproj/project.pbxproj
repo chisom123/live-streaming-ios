@@ -75,6 +75,8 @@
 		4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9D2AA605500068F901 /* MyBears.swift */; };
 		4F3E0DA02AA777240068F901 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9F2AA777240068F901 /* Settings.swift */; };
 		4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA12AA782DE0068F901 /* ChangeName.swift */; };
+		4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA32AA89F0E0068F901 /* AddFriends.swift */; };
+		4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,6 +128,8 @@
 		4F3E0D9D2AA605500068F901 /* MyBears.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBears.swift; sourceTree = "<group>"; };
 		4F3E0D9F2AA777240068F901 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		4F3E0DA12AA782DE0068F901 /* ChangeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeName.swift; sourceTree = "<group>"; };
+		4F3E0DA32AA89F0E0068F901 /* AddFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriends.swift; sourceTree = "<group>"; };
+		4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendsModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -261,6 +265,7 @@
 				4F3E0D9D2AA605500068F901 /* MyBears.swift */,
 				4F3E0D9F2AA777240068F901 /* Settings.swift */,
 				4F3E0DA12AA782DE0068F901 /* ChangeName.swift */,
+				4F3E0DA32AA89F0E0068F901 /* AddFriends.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -282,6 +287,7 @@
 				4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */,
 				4F3E0D842A9BC9570068F901 /* Bear.swift */,
 				4F3E0D8C2A9F65000068F901 /* APICaller.swift */,
+				4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -478,6 +484,8 @@
 				4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F3E0D8D2A9F65000068F901 /* APICaller.swift in Sources */,
+				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
+				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,

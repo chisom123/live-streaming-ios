@@ -33,6 +33,8 @@ struct ChangeNameView: View {
                     
                     Spacer() // This spacer will ensure the two buttons are at opposite ends.
                 }
+                
+                Spacer()
 
                 Text("My Name")
                     .font(.system(size: 18, weight: .semibold, design: .default))
@@ -40,7 +42,6 @@ struct ChangeNameView: View {
                     .lineSpacing(10)
                     .foregroundColor(.black)
                     .padding(.bottom, 40)
-                    .padding(.top, 30)
                     .padding(.horizontal)
                 
                 TextField("My Name", text: $updatedName)
@@ -96,6 +97,7 @@ struct ChangeNameView: View {
             }
             .onAppear(perform: fetchUserName)  // <-- Here's the change
         }
+        Spacer()
     }
 
     func fetchUserName() {

@@ -5,6 +5,7 @@ struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
+    @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
     
     func signOut() {
         do {
@@ -56,7 +57,7 @@ struct SettingsView: View {
 
                     // Add Friends Button
                     Button(action: {
-                        // Add your action for Button 2 here
+                        self.showAddFriendsView = true
                     }) {
                         HStack {
                             Text("Add Friends")
@@ -69,6 +70,9 @@ struct SettingsView: View {
                     }
                     .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
+                    .fullScreenCover(isPresented: $showAddFriendsView) {  // Use the full screen cover modifier
+                        AddFriendsView(viewModel: AddFriendsModel())
+                    }
     
                     Button(action: {
                         if let url = URL(string: "mailto:pingbearapp@gmail.com") {

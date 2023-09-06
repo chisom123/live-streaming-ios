@@ -63,7 +63,7 @@ class BearsViewModel: ObservableObject {
                     } else {
                         // Update local P-Bills value
                         self.pBills = newPBills
-                        self.updateUserIcon(with: bear.imageUrl) 
+                        self.updateUserIcon(with: bear.imageUrl)
                         // Optionally, fetch the user's bears again or just append the new bear to a local list
                     }
                 }
