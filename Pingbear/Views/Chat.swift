@@ -80,15 +80,15 @@ struct ChatView: View {
                 .disabled(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid)
                 .submitLabel(.send)
                 .padding()
-                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#262626") : Color(hex: "#F5F5F5"))
+                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#F5F5F5"))
                 .cornerRadius(5)
                 .font(.system(size: 16, weight: .semibold, design: .default))
                 .foregroundColor(Color.black)
 
                 // Conditional Placeholder
                 if message.isEmpty {
-                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "Send a message")
-                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color.white : Color.black)  // Change placeholder color conditionally
+                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "Type here")
+                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color.black : Color(hex: "#1199FF"))  // Change placeholder color conditionally
                         .padding(.leading) // Adjust to match your TextField's padding
                         .font(.system(size: 16, weight: .semibold, design: .default))
                 }
