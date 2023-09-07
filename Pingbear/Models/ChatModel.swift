@@ -42,6 +42,12 @@ class ChatModel: ObservableObject {
             "content": content
         ]
         
+        // Check if current user sent the last message - CHECK THIS, DONT THINK ITS WORKING
+        if let lastMessage = self.messages.last, lastMessage.senderID == user.uid {
+            print("You can't send consecutive messages. Wait for your friend to reply!")
+            return
+        }
+        
         let documentRef = db.collection("messages").document(documentID).collection("messages").document()
         documentRef.setData(message) { error in
             if let error = error {

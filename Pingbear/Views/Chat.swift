@@ -67,9 +67,9 @@ struct ChatView: View {
             .padding(.top, 15)
             .padding(.bottom, 5)
 
-            HStack {
-
-                TextField("Send a message", text: $message, onCommit: {
+            ZStack(alignment: .leading) {
+                // Actual TextField
+                TextField("", text: $message, onCommit: {
                     if !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         viewModel.sendMessage(to: friend, content: message)
                         DispatchQueue.main.async {
@@ -77,13 +77,21 @@ struct ChatView: View {
                         }
                     }
                 })
+                .disabled(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid)
                 .submitLabel(.send)
                 .padding()
-                .background(Color(hex: "#F5F5F5"))
+                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#262626") : Color(hex: "#F5F5F5"))
                 .cornerRadius(5)
                 .font(.system(size: 16, weight: .semibold, design: .default))
                 .foregroundColor(Color.black)
 
+                // Conditional Placeholder
+                if message.isEmpty {
+                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "Send a message")
+                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color.white : Color.black)  // Change placeholder color conditionally
+                        .padding(.leading) // Adjust to match your TextField's padding
+                        .font(.system(size: 16, weight: .semibold, design: .default))
+                }
             }
             .padding()
         }
