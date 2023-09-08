@@ -88,7 +88,7 @@ struct ChatView: View {
                 // Conditional Placeholder
                 if message.isEmpty {
                     Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "Type here")
-                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color.black : Color.black)  // Change placeholder color conditionally
+                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#FF1493") : Color.black)  // Change placeholder color conditionally
                         .padding(.leading) // Adjust to match your TextField's padding
                         .font(.system(size: 16, weight: .semibold, design: .default))
                 }
