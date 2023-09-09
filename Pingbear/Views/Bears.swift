@@ -9,6 +9,7 @@ struct BearsView: View {
     @State private var isPbillViewPresented: Bool = false
     @State private var isMyBearsViewPresented: Bool = false
     @State private var isSettingsViewPresented: Bool = false
+    @State private var bearWithInsufficientFunds: String? = nil
     @ObservedObject private var viewModel = BearsViewModel()
     
     var body: some View {
@@ -101,10 +102,16 @@ struct BearsView: View {
                     VStack(spacing: 25) {
                         ForEach(viewModel.bears, id: \.id) { bear in
                             Button(action: {
+                                if viewModel.ownedBears.contains(where: { $0.imageUrl == bear.imageUrl }) {
+                                    // Do nothing if the bear is already owned
+                                    return
+                                }
+
                                 if viewModel.pBills >= bear.price {
                                     viewModel.purchaseBear(bear)
+                                    bearWithInsufficientFunds = nil  // Clear the ID when there's enough funds to purchase
                                 } else {
-                                    print("You aint got the facilities for that big man")
+                                    bearWithInsufficientFunds = bear.id  // Store the ID of the bear with insufficient funds
                                 }
                             }) {
                                 HStack {
@@ -120,10 +127,14 @@ struct BearsView: View {
                                             .font(.system(size: 16, weight: .bold, design: .default))
                                             .foregroundColor(.black)
                                         
-                                        if viewModel.pBills >= bear.price {
-                                            Text("Buy for \(bear.price) P-Bills")
+                                        if viewModel.ownedBears.contains(where: { $0.imageUrl == bear.imageUrl }) {
+                                            Text("Purchased")
                                                 .font(.system(size: 15, weight: .bold, design: .default))
-                                                .foregroundColor(Color(hex: "#1199FF"))
+                                                .foregroundColor(Color(hex: "#ababab"))
+                                        } else if bearWithInsufficientFunds == bear.id {
+                                            Text("Buy more P-Bills")
+                                                .font(.system(size: 15, weight: .bold, design: .default))
+                                                .foregroundColor(Color(hex: "#CC2255"))
                                         } else {
                                             Text("Buy for \(bear.price) P-Bills")
                                                 .font(.system(size: 15, weight: .bold, design: .default))
