@@ -8,6 +8,7 @@ class BearsViewModel: ObservableObject {
     @Published var pBills: Int = 0
     @Published var bears: [Bear] = []
     @Published var ownedBears: [Bear] = []
+    @Published var currentUserIcon: String = ""
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -26,6 +27,7 @@ class BearsViewModel: ObservableObject {
         Firestore.firestore().collection("users").document(userID).getDocument { snapshot, error in
             guard let data = snapshot?.data() else { return }
             self.pBills = data["pBills"] as? Int ?? 0
+            self.currentUserIcon = data["icon"] as? String ?? ""
         }
     }
 
@@ -97,10 +99,13 @@ class BearsViewModel: ObservableObject {
             if let error = error {
                 print("Error updating user's icon: \(error.localizedDescription)")
             } else {
+                // Update the currentUserIcon here after successful database update
+                self.currentUserIcon = imageUrl
                 print("User's icon successfully updated!")
             }
         }
     }
+
 
 
 }

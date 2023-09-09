@@ -33,11 +33,6 @@ struct MyBearsView: View {
                 }
 
                 ScrollView {
-                    Text("My Bears")
-                        .font(.system(size: 24, weight: .bold, design: .default))
-                        .foregroundColor(Color(hex: "#000"))
-                        .padding(.leading, 20) // Add padding to the left side
-                        .padding(.top, 40)
 
                     VStack(spacing: 25) {
                         ForEach(viewModel.ownedBears, id: \.id) { bear in
@@ -56,9 +51,9 @@ struct MyBearsView: View {
                                             .font(.system(size: 16, weight: .bold, design: .default))
                                             .foregroundColor(.black)
                                         
-                                        Text("Owned")
+                                        Text(bear.imageUrl == viewModel.currentUserIcon ? "Active" : "Activate")
                                             .font(.system(size: 15, weight: .bold, design: .default))
-                                            .foregroundColor(Color(hex: "#1199FF"))
+                                            .foregroundColor(bear.imageUrl == viewModel.currentUserIcon ? Color(hex: "#ababab") : Color(hex: "#1199FF"))
                                     }
 
                                     Spacer()
