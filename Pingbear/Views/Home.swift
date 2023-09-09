@@ -10,7 +10,6 @@ struct AppUser: Identifiable, Equatable {
     var name: String
     var phoneNumber: String
     var icon: String? // The URL of the user's icon
-    var lastMessageTimestamp: Timestamp?
 }
 
 extension UIDevice {

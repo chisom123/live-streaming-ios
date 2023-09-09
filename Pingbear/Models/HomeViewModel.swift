@@ -33,10 +33,15 @@ class HomeViewModel: ObservableObject {
 
     private func fetchUserDetails(friendIDs: [String]) {
         let db = Firestore.firestore()
-        
+
+        // Use DispatchGroup to manage asynchronous operations
+        let group = DispatchGroup()
         for friendID in friendIDs {
+            group.enter()
             let docRef = db.collection("users").document(friendID)
-            docRef.addSnapshotListener { (document, error) in
+            
+            docRef.getDocument { (document, error) in
+                defer { group.leave() }
                 if let error = error {
                     print("Error getting friend's details: \(error)")
                     return
@@ -46,23 +51,23 @@ class HomeViewModel: ObservableObject {
                 let friendPhoneNumber = data["phoneNumber"] as? String
                 let friendName = data["name"] as? String
                 let friendIcon = data["icon"] as? String
-                let lastMessageTimestamp = data["lastMessageTimestamp"] as? Timestamp
+                    
+                // Removed the lastMessageTimestamp part
+                let user = AppUser(id: friendID, name: friendName ?? "", phoneNumber: friendPhoneNumber ?? "", icon: friendIcon)
                 
-                let user = AppUser(id: friendID, name: friendName ?? "", phoneNumber: friendPhoneNumber ?? "", icon: friendIcon, lastMessageTimestamp: lastMessageTimestamp)
                 DispatchQueue.main.async {
                     if let index = self.appUsers.firstIndex(where: { $0.id == friendID }) {
                         self.appUsers[index] = user
                     } else {
                         self.appUsers.append(user)
                     }
-                    self.appUsers.sort { (user1, user2) -> Bool in
-                        guard let timestamp1 = user1.lastMessageTimestamp, let timestamp2 = user2.lastMessageTimestamp else {
-                            return user1.lastMessageTimestamp != nil
-                        }
-                        return timestamp1.dateValue() > timestamp2.dateValue()
-                    }
                 }
             }
+        }
+
+        // Once all users have been fetched, shuffle the appUsers array
+        group.notify(queue: .main) {
+            self.appUsers.shuffle()
         }
     }
 
