@@ -25,9 +25,11 @@ class BearsViewModel: ObservableObject {
         let userID = Auth.auth().currentUser?.uid ?? ""
 
         Firestore.firestore().collection("users").document(userID).getDocument { snapshot, error in
-            guard let data = snapshot?.data() else { return }
-            self.pBills = data["pBills"] as? Int ?? 0
-            self.currentUserIcon = data["icon"] as? String ?? ""
+            DispatchQueue.main.async {
+                guard let data = snapshot?.data() else { return }
+                self.pBills = data["pBills"] as? Int ?? 0
+                self.currentUserIcon = data["icon"] as? String ?? ""
+            }
         }
     }
 

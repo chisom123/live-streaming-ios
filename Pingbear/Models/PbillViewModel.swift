@@ -62,10 +62,10 @@ class PbillViewModel: NSObject, ObservableObject {
 
     private func amountForProductIdentifier(_ identifier: String) -> Int {
         switch identifier {
-        case "Bill1": return 100
-        case "Bill2": return 200
-        case "Bill3": return 300
-        case "Bill4": return 400
+        case "Bill1": return 900
+        case "Bill2": return 2300
+        case "Bill3": return 4000
+        case "Bill4": return 11000
         default: return 0
         }
     }
