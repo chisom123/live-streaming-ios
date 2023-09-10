@@ -11,6 +11,11 @@ struct BearsView: View {
     @State private var isSettingsViewPresented: Bool = false
     @State private var bearWithInsufficientFunds: String? = nil
     @ObservedObject private var viewModel = BearsViewModel()
+    @ObservedObject private var pbillViewModel = PbillViewModel()
+
+    init() {
+        viewModel.listenForPBillsPurchase(pbillViewModel: pbillViewModel)
+    }
     
     var body: some View {
         ZStack {
@@ -159,8 +164,13 @@ struct BearsView: View {
                 Spacer().frame(height: 30)
                 
             }
+            .onChange(of: pbillViewModel.purchaseCompleted) { completed in
+                if completed {
+                    isPbillViewPresented = false
+                }
+            }
             .fullScreenCover(isPresented: $isPbillViewPresented, content: {
-                PbillView()
+                PbillView(viewModel: pbillViewModel)
             })
             .fullScreenCover(isPresented: $isMyBearsViewPresented, content: {
                 MyBearsView()

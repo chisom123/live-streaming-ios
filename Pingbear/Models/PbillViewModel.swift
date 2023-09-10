@@ -3,9 +3,11 @@ import StoreKit
 import Firebase
 import FirebaseAuth
 import FirebaseFirestore
+import Combine
 
 class PbillViewModel: NSObject, ObservableObject {
     @Published var products: [SKProduct] = []
+    @Published var purchaseCompleted: Bool = false
     private var productIdentifiers: Set<String> = ["Bill1", "Bill2", "Bill3", "Bill4"]
 
     override init() {
@@ -56,6 +58,7 @@ class PbillViewModel: NSObject, ObservableObject {
                 print("Error updating P-Bills: \(error)")
             } else {
                 print("P-Bills successfully updated!")
+                self.purchaseCompleted = true
             }
         }
     }

@@ -3,7 +3,7 @@ import SwiftUI
 struct PbillView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var viewModel = PbillViewModel()
+    @ObservedObject var viewModel: PbillViewModel
 
     var body: some View {
         VStack {

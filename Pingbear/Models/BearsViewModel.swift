@@ -3,6 +3,7 @@ import Combine
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
+import Combine
 
 class BearsViewModel: ObservableObject {
     @Published var pBills: Int = 0
@@ -109,6 +110,15 @@ class BearsViewModel: ObservableObject {
         }
     }
 
+    func listenForPBillsPurchase(pbillViewModel: PbillViewModel) {
+        pbillViewModel.$purchaseCompleted
+            .filter { $0 == true } // Only proceed if purchaseCompleted is true
+            .sink { [weak self] _ in
+                self?.fetchPBills()
+                pbillViewModel.purchaseCompleted = false // Reset purchaseCompleted in pbillViewModel
+            }
+            .store(in: &cancellables)
+    }
 
 
 }
