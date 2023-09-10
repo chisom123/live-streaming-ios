@@ -89,6 +89,8 @@ struct NameEntryView: View {
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
             } else {
                 self.navigateToHome = true
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                UserDefaults.standard.synchronize()
             }
         }
     }

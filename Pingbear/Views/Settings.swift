@@ -10,9 +10,9 @@ struct SettingsView: View {
     func signOut() {
         do {
             try Auth.auth().signOut()
-            presentationMode.wrappedValue.dismiss()
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
         } catch let signOutError as NSError {
-            print("Error signing out: \(signOutError)")
+            print("Error signing out: %@", signOutError)
         }
     }
 
