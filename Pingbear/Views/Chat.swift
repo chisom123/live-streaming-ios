@@ -32,6 +32,20 @@ struct ChatView: View {
     }
 
     var body: some View {
+        var lastInteractionTime: String {
+            guard let timestamp = viewModel.friendLastViewed else { return " " }
+            let interval = Date().timeIntervalSince(timestamp.dateValue())
+            if interval < 60 {
+                return "Here \(Int(interval))s ago"
+            } else if interval < 3600 {
+                return "Here \(Int(interval/60))m ago"
+            } else if interval < 86400 {
+                return "Here \(Int(interval/3600))h ago"
+            } else {
+                return "Here \(Int(interval/86400))d ago"
+            }
+        }
+
         VStack {
             HStack {
                 Button(action: {
@@ -46,7 +60,7 @@ struct ChatView: View {
                 
                 Spacer()
                 
-                Text("Here 2s ago")
+                Text(lastInteractionTime)
                     .font(.system(size: 17, weight: .semibold, design: .default))
                     .foregroundColor(.black)
                     .padding(.trailing, 20)
@@ -97,6 +111,8 @@ struct ChatView: View {
         }
         .onAppear {
             viewModel.fetchMessages(for: friend)
+            viewModel.updateLastViewed(for: friend)
+            viewModel.fetchLastViewed(for: friend)
         }
     }
 }

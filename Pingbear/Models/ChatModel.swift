@@ -22,6 +22,7 @@ struct Message: Equatable, Identifiable, Hashable {
 
 class ChatModel: ObservableObject {
     @Published var messages: [Message] = []
+    @Published var friendLastViewed: Timestamp?
     
     private var apiCaller = APICaller.shared
     private let db = Firestore.firestore()
@@ -54,6 +55,47 @@ class ChatModel: ObservableObject {
                 print("Error writing message to Firestore: \(error)")
             } else {
                 print("Message successfully written!")
+            }
+        }
+    }
+
+    func updateLastViewed(for friend: AppUser) {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
+
+        let lastViewedRef = db.collection("chats").document(documentID).collection("last_viewed")
+        
+        lastViewedRef.document(user.uid).setData(["timestamp": Timestamp(date: Date())]) { error in
+            if let error = error {
+                print("Error updating last viewed timestamp: \(error)")
+            } else {
+                print("Successfully updated last viewed timestamp!")
+            }
+        }
+    }
+
+    func fetchLastViewed(for friend: AppUser) {
+        guard let user = Auth.auth().currentUser else { return }
+
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
+
+        let lastViewedRef = db.collection("chats").document(documentID).collection("last_viewed").document(friend.id)
+        lastViewedRef.getDocument { (document, error) in
+            if let document = document, document.exists, let timestamp = document["timestamp"] as? Timestamp {
+                self.friendLastViewed = timestamp
+            } else {
+                print("Error fetching last viewed timestamp: \(error?.localizedDescription ?? "Unknown error")")
             }
         }
     }
