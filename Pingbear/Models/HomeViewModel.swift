@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import Contacts
 import FirebaseFirestore
+import PhoneNumberKit
 
 class HomeViewModel: ObservableObject {
     @Published var appUsers: [AppUser] = []
@@ -25,10 +26,6 @@ class HomeViewModel: ObservableObject {
         var id: Int {
             hashValue
         }
-    }
-    
-    private func normalizePhoneNumber(_ number: String) -> String {
-        return number.filter { $0.isNumber }
     }
 
     private func fetchUserDetails(friendIDs: [String]) {
@@ -71,7 +68,17 @@ class HomeViewModel: ObservableObject {
         }
     }
 
+    func formatPhoneNumber(_ phoneNumber: String) -> String {
+        let phoneNumberKit = PhoneNumberKit()
 
+        do {
+            let parsedPhoneNumber = try phoneNumberKit.parse(phoneNumber)
+            return phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
+        } catch {
+            return phoneNumber
+        }
+    }
+    
     func fetchContacts() {
         guard let currentUserID = Auth.auth().currentUser?.uid else {
             print("Failed to get current user ID")
@@ -104,9 +111,9 @@ class HomeViewModel: ObservableObject {
                             try store.enumerateContacts(with: request, usingBlock: { (contact, stopPointer) in
                                 for phoneNumber in contact.phoneNumbers {
                                     let number = phoneNumber.value.stringValue
-                                    let normalizedNumber = self.normalizePhoneNumber(number)
+                                    let formattedNumber = self.formatPhoneNumber(number)
                                     
-                                    db.collection("users").whereField("phoneNumber", isEqualTo: normalizedNumber).getDocuments { (snapshot, error) in
+                                    db.collection("users").whereField("phoneNumber", isEqualTo: formattedNumber).getDocuments { (snapshot, error) in
                                         if let error = error {
                                             print("Error getting documents: \(error)")
                                             return
@@ -147,6 +154,8 @@ class HomeViewModel: ObservableObject {
             }
             let friendIDs = snapshot?.documents.compactMap { $0["uid"] as? String } ?? []
             self.fetchUserDetails(friendIDs: friendIDs)
+            
+            self.fetchContacts()
         }
     }
 

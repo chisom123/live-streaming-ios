@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import CountryPicker
+import PhoneNumberKit
 
 struct AddFriendsView: View {
     
@@ -13,6 +14,24 @@ struct AddFriendsView: View {
 
     enum MessageStatus {
         case error, success, none
+    }
+
+    var formattedPhoneNumber: String {
+        let phoneNumberKit = PhoneNumberKit()
+
+        guard let country = selectedCountry else {
+            return phoneNumber
+        }
+
+        let fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
+
+        do {
+            let parsedPhoneNumber = try phoneNumberKit.parse(fullPhoneNumber)
+            let formattedPhoneNumber = phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
+            return formattedPhoneNumber
+        } catch {
+            return phoneNumber
+        }
     }
     
     init(viewModel: AddFriendsModel) {
@@ -113,17 +132,7 @@ struct AddFriendsView: View {
                 }
                 
                 Button(action: {
-                    // Combine the country phone code and the phone number
-                    let fullPhoneNumber: String
-                    if let country = selectedCountry {
-                        fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
-                    } else {
-                        // If the country hasn't been selected, default to the UK phone code.
-                        // Alternatively, you can show an error message prompting the user to select a country.
-                        fullPhoneNumber = "+44\(phoneNumber)"
-                    }
-
-                    viewModel.addFriend(byPhoneNumber: fullPhoneNumber) { (success, error) in
+                    viewModel.addFriend(byPhoneNumber: formattedPhoneNumber) { (success, error) in
                         if success {
                             messageStatus = .success
                         } else {

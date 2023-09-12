@@ -4,14 +4,8 @@ import FirebaseFirestore
 
 class AddFriendsModel: ObservableObject {
     
-    // Normalizes phone numbers
-    private func normalizePhoneNumber(_ number: String) -> String {
-        return number.filter { $0.isNumber }
-    }
-    
     // Function to add a friend by phone number
     func addFriend(byPhoneNumber phoneNumber: String, completion: @escaping (Bool, Error?) -> Void) {
-        let normalizedNumber = normalizePhoneNumber(phoneNumber)
         
         guard let currentUserID = Auth.auth().currentUser?.uid else {
             print("Failed to get current user ID")
@@ -20,7 +14,7 @@ class AddFriendsModel: ObservableObject {
         }
         
         let db = Firestore.firestore()
-        db.collection("users").whereField("phoneNumber", isEqualTo: normalizedNumber).getDocuments { (snapshot, error) in
+        db.collection("users").whereField("phoneNumber", isEqualTo: phoneNumber).getDocuments { (snapshot, error) in
             if let error = error {
                 print("Error getting documents: \(error)")
                 completion(false, error)
