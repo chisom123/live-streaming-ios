@@ -24,7 +24,6 @@ class ChatModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var friendLastViewed: Timestamp?
     
-    private var apiCaller = APICaller.shared
     private let db = Firestore.firestore()
     
     func sendMessage(to recipient: AppUser, content: String) {
@@ -112,19 +111,6 @@ class ChatModel: ObservableObject {
         return history
     }
 
-    func getSuggestedReply(history: String, completion: @escaping (String) -> Void) {
-        apiCaller.getResponse(input: history) { result in
-            switch result {
-            case .success(let suggestion):
-                let refinedSuggestion = suggestion
-                    .replacingOccurrences(of: "User-A: ", with: "")
-                    .replacingOccurrences(of: "User-B: ", with: "")
-                completion(refinedSuggestion)
-            case .failure(let error):
-                print("Error getting suggested reply: \(error.localizedDescription)")
-            }
-        }
-    }
     func fetchMessages(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }
         

@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseAuth
 import CountryPicker
+import PhoneNumberKit
 
 struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
     
@@ -56,6 +57,25 @@ struct PhoneEntryView: View {
         CountryManager.shared.config.closeButtonStyle = closeButton
     }
 
+    var formattedPhoneNumber: String {
+        let phoneNumberKit = PhoneNumberKit()
+
+        guard let country = selectedCountry else {
+            return phoneNumber
+        }
+
+        let fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
+
+        do {
+            let parsedPhoneNumber = try phoneNumberKit.parse(fullPhoneNumber)
+            let formattedPhoneNumber = phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
+            return formattedPhoneNumber
+        } catch {
+            return phoneNumber
+        }
+    }
+
+    
     var body: some View {
         VStack {
             Text("Enter your phone number")
@@ -120,7 +140,7 @@ struct PhoneEntryView: View {
             }
             .padding(.top, 20)
 
-            NavigationLink(destination: VerificationView(phoneNumber: phoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
+            NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
                 EmptyView()
             }.isDetailLink(false)
         }
@@ -129,6 +149,8 @@ struct PhoneEntryView: View {
     }
 
     func sendVerificationCode() {
+        let phoneNumberKit = PhoneNumberKit()
+        
         guard let country = selectedCountry else {
             errorMessage = "Please select a country."
             return
@@ -136,14 +158,22 @@ struct PhoneEntryView: View {
 
         let fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
 
-        PhoneAuthProvider.provider().verifyPhoneNumber(fullPhoneNumber, uiDelegate: nil) { (verificationID, error) in
-            if let error = error {
-                self.errorMessage = error.localizedDescription
-                return
+        do {
+            let parsedPhoneNumber = try phoneNumberKit.parse(fullPhoneNumber)
+            let formattedPhoneNumber = phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
+
+            PhoneAuthProvider.provider().verifyPhoneNumber(formattedPhoneNumber, uiDelegate: nil) { (verificationID, error) in
+                if let error = error {
+                    self.errorMessage = error.localizedDescription
+                    return
+                }
+
+                self.verificationID = verificationID
+                self.showVerificationView = true
             }
 
-            self.verificationID = verificationID
-            self.showVerificationView = true
+        } catch {
+            errorMessage = "Invalid phone number"
         }
     }
 }

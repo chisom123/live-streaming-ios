@@ -67,9 +67,6 @@
 		4F3E0D832A9BA19D0068F901 /* BearsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */; };
 		4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D842A9BC9570068F901 /* Bear.swift */; };
 		4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */; };
-		4F3E0D8B2A9CC21C0068F901 /* OpenAISwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D8A2A9CC21C0068F901 /* OpenAISwift */; };
-		4F3E0D8D2A9F65000068F901 /* APICaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D8C2A9F65000068F901 /* APICaller.swift */; };
-		4F3E0D902A9F77DA0068F901 /* ChatGPTSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D8F2A9F77DA0068F901 /* ChatGPTSwift */; };
 		4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D922AA094FB0068F901 /* GrowingTextView */; };
 		4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D952AA0DED80068F901 /* CountryPicker */; };
 		4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9D2AA605500068F901 /* MyBears.swift */; };
@@ -77,6 +74,7 @@
 		4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA12AA782DE0068F901 /* ChangeName.swift */; };
 		4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA32AA89F0E0068F901 /* AddFriends.swift */; };
 		4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */; };
+		4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -124,7 +122,6 @@
 		4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PbillViewModel.swift; sourceTree = "<group>"; };
 		4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BearsViewModel.swift; sourceTree = "<group>"; };
 		4F3E0D842A9BC9570068F901 /* Bear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bear.swift; sourceTree = "<group>"; };
-		4F3E0D8C2A9F65000068F901 /* APICaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APICaller.swift; sourceTree = "<group>"; };
 		4F3E0D9D2AA605500068F901 /* MyBears.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyBears.swift; sourceTree = "<group>"; };
 		4F3E0D9F2AA777240068F901 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		4F3E0DA12AA782DE0068F901 /* ChangeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeName.swift; sourceTree = "<group>"; };
@@ -161,12 +158,11 @@
 				4F3E0D492A86F6BF0068F901 /* FirebasePerformance in Frameworks */,
 				4F3E0D412A86F6BF0068F901 /* FirebaseInAppMessagingSwift-Beta in Frameworks */,
 				4F3E0D4F2A86F6BF0068F901 /* FirebaseStorage in Frameworks */,
+				4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */,
 				4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */,
 				4F3E0D332A86F6BF0068F901 /* FirebaseDynamicLinks in Frameworks */,
-				4F3E0D8B2A9CC21C0068F901 /* OpenAISwift in Frameworks */,
 				4F3E0D372A86F6BF0068F901 /* FirebaseFirestoreCombine-Community in Frameworks */,
 				4F3E0D472A86F6BF0068F901 /* FirebaseMessaging in Frameworks */,
-				4F3E0D902A9F77DA0068F901 /* ChatGPTSwift in Frameworks */,
 				4F3E0D432A86F6BF0068F901 /* FirebaseInstallations in Frameworks */,
 				4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */,
 			);
@@ -286,7 +282,6 @@
 				4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */,
 				4F3E0D822A9BA19D0068F901 /* BearsViewModel.swift */,
 				4F3E0D842A9BC9570068F901 /* Bear.swift */,
-				4F3E0D8C2A9F65000068F901 /* APICaller.swift */,
 				4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */,
 			);
 			path = Models;
@@ -337,10 +332,9 @@
 				4F3E0D4E2A86F6BF0068F901 /* FirebaseStorage */,
 				4F3E0D502A86F6BF0068F901 /* FirebaseStorageCombine-Community */,
 				4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */,
-				4F3E0D8A2A9CC21C0068F901 /* OpenAISwift */,
-				4F3E0D8F2A9F77DA0068F901 /* ChatGPTSwift */,
 				4F3E0D922AA094FB0068F901 /* GrowingTextView */,
 				4F3E0D952AA0DED80068F901 /* CountryPicker */,
+				4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -417,10 +411,9 @@
 			packageReferences = (
 				4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
-				4F3E0D892A9CC21C0068F901 /* XCRemoteSwiftPackageReference "OpenAISwift" */,
-				4F3E0D8E2A9F77DA0068F901 /* XCRemoteSwiftPackageReference "ChatGPTSwift" */,
 				4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */,
 				4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */,
+				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -483,7 +476,6 @@
 				4F3E0D742A927FBD0068F901 /* Chat.swift in Sources */,
 				4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
-				4F3E0D8D2A9F65000068F901 /* APICaller.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
@@ -872,22 +864,6 @@
 				minimumVersion = 2.0.0;
 			};
 		};
-		4F3E0D892A9CC21C0068F901 /* XCRemoteSwiftPackageReference "OpenAISwift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/adamrushy/OpenAISwift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
-		4F3E0D8E2A9F77DA0068F901 /* XCRemoteSwiftPackageReference "ChatGPTSwift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/alfianlosari/ChatGPTSwift.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
-			};
-		};
 		4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/KennethTsang/GrowingTextView";
@@ -902,6 +878,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
+			};
+		};
+		4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/marmelroy/PhoneNumberKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.6.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1047,16 +1031,6 @@
 			package = 4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
 			productName = SDWebImageSwiftUI;
 		};
-		4F3E0D8A2A9CC21C0068F901 /* OpenAISwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0D892A9CC21C0068F901 /* XCRemoteSwiftPackageReference "OpenAISwift" */;
-			productName = OpenAISwift;
-		};
-		4F3E0D8F2A9F77DA0068F901 /* ChatGPTSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0D8E2A9F77DA0068F901 /* XCRemoteSwiftPackageReference "ChatGPTSwift" */;
-			productName = ChatGPTSwift;
-		};
 		4F3E0D922AA094FB0068F901 /* GrowingTextView */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */;
@@ -1066,6 +1040,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */;
 			productName = CountryPicker;
+		};
+		4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
+			productName = PhoneNumberKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
