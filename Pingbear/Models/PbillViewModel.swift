@@ -4,6 +4,7 @@ import Firebase
 import FirebaseAuth
 import FirebaseFirestore
 import Combine
+import Flurry_iOS_SDK
 
 class PbillViewModel: NSObject, ObservableObject {
     @Published var products: [SKProduct] = []
@@ -59,6 +60,7 @@ class PbillViewModel: NSObject, ObservableObject {
             } else {
                 print("P-Bills successfully updated!")
                 self.purchaseCompleted = true
+                Flurry.log(eventName: "Pbills-Purchased")
             }
         }
     }

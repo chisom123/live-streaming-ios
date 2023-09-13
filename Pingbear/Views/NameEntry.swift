@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
+import Flurry_iOS_SDK
 
 struct NameEntryView: View {
     let phoneNumber: String
@@ -86,6 +87,7 @@ struct NameEntryView: View {
                 self.navigateToHome = true
                 UserDefaults.standard.set(true, forKey: "isLoggedIn")
                 UserDefaults.standard.synchronize()
+                Flurry.log(eventName: "Sign-In")
             }
         }
     }

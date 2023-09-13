@@ -76,6 +76,9 @@
 		4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */; };
 		4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */; };
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
+		4F3E0DB72AB1E5580068F901 /* Flurry in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB62AB1E5580068F901 /* Flurry */; };
+		4F3E0DB92AB1E5580068F901 /* FlurryConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB82AB1E5580068F901 /* FlurryConfig */; };
+		4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,11 +144,14 @@
 				4F3E0D3D2A86F6BF0068F901 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				4F3E0D352A86F6BF0068F901 /* FirebaseFirestore in Frameworks */,
 				4F3E0D212A86F6BF0068F901 /* FirebaseAnalyticsSwift in Frameworks */,
+				4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */,
 				4F3E0D1D2A86F6BF0068F901 /* FirebaseAnalytics in Frameworks */,
 				4F3E0D1F2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */,
 				4F3E0D452A86F6BF0068F901 /* FirebaseMLModelDownloader in Frameworks */,
 				4F3E0D392A86F6BF0068F901 /* FirebaseFirestoreSwift in Frameworks */,
 				4F3E0D252A86F6BF0068F901 /* FirebaseAppCheck in Frameworks */,
+				4F3E0DB92AB1E5580068F901 /* FlurryConfig in Frameworks */,
+				4F3E0DB72AB1E5580068F901 /* Flurry in Frameworks */,
 				4F3E0D232A86F6BF0068F901 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
 				4F3E0D292A86F6BF0068F901 /* FirebaseAuth in Frameworks */,
 				4F3E0D2D2A86F6BF0068F901 /* FirebaseCrashlytics in Frameworks */,
@@ -338,6 +344,9 @@
 				4F3E0D922AA094FB0068F901 /* GrowingTextView */,
 				4F3E0D952AA0DED80068F901 /* CountryPicker */,
 				4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */,
+				4F3E0DB62AB1E5580068F901 /* Flurry */,
+				4F3E0DB82AB1E5580068F901 /* FlurryConfig */,
+				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -417,6 +426,7 @@
 				4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */,
 				4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */,
 				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
+				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -900,6 +910,14 @@
 				minimumVersion = 3.6.0;
 			};
 		};
+		4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/flurry/FlurrySwiftPackage/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1057,6 +1075,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
 			productName = PhoneNumberKit;
+		};
+		4F3E0DB62AB1E5580068F901 /* Flurry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
+			productName = Flurry;
+		};
+		4F3E0DB82AB1E5580068F901 /* FlurryConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
+			productName = FlurryConfig;
+		};
+		4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
+			productName = FlurryMessaging;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

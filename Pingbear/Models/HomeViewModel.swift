@@ -3,6 +3,7 @@ import Firebase
 import Contacts
 import FirebaseFirestore
 import PhoneNumberKit
+import Flurry_iOS_SDK
 
 class HomeViewModel: ObservableObject {
     @Published var appUsers: [AppUser] = []
@@ -124,6 +125,8 @@ class HomeViewModel: ObservableObject {
                                                 // If this contact isn't already a friend, add to friends collection
                                                 db.collection("users").document(currentUserID).collection("friends").document(mutualContactID).setData(["uid": mutualContactID])
                                                 db.collection("users").document(mutualContactID).collection("friends").document(currentUserID).setData(["uid": currentUserID])
+                                                
+                                                Flurry.log(eventName: "Friends-Added")
                                             }
                                         }
                                     }
@@ -146,8 +149,8 @@ class HomeViewModel: ObservableObject {
         
         let db = Firestore.firestore()
 
-        // Fetch the current user's friends from Firestore
-        db.collection("users").document(currentUserID).collection("friends").getDocuments { (snapshot, error) in
+        // Use a realtime listener to fetch the current user's friends from Firestore
+        db.collection("users").document(currentUserID).collection("friends").addSnapshotListener { (snapshot, error) in
             if let error = error {
                 print("Error getting friends: \(error)")
                 return

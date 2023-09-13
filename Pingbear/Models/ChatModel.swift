@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestoreSwift
+import Flurry_iOS_SDK
 
 struct Message: Equatable, Identifiable, Hashable {
     var id: String?
@@ -54,6 +55,7 @@ class ChatModel: ObservableObject {
                 print("Error writing message to Firestore: \(error)")
             } else {
                 print("Message successfully written!")
+                Flurry.log(eventName: "Messages-Sent")
             }
         }
     }

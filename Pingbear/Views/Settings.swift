@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import Combine
+import Flurry_iOS_SDK
 
 struct SettingsView: View {
     
@@ -99,6 +100,7 @@ struct SettingsView: View {
                     // Log Out Button
                     Button(action: {
                         self.signOut()
+                        Flurry.log(eventName: "Sign-Out")
                     }) {
                         HStack {
                             Text("Log Out")

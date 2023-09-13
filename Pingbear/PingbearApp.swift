@@ -1,12 +1,19 @@
 import SwiftUI
 import Firebase
 import Combine
+import Flurry_iOS_SDK
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
+
+        let builder = FlurrySessionBuilder.init()
+           builder.build(crashReportingEnabled: true)
+           builder.build(logLevel: .all)
+        Flurry.startSession(apiKey: "WMHP655MSWY769SJRTYF", sessionBuilder: builder)
+        
         return true
     }
     
