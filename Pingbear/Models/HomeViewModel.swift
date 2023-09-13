@@ -22,7 +22,7 @@ class HomeViewModel: ObservableObject {
     }
     
     enum ActiveSheet: Identifiable {
-        case chatView, searchView, bearsView
+        case chatView, searchView, bearsView, addFriendsView
 
         var id: Int {
             hashValue
@@ -170,5 +170,9 @@ class HomeViewModel: ObservableObject {
 
     func showBearsView() {
         activeSheet = .bearsView
+    }
+
+    func showAddFriendsView() {
+        activeSheet = .addFriendsView
     }
 }

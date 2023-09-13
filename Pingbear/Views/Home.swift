@@ -79,6 +79,11 @@ struct HomeView: View {
         }
         .navigationBarHidden(true)
         .overlay(
+            viewModel.appUsers.isEmpty ?
+                EmptyStateView(showAddFriendsAction: viewModel.showAddFriendsView)
+                : nil
+        )
+        .overlay(
             VStack {
                 Spacer()
                 HStack {
@@ -112,6 +117,8 @@ struct HomeView: View {
                 SearchView(selectedUserIndex: $viewModel.selectedUserIndex, isPresented: .constant(true), users: viewModel.appUsers)
             case .bearsView:
                    BearsView()
+            case .addFriendsView:
+                AddFriendsView(viewModel: AddFriendsModel())
             }
         }
     }
@@ -157,5 +164,37 @@ struct VerticalPager<Content: View>: View {
             )
         }
         .edgesIgnoringSafeArea(.all)
+    }
+}
+
+struct EmptyStateView: View {
+    let showAddFriendsAction: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Welcome to Pingbear")
+                .font(.system(size: 24, weight: .bold, design: .default))
+                .padding(.horizontal)
+            
+            Text("To get started, tap the button below and add a friend")
+                .foregroundColor(Color(hex: "#ababab"))
+                .font(.system(size: 16, weight: .semibold, design: .default))
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
+                .padding(.top, 10)
+                .padding(.horizontal, 20)
+            
+            Button(action: showAddFriendsAction) {
+                Text("Add Friends")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
+            }
+            .padding(.top, 10)
+            .padding(.horizontal)
+        }
     }
 }
