@@ -44,6 +44,7 @@ struct PhoneEntryView: View {
     @State private var showVerificationView = false
     @State private var selectedCountry: Country?
     @State private var showCountryPicker = false
+    @State private var isLoading: Bool = false
 
     init() {
         if let countryCode = NSLocale.current.regionCode,
@@ -126,19 +127,24 @@ struct PhoneEntryView: View {
                     .padding(.top, 20)
                     .padding(.horizontal)
             }
-
-            Button(action: {
-                self.sendVerificationCode()
-            }) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
+        
+            if isLoading {
+                ProgressView()
+                    .padding(.top, 30)
+            } else {
+                Button(action: {
+                    self.sendVerificationCode()
+                }) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .background(Color(hex: "#1199FF"))
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(200)
+                }
+                .padding(.top, 20)
             }
-            .padding(.top, 20)
 
             NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
                 EmptyView()
@@ -149,9 +155,12 @@ struct PhoneEntryView: View {
     }
 
     func sendVerificationCode() {
+        errorMessage = nil
+        isLoading = true
         let phoneNumberKit = PhoneNumberKit()
         
         guard let country = selectedCountry else {
+            self.isLoading = false
             errorMessage = "Please select a country."
             return
         }
@@ -163,6 +172,8 @@ struct PhoneEntryView: View {
             let formattedPhoneNumber = phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
 
             PhoneAuthProvider.provider().verifyPhoneNumber(formattedPhoneNumber, uiDelegate: nil) { (verificationID, error) in
+                self.isLoading = false
+                
                 if let error = error {
                     self.errorMessage = error.localizedDescription
                     return
@@ -173,6 +184,7 @@ struct PhoneEntryView: View {
             }
 
         } catch {
+            self.isLoading = false
             errorMessage = "Invalid phone number"
         }
     }

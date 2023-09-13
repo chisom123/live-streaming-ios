@@ -9,6 +9,8 @@ import Flurry_iOS_SDK
 class PbillViewModel: NSObject, ObservableObject {
     @Published var products: [SKProduct] = []
     @Published var purchaseCompleted: Bool = false
+    @Published var isLoading: Bool = false
+
     private var productIdentifiers: Set<String> = ["Bill1", "Bill2", "Bill3", "Bill4"]
 
     override init() {
@@ -34,6 +36,9 @@ class PbillViewModel: NSObject, ObservableObject {
     }
 
     func purchase(product: SKProduct) {
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
     }
@@ -55,6 +60,9 @@ class PbillViewModel: NSObject, ObservableObject {
         userDocRef.updateData([
             "pBills": FieldValue.increment(Int64(pbillAmount))
         ]) { error in
+            DispatchQueue.main.async {
+                self.isLoading = false // Set isLoading to false here
+            }
             if let error = error {
                 print("Error updating P-Bills: \(error)")
             } else {
@@ -91,11 +99,20 @@ extension PbillViewModel: SKPaymentTransactionObserver {
             case .purchased:
                 handleCompletedPayment(transaction: transaction)
                 SKPaymentQueue.default().finishTransaction(transaction)
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
             case .failed:
                 // Handle failed transaction
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
                 SKPaymentQueue.default().finishTransaction(transaction)
             case .restored:
                 // Handle restored transaction if your app supports it
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                }
                 SKPaymentQueue.default().finishTransaction(transaction)
             default:
                 break
