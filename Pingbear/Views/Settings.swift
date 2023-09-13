@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
     @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
+    @State private var showSignOutAlert = false
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
 
     
@@ -99,7 +100,7 @@ struct SettingsView: View {
                     
                     // Log Out Button
                     Button(action: {
-                        self.signOut()
+                        self.showSignOutAlert = true
                         Flurry.log(eventName: "Sign-Out")
                     }) {
                         HStack {
@@ -113,7 +114,14 @@ struct SettingsView: View {
                     }
                     .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
-                    
+                    .alert(isPresented: $showSignOutAlert) {
+                        Alert(title: Text("Are you sure?"),
+                              primaryButton: .destructive(Text("Yes")) {
+                                  self.signOut()
+                                  Flurry.log(eventName: "Sign-Out")
+                              },
+                              secondaryButton: .cancel())
+                    }
                 }
                 .padding(.top, 30)
                 .padding([.leading, .trailing], 20)
