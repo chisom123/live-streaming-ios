@@ -1,16 +1,20 @@
 import SwiftUI
 import Firebase
+import Combine
 
 struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
     @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
+    @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
+
     
     func signOut() {
         do {
             try Auth.auth().signOut()
             UserDefaults.standard.set(false, forKey: "isLoggedIn")
+            didLogOut.send(())
         } catch let signOutError as NSError {
             print("Error signing out: %@", signOutError)
         }

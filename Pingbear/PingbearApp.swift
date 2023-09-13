@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import Combine
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   
@@ -29,6 +30,8 @@ struct PingbearApp: App {
     // Check UserDefaults
     @State private var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn")
     
+    let didLogOut = PassthroughSubject<Void, Never>()
+    
     var body: some Scene {
         WindowGroup {
             if isLoggedIn && Auth.auth().currentUser != nil {
@@ -39,6 +42,10 @@ struct PingbearApp: App {
                             window.overrideUserInterfaceStyle = .light
                         }
                     }
+                    .environment(\.didLogOut, didLogOut)
+                    .onReceive(didLogOut) { _ in
+                        isLoggedIn = false
+                    }
             } else {
                 LandingView()
                     .onAppear {
@@ -46,6 +53,10 @@ struct PingbearApp: App {
                            let window = scene.windows.first {
                             window.overrideUserInterfaceStyle = .light
                         }
+                    }
+                    .environment(\.didLogOut, didLogOut)
+                    .onReceive(didLogOut) { _ in
+                        isLoggedIn = false
                     }
             }
         }
