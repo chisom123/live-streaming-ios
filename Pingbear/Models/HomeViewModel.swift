@@ -12,6 +12,7 @@ class HomeViewModel: ObservableObject {
     @Published var selectedUser: AppUser?
     @Published var currentIndex: Int = 0
     @Published var activeSheet: ActiveSheet? = nil
+    @Published var hasLoadedBefore: Bool = false
     @Published var selectedUserIndex: Int? = nil {
         didSet {
             if let index = selectedUserIndex {
@@ -149,18 +150,25 @@ class HomeViewModel: ObservableObject {
         
         let db = Firestore.firestore()
 
-        // Use a realtime listener to fetch the current user's friends from Firestore
-        db.collection("users").document(currentUserID).collection("friends").addSnapshotListener { (snapshot, error) in
-            if let error = error {
-                print("Error getting friends: \(error)")
-                return
+        if !hasLoadedBefore {
+            // Use a realtime listener to fetch the current user's friends from Firestore
+            db.collection("users").document(currentUserID).collection("friends").addSnapshotListener { (snapshot, error) in
+                if let error = error {
+                    print("Error getting friends: \(error)")
+                    return
+                }
+                let friendIDs = snapshot?.documents.compactMap { $0["uid"] as? String } ?? []
+                self.fetchUserDetails(friendIDs: friendIDs)
+                
+                self.fetchContacts()
             }
-            let friendIDs = snapshot?.documents.compactMap { $0["uid"] as? String } ?? []
-            self.fetchUserDetails(friendIDs: friendIDs)
-            
+            hasLoadedBefore = true
+        } else {
+            // If already loaded before, directly fetch contacts without setting up a new listener
             self.fetchContacts()
         }
     }
+
 
 
     func selectUser(_ user: AppUser) {
