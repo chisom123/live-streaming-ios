@@ -66,10 +66,9 @@ struct MyBearsView: View {
                         }
                     }
                     .padding(.top, 30)
+                    .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
-                
-                Spacer().frame(height: 30)
                 
             }
         }

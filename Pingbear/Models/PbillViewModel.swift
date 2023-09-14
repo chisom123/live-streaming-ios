@@ -35,6 +35,17 @@ class PbillViewModel: NSObject, ObservableObject {
         }
     }
 
+    func titleName(for product: SKProduct) -> String {
+        switch product.productIdentifier {
+        case "Bill1": return "900 P-Bills"
+        case "Bill2": return "2300 P-Bills"
+        case "Bill3": return "4000 P-Bills"
+        case "Bill4": return "11000 P-Bills"
+        default: return "900 P-Bills"
+        }
+    }
+
+
     func purchase(product: SKProduct) {
         DispatchQueue.main.async {
             self.isLoading = true

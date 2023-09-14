@@ -39,7 +39,7 @@ struct PbillView: View {
                                         .padding(.trailing, 20)
                                     
                                     VStack(alignment: .leading, spacing: 18) {
-                                        Text(product.localizedTitle)
+                                        Text(viewModel.titleName(for: product))
                                             .font(.system(size: 16, weight: .bold, design: .default))
                                             .foregroundColor(.black)
                                         Text("Continue")
@@ -57,12 +57,10 @@ struct PbillView: View {
                         }
                     }
                     .padding(.top, 30)
+                    .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
             }
-
-
-            Spacer().frame(height: 30)
         }
     }
 }

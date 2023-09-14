@@ -157,12 +157,9 @@ struct BearsView: View {
                         }
                     }
                     .padding(.top, 30)
+                    .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
-                
-                // This will add padding (whitespace) to the bottom of the last item
-                Spacer().frame(height: 30)
-                
             }
             .onChange(of: pbillViewModel.purchaseCompleted) { completed in
                 if completed {
