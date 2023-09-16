@@ -98,7 +98,9 @@ class PbillViewModel: NSObject, ObservableObject {
 extension PbillViewModel: SKProductsRequestDelegate {
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         DispatchQueue.main.async {
-            self.products = response.products
+            self.products = response.products.sorted(by: {
+                self.amountForProductIdentifier($0.productIdentifier) < self.amountForProductIdentifier($1.productIdentifier)
+            })
         }
     }
 }
