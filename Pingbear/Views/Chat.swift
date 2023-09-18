@@ -81,6 +81,15 @@ struct ChatView: View {
             .padding(.top, 15)
             .padding(.bottom, 5)
 
+            HStack {
+                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "" : "Your turn to type")
+                        .foregroundColor(Color(hex: "#FF6347"))  // Change placeholder color conditionally
+                        .font(.system(size: 16, weight: .semibold, design: .default))
+                        .padding(.leading) // Adjust to match your TextField's padding
+                        .padding(.top, 15)
+                Spacer()
+            }
+            
             ZStack(alignment: .leading) {
                 // Actual TextField
                 TextField("", text: $message, onCommit: {
@@ -101,8 +110,8 @@ struct ChatView: View {
 
                 // Conditional Placeholder
                 if message.isEmpty {
-                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "Your turn to type")
-                        .foregroundColor(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#FF1493") : Color(hex: "#FF6347"))  // Change placeholder color conditionally
+                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "")
+                        .foregroundColor(Color(hex: "#FF1493"))  // Change placeholder color conditionally
                         .padding(.leading) // Adjust to match your TextField's padding
                         .font(.system(size: 16, weight: .semibold, design: .default))
                 }
