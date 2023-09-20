@@ -103,7 +103,7 @@ struct ChatView: View {
                 .disabled(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid)
                 .submitLabel(.send)
                 .padding()
-                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#F5F5F5"))
+                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#CCF6C4"))
                 .cornerRadius(5)
                 .font(.system(size: 16, weight: .semibold, design: .default))
                 .foregroundColor(Color.black)
