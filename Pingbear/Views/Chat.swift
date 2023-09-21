@@ -91,7 +91,7 @@ struct ChatView: View {
 
             HStack {
                     Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "" : "Your turn to type")
-                        .foregroundColor(Color(hex: "#FF6347"))  // Change placeholder color conditionally
+                        .foregroundColor(Color(hex: "#FF1493"))  // Change placeholder color conditionally
                         .font(.system(size: 16, weight: .semibold, design: .default))
                         .padding(.leading) // Adjust to match your TextField's padding
                         .padding(.top, 15)
@@ -111,7 +111,7 @@ struct ChatView: View {
                 .disabled(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid)
                 .submitLabel(.send)
                 .padding()
-                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#CCF6C4"))
+                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#F5F5F5"))
                 .cornerRadius(5)
                 .font(.system(size: 16, weight: .semibold, design: .default))
                 .foregroundColor(Color.black)
