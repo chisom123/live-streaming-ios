@@ -7,12 +7,21 @@ struct ChatView: View {
     var friend: AppUser
     @Environment(\.presentationMode) var presentationMode
     @State private var message: String = ""
-
-    func formatTime(_ timestamp: Timestamp) -> String {
-        let date = timestamp.dateValue()
+    
+    private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return formatter
+    }()
+    
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE dd MMM"
+        return formatter
+    }()
+    
+    func formatTime(_ timestamp: Timestamp) -> String {
+        return Self.timeFormatter.string(from: timestamp.dateValue())
     }
 
     func formatDate(_ timestamp: Timestamp) -> String {
@@ -25,9 +34,7 @@ struct ChatView: View {
         } else if Calendar.current.isDate(date, inSameDayAs: yesterday) {
             return "Yesterday"
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "EEE dd MMM"
-            return formatter.string(from: date)
+            return Self.dateFormatter.string(from: date)
         }
     }
 
@@ -35,6 +42,7 @@ struct ChatView: View {
         var lastInteractionTime: String {
             guard let timestamp = viewModel.friendLastViewed else { return " " }
             let interval = Date().timeIntervalSince(timestamp.dateValue())
+            
             if interval < 60 {
                 return "Here \(Int(interval))s ago"
             } else if interval < 3600 {
