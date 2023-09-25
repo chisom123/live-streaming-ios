@@ -7,21 +7,12 @@ struct ChatView: View {
     var friend: AppUser
     @Environment(\.presentationMode) var presentationMode
     @State private var message: String = ""
-    
-    private static let timeFormatter: DateFormatter = {
+
+    func formatTime(_ timestamp: Timestamp) -> String {
+        let date = timestamp.dateValue()
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        return formatter
-    }()
-    
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE dd MMM"
-        return formatter
-    }()
-    
-    func formatTime(_ timestamp: Timestamp) -> String {
-        return Self.timeFormatter.string(from: timestamp.dateValue())
+        return formatter.string(from: date)
     }
 
     func formatDate(_ timestamp: Timestamp) -> String {
@@ -34,7 +25,9 @@ struct ChatView: View {
         } else if Calendar.current.isDate(date, inSameDayAs: yesterday) {
             return "Yesterday"
         } else {
-            return Self.dateFormatter.string(from: date)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "EEE dd MMM"
+            return formatter.string(from: date)
         }
     }
 
@@ -42,7 +35,6 @@ struct ChatView: View {
         var lastInteractionTime: String {
             guard let timestamp = viewModel.friendLastViewed else { return " " }
             let interval = Date().timeIntervalSince(timestamp.dateValue())
-            
             if interval < 60 {
                 return "Here \(Int(interval))s ago"
             } else if interval < 3600 {
@@ -90,8 +82,8 @@ struct ChatView: View {
             .padding(.bottom, 5)
 
             HStack {
-                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "" : "Your turn to type")
-                        .foregroundColor(Color(hex: "#FF1493"))  // Change placeholder color conditionally
+                    Text(viewModel.lastPerson == Auth.auth().currentUser?.uid ? "" : "Your turn to type")
+                        .foregroundColor(Color(hex: "#FF6347"))  // Change placeholder color conditionally
                         .font(.system(size: 16, weight: .semibold, design: .default))
                         .padding(.leading) // Adjust to match your TextField's padding
                         .padding(.top, 15)
@@ -108,17 +100,17 @@ struct ChatView: View {
                         }
                     }
                 })
-                .disabled(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid)
+                .disabled(viewModel.lastPerson == Auth.auth().currentUser?.uid)
                 .submitLabel(.send)
                 .padding()
-                .background(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#F5F5F5"))
+                .background(viewModel.lastPerson == Auth.auth().currentUser?.uid ? Color(hex: "#F5F5F5") : Color(hex: "#F5F5F5"))
                 .cornerRadius(5)
                 .font(.system(size: 16, weight: .semibold, design: .default))
                 .foregroundColor(Color.black)
 
                 // Conditional Placeholder
                 if message.isEmpty {
-                    Text(viewModel.messages.last?.senderID == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "")
+                    Text(viewModel.lastPerson == Auth.auth().currentUser?.uid ? "Waiting for a reply" : "")
                         .foregroundColor(Color(hex: "#FF1493"))  // Change placeholder color conditionally
                         .padding(.leading) // Adjust to match your TextField's padding
                         .font(.system(size: 16, weight: .semibold, design: .default))
@@ -130,6 +122,7 @@ struct ChatView: View {
             viewModel.fetchMessages(for: friend)
             viewModel.updateLastViewed(for: friend)
             viewModel.fetchLastViewed(for: friend)
+            viewModel.fetchLastPerson(for: friend) // Fetch lastperson on view appear
         }
     }
 }

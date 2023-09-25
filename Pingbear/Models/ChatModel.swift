@@ -24,34 +24,44 @@ struct Message: Equatable, Identifiable, Hashable {
 class ChatModel: ObservableObject {
     @Published var messages: [Message] = []
     @Published var friendLastViewed: Timestamp?
+    @Published var lastPerson: String?
     
     private let db = Firestore.firestore()
     
-    private func documentID(from userUID: String, friendUID: String) -> String {
-        return userUID < friendUID ? "\(userUID)_\(friendUID)" : "\(friendUID)_\(userUID)"
-    }
-    
     func sendMessage(to recipient: AppUser, content: String) {
-        guard let user = Auth.auth().currentUser,
-              let lastMessage = self.messages.last, lastMessage.senderID != user.uid else {
-            print("Failed prerequisites for sending message.")
-            return
-        }
+        guard let user = Auth.auth().currentUser else { return }
 
+        let documentID: String
+        if user.uid < recipient.id {
+            documentID = "\(user.uid)_\(recipient.id)"
+        } else {
+            documentID = "\(recipient.id)_\(user.uid)"
+        }
+        
         let message: [String: Any] = [
             "senderID": user.uid,
             "timestamp": Timestamp(date: Date()),
             "content": content
         ]
         
-        let documentRef = db.collection("messages").document(documentID(from: user.uid, friendUID: recipient.id)).collection("messages").document()
-        
+        let documentRef = db.collection("messages").document(documentID).collection("messages").document()
         documentRef.setData(message) { error in
             if let error = error {
                 print("Error writing message to Firestore: \(error)")
             } else {
                 print("Message successfully written!")
                 Flurry.log(eventName: "Messages-Sent")
+    
+                // Update the lastperson field in the metadata document
+                let metadataRef = self.db.collection("messages").document(documentID)
+                metadataRef.setData(["lastperson": user.uid]) { error in
+                    if let error = error {
+                        print("Error updating lastperson: \(error)")
+                    } else {
+                        print("Successfully updated lastperson!")
+                    }
+                }
+                
             }
         }
     }
@@ -59,7 +69,14 @@ class ChatModel: ObservableObject {
     func updateLastViewed(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }
         
-        let lastViewedRef = db.collection("chats").document(documentID(from: user.uid, friendUID: friend.id)).collection("last_viewed")
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
+
+        let lastViewedRef = db.collection("chats").document(documentID).collection("last_viewed")
         
         lastViewedRef.document(user.uid).setData(["timestamp": Timestamp(date: Date())]) { error in
             if let error = error {
@@ -73,8 +90,14 @@ class ChatModel: ObservableObject {
     func fetchLastViewed(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }
 
-        let lastViewedRef = db.collection("chats").document(documentID(from: user.uid, friendUID: friend.id)).collection("last_viewed").document(friend.id)
-        
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
+
+        let lastViewedRef = db.collection("chats").document(documentID).collection("last_viewed").document(friend.id)
         lastViewedRef.getDocument { (document, error) in
             if let document = document, document.exists, let timestamp = document["timestamp"] as? Timestamp {
                 self.friendLastViewed = timestamp
@@ -83,6 +106,29 @@ class ChatModel: ObservableObject {
             }
         }
     }
+
+    func fetchLastPerson(for friend: AppUser) {
+        guard let user = Auth.auth().currentUser else { return }
+
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
+
+        let metadataRef = db.collection("messages").document(documentID)
+        
+        // Using addSnapshotListener instead of getDocument
+        metadataRef.addSnapshotListener { (document, error) in
+            if let document = document, document.exists, let lastPerson = document["lastperson"] as? String {
+                self.lastPerson = lastPerson
+            } else {
+                print("Error fetching lastperson: \(error?.localizedDescription ?? "Unknown error")")
+            }
+        }
+    }
+
 
     func getConversationHistory(recipientId: String) -> String {
         var history = ""
@@ -98,8 +144,15 @@ class ChatModel: ObservableObject {
 
     func fetchMessages(for friend: AppUser) {
         guard let user = Auth.auth().currentUser else { return }
+        
+        let documentID: String
+        if user.uid < friend.id {
+            documentID = "\(user.uid)_\(friend.id)"
+        } else {
+            documentID = "\(friend.id)_\(user.uid)"
+        }
 
-        db.collection("messages").document(documentID(from: user.uid, friendUID: friend.id)).collection("messages")
+        db.collection("messages").document(documentID).collection("messages")
             .order(by: "timestamp", descending: true)
             .addSnapshotListener { (snapshot, error) in
                 guard let documents = snapshot?.documents else {
@@ -113,5 +166,6 @@ class ChatModel: ObservableObject {
                 }
             }
     }
-}
 
+    
+}
