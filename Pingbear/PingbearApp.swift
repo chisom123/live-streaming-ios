@@ -42,7 +42,7 @@ struct PingbearApp: App {
     var body: some Scene {
         WindowGroup {
             if isLoggedIn && Auth.auth().currentUser != nil {
-                HomeView() // This assumes you have a HomeView struct for the home page.
+                ContentView()
                     .onAppear {
                         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = scene.windows.first {
