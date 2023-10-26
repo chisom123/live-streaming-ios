@@ -58,27 +58,40 @@ struct MapView: View {
 
     private func fetchCompetitionLocations() {
         let db = Firestore.firestore()
-        db.collection("competitions").getDocuments { (querySnapshot, err) in
-            if let err = err {
-                print("Error getting documents: \(err)")
-            } else {
-                let userLocation = locationManager.location?.coordinate
-                competitionLocations = querySnapshot?.documents.compactMap { document in
-                    let data = document.data()
-                    if  let lat = data["latitude"] as? Double,
-                        let lon = data["longitude"] as? Double {
-                        let competitionLocation = CLLocationCoordinate2D(latitude: lat, longitude: lon)
 
-                        // Check if competition location is within a 5-mile (about 8046.72 meters) radius
-                        if let userLocation = userLocation,
-                           distance(from: userLocation, to: competitionLocation) <= 8046.72 {
-                            return CustomPointAnnotation(coordinate: competitionLocation)
+        // Calculate the cutoff time, which is 12 hours before now.
+        let twelveHoursAgo = Calendar.current.date(byAdding: .hour, value: -12, to: Date())!
+        let twelveHoursAgoTimestamp = Timestamp(date: twelveHoursAgo)
+
+        db.collection("competitions")
+            .whereField("timestamp", isGreaterThan: twelveHoursAgoTimestamp) // This ensures we only fetch recent competitions.
+            .getDocuments { (querySnapshot, err) in
+                if let err = err {
+                    print("Error getting documents: \(err)")
+                } else {
+                    let userLocation = self.locationManager.location?.coordinate
+                    self.competitionLocations = querySnapshot?.documents.compactMap { document in
+                        let data = document.data()
+                        
+                        if  let lat = data["latitude"] as? Double,
+                            let lon = data["longitude"] as? Double,
+                            let timestamp = data["timestamp"] as? Timestamp { // Ensure the timestamp exists
+
+                            let competitionLocation = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                            
+                            // Check if the competition is recent (within the last 12 hours)
+                            let competitionDate = timestamp.dateValue()
+                            if competitionDate >= twelveHoursAgo,
+                               let userLocation = userLocation,
+                               self.distance(from: userLocation, to: competitionLocation) <= 8046.72 { // About 5 miles
+                                // If all conditions are met, add the competition
+                                return CustomPointAnnotation(coordinate: competitionLocation)
+                            }
                         }
-                    }
-                    return nil
-                } ?? []
+                        return nil // Ignore any data points that don't meet the criteria
+                    } ?? []
+                }
             }
-        }
     }
 
 }
