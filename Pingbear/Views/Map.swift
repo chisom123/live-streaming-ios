@@ -14,23 +14,37 @@ struct MapView: View {
     )
 
     @State private var competitionLocations = [CustomPointAnnotation]()
+    @State private var selectedCompetition: CustomPointAnnotation? = nil
     
     private var locationManager = CLLocationManager()
     
     var body: some View {
-        Map(coordinateRegion: $region,
-            showsUserLocation: true,
-            annotationItems: competitionLocations) { location in
-                MapAnnotation(coordinate: location.coordinate) {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.red)
-                        .imageScale(.large)
+        NavigationView {
+            ZStack {
+                Map(coordinateRegion: $region,
+                    showsUserLocation: true,
+                    annotationItems: competitionLocations) { location in
+                        MapAnnotation(coordinate: location.coordinate) {
+                            // Here, we use a Button action to handle the tap, and set the selected competition
+                            Button(action: {
+                                self.selectedCompetition = location
+                            }) {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.red)
+                                    .imageScale(.large)
+                            }
+                        }
+                    }
+                .edgesIgnoringSafeArea(.top)
+                .onAppear {
+                    setupLocationManager()
+                    fetchCompetitionLocations()
+                }
+                .fullScreenCover(item: $selectedCompetition) { selectedCompetition in
+                    // When an annotation is tapped, this will trigger navigation to the 'CompDetails' view
+                    CompDetails(competition: selectedCompetition)
                 }
             }
-        .edgesIgnoringSafeArea(.top)
-        .onAppear {
-            setupLocationManager()
-            fetchCompetitionLocations()
         }
     }
 
@@ -75,6 +89,7 @@ struct MapView: View {
                         
                         if  let lat = data["latitude"] as? Double,
                             let lon = data["longitude"] as? Double,
+                            let description = data["description"] as? String,
                             let timestamp = data["timestamp"] as? Timestamp { // Ensure the timestamp exists
 
                             let competitionLocation = CLLocationCoordinate2D(latitude: lat, longitude: lon)
@@ -85,7 +100,7 @@ struct MapView: View {
                                let userLocation = userLocation,
                                self.distance(from: userLocation, to: competitionLocation) <= 8046.72 { // About 5 miles
                                 // If all conditions are met, add the competition
-                                return CustomPointAnnotation(coordinate: competitionLocation)
+                                return CustomPointAnnotation(id: document.documentID, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon), competitionDescription: description)
                             }
                         }
                         return nil // Ignore any data points that don't meet the criteria
@@ -97,11 +112,14 @@ struct MapView: View {
 }
 
 class CustomPointAnnotation: NSObject, MKAnnotation, Identifiable {
-    let id = UUID()
+    let id: String // this could be the document ID from Firestore
     @objc dynamic var coordinate: CLLocationCoordinate2D
-    var title: String?
 
-    init(coordinate: CLLocationCoordinate2D) {
+    var competitionDescription: String
+
+    init(id: String, coordinate: CLLocationCoordinate2D, competitionDescription: String) {
+        self.id = id
         self.coordinate = coordinate
+        self.competitionDescription = competitionDescription
     }
 }
