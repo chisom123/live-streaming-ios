@@ -22,7 +22,7 @@ struct MapView: View {
         NavigationView {
             ZStack {
                 Map(coordinateRegion: $region,
-                    showsUserLocation: true,
+//                    showsUserLocation: true,
                     annotationItems: competitionLocations) { location in
                         MapAnnotation(coordinate: location.coordinate) {
                             // Here, we use a Button action to handle the tap, and set the selected competition
@@ -100,7 +100,7 @@ struct MapView: View {
                                let userLocation = userLocation,
                                self.distance(from: userLocation, to: competitionLocation) <= 8046.72 { // About 5 miles
                                 // If all conditions are met, add the competition
-                                return CustomPointAnnotation(id: document.documentID, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon), competitionDescription: description)
+                                return CustomPointAnnotation(id: document.documentID, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon), competitionDescription: description, timestamp: timestamp.dateValue() )
                             }
                         }
                         return nil // Ignore any data points that don't meet the criteria
@@ -116,10 +116,12 @@ class CustomPointAnnotation: NSObject, MKAnnotation, Identifiable {
     @objc dynamic var coordinate: CLLocationCoordinate2D
 
     var competitionDescription: String
+    var timestamp: Date
 
-    init(id: String, coordinate: CLLocationCoordinate2D, competitionDescription: String) {
+    init(id: String, coordinate: CLLocationCoordinate2D, competitionDescription: String, timestamp: Date) {
         self.id = id
         self.coordinate = coordinate
         self.competitionDescription = competitionDescription
+        self.timestamp = timestamp
     }
 }
