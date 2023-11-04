@@ -29,5 +29,8 @@
 
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>We need your location for...</string>
+
+    <key>NSCameraUsageDescription</key>
+    <string>We need access to your camera for capturing photos.</string>
 </dict>
 </plist>

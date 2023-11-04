@@ -16,6 +16,8 @@ struct NewCompetition: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionDescription: String = ""
     
+    @State private var isCameraPresented = false
+    
     var body: some View {
         ZStack {
             VStack {
@@ -74,6 +76,9 @@ struct NewCompetition: View {
             }
 
         }
+        .fullScreenCover(isPresented: $isCameraPresented, content: {
+            CameraView()
+        })
     }
     func newcomp() {
         // Location Manager for getting the current location
@@ -97,16 +102,18 @@ struct NewCompetition: View {
             "timestamp": Timestamp() // Current time
         ]
         
-        // Add a new document with the competition data
-        db.collection("competitions").addDocument(data: competitionData) { err in
-            if let err = err {
-                print("Error adding document: \(err)")
-            } else {
-                print("Document added")
-                // You can dismiss the current view or do something else
-                presentationMode.wrappedValue.dismiss()
-            }
-        }
+        self.isCameraPresented = true
+        
+//        // Add a new document with the competition data
+//        db.collection("competitions").addDocument(data: competitionData) { err in
+//            if let err = err {
+//                print("Error adding document: \(err)")
+//            } else {
+//                print("Document added")
+//                // You can dismiss the current view or do something else
+//                self.isCameraPresented = true
+//            }
+//        }
     }
 
 }

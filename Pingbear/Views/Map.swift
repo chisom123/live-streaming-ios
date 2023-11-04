@@ -15,6 +15,7 @@ struct MapView: View {
 
     @State private var competitionLocations = [CustomPointAnnotation]()
     @State private var selectedCompetition: CustomPointAnnotation? = nil
+    @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     
     private var locationManager = CLLocationManager()
     
@@ -44,6 +45,31 @@ struct MapView: View {
                     // When an annotation is tapped, this will trigger navigation to the 'CompDetails' view
                     CompDetails(competition: selectedCompetition)
                 }
+
+                VStack {
+                    HStack {
+                        Spacer() // Pushes the button to the trailing edge of the screen
+                        Button(action: {
+                            isPresentingNewCompetition = true
+                        }) {
+                            Image(systemName: "plus.circle.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 44, height: 44) // Adjust the size as needed
+                                .foregroundColor(Color.blue) // Your desired color
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(radius: 5)
+                                .padding() // Adds padding to all sides
+                        }
+                    }
+                    Spacer() // Pushes everything to the top
+                }
+                
+            }
+            .fullScreenCover(isPresented: $isPresentingNewCompetition) {
+                // The view to present when "New" button is tapped
+                NewCompetition() // Replace this with the actual view you want to present
             }
         }
     }

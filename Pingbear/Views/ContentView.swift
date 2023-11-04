@@ -19,33 +19,28 @@ struct CustomTabView: View {
                     }
                     .tag(0)
 
-                // Just an empty view for the center tab item
-                // The actual button will be floating above the tab bar
                 Text("")
                     .tabItem {
                         Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
+                        Text("Votes")
+                    }
+                    .tag(1)
+
+                Text("")
+                    .tabItem {
+                        Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
+                        Text("Leaderboard")
                     }
                     .tag(2)
-            }
 
-            // The "Create Contest" button
-            Button(action: {
-                isPresentingNewCompetition = true  // <- This line changes the state, triggering the modal presentation
-            }) {
-                Image(systemName: "plus.circle.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 60, height: 60) // adjust the size as required
-                    .foregroundColor(Color.blue) // your desired color
-                    .background(Color.white)
-                    .clipShape(Circle())
-                    .shadow(radius: 5)
+                Text("")
+                    .tabItem {
+                        Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
+                        Text("Settings")
+                    }
+                    .tag(3)
             }
-            .offset(y: -40) // This lifts the button up above the tab bar
-            .padding(.bottom, -40) // Adjust this value as necessary to fine-tune the button's position
-            .fullScreenCover(isPresented: $isPresentingNewCompetition) {
-                NewCompetition() // This is the view that will be presented full screen
-            }
+            
         }
     }
 }

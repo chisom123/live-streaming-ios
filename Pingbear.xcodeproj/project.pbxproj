@@ -11,6 +11,7 @@
 		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
 		4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D062AE81F760011F541 /* NewCompetition.swift */; };
 		4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D082AEBBF990011F541 /* CompDetails.swift */; };
+		4F375D0B2AF444B70011F541 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0A2AF444B70011F541 /* Camera.swift */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
@@ -109,6 +110,7 @@
 		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F375D062AE81F760011F541 /* NewCompetition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCompetition.swift; sourceTree = "<group>"; };
 		4F375D082AEBBF990011F541 /* CompDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompDetails.swift; sourceTree = "<group>"; };
+		4F375D0A2AF444B70011F541 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		4F3E0CE92A846CE80068F901 /* Pingbear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pingbear.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearApp.swift; sourceTree = "<group>"; };
 		4F3E0CF02A846CE90068F901 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -287,6 +289,7 @@
 				4F375D042AE7CD3D0011F541 /* ContentView.swift */,
 				4F375D062AE81F760011F541 /* NewCompetition.swift */,
 				4F375D082AEBBF990011F541 /* CompDetails.swift */,
+				4F375D0A2AF444B70011F541 /* Camera.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -512,6 +515,7 @@
 				4F3E0D742A927FBD0068F901 /* Chat.swift in Sources */,
 				4F3E0D9E2AA605500068F901 /* MyBears.swift in Sources */,
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
+				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F375D032AE7C67E0011F541 /* Map.swift in Sources */,
