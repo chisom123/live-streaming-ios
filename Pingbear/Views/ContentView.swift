@@ -21,24 +21,17 @@ struct CustomTabView: View {
 
                 Text("")
                     .tabItem {
-                        Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
-                        Text("Votes")
+                        Image(systemName: "list.number") // Just a placeholder, the actual button is created below
+                        Text("Leaderboard")
                     }
                     .tag(1)
 
                 Text("")
                     .tabItem {
-                        Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
-                        Text("Leaderboard")
-                    }
-                    .tag(2)
-
-                Text("")
-                    .tabItem {
-                        Image(systemName: "plus.circle") // Just a placeholder, the actual button is created below
+                        Image(systemName: "slider.horizontal.3") // Just a placeholder, the actual button is created below
                         Text("Settings")
                     }
-                    .tag(3)
+                    .tag(2)
             }
             
         }
