@@ -2,7 +2,7 @@ import SwiftUI
 
 // Theme or constants file
 struct AppColors {
-    static let background = Color(hex: "#FFE4E1")
+    static let background = Color(hex: "#FFF")
     static let primary = Color(hex: "#1199FF")
     static let white = Color(hex: "#fff")
 }
@@ -57,20 +57,20 @@ struct AppLogo: View {
         Image("transparent-logo")
             .resizable()
             .scaledToFit()
-            .frame(width: 75, height: 75)
+            .frame(width: 115, height: 115)
     }
 }
 
 struct DisclaimerText: View {
     var body: some View {
-        Text("By continuing, you agree to Pingbear's Privacy Policy and Terms of Service.")
-            .font(.system(size: 16, weight: .semibold, design: .default))
+        Text("By continuing, you agree to Chay's Privacy Policy and Terms of Service.")
+            .font(.system(size: 15.5, weight: .semibold, design: .default))
             .multilineTextAlignment(.center)
             .lineSpacing(13)
             .foregroundColor(.black)
             .padding(.horizontal, 25)
             .padding(.bottom, 25)
-            .accessibilityLabel("Disclaimer: By continuing, you agree to Pingbear's Privacy Policy and Terms of Service.")
+            .accessibilityLabel("Disclaimer: By continuing, you agree to Chay's Privacy Policy and Terms of Service.")
     }
 }
 
