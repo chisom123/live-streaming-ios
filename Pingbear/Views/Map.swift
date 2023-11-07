@@ -30,8 +30,8 @@ struct MapView: View {
                             Button(action: {
                                 self.selectedCompetition = location
                             }) {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.red)
+                                Image(systemName: "circle.fill")
+                                    .foregroundColor(Color(hex: "#FF0000"))
                                     .imageScale(.large)
                             }
                         }
