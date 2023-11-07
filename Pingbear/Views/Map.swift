@@ -56,10 +56,9 @@ struct MapView: View {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 44, height: 44) // Adjust the size as needed
-                                .foregroundColor(Color.blue) // Your desired color
+                                .foregroundColor(Color(hex: "#1199FF")) // Your desired color
                                 .background(Color.white)
                                 .clipShape(Circle())
-                                .shadow(radius: 5)
                                 .padding() // Adds padding to all sides
                         }
                     }
