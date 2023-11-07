@@ -1,149 +1,137 @@
-import SwiftUI
 import AVFoundation
+import Combine
+import SwiftUI
 
-// A UIViewControllerRepresentable to manage the camera session
-struct CameraViewController: UIViewControllerRepresentable {
-    class Coordinator: NSObject, AVCapturePhotoCaptureDelegate {
-        var parent: CameraViewController
-        var photoOutput = AVCapturePhotoOutput()
-        
-        init(parent: CameraViewController) {
-            self.parent = parent
-        }
-        
-        func capturePhoto() {
-            let settings = AVCapturePhotoSettings()
-            photoOutput.capturePhoto(with: settings, delegate: self)
-        }
-        
-        func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-            guard let imageData = photo.fileDataRepresentation() else { return }
-            
-            // Here we can use the image data, for example, save it or pass it to the SwiftUI view
-            parent.photoCapturedHandler?(UIImage(data: imageData))
-        }
+class CameraManager: NSObject, ObservableObject {
+    private var captureSession: AVCaptureSession?
+    private var backCamera: AVCaptureDevice?
+    private var frontCamera: AVCaptureDevice?
+    private var currentCamera: AVCaptureDevice?
+    private var photoOutput: AVCapturePhotoOutput?
+    
+    var cameraPreviewLayer: AVCaptureVideoPreviewLayer?
+
+    @Published var image: UIImage?
+    @Published var isCameraReady = false
+
+    override init() {
+        super.init()
+        setupCaptureSession()
     }
     
-    var photoCapturedHandler: ((UIImage?) -> Void)?
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+    func setupCaptureSession() {
+        captureSession = AVCaptureSession()
+        captureSession?.sessionPreset = .photo
+        setupDevice()
+        setupInputOutput()
+        setupPreviewLayer()
+        startRunningCaptureSession()
     }
     
-    func makeUIViewController(context: Context) -> UIViewController {
-        let viewController = UIViewController()
-        let captureSession = AVCaptureSession()
+    func setupDevice() {
+        let deviceDiscoverySession = AVCaptureDevice.DiscoverySession(deviceTypes: [AVCaptureDevice.DeviceType.builtInWideAngleCamera], mediaType: AVMediaType.video, position: AVCaptureDevice.Position.unspecified)
         
-        guard let camera = AVCaptureDevice.default(for: .video) else {
-            fatalError("No video camera available")
+        let devices = deviceDiscoverySession.devices
+        
+        for device in devices {
+            if device.position == AVCaptureDevice.Position.back {
+                backCamera = device
+            } else if device.position == AVCaptureDevice.Position.front {
+                frontCamera = device
+            }
         }
         
+        currentCamera = frontCamera
+    }
+    
+    func setupInputOutput() {
         do {
-            let input = try AVCaptureDeviceInput(device: camera)
-            if captureSession.canAddInput(input) {
-                captureSession.addInput(input)
-            }
-            if captureSession.canAddOutput(context.coordinator.photoOutput) {
-                captureSession.addOutput(context.coordinator.photoOutput)
-            }
+            let captureDeviceInput = try AVCaptureDeviceInput(device: currentCamera!)
+            captureSession!.addInput(captureDeviceInput)
+            photoOutput = AVCapturePhotoOutput()
+            photoOutput?.setPreparedPhotoSettingsArray([AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])], completionHandler: nil)
+            captureSession!.addOutput(photoOutput!)
         } catch {
-            fatalError(error.localizedDescription)
+            print(error)
         }
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = viewController.view.bounds
-        previewLayer.videoGravity = .resizeAspectFill
-        viewController.view.layer.addSublayer(previewLayer)
-        
-        captureSession.startRunning()
-        
-        return viewController
     }
     
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // Here you can update your UI if needed
+    func setupPreviewLayer() {
+        guard let captureSession = captureSession else { return }
+        cameraPreviewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        cameraPreviewLayer?.videoGravity = .resizeAspectFill
+        cameraPreviewLayer?.connection?.videoOrientation = .portrait
+        DispatchQueue.main.async {
+            self.isCameraReady = true
+        }
     }
+
+    func startRunningCaptureSession() {
+        captureSession!.startRunning()
+    }
+    
+    // Add the rest of the functions here...
+    
+    // Call this function to toggle the camera
+    func toggleCamera() {
+        // Implement camera toggle functionality
+    }
+    
+    // Call this function to capture a photo
+    func capturePhoto() {
+        // Implement photo capture functionality
+    }
+    
+    // Use this function to add pinch to zoom functionality
+    func pinchToZoom(_ pinch: UIPinchGestureRecognizer) {
+        // Implement pinch to zoom functionality
+    }
+}
+
+struct CameraPreview: UIViewRepresentable {
+    @ObservedObject var cameraManager: CameraManager
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: UIScreen.main.bounds)
+        cameraManager.cameraPreviewLayer?.frame = view.frame
+        if let previewLayer = cameraManager.cameraPreviewLayer {
+            view.layer.addSublayer(previewLayer)
+        }
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
 struct CameraView: View {
-    @State private var capturedImage: UIImage?
-    @StateObject private var cameraController = CameraController() // CameraController manages AVCaptureSession
-    
+    @StateObject private var cameraManager = CameraManager()
+
     var body: some View {
         ZStack {
-            CameraViewController(photoCapturedHandler: { image in
-                self.capturedImage = image
-                // Here you can handle the captured image, for example, show it on the UI or save it
-            })
+            CameraPreview(cameraManager: cameraManager)
+
             VStack {
+                Spacer()
                 HStack {
                     Button(action: {
-                        // Your close action here
+                        cameraManager.capturePhoto()
                     }) {
-                        Image(systemName: "xmark.circle.fill") // Using system image for simplicity
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                            .padding(.leading, 20)
-                            .padding(.top, 20)
+                        Image(systemName: "camera.circle")
+                            .font(.largeTitle)
+                            .padding()
                     }
-                    
-                    Spacer()
-                }
-                Spacer()
-                
-                Button(action: {
-                    // This will trigger photo capture
-                    cameraController.capturePhoto()
-                }) {
-                    Image(systemName: "camera.circle") // Using system image for simplicity
-                        .resizable()
-                        .frame(width: 70, height: 70)
-                        .padding(.bottom, 40)
+                    Button(action: {
+                        cameraManager.toggleCamera()
+                    }) {
+                        Image(systemName: "arrow.triangle.2.circlepath.camera")
+                            .font(.largeTitle)
+                            .padding()
+                    }
                 }
             }
         }
-        .edgesIgnoringSafeArea(.all)
         .onAppear {
-            cameraController.setupSession()
+            cameraManager.setupCaptureSession()
         }
-    }
-}
-
-class CameraController: NSObject, ObservableObject {
-    private var captureSession: AVCaptureSession?
-    private let photoOutput = AVCapturePhotoOutput()
-    private var photoCaptureCompletionHandler: ((UIImage?) -> Void)?
-
-    func setupSession() {
-        captureSession = AVCaptureSession()
-        guard let captureSession = captureSession else { return }
-        
-        guard let camera = AVCaptureDevice.default(for: .video) else {
-            fatalError("No video camera available")
-        }
-        
-        do {
-            let input = try AVCaptureDeviceInput(device: camera)
-            if captureSession.canAddInput(input) {
-                captureSession.addInput(input)
-            }
-            if captureSession.canAddOutput(photoOutput) {
-                captureSession.addOutput(photoOutput)
-            }
-        } catch {
-            fatalError(error.localizedDescription)
-        }
-    }
-    
-    func capturePhoto() {
-        let settings = AVCapturePhotoSettings()
-        photoOutput.capturePhoto(with: settings, delegate: self)
-    }
-}
-
-extension CameraController: AVCapturePhotoCaptureDelegate {
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        guard let imageData = photo.fileDataRepresentation() else { return }
-        photoCaptureCompletionHandler?(UIImage(data: imageData))
     }
 }
