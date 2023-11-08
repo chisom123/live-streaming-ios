@@ -102,17 +102,17 @@ struct NewCompetition: View {
             "timestamp": Timestamp() // Current time
         ]
         
-        
+        self.isCameraPresented = true
         // Add a new document with the competition data
-        db.collection("competitions").addDocument(data: competitionData) { err in
-            if let err = err {
-                print("Error adding document: \(err)")
-            } else {
-                print("Document added")
-                // You can dismiss the current view or do something else
-                self.isCameraPresented = true
-            }
-        }
+//        db.collection("competitions").addDocument(data: competitionData) { err in
+//            if let err = err {
+//                print("Error adding document: \(err)")
+//            } else {
+//                print("Document added")
+//                // You can dismiss the current view or do something else
+//                self.isCameraPresented = true
+//            }
+//        }
     }
 
 }
