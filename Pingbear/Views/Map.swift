@@ -18,6 +18,8 @@ struct MapView: View {
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     
     private var locationManager = CLLocationManager()
+    @Environment(\.scenePhase) private var scenePhase
+
     
     var body: some View {
         NavigationView {
@@ -40,6 +42,12 @@ struct MapView: View {
                 .onAppear {
                     setupLocationManager()
                     fetchCompetitionLocations()
+                }
+                .onChange(of: scenePhase) { newScenePhase in
+                    if newScenePhase == .active {
+                        setupLocationManager()
+                        fetchCompetitionLocations()
+                    }
                 }
                 .fullScreenCover(item: $selectedCompetition) { selectedCompetition in
                     // When an annotation is tapped, this will trigger navigation to the 'CompDetails' view

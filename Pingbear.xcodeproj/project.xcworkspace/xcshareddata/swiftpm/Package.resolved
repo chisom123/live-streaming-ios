@@ -152,6 +152,15 @@
         "revision" : "ce20dc083ee485524b802669890291c0d8090170",
         "version" : "1.22.1"
       }
+    },
+    {
+      "identity" : "swiftttcamera",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/rogerluan/SwiftttCamera",
+      "state" : {
+        "revision" : "8c418c68a20b990c94644add4906d74d94592a80",
+        "version" : "0.9.0"
+      }
     }
   ],
   "version" : 2

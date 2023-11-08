@@ -12,6 +12,7 @@
 		4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D062AE81F760011F541 /* NewCompetition.swift */; };
 		4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D082AEBBF990011F541 /* CompDetails.swift */; };
 		4F375D0B2AF444B70011F541 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0A2AF444B70011F541 /* Camera.swift */; };
+		4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 4F375D0D2AFBDA780011F541 /* SwiftttCamera */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
@@ -176,6 +177,7 @@
 				4F3E0D512A86F6BF0068F901 /* FirebaseStorageCombine-Community in Frameworks */,
 				4F3E0D4B2A86F6BF0068F901 /* FirebaseRemoteConfig in Frameworks */,
 				4F3E0D272A86F6BF0068F901 /* FirebaseAppDistribution-Beta in Frameworks */,
+				4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */,
 				4F3E0D2B2A86F6BF0068F901 /* FirebaseAuthCombine-Community in Frameworks */,
 				4F3E0D492A86F6BF0068F901 /* FirebasePerformance in Frameworks */,
 				4F3E0D412A86F6BF0068F901 /* FirebaseInAppMessagingSwift-Beta in Frameworks */,
@@ -368,6 +370,7 @@
 				4F3E0DB62AB1E5580068F901 /* Flurry */,
 				4F3E0DB82AB1E5580068F901 /* FlurryConfig */,
 				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
+				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -448,6 +451,7 @@
 				4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */,
 				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
 				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
+				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -898,6 +902,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rogerluan/SwiftttCamera";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
 		4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -949,6 +961,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4F375D0D2AFBDA780011F541 /* SwiftttCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */;
+			productName = SwiftttCamera;
+		};
 		4F3E0D1C2A86F6BF0068F901 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
