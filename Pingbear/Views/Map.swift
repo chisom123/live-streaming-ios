@@ -25,7 +25,7 @@ struct MapView: View {
         NavigationView {
             ZStack {
                 Map(coordinateRegion: $region,
-//                    showsUserLocation: true,
+                    showsUserLocation: true,
                     annotationItems: competitionLocations) { location in
                         MapAnnotation(coordinate: location.coordinate) {
                             // Here, we use a Button action to handle the tap, and set the selected competition

@@ -45,14 +45,12 @@ struct NewCompetition: View {
                     .padding(.bottom, 40)
                     .padding(.horizontal)
 
-                TextEditor(text: $competitionDescription)
-                    .frame(height: 100) // Adjust the height as necessary
+                TextField("Describe Competition", text: $competitionDescription)
+                    .keyboardType(.default)
                     .padding()
-                    .scrollContentBackground(.hidden) // <- Hide it
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
-                    .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color(hex: "#dcdcdc"), lineWidth: 1.5)) // Just to make it look a bit nicer
-                    .lineSpacing(10)
+                    .cornerRadius(5)
                     .font(.system(size: 16, weight: .medium, design: .default))
                     .padding(.horizontal)
         
