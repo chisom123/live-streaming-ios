@@ -57,7 +57,7 @@ struct CustomTabView: View {
                     }
                     .tag(1)
 
-                Text("Settings")
+                SettingsView()
                     .tabItem {
                         Image(systemName: "slider.horizontal.3")
                         Text("Settings")

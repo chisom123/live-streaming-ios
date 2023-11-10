@@ -29,58 +29,7 @@ struct SettingsView: View {
         ZStack {
             VStack {
                 
-                HStack {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Image("Close")
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                            .padding(.leading, 20)
-                            .padding(.top, 20)
-                    }
-                    
-                    Spacer() // This spacer will ensure the two buttons are at opposite ends.
-                }
-                
                 VStack(spacing: 25) {
-                    // Add Friends Button
-                    Button(action: {
-                        self.showAddFriendsView = true
-                    }) {
-                        HStack {
-                            Text("Add Friends")
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#1199FF"))
-                            Spacer()
-                        }
-                        .padding([.top, .bottom], 20)
-                        .padding([.leading, .trailing], 20)
-                    }
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .fullScreenCover(isPresented: $showAddFriendsView) {  // Use the full screen cover modifier
-                        AddFriendsView(viewModel: AddFriendsModel())
-                    }
-                    
-                    // My Friends Button
-                    Button(action: {
-                        self.showMyFriendsView = true
-                    }) {
-                        HStack {
-                            Text("My Friends")
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#1199FF"))
-                            Spacer()
-                        }
-                        .padding([.top, .bottom], 20)
-                        .padding([.leading, .trailing], 20)
-                    }
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .fullScreenCover(isPresented: $showMyFriendsView) {  // Use the full screen cover modifier
-                        MyFriendsView(viewModel: MyFriendsModel())
-                    }
                     
                     // Change Name Button
                     Button(action: {
@@ -100,8 +49,6 @@ struct SettingsView: View {
                     .fullScreenCover(isPresented: $showChangeNameView) {  // Use the full screen cover modifier
                         ChangeNameView()
                     }
-                    
-                    Spacer()
                     
                     Button(action: {
                         if let url = URL(string: "mailto:pingbearapp@gmail.com") {
@@ -179,11 +126,7 @@ struct SettingsView: View {
                               secondaryButton: .cancel())
                     }
                 }
-                .padding(.top, 30)
-                .padding(.bottom, 20)
                 .padding([.leading, .trailing], 20)
-                
-                Spacer()
             }
         }
     }
