@@ -50,19 +50,12 @@ struct CustomTabView: View {
                     }
                     .tag(0)
 
-                Text("Leaderboard")
-                    .tabItem {
-                        Image(systemName: "list.number")
-                        Text("Leaderboard")
-                    }
-                    .tag(1)
-
                 SettingsView()
                     .tabItem {
                         Image(systemName: "slider.horizontal.3")
                         Text("Settings")
                     }
-                    .tag(2)
+                    .tag(1)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items
         }

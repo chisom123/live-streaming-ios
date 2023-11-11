@@ -8,6 +8,7 @@ struct CompDetails: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionDescription: String = ""
     @State private var competitionTimestamp: Date
+    @State private var isCameraPresented = false
 
     @State private var timeRemaining: String = ""
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -25,7 +26,7 @@ struct CompDetails: View {
             let seconds = Int(timeInterval) % 60
 
             // Return as a formatted string
-            return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
+            return String(format: "%02i : %02i : %02i", hours, minutes, seconds)
         } else {
             // If the event is over, you might want to return something relevant
             return "00:00:00"
@@ -69,7 +70,7 @@ struct CompDetails: View {
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
-                    .foregroundColor(Color(hex: "#CC2255"))
+                    .foregroundColor(Color(hex: "#ababab"))
                     .padding(.bottom, 20)
                     .padding(.horizontal)
                     .onReceive(timer) { _ in
@@ -96,6 +97,20 @@ struct CompDetails: View {
                 }
                 .padding(.top, 10)
                 .padding(.horizontal)
+
+                Button(action: {
+                    joincomp()
+                }) {
+                    Text("Vote Now (5)")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .background(Color(hex: "#7B68EE"))
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(200)
+                }
+                .padding(.top, 20)
+                .padding(.horizontal)
                 
 
                 Spacer()
@@ -106,8 +121,11 @@ struct CompDetails: View {
             let endTime = competitionTimestamp.addingTimeInterval(12 * 60 * 60)  // 12 hours from timestamp
             timeRemaining = timeLeft(until: endTime)
         }
+        .fullScreenCover(isPresented: $isCameraPresented, content: {
+            CameraView()
+        })
     }
     func joincomp() {
-        
+        self.isCameraPresented = true
     }
 }
