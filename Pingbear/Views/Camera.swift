@@ -3,9 +3,16 @@ import SwiftttCamera
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     @Binding var shouldToggleCamera: Bool
+    @Binding var shouldTakePicture: Bool
+    @Binding var capturedImage: UIImage?
     
     func makeUIViewController(context: Context) -> CameraViewController {
         let cameraViewController = CameraViewController()
+        cameraViewController.onImageCaptured = { image in
+            DispatchQueue.main.async {
+                self.capturedImage = image
+            }
+        }
         return cameraViewController
     }
 
@@ -16,12 +23,21 @@ struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
                 self.shouldToggleCamera = false
             }
         }
+        
+        if shouldTakePicture {
+            uiViewController.takePicture()
+            DispatchQueue.main.async {
+                self.shouldTakePicture = false
+            }
+        }
     }
 
     typealias UIViewControllerType = CameraViewController
 }
 
 class CameraViewController: UIViewController, CameraDelegate {
+    var onImageCaptured: ((UIImage) -> Void)?
+    
     private lazy var camera: SwiftttCamera = {
         let result = SwiftttCamera()
         result.delegate = self
@@ -35,8 +51,13 @@ class CameraViewController: UIViewController, CameraDelegate {
         camera.view.frame = view.frame
     }
 
+    func takePicture() {
+        camera.takePicture()
+    }
+
     func cameraController(_ cameraController: CameraProtocol, didFinishCapturingImage capturedImage: CapturedImage) {
-        // Handle the captured image
+        let image = capturedImage.fullImage
+        onImageCaptured?(image)
     }
 
     func toggleCamera() {
@@ -49,51 +70,94 @@ class CameraViewController: UIViewController, CameraDelegate {
 struct CameraView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var shouldToggleCamera = false
+    @State private var shouldTakePicture = false
+    @State private var capturedImage: UIImage?
     
     var body: some View {
         ZStack {
-            CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera)
+            CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
                 .edgesIgnoringSafeArea(.all)
             
-            VStack {
-                HStack {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Image(systemName: "arrow.left")
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.white.opacity(0.5))
-                            .clipShape(Circle())
-                            .shadow(radius: 10)
+            if let image = capturedImage {
+                ZStack {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .edgesIgnoringSafeArea(.all)
+
+                    VStack {
+                        HStack {
+                            Button(action: {
+                                presentationMode.wrappedValue.dismiss()
+                            }) {
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(.white)
+                                    .padding(5)
+                                    .padding(.top, 15)
+                                    .shadow(radius: 10)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top)
+                        .padding(.horizontal)
+
+                        Spacer()
+
+                        // "Continue" Button at the bottom
+                        Button(action: {
+                            // Your submit action here
+                        }) {
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color.blue) // Assuming Color(hex: "#1199FF") is equivalent to blue
+                                .foregroundColor(.white)
+                                .cornerRadius(200)
+                        }
+                        .padding(.horizontal)
+                        .padding(.bottom, UIApplication.shared.windows.first?.safeAreaInsets.bottom)
                     }
-                    Spacer()
-                    Button(action: {
-                        self.shouldToggleCamera.toggle()
-                    }) {
-                        Image(systemName: "camera.rotate")
-                            .foregroundColor(.black)
-                            .padding()
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(radius: 10)
+                    .edgesIgnoringSafeArea(.all)
+                }
+            } else {
+                VStack {
+                    HStack {
+                        Button(action: {
+                            presentationMode.wrappedValue.dismiss()
+                        }) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 30)) // Increase the font size as needed
+                                .foregroundColor(.white)
+                                .padding(5) // Adjust the padding to balance the increased size
+                                .shadow(radius: 10)
+                        }
+                        Spacer()
+                        Button(action: {
+                            self.shouldToggleCamera.toggle()
+                        }) {
+                            Image(systemName: "arrow.2.circlepath")
+                                .font(.system(size: 30)) // Increase the font size as needed
+                                .foregroundColor(.white)
+                                .padding(5) // Adjust the padding to balance the increased size
+                                .shadow(radius: 10)
+                        }
                     }
+                    .padding([.top, .leading, .trailing])
+
+                    Spacer() // This will create space between the top HStack and the bottom button
+
+                    Button(action: {
+                        self.shouldTakePicture = true
+                    }) {
+                        Circle()
+                            .stroke(Color.white, lineWidth: 8) // White outline
+                            .frame(width: 100, height: 100)
+                    }
+                    .padding(.bottom)
                 }
-                .padding([.top, .leading, .trailing])
-                Spacer() // This will push the top HStack to the top and the bottom button to the bottom
-                
-                Button(action: {
-                    
-                }) {
-                    Image(systemName: "camera.circle")
-                        .font(.system(size: 72))
-                        .foregroundColor(.black)
-                        .padding()
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .shadow(radius: 10)
-                }
-                .padding(.bottom)
             }
         }
     }
