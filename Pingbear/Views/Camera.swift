@@ -113,7 +113,7 @@ struct CameraView: View {
                                 .frame(maxWidth: .infinity, minHeight: 44)
                                 .font(.system(size: 18, weight: .bold, design: .default))
                                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color.blue) // Assuming Color(hex: "#1199FF") is equivalent to blue
+                                .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
                                 .foregroundColor(.white)
                                 .cornerRadius(200)
                         }
