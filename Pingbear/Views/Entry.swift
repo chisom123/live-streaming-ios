@@ -59,7 +59,7 @@ struct EntryView: View {
                 Button(action: {
                     // Action for "30 hearts left"
                 }) {
-                    Text("30 hearts left")
+                    Text("30 votes left")
                         .font(.system(size: 15, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
                         .background(Color(hex: "#fff"))
