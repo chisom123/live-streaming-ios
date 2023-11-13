@@ -11,6 +11,7 @@ import SDWebImageSwiftUI
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
     @Environment(\.presentationMode) var presentationMode
+    @State private var heartColor: Color = .white
 
     init(competitionId: String) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId))
@@ -66,7 +67,34 @@ struct EntryView: View {
                     }
                 }
                 .padding([.top, .leading, .trailing])
+                
                 Spacer()
+
+                // Heart button at the bottom
+                Button(action: {
+                    heartColor = Color(hex: "#FFD700")
+                    
+                    // Delay to reset the color back to white
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        withAnimation {
+                            heartColor = .white
+                        }
+                    }
+                }) {
+                    ZStack {
+                        Circle() // Outer circle
+                            .stroke(lineWidth: 8)
+                            .frame(width: 100, height: 100)
+                            .foregroundColor(heartColor)
+                            .shadow(radius: 10)
+
+                        Image(systemName: "heart.fill") // Heart symbol
+                            .font(.system(size: 35))
+                            .foregroundColor(heartColor)
+                            .shadow(radius: 10)
+                    }
+                    .padding(.bottom) // Adjust padding as needed
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
