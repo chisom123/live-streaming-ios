@@ -9,6 +9,7 @@ struct CompDetails: View {
     @State private var competitionDescription: String = ""
     @State private var competitionTimestamp: Date
     @State private var isCameraPresented = false
+    @State private var isVotingPresented = false
 
     @State private var timeRemaining: String = ""
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -99,7 +100,7 @@ struct CompDetails: View {
                 .padding(.horizontal)
 
                 Button(action: {
-                    joincomp()
+                    vote()
                 }) {
                     Text("Vote Now (5)")
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -124,8 +125,14 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competitionId: competition.id)
         })
+        .fullScreenCover(isPresented: $isVotingPresented, content: {
+            EntryView(competitionId: competition.id)
+        })
     }
     func joincomp() {
         self.isCameraPresented = true
+    }
+    func vote() {
+        self.isVotingPresented = true
     }
 }
