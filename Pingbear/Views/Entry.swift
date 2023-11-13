@@ -38,65 +38,88 @@ struct EntryView: View {
             }
             .edgesIgnoringSafeArea(.all)
 
-            VStack {
-                HStack {
-                    // Xmark button on the left
+            // Top Left - Xmark button
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .padding(5)
+                        .shadow(radius: 10)
+                }
+                Spacer()
+            }
+            .padding([.top, .leading])
+
+            // Top Right - "30 hearts left" button
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Action for "30 hearts left"
+                }) {
+                    Text("30 hearts left")
+                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
+                        .background(Color(hex: "#fff"))
+                        .foregroundColor(Color(hex: "#000"))
+                        .cornerRadius(200)
+                }
+            }
+            .padding([.top, .trailing])
+
+            // Middle Right - Arrow.right button
+            if viewModel.currentIndex < viewModel.entries.count - 1 {
+                VStack {
+                    Spacer()
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        viewModel.currentIndex += 1
                     }) {
-                        Image(systemName: "xmark")
+                        Image(systemName: "arrow.right")
                             .font(.system(size: 30))
                             .foregroundColor(.white)
                             .padding(5)
                             .shadow(radius: 10)
                     }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing)
+            }
 
-                    Spacer() // This spacer separates the two buttons
+            // Bottom - Heart button, horizontally centered
+            VStack {
+                Spacer() // Pushes the button to the bottom
 
-                    // Arrow.right button on the right, shown conditionally
-                    if viewModel.currentIndex < viewModel.entries.count - 1 {
-                        Button(action: {
-                            viewModel.currentIndex += 1
-                        }) {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .padding(5)
+                HStack {
+                    Spacer() // Pushes the button to the center horizontally
+                    Button(action: {
+                        heartColor = Color(hex: "#FFD700")
+                        // Delay to reset the color back to white
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                            withAnimation {
+                                heartColor = .white
+                            }
+                        }
+                    }) {
+                        ZStack {
+                            Circle() // Outer circle
+                                .stroke(lineWidth: 8)
+                                .frame(width: 100, height: 100)
+                                .foregroundColor(heartColor)
+                                .shadow(radius: 10)
+
+                            Image(systemName: "heart.fill") // Heart symbol
+                                .font(.system(size: 35))
+                                .foregroundColor(heartColor)
                                 .shadow(radius: 10)
                         }
                     }
+                    Spacer() // Pushes the button to the center horizontally
                 }
-                .padding([.top, .leading, .trailing])
-                
-                Spacer()
-
-                // Heart button at the bottom
-                Button(action: {
-                    heartColor = Color(hex: "#FFD700")
-                    
-                    // Delay to reset the color back to white
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        withAnimation {
-                            heartColor = .white
-                        }
-                    }
-                }) {
-                    ZStack {
-                        Circle() // Outer circle
-                            .stroke(lineWidth: 8)
-                            .frame(width: 100, height: 100)
-                            .foregroundColor(heartColor)
-                            .shadow(radius: 10)
-
-                        Image(systemName: "heart.fill") // Heart symbol
-                            .font(.system(size: 35))
-                            .foregroundColor(heartColor)
-                            .shadow(radius: 10)
-                    }
-                    .padding(.bottom) // Adjust padding as needed
-                }
+                .padding(.bottom) // Adjust padding as needed
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
         }
     }
