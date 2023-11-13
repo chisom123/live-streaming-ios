@@ -75,7 +75,7 @@ struct NewCompetition: View {
 
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView()
+//            CameraView()
         })
     }
     func newcomp() {

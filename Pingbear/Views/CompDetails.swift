@@ -122,7 +122,7 @@ struct CompDetails: View {
             timeRemaining = timeLeft(until: endTime)
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView()
+            CameraView(competitionId: competition.id)
         })
     }
     func joincomp() {

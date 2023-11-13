@@ -1,5 +1,8 @@
 import SwiftUI
 import SwiftttCamera
+import Firebase
+import FirebaseStorage
+import FirebaseFirestore
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     @Binding var shouldToggleCamera: Bool
@@ -72,6 +75,7 @@ struct CameraView: View {
     @State private var shouldToggleCamera = false
     @State private var shouldTakePicture = false
     @State private var capturedImage: UIImage?
+    var competitionId: String
     
     var body: some View {
         ZStack {
@@ -107,7 +111,7 @@ struct CameraView: View {
 
                         // "Continue" Button at the bottom
                         Button(action: {
-                            // Your submit action here
+                            submitEntry()
                         }) {
                             Text("Continue")
                                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -157,6 +161,51 @@ struct CameraView: View {
                             .frame(width: 100, height: 100)
                     }
                     .padding(.bottom)
+                }
+            }
+        }
+    }
+    
+    func submitEntry() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("User not logged in")
+            return
+        }
+
+        guard let capturedImage = self.capturedImage, let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
+            print("No image captured")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let storage = Storage.storage()
+        let storageRef = storage.reference()
+        let imageRef = storageRef.child("images/\(UUID().uuidString).jpg")
+
+        imageRef.putData(imageData, metadata: nil) { metadata, error in
+            guard metadata != nil else {
+                print("Error uploading image: \(String(describing: error))")
+                return
+            }
+
+            imageRef.downloadURL { url, error in
+                guard let downloadURL = url else {
+                    print("Error getting download URL: \(String(describing: error))")
+                    return
+                }
+
+                // Now that you have the image URL, include it in the entryData
+                let entryData = ["userId": userId, "imageUrl": downloadURL.absoluteString]
+                
+                // Save to Firestore
+                let entriesCollection = db.collection("competitions").document(self.competitionId).collection("entries")
+                entriesCollection.addDocument(data: entryData) { error in
+                    if let error = error {
+                        print("Error saving entry: \(error)")
+                    } else {
+                        print("Entry saved successfully")
+                        self.presentationMode.wrappedValue.dismiss()
+                    }
                 }
             }
         }
