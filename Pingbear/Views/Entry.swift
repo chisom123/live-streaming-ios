@@ -11,7 +11,7 @@ import SDWebImageSwiftUI
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
     @Environment(\.presentationMode) var presentationMode
-    @State private var heartColor: Color = .white
+    @State private var rating: Int = 0
 
     init(competitionId: String) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId))
@@ -49,44 +49,25 @@ struct EntryView: View {
                         .padding(5)
                         .shadow(radius: 10)
                 }
+                
                 Spacer()
-            }
-            .padding([.top, .leading])
-
-            // Top Right - "30 hearts left" button
-            HStack {
-                Spacer()
-                Button(action: {
-                    // Action for "30 hearts left"
-                }) {
-                    Text("30 votes left")
-                        .font(.system(size: 15, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
-                        .background(Color(hex: "#fff"))
-                        .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(200)
+                
+                // Middle Right - Arrow.right button
+                if viewModel.currentIndex < viewModel.entries.count - 1 {
+                        Button(action: {
+                            viewModel.currentIndex += 1
+                        }) {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 30))
+                                .foregroundColor(.white)
+                                .padding(5)
+                                .shadow(radius: 10)
+                        }
                 }
             }
-            .padding([.top, .trailing])
+            .padding([.top, .leading, .trailing])
 
-            // Middle Right - Arrow.right button
-            if viewModel.currentIndex < viewModel.entries.count - 1 {
-                VStack {
-                    Spacer()
-                    Button(action: {
-                        viewModel.currentIndex += 1
-                    }) {
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                            .padding(5)
-                            .shadow(radius: 10)
-                    }
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing)
-            }
+
 
             // Bottom - Heart button, horizontally centered
             VStack {
@@ -94,33 +75,30 @@ struct EntryView: View {
 
                 HStack {
                     Spacer() // Pushes the button to the center horizontally
-                    Button(action: {
-                        heartColor = Color(hex: "#FFD700")
-                        // Delay to reset the color back to white
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                            withAnimation {
-                                heartColor = .white
-                            }
-                        }
-                    }) {
-                        ZStack {
-                            Circle() // Outer circle
-                                .stroke(lineWidth: 8)
-                                .frame(width: 100, height: 100)
-                                .foregroundColor(heartColor)
-                                .shadow(radius: 10)
-
-                            Image(systemName: "heart.fill") // Heart symbol
+ 
+                    // Creating 4 star buttons
+                    ForEach(1...4, id: \.self) { star in
+                        Button(action: {
+                            // Update the rating when a star is tapped
+                            self.rating = star
+                             
+                            let currentEntryId = viewModel.entries[viewModel.currentIndex].id
+                            viewModel.updateStarRating(for: currentEntryId, with: star)
+                        }) {
+                            // Display the star, filled if it's less than or equal to the current rating
+                            Image(systemName: star <= self.rating ? "star.fill" : "star")
+                                .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.white)
                                 .font(.system(size: 35))
-                                .foregroundColor(heartColor)
+                                .padding(5)
                                 .shadow(radius: 10)
                         }
                     }
+                    
                     Spacer() // Pushes the button to the center horizontally
                 }
                 .padding(.bottom) // Adjust padding as needed
+                
             }
-
         }
     }
 }
