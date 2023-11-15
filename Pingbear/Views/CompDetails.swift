@@ -118,6 +118,7 @@ struct CompDetails: View {
                     .font(.system(size: 17, weight: .semibold, design: .default))
                     .foregroundColor(.black)
                     .padding(.top, 35)
+                    .padding(.bottom, 20)
                     .padding(.horizontal, 20)
 
                 ScrollView {
@@ -171,7 +172,6 @@ struct CompDetails: View {
                             .padding(.horizontal, 20) // Padding on the sides of each row
                         }
                     }
-                    .padding(.top, 20) // Padding at the top of the VStack
                 }
 
                 
