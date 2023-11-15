@@ -10,6 +10,7 @@ struct CompDetails: View {
     @State private var competitionTimestamp: Date
     @State private var isCameraPresented = false
     @State private var isVotingPresented = false
+    @ObservedObject var entryViewModel: EntryViewModel
 
     @State private var timeRemaining: String = ""
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -37,11 +38,14 @@ struct CompDetails: View {
     init(competition: CustomPointAnnotation) {
         self.competition = competition
         _competitionTimestamp = State(initialValue: competition.timestamp)  // Set initial timestamp
+        // Initialize EntryViewModel with the competition ID
+        self.entryViewModel = EntryViewModel(competitionId: competition.id)
     }
+
     
     var body: some View {
         ZStack {
-            VStack {
+            VStack(alignment: .leading) {
                 HStack {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
@@ -57,23 +61,20 @@ struct CompDetails: View {
                 }
     
                 
-                Spacer()
-                
                 Text(competition.competitionDescription)
                     .font(.system(size: 21, weight: .semibold, design: .default))
-                    .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)
                     .padding(.bottom, 20)
-                    .padding(.horizontal)
+                    .padding(.top, 30)
+                    .padding(.horizontal, 20)
 
                 Text(timeRemaining)
                     .font(.system(size: 17, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(Color(hex: "#ababab"))
                     .padding(.bottom, 20)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
                     .onReceive(timer) { _ in
                         // Calculate the end time (i.e., competition timestamp + 12 hours)
                         let endTime = competitionTimestamp.addingTimeInterval(12 * 60 * 60)
@@ -97,12 +98,12 @@ struct CompDetails: View {
                         .cornerRadius(200)
                 }
                 .padding(.top, 10)
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
 
                 Button(action: {
                     vote()
                 }) {
-                    Text("Vote Now (5)")
+                    Text("Vote Now")
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
@@ -111,10 +112,69 @@ struct CompDetails: View {
                         .cornerRadius(200)
                 }
                 .padding(.top, 20)
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
                 
+                Text("Leaderboard")
+                    .font(.system(size: 17, weight: .semibold, design: .default))
+                    .foregroundColor(.black)
+                    .padding(.top, 35)
+                    .padding(.horizontal, 20)
 
-                Spacer()
+                ScrollView {
+                    VStack(spacing: 10) { // Increased spacing between items
+                        ForEach(Array(entryViewModel.entries.sorted { $0.stars > $1.stars }.enumerated()), id: \.element.id) { (index, entry) in
+                            HStack {
+                                // Position
+                                Text("\(index + 1)")
+                                    .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
+                                    .frame(width: 40, alignment: .center) // Centered and wider frame for position
+                                    .foregroundColor(.black)
+
+                                Divider() // Adds a visual separator
+                            
+                                // Profile Image
+                                Image("Placeholder") // Replace "profile_placeholder" with your image name or URL
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 40, height: 40) // Adjust size as needed
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 2)) // Optional: adds a border to the image
+                                    .padding(.leading, 10) // Increased padding
+
+                                // User's name
+                                Text(entry.userName)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .lineLimit(1)
+                                    .foregroundColor(.black)
+                                    .truncationMode(.tail)
+                                    .padding(.leading, 10) // Increased padding
+
+                                Spacer()
+
+                                // Stars and symbol
+                                HStack(spacing: 10) { // Increased spacing
+                                    Text("\(entry.stars)")
+                                        .font(.system(size: 18, weight: .semibold)) // Slightly larger font for stars
+                                        .foregroundColor(Color(hex: "#DAA520"))
+                                    
+                                    Image(systemName: "star.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 20, height: 20) // Slightly larger star icon
+                                        .foregroundColor(Color(hex: "#DAA520"))
+                                }
+                                .padding(.trailing, 15) // Increased padding
+                            }
+                            .padding() // Padding around the HStack
+                            .background(Color(hex: "#F5F5F5"))
+                            .cornerRadius(5)
+                            .padding(.horizontal, 20) // Padding on the sides of each row
+                        }
+                    }
+                    .padding(.top, 20) // Padding at the top of the VStack
+                }
+
+                
             }
         }
         .onAppear {

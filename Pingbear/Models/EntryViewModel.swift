@@ -5,6 +5,8 @@ import FirebaseFirestore
 struct Entry: Identifiable {
     let id: String
     let imageUrl: String
+    let userName: String // Add userName
+    let stars: Int
 }
 
 class EntryViewModel: ObservableObject {
@@ -16,24 +18,48 @@ class EntryViewModel: ObservableObject {
         self.competitionId = competitionId
         fetchEntries()
     }
-
+    
     func fetchEntries() {
         let db = Firestore.firestore()
-        db.collection("competitions").document(competitionId).collection("entries").getDocuments { (snapshot, error) in
+        db.collection("competitions").document(competitionId).collection("entries").getDocuments { [weak self] (snapshot, error) in
+            guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")
                 return
             }
 
+            let group = DispatchGroup()
+
             if let documents = snapshot?.documents {
-                self.entries = documents.map { document in
-                    // Assuming each entry document has an 'imageUrl' field
+                for document in documents {
+                    group.enter()
+                    let userId = document.data()["userId"] as? String ?? ""
                     let imageUrl = document.data()["imageUrl"] as? String ?? ""
-                    return Entry(id: document.documentID, imageUrl: imageUrl)
+                    let stars = document.data()["stars"] as? Int ?? 0
+
+                    // Fetch the user name based on userId
+                    db.collection("users").document(userId).getDocument { (userSnapshot, error) in
+                        defer { group.leave() }
+                        if let error = error {
+                            print("Error getting user: \(error)")
+                            return
+                        }
+
+                        let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
+                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars)
+                        self.entries.append(entry)
+                    }
                 }
+            }
+
+            // Wait for all user names to be fetched
+            group.notify(queue: .main) {
+                self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
             }
         }
     }
+
+
     
     // Function to update the star rating
     func updateStarRating(for entryId: String, with stars: Int) {
