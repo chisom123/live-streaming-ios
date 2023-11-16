@@ -15,7 +15,7 @@ struct CompDetails: View {
     @State private var timeRemaining: String = ""
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    var competition: CustomPointAnnotation // this holds the selected competition details
+    var competition: Competition // this holds the selected competition details
 
     func timeLeft(until endTime: Date) -> String {
         let currentTime = Date()
@@ -35,9 +35,9 @@ struct CompDetails: View {
         }
     }
 
-    init(competition: CustomPointAnnotation) {
+    init(competition: Competition) {
         self.competition = competition
-        _competitionTimestamp = State(initialValue: competition.timestamp)  // Set initial timestamp
+        _competitionTimestamp = State(initialValue: competition.date)  // Set initial timestamp
         // Initialize EntryViewModel with the competition ID
         self.entryViewModel = EntryViewModel(competitionId: competition.id)
     }
@@ -61,7 +61,7 @@ struct CompDetails: View {
                 }
     
                 
-                Text(competition.competitionDescription)
+                Text(competition.description)
                     .font(.system(size: 21, weight: .semibold, design: .default))
                     .lineSpacing(10)
                     .foregroundColor(.black)

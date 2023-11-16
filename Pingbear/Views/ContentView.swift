@@ -43,19 +43,26 @@ struct CustomTabView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selection) {
-                MapView()
+                CompetitionsView()
                     .tabItem {
                         Image(systemName: "house")
                         Text("Home")
                     }
                     .tag(0)
+                
+                SettingsView()
+                    .tabItem {
+                        Image(systemName: "list.number")
+                        Text("My Competitions")
+                    }
+                    .tag(1)
 
                 SettingsView()
                     .tabItem {
                         Image(systemName: "slider.horizontal.3")
                         Text("Settings")
                     }
-                    .tag(1)
+                    .tag(2)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items
         }
