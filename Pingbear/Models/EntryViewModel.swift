@@ -61,10 +61,17 @@ class EntryViewModel: ObservableObject {
 
 
     
-    // Function to update the star rating
     func updateStarRating(for entryId: String, with stars: Int) {
         let db = Firestore.firestore()
         let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
+
+        // Fetching the current Firebase user's ID
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            print("Error: No authenticated user found.")
+            return
+        }
+
+        let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
 
         // Increment the 'stars' field by the new rating
         entryRef.updateData(["stars": FieldValue.increment(Int64(stars))]) { error in
@@ -72,7 +79,18 @@ class EntryViewModel: ObservableObject {
                 print("Error updating star rating: \(error)")
             } else {
                 print("Star rating updated successfully.")
+
+                // Add the current user to the participants collection
+                participantRef.setData(["userId": currentUserId]) { error in
+                    if let error = error {
+                        print("Error adding participant: \(error)")
+                    } else {
+                        print("Participant added successfully.")
+                    }
+                }
             }
         }
     }
+
+
 }

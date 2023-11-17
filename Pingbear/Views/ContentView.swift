@@ -50,7 +50,7 @@ struct CustomTabView: View {
                     }
                     .tag(0)
                 
-                SettingsView()
+                MyCompsView()
                     .tabItem {
                         Image(systemName: "list.number")
                         Text("My Competitions")

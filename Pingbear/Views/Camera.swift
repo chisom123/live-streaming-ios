@@ -204,10 +204,20 @@ struct CameraView: View {
                         print("Error saving entry: \(error)")
                     } else {
                         print("Entry saved successfully")
+                        // Add the user to the participants collection
+                        let participantRef = db.collection("competitions").document(self.competitionId).collection("participants").document(userId)
+                        participantRef.setData(["userId": userId]) { error in
+                            if let error = error {
+                                print("Error adding participant: \(error)")
+                            } else {
+                                print("Participant added successfully.")
+                            }
+                        }
                         self.presentationMode.wrappedValue.dismiss()
                     }
                 }
             }
         }
     }
+
 }

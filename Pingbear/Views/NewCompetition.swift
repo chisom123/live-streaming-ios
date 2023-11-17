@@ -77,6 +77,7 @@ struct NewCompetition: View {
 //            CameraView()
         })
     }
+
     func newcomp() {
         // Firestore reference
         let db = Firestore.firestore()
@@ -95,13 +96,29 @@ struct NewCompetition: View {
         ]
 
         // Add a new document with the competition data
-        db.collection("competitions").addDocument(data: competitionData) { err in
+        var ref: DocumentReference? = nil
+        ref = db.collection("competitions").addDocument(data: competitionData) { err in
             if let err = err {
                 print("Error adding document: \(err)")
             } else {
                 print("Document added with user ID")
-                // You can dismiss the current view or do something else
-                self.isCameraPresented = true
+
+                // Get the reference to the newly created competition
+                guard let newCompetitionId = ref?.documentID else {
+                    print("Error fetching new competition ID")
+                    return
+                }
+
+                // Add the user to the participants collection of the new competition
+                let participantRef = db.collection("competitions").document(newCompetitionId).collection("participants").document(userID)
+                participantRef.setData(["userId": userID]) { error in
+                    if let error = error {
+                        print("Error adding participant: \(error)")
+                    } else {
+                        print("Participant added successfully.")
+                        self.isCameraPresented = true
+                    }
+                }
             }
         }
     }

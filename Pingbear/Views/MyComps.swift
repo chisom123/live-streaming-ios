@@ -1,15 +1,18 @@
 import SwiftUI
+import FirebaseAuth // Ensure you have imported FirebaseAuth
 
-struct CompetitionsView: View {
+
+struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
 
+
     var body: some View {
         VStack {
-            // Button at the top
+            // Top Bar with Title
             HStack {
-                Text("All Competitions")
+                Text("My Competitions")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)
@@ -30,14 +33,14 @@ struct CompetitionsView: View {
                 }
             }
             .padding(.vertical, 20)
-            
-            Spacer()
 
-            // Existing ScrollView content
+            Spacer()
+            
             ScrollView {
-                VStack(spacing: 20) {  // Increased spacing between items
+                VStack(spacing: 20) {
                     ForEach(viewModel.competitions, id: \.id) { competition in
                         HStack {
+                            
                             // Position
                             Text("100")
                                 .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
@@ -55,20 +58,16 @@ struct CompetitionsView: View {
                                 .padding(.leading, 10) // Increased padding
 
                             Spacer()
-
                         }
                         .padding(20)
                         .background(Color(hex: "#F5F5F5"))
                         .cornerRadius(5)
                         .padding(.horizontal, 20)
                         .onTapGesture {
-                            self.selectedCompetition = competition  // Set the selected competition
+                            self.selectedCompetition = competition
                         }
                     }
                 }
-            }
-            .onAppear {
-                viewModel.fetchCompetitions()
             }
             .fullScreenCover(item: $selectedCompetition) { comp in
                 CompDetails(competition: comp)
@@ -76,6 +75,9 @@ struct CompetitionsView: View {
             .fullScreenCover(isPresented: $isPresentingNewCompetition) {
                 NewCompetition() // Replace this with the actual view you want to present
             }
+        }
+        .onAppear {
+            viewModel.fetchUserCompetitions()
         }
     }
 }

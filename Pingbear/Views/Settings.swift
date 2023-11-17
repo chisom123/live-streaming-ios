@@ -58,7 +58,7 @@ struct SettingsView: View {
                         HStack {
                             Text("Contact Us")
                                 .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#ababab"))
+                                .foregroundColor(Color(hex: "#1199FF"))
                             Spacer()
                         }
                         .padding([.top, .bottom], 20)
