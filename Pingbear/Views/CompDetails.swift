@@ -31,7 +31,7 @@ struct CompDetails: View {
             return String(format: "%02i : %02i : %02i", hours, minutes, seconds)
         } else {
             // If the event is over, you might want to return something relevant
-            return "00:00:00"
+            return "00 : 00 :00"
         }
     }
 
@@ -76,8 +76,8 @@ struct CompDetails: View {
                     .padding(.bottom, 20)
                     .padding(.horizontal, 20)
                     .onReceive(timer) { _ in
-                        // Calculate the end time (i.e., competition timestamp + 12 hours)
-                        let endTime = competitionTimestamp.addingTimeInterval(12 * 60 * 60)
+                        // Calculate the end time (i.e., competition timestamp + 24 hours)
+                        let endTime = competitionTimestamp.addingTimeInterval(24 * 60 * 60)
 
                         // Update the time remaining
                         timeRemaining = timeLeft(until: endTime)
@@ -179,7 +179,7 @@ struct CompDetails: View {
         }
         .onAppear {
             // Now that the view has appeared, we can calculate the initial time remaining
-            let endTime = competitionTimestamp.addingTimeInterval(12 * 60 * 60)  // 12 hours from timestamp
+            let endTime = competitionTimestamp.addingTimeInterval(24 * 60 * 60)  // 12 hours from timestamp
             timeRemaining = timeLeft(until: endTime)
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {

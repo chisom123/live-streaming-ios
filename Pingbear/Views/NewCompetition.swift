@@ -8,7 +8,6 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
-import CoreLocation
 import UIKit
 
 struct NewCompetition: View {
@@ -79,38 +78,33 @@ struct NewCompetition: View {
         })
     }
     func newcomp() {
-        // Location Manager for getting the current location
-        let locationManager = CLLocationManager()
-        
-        // Ensure the user's location is available
-        guard let userLocation = locationManager.location else {
-            // Handle the case if unable to fetch the location
-            print("Unable to get user location")
+        // Firestore reference
+        let db = Firestore.firestore()
+
+        // Get the current user's ID
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("Error: User not logged in")
             return
         }
 
-        // Firestore reference
-        let db = Firestore.firestore()
-        
-        // Data to save
+        // Data to save, including the user ID
         let competitionData: [String: Any] = [
             "description": competitionDescription,
-            "latitude": userLocation.coordinate.latitude,
-            "longitude": userLocation.coordinate.longitude,
-            "timestamp": Timestamp() // Current time
+            "timestamp": Timestamp(), // Current time
+            "userID": userID // Adding the user ID
         ]
-        
-        self.isCameraPresented = true
+
         // Add a new document with the competition data
         db.collection("competitions").addDocument(data: competitionData) { err in
             if let err = err {
                 print("Error adding document: \(err)")
             } else {
-                print("Document added")
+                print("Document added with user ID")
                 // You can dismiss the current view or do something else
                 self.isCameraPresented = true
             }
         }
     }
+
 
 }
