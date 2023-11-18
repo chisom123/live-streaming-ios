@@ -75,6 +75,7 @@ struct CameraView: View {
     @State private var shouldToggleCamera = false
     @State private var shouldTakePicture = false
     @State private var capturedImage: UIImage?
+    @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     var competitionId: String
     
     var body: some View {
@@ -105,7 +106,7 @@ struct CameraView: View {
                             Spacer()
                             
                             Button(action: {
-
+                                isPresentingInfo = true
                             }) {
                                 Text("Turn on Superstar")
                                     .font(.system(size: 16, weight: .bold, design: .default))
@@ -175,6 +176,9 @@ struct CameraView: View {
                     .padding(.bottom)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $isPresentingInfo) {
+            SuperstarInfoView() // Replace this with the actual view you want to present
         }
     }
     

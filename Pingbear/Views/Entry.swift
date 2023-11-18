@@ -11,6 +11,7 @@ import SDWebImageSwiftUI
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
     @Environment(\.presentationMode) var presentationMode
+    @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     @State private var rating: Int = 0
 
     init(competitionId: String) {
@@ -53,7 +54,7 @@ struct EntryView: View {
                 Spacer()
                 
                 Button(action: {
-
+                    isPresentingInfo = true
                 }) {
                     Text("Turn on Superstar")
                         .font(.system(size: 16, weight: .bold, design: .default))
@@ -101,11 +102,9 @@ struct EntryView: View {
                 .padding(.bottom) // Adjusts the bottom padding of the entire block
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-
-
-
-
-
+        }
+        .fullScreenCover(isPresented: $isPresentingInfo) {
+            SuperstarInfoView() // Replace this with the actual view you want to present
         }
     }
 }
