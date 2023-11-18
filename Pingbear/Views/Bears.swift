@@ -167,7 +167,7 @@ struct BearsView: View {
                 }
             }
             .fullScreenCover(isPresented: $isPbillViewPresented, content: {
-                PbillView(viewModel: pbillViewModel)
+//                PbillView(viewModel: pbillViewModel)
             })
             .fullScreenCover(isPresented: $isMyBearsViewPresented, content: {
                 MyBearsView()

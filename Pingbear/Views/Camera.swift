@@ -135,7 +135,7 @@ struct CameraView: View {
                                 .cornerRadius(200)
                         }
                         .padding(.horizontal)
-                        .padding(.bottom, UIApplication.shared.windows.first?.safeAreaInsets.bottom)
+                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
                     }
                     .edgesIgnoringSafeArea(.all)
                 }
@@ -178,7 +178,7 @@ struct CameraView: View {
             }
         }
         .fullScreenCover(isPresented: $isPresentingInfo) {
-            SuperstarInfoView() // Replace this with the actual view you want to present
+            SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
         }
     }
     

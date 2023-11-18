@@ -104,7 +104,7 @@ struct EntryView: View {
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
         }
         .fullScreenCover(isPresented: $isPresentingInfo) {
-            SuperstarInfoView() // Replace this with the actual view you want to present
+            SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
         }
     }
 }
