@@ -99,12 +99,24 @@ struct CameraView: View {
                                     .font(.system(size: 30))
                                     .foregroundColor(.white)
                                     .padding(5)
-                                    .padding(.top, 15)
                                     .shadow(radius: 10)
                             }
+                            
                             Spacer()
+                            
+                            Button(action: {
+
+                            }) {
+                                Text("Turn on Superstar")
+                                    .font(.system(size: 16, weight: .bold, design: .default))
+                                    .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
+                                    .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
+                                    .foregroundColor(AppColors.primary)
+                                    .cornerRadius(200)
+
+                            }
                         }
-                        .padding(.top, UIApplication.shared.windows.first?.safeAreaInsets.top)
+                        .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
                         .padding(.horizontal)
 
                         Spacer()

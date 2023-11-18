@@ -43,7 +43,7 @@ struct EntryView: View {
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
                 }) {
-                    Image(systemName: "xmark")
+                    Image(systemName: "arrow.left")
                         .font(.system(size: 30))
                         .foregroundColor(.white)
                         .padding(5)
@@ -52,18 +52,19 @@ struct EntryView: View {
                 
                 Spacer()
                 
-                // Middle Right - Arrow.right button
-                if viewModel.currentIndex < viewModel.entries.count - 1 {
-                        Button(action: {
-                            viewModel.currentIndex += 1
-                        }) {
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .padding(5)
-                                .shadow(radius: 10)
-                        }
+                Button(action: {
+
+                }) {
+                    Text("Turn on Superstar")
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
+                        .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
+                        .foregroundColor(AppColors.primary)
+                        .cornerRadius(200)
+
                 }
+
+            
             }
             .padding([.top, .leading, .trailing])
 
@@ -71,34 +72,40 @@ struct EntryView: View {
 
             // Bottom - Heart button, horizontally centered
             VStack {
-                Spacer() // Pushes the button to the bottom
+                Spacer() // Pushes the content to the bottom
 
-                HStack {
-                    Spacer() // Pushes the button to the center horizontally
- 
-                    // Creating 4 star buttons
-                    ForEach(1...4, id: \.self) { star in
-                        Button(action: {
-                            // Update the rating when a star is tapped
-                            self.rating = star
-                             
-                            let currentEntryId = viewModel.entries[viewModel.currentIndex].id
-                            viewModel.updateStarRating(for: currentEntryId, with: star)
-                        }) {
-                            // Display the star, filled if it's less than or equal to the current rating
-                            Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.white)
-                                .font(.system(size: 35))
-                                .padding(5)
-                                .shadow(radius: 10)
+                // Container view for stars with background
+                ZStack {
+                    HStack(alignment: .center, spacing: 10) { // Add spacing between stars if needed
+                        ForEach(1...4, id: \.self) { star in
+                            Button(action: {
+                                // Update the rating when a star is tapped
+                                self.rating = star
+                                let currentEntryId = viewModel.entries[viewModel.currentIndex].id
+                                viewModel.updateStarRating(for: currentEntryId, with: star)
+                            }) {
+                                // Display the star
+                                Image(systemName: star <= self.rating ? "star.fill" : "star")
+                                    .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.black)
+                                    .font(.system(size: 33))
+                                    .padding(5)
+                            }
                         }
                     }
-                    
-                    Spacer() // Pushes the button to the center horizontally
+                    .padding(.horizontal) // Adds horizontal padding to the HStack
+                    .padding(.vertical, 10) // Increase vertical padding of the HStack
+                    .background(RoundedRectangle(cornerRadius: 200)
+                        .foregroundColor(AppColors.white.opacity(0.95))) // Background color similar to the button
+                    // Removed the shadow from the background
                 }
-                .padding(.bottom) // Adjust padding as needed
-                
+                .padding(.bottom) // Adjusts the bottom padding of the entire block
             }
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+
+
+
+
+
         }
     }
 }
