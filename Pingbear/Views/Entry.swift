@@ -53,16 +53,21 @@ struct EntryView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                    isPresentingInfo = true
-                }) {
-                    Text("Turn on Superstar")
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-                        .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
-                        .foregroundColor(AppColors.primary)
-                        .cornerRadius(200)
-
+                // Conditionally show "Turn on Superstar" button
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let isCurrentEntryUserSubscribed = viewModel.entries[viewModel.currentIndex].isEntryUserSubscribed
+                    if !(viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) {
+                        Button(action: {
+                            isPresentingInfo = true
+                        }) {
+                            Text("Turn on Superstar")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
+                                .background(AppColors.white.opacity(0.95))
+                                .foregroundColor(AppColors.primary)
+                                .cornerRadius(200)
+                        }
+                    }
                 }
 
             
@@ -77,19 +82,23 @@ struct EntryView: View {
 
                 // Container view for stars with background
                 ZStack {
-                    HStack(alignment: .center, spacing: 10) { // Add spacing between stars if needed
-                        ForEach(1...4, id: \.self) { star in
-                            Button(action: {
-                                // Update the rating when a star is tapped
-                                self.rating = star
-                                let currentEntryId = viewModel.entries[viewModel.currentIndex].id
-                                viewModel.updateStarRating(for: currentEntryId, with: star)
-                            }) {
-                                // Display the star
-                                Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                    .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.black)
-                                    .font(.system(size: 33))
-                                    .padding(5)
+                    HStack(alignment: .center, spacing: 10) {
+                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                            let isCurrentEntryUserSubscribed = viewModel.entries[viewModel.currentIndex].isEntryUserSubscribed
+                            let maxStars = (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? 5 : 4
+
+                            ForEach(1...maxStars, id: \.self) { star in
+                                Button(action: {
+                                    let ratingIncrement = star == 5 ? 8 : star
+                                    self.rating = ratingIncrement
+                                    let currentEntryId = viewModel.entries[viewModel.currentIndex].id
+                                    viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
+                                }) {
+                                    Image(systemName: star <= self.rating ? "star.fill" : "star")
+                                        .foregroundColor(star == 5 && (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? Color(hex: "#FFA500") : (star <= self.rating ? Color(hex: "#FFD700") : Color.black))
+                                        .font(.system(size: 33))
+                                        .padding(5)
+                                }
                             }
                         }
                     }

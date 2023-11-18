@@ -183,7 +183,7 @@ struct CompDetails: View {
             timeRemaining = timeLeft(until: endTime)
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView(competitionId: competition.id)
+            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id))
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)

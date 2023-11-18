@@ -7,16 +7,20 @@ struct Entry: Identifiable {
     let imageUrl: String
     let userName: String // Add userName
     let stars: Int
+    let isEntryUserSubscribed: Bool  // Add this line
 }
 
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
     var competitionId: String // Add a property to store the competition ID
     @Published var currentIndex: Int = 0
+    @Published var isUserSubscribed: Bool = false
+
 
     init(competitionId: String) {
         self.competitionId = competitionId
         fetchEntries()
+        fetchUserSubscriptionStatus() // Fetch subscription status when initializing
     }
     
     func fetchEntries() {
@@ -46,7 +50,10 @@ class EntryViewModel: ObservableObject {
                         }
 
                         let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
-                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars)
+                        let isSubscribed = userSnapshot?.data()?["subscribed"] as? Bool ?? false
+
+                        // Create Entry instance with subscription status
+                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isEntryUserSubscribed: isSubscribed)
                         self.entries.append(entry)
                     }
                 }
@@ -59,6 +66,18 @@ class EntryViewModel: ObservableObject {
         }
     }
 
+    func fetchUserSubscriptionStatus() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No user logged in")
+            return
+        }
+
+        Firestore.firestore().collection("users").document(userId).getDocument { [weak self] document, error in
+            if let document = document, document.exists {
+                self?.isUserSubscribed = document.get("subscribed") as? Bool ?? false
+            }
+        }
+    }
 
     
     func updateStarRating(for entryId: String, with stars: Int) {
@@ -72,9 +91,11 @@ class EntryViewModel: ObservableObject {
         }
 
         let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
+        
+        let starIncrement = (stars <= 4) ? stars : 8
 
         // Increment the 'stars' field by the new rating
-        entryRef.updateData(["stars": FieldValue.increment(Int64(stars))]) { error in
+        entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
             if let error = error {
                 print("Error updating star rating: \(error)")
             } else {
