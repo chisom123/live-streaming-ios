@@ -51,7 +51,9 @@ class CompetitionsModel: ObservableObject {
         let db = Firestore.firestore()
         var temporaryCompetitions: [Competition] = [] // Temporary storage for competitions
 
+        // Adding timestamp filter to fetch only competitions from the last 24 hours
         db.collection("competitions")
+            .whereField("timestamp", isGreaterThan: Timestamp(date: Calendar.current.date(byAdding: .hour, value: -24, to: Date())!))
             .getDocuments { [weak self] (querySnapshot, err) in
                 if let err = err {
                     print("Error getting competitions: \(err)")
@@ -97,6 +99,7 @@ class CompetitionsModel: ObservableObject {
                 }
             }
     }
+
 
 
 }
