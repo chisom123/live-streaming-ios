@@ -63,7 +63,7 @@ struct SuperstarInfoView: View {
                             .padding(.horizontal)
                         
                         Button(action: {
-                            if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "Bill1" }) {
+                            if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "sup1" }) {
                                 viewModel.purchase(product: subscriptionProduct)
                             }
                         }) {
