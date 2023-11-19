@@ -132,15 +132,6 @@ struct CompDetails: View {
                                     .foregroundColor(.black)
 
                                 Divider() // Adds a visual separator
-                            
-                                // Profile Image
-                                Image("Placeholder") // Replace "profile_placeholder" with your image name or URL
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 40, height: 40) // Adjust size as needed
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 2)) // Optional: adds a border to the image
-                                    .padding(.leading, 10) // Increased padding
 
                                 // User's name
                                 Text(entry.userName)
@@ -166,7 +157,7 @@ struct CompDetails: View {
                                 }
                                 .padding(.trailing, 15) // Increased padding
                             }
-                            .padding() // Padding around the HStack
+                            .padding(20)
                             .background(Color(hex: "#F5F5F5"))
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
