@@ -10,6 +10,8 @@ struct CompDetails: View {
     @State private var competitionTimestamp: Date
     @State private var isCameraPresented = false
     @State private var isVotingPresented = false
+    @State private var selectedImageUrl: String = ""
+    @State private var showBigImageView = false
     @ObservedObject var entryViewModel: EntryViewModel
 
     @State private var timeRemaining: String = ""
@@ -161,10 +163,17 @@ struct CompDetails: View {
                             .background(Color(hex: "#F5F5F5"))
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
+                            .onTapGesture {
+                                self.selectedImageUrl = entry.imageUrl
+                                self.showBigImageView = true
+                            }
                         }
                     }
                 }
-
+                // Present BigImageView when an entry is tapped
+                .fullScreenCover(isPresented: $showBigImageView) {
+                    BigImageView(imageUrl: selectedImageUrl)
+                }
                 
             }
         }

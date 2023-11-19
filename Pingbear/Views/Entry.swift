@@ -30,9 +30,7 @@ struct EntryView: View {
                                 .scaledToFill()
                                 .clipped()
                         } else {
-                            Image("placeholder")
-                                .resizable()
-                                .scaledToFit()
+                            ProgressView()
                         }
                     }
                 }
