@@ -13,9 +13,15 @@ struct EntryView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     @State private var rating: Int = 0
+    @State private var fifthStarScale: CGFloat = 1.0
 
     init(competitionId: String) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId))
+    }
+    
+    private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
     }
     
     var body: some View {
@@ -91,13 +97,25 @@ struct EntryView: View {
                                     self.rating = ratingIncrement
                                     let currentEntryId = viewModel.entries[viewModel.currentIndex].id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
+
+                                    if star == 5 {
+                                        triggerHapticFeedback(style: .heavy)
+                                        withAnimation(.spring()) {
+                                            self.fifthStarScale = 1.5 // Scale up
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                self.fifthStarScale = 1.0 // Scale back to normal
+                                            }
+                                        }
+                                    }
                                 }) {
                                     Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                        .foregroundColor(star == 5 && (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? Color(hex: "#FFA500") : (star <= self.rating ? Color(hex: "#FFD700") : Color.black))
+                                        .foregroundColor(star == 5 && (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? Color(hex: "#DAA520") : (star <= self.rating ? Color(hex: "#FFD700") : Color.black))
                                         .font(.system(size: 33))
+                                        .scaleEffect(star == 5 ? fifthStarScale : 1.0) // Apply scale effect to the 5th star
                                         .padding(5)
                                 }
                             }
+                            
                         }
                     }
                     .padding(.horizontal) // Adds horizontal padding to the HStack
