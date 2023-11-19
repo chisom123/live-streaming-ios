@@ -14,8 +14,13 @@ struct NewCompetition: View {
     
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionDescription: String = ""
-    
+    @State private var errorMessage: String? = nil
     @State private var isCameraPresented = false
+    
+    func isValidName(_ name: String) -> Bool {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmedName.isEmpty
+    }
     
     var body: some View {
         ZStack {
@@ -52,6 +57,17 @@ struct NewCompetition: View {
                     .cornerRadius(5)
                     .font(.system(size: 16, weight: .medium, design: .default))
                     .padding(.horizontal)
+                
+                if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(Color(hex: "#CC2255"))
+                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .padding(.bottom, 8)
+                        .padding(.top, 20)
+                        .padding(.horizontal)
+                }
         
                 Button(action: {
                     newcomp()
@@ -85,6 +101,12 @@ struct NewCompetition: View {
         // Get the current user's ID
         guard let userID = Auth.auth().currentUser?.uid else {
             print("Error: User not logged in")
+            return
+        }
+        
+        // Validate the name
+        guard isValidName(competitionDescription) else {
+            errorMessage = "Please enter a description"
             return
         }
 
