@@ -67,6 +67,7 @@ struct CompetitionsView: View {
                     }
                 }
             }
+            .navigationBarHidden(true)
             .onAppear {
                 viewModel.fetchCompetitions()
             }
