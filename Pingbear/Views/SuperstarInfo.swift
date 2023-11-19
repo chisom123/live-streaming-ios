@@ -63,7 +63,7 @@ struct SuperstarInfoView: View {
                             .padding(.horizontal)
                         
                         Button(action: {
-                            if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "sup1" }) {
+                            if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "Bill1" }) {
                                 viewModel.purchase(product: subscriptionProduct)
                             }
                         }) {
@@ -90,9 +90,14 @@ struct SuperstarInfoView: View {
             }
             
             Spacer()
-            
+            .onChange(of: viewModel.purchaseCompleted) { completed in
+                if completed {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
             
         }
+
     }
 
 }
