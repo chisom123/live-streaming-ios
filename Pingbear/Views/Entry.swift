@@ -42,6 +42,10 @@ struct EntryView: View {
                 }
             }
             .edgesIgnoringSafeArea(.all)
+            .onChange(of: viewModel.currentIndex) { _ in
+                // Reset the rating when changing index
+                self.rating = 0
+            }
 
             // Top Left - Xmark button
             HStack {
@@ -105,6 +109,12 @@ struct EntryView: View {
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                                 self.fifthStarScale = 1.0 // Scale back to normal
                                             }
+                                        }
+                                    }
+                                    
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        if viewModel.currentIndex < viewModel.entries.count - 1 {
+                                            viewModel.currentIndex += 1
                                         }
                                     }
                                 }) {
