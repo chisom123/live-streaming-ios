@@ -101,14 +101,29 @@ class EntryViewModel: ObservableObject {
             } else {
                 print("Star rating updated successfully.")
 
-                // Add the current user to the participants collection
-                participantRef.setData(["userId": currentUserId]) { error in
-                    if let error = error {
-                        print("Error adding participant: \(error)")
-                    } else {
-                        print("Participant added successfully.")
-                    }
-                }
+                // Check if the participant document exists
+                 participantRef.getDocument { (document, error) in
+                     if let document = document, document.exists {
+                         // Document exists, update the 'voted_entries' array
+                         participantRef.updateData(["voted_entries": FieldValue.arrayUnion([entryId])]) { error in
+                             if let error = error {
+                                 print("Error updating voted entries: \(error)")
+                             } else {
+                                 print("Voted entries updated successfully.")
+                             }
+                         }
+                     } else {
+                         // Document does not exist, create a new one with the user ID and the voted entry
+                         participantRef.setData(["userId": currentUserId, "voted_entries": [entryId]]) { error in
+                             if let error = error {
+                                 print("Error adding participant: \(error)")
+                             } else {
+                                 print("Participant added successfully.")
+                             }
+                         }
+                     }
+                 }
+                
             }
         }
     }
