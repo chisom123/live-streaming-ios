@@ -16,6 +16,8 @@ struct NewCompetition: View {
     @State private var competitionDescription: String = ""
     @State private var errorMessage: String? = nil
     @State private var isCameraPresented = false
+    @State private var selectedCompetition: Competition?
+
     
     func isValidName(_ name: String) -> Bool {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -89,9 +91,9 @@ struct NewCompetition: View {
             }
 
         }
-        .fullScreenCover(isPresented: $isCameraPresented, content: {
-//            CameraView()
-        })
+        .fullScreenCover(item: $selectedCompetition) { competition in
+            CompDetails(competition: competition)
+        }
     }
 
     func newcomp() {
@@ -138,12 +140,46 @@ struct NewCompetition: View {
                         print("Error adding participant: \(error)")
                     } else {
                         print("Participant added successfully.")
-                        self.isCameraPresented = true
+                        self.fetchNewCompetitionDetails(newCompetitionId)
+
                     }
                 }
             }
         }
     }
+
+    func fetchNewCompetitionDetails(_ competitionId: String) {
+        let db = Firestore.firestore()
+
+        db.collection("competitions").document(competitionId).getDocument { (document, error) in
+            if let error = error {
+                print("Error fetching competition details: \(error)")
+                return
+            }
+
+            if let document = document, document.exists {
+                let data = document.data()
+                guard let description = data?["description"] as? String,
+                      let timestamp = data?["timestamp"] as? Timestamp else {
+                    print("Error reading competition data")
+                    return
+                }
+
+                let competition = Competition(
+                    id: document.documentID,
+                    description: description,
+                    date: timestamp.dateValue()
+                )
+
+                DispatchQueue.main.async {
+                    self.selectedCompetition = competition
+                }
+            } else {
+                print("Competition does not exist")
+            }
+        }
+    }
+
 
 
 }
