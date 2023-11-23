@@ -124,7 +124,7 @@ struct CompDetails: View {
                     .padding(.horizontal, 20)
 
                 ScrollView {
-                    VStack(spacing: 10) { // Increased spacing between items
+                    VStack(spacing: 15) { // Increased spacing between items
                         ForEach(Array(entryViewModel.entries.sorted { $0.stars > $1.stars }.enumerated()), id: \.element.id) { (index, entry) in
                             HStack {
                                 // Position
