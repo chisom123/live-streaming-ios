@@ -20,6 +20,7 @@
 		4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382E9F2B07CAA600669A58 /* MyComps.swift */; };
 		4F382EA42B0917F400669A58 /* SuperstarInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382EA32B0917F400669A58 /* SuperstarInfo.swift */; };
 		4F382EA62B0A56CC00669A58 /* BigImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382EA52B0A56CC00669A58 /* BigImage.swift */; };
+		4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F382EA82B0F89D800669A58 /* NotificationBannerSwift */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
@@ -193,6 +194,7 @@
 				4F3E0D272A86F6BF0068F901 /* FirebaseAppDistribution-Beta in Frameworks */,
 				4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */,
 				4F3E0D2B2A86F6BF0068F901 /* FirebaseAuthCombine-Community in Frameworks */,
+				4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */,
 				4F3E0D492A86F6BF0068F901 /* FirebasePerformance in Frameworks */,
 				4F3E0D412A86F6BF0068F901 /* FirebaseInAppMessagingSwift-Beta in Frameworks */,
 				4F3E0D4F2A86F6BF0068F901 /* FirebaseStorage in Frameworks */,
@@ -392,6 +394,7 @@
 				4F3E0DB82AB1E5580068F901 /* FlurryConfig */,
 				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
 				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
+				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -473,6 +476,7 @@
 				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
 				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
 				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
+				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -938,6 +942,14 @@
 				minimumVersion = 0.9.0;
 			};
 		};
+		4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Daltron/NotificationBanner";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 		4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -993,6 +1005,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */;
 			productName = SwiftttCamera;
+		};
+		4F382EA82B0F89D800669A58 /* NotificationBannerSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */;
+			productName = NotificationBannerSwift;
 		};
 		4F3E0D1C2A86F6BF0068F901 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;

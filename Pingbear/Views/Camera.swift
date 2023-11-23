@@ -3,6 +3,8 @@ import SwiftttCamera
 import Firebase
 import FirebaseStorage
 import FirebaseFirestore
+import NotificationBannerSwift
+import Flurry_iOS_SDK
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     @Binding var shouldToggleCamera: Bool
@@ -189,6 +191,8 @@ struct CameraView: View {
     }
     
     func submitEntry() {
+        self.presentationMode.wrappedValue.dismiss()
+
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
             return
@@ -235,7 +239,11 @@ struct CameraView: View {
                                 print("Participant added successfully.")
                             }
                         }
-                        self.presentationMode.wrappedValue.dismiss()
+                        
+                        let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
+                        banner.show()
+                        
+                        Flurry.log(eventName: "Competition picture created")
                     }
                 }
             }
