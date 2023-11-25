@@ -64,7 +64,7 @@ struct CompDetails: View {
                 
                 Text(competition.description)
                     .font(.system(size: 19, weight: .semibold, design: .default))
-                    .lineSpacing(11)
+                    .lineSpacing(10)
                     .foregroundColor(.black)
                     .padding(.bottom, 20)
                     .padding(.top, 30)
