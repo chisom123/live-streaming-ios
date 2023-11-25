@@ -127,21 +127,40 @@ struct CompDetails: View {
                     VStack(spacing: 15) { // Increased spacing between items
                         ForEach(Array(entryViewModel.entries.sorted { $0.stars > $1.stars }.enumerated()), id: \.element.id) { (index, entry) in
                             HStack {
-                                // Position
-                                Text("\(index + 1)")
-                                    .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
-                                    .frame(width: 40, alignment: .center) // Centered and wider frame for position
-                                    .foregroundColor(.black)
+                                
+                                if entry.isCurrentUser {
+                                    // Position
+                                    Text("\(index + 1)")
+                                        .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
+                                        .frame(width: 40, alignment: .center) // Centered and wider frame for position
+                                        .foregroundColor(Color(hex: "#DAA520"))
 
-                                Divider() // Adds a visual separator
+                                    Divider() // Adds a visual separator
 
-                                // User's name
-                                Text(entry.userName)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .lineLimit(1)
-                                    .foregroundColor(.black)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
+                                    // User's name
+                                    Text("Me")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .lineLimit(1)
+                                        .foregroundColor(Color(hex: "#DAA520"))
+                                        .truncationMode(.tail)
+                                        .padding(.leading, 10) // Increased padding
+                                } else {
+                                    // Position
+                                    Text("\(index + 1)")
+                                        .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
+                                        .frame(width: 40, alignment: .center) // Centered and wider frame for position
+                                        .foregroundColor(.black)
+
+                                    Divider() // Adds a visual separator
+
+                                    // User's name
+                                    Text(entry.userName)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .lineLimit(1)
+                                        .foregroundColor(.black)
+                                        .truncationMode(.tail)
+                                        .padding(.leading, 10) // Increased padding
+                                }
 
                                 Spacer()
 

@@ -7,6 +7,7 @@ struct Entry: Identifiable {
     let imageUrl: String
     let userName: String // Add userName
     let stars: Int
+    let isCurrentUser: Bool // Indicates if the entry belongs to the current user
     let isEntryUserSubscribed: Bool  // Add this line
 }
 
@@ -35,6 +36,9 @@ class EntryViewModel: ObservableObject {
             let group = DispatchGroup()
 
             if let documents = snapshot?.documents {
+                
+                let currentUserId = Auth.auth().currentUser?.uid // Get the current user's ID
+
                 for document in documents {
                     group.enter()
                     let userId = document.data()["userId"] as? String ?? ""
@@ -53,7 +57,9 @@ class EntryViewModel: ObservableObject {
                         let isSubscribed = userSnapshot?.data()?["subscribed"] as? Bool ?? false
 
                         // Create Entry instance with subscription status
-                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isEntryUserSubscribed: isSubscribed)
+                        let isCurrentUser = userId == currentUserId
+                        
+                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isEntryUserSubscribed: isSubscribed)
                         self.entries.append(entry)
                     }
                 }
