@@ -39,9 +39,8 @@ struct CompDetails: View {
 
     init(competition: Competition) {
         self.competition = competition
-        _competitionTimestamp = State(initialValue: competition.date)  // Set initial timestamp
-        // Initialize EntryViewModel with the competition ID
-        self.entryViewModel = EntryViewModel(competitionId: competition.id)
+        _competitionTimestamp = State(initialValue: competition.date)
+        self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
     }
 
     
@@ -202,7 +201,7 @@ struct CompDetails: View {
             timeRemaining = timeLeft(until: endTime)
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id))
+            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView))
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)

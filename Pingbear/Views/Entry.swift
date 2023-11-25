@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SDWebImageSwiftUI
+import NotificationBannerSwift
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
@@ -16,7 +17,7 @@ struct EntryView: View {
     @State private var fifthStarScale: CGFloat = 1.0
 
     init(competitionId: String) {
-        _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId))
+        _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
     }
     
     private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
@@ -102,19 +103,30 @@ struct EntryView: View {
                                     let currentEntryId = viewModel.entries[viewModel.currentIndex].id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
 
-                                    if star == 5 {
-                                        triggerHapticFeedback(style: .heavy)
-                                        withAnimation(.spring()) {
-                                            self.fifthStarScale = 1.5 // Scale up
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                self.fifthStarScale = 1.0 // Scale back to normal
+                                    // Add check here to see if it's the last entry
+                                    if viewModel.currentIndex == viewModel.entries.count - 1 {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
+                                            presentationMode.wrappedValue.dismiss()
+                                            
+                                            let banner = NotificationBanner(title: "No More Photos Currently", style: .success)
+                                            banner.show()
+                                        }
+                                    } else {
+                                        // Existing code to handle non-last entries
+                                        if star == 5 {
+                                            triggerHapticFeedback(style: .heavy)
+                                            withAnimation(.spring()) {
+                                                self.fifthStarScale = 1.5 // Scale up
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                    self.fifthStarScale = 1.0 // Scale back to normal
+                                                }
                                             }
                                         }
-                                    }
-                                    
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                        if viewModel.currentIndex < viewModel.entries.count - 1 {
-                                            viewModel.currentIndex += 1
+
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                            if viewModel.currentIndex < viewModel.entries.count - 1 {
+                                                viewModel.currentIndex += 1
+                                            }
                                         }
                                     }
                                 }) {

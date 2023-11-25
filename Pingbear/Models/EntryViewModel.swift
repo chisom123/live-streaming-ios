@@ -17,14 +17,23 @@ class EntryViewModel: ObservableObject {
     @Published var currentIndex: Int = 0
     @Published var isUserSubscribed: Bool = false
 
+    enum FetchEntriesMode {
+        case entryView
+        case compDetailsView
+    }
 
-    init(competitionId: String) {
+    init(competitionId: String, mode: FetchEntriesMode) {
         self.competitionId = competitionId
-        fetchEntries()
+        switch mode {
+        case .entryView:
+            fetchEntriesForEntryView()
+        case .compDetailsView:
+            fetchEntriesForCompDetailsView()
+        }
         fetchUserSubscriptionStatus() // Fetch subscription status when initializing
     }
     
-    func fetchEntries() {
+    func fetchEntriesForCompDetailsView() {
         let db = Firestore.firestore()
         db.collection("competitions").document(competitionId).collection("entries").getDocuments { [weak self] (snapshot, error) in
             guard let self = self else { return }
@@ -68,6 +77,68 @@ class EntryViewModel: ObservableObject {
             // Wait for all user names to be fetched
             group.notify(queue: .main) {
                 self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
+            }
+        }
+    }
+    
+    func fetchEntriesForEntryView() {
+        let db = Firestore.firestore()
+        db.collection("competitions").document(competitionId).collection("entries").getDocuments { [weak self] (snapshot, error) in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error getting entries: \(error)")
+                return
+            }
+
+            let group = DispatchGroup()
+
+            if let documents = snapshot?.documents {
+                
+                let currentUserId = Auth.auth().currentUser?.uid // Get the current user's ID
+
+                // Fetch the current user's voted entries
+                db.collection("competitions").document(competitionId).collection("participants").document(currentUserId ?? "").getDocument { (participantSnapshot, error) in
+                    if let error = error {
+                        print("Error getting participant info: \(error)")
+                        return
+                    }
+
+                    let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
+
+                    for document in documents {
+                        group.enter()
+                        let userId = document.data()["userId"] as? String ?? ""
+                        let imageUrl = document.data()["imageUrl"] as? String ?? ""
+                        let stars = document.data()["stars"] as? Int ?? 0
+
+                        // Exclude if the entry is submitted by the current user or already voted on
+                        if userId == currentUserId || votedEntries.contains(document.documentID) {
+                            group.leave()
+                            continue
+                        }
+
+                        // Fetch the user name based on userId
+                        db.collection("users").document(userId).getDocument { (userSnapshot, error) in
+                            defer { group.leave() }
+                            if let error = error {
+                                print("Error getting user: \(error)")
+                                return
+                            }
+
+                            let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
+                            let isSubscribed = userSnapshot?.data()?["subscribed"] as? Bool ?? false
+
+                            let isCurrentUser = userId == currentUserId
+                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isEntryUserSubscribed: isSubscribed)
+                            self.entries.append(entry)
+                        }
+                    }
+
+                    // Wait for all user names to be fetched
+                    group.notify(queue: .main) {
+                        self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
+                    }
+                }
             }
         }
     }
