@@ -27,10 +27,10 @@ struct EntryView: View {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
-            VerticalPager(pageCount: viewModel.entries.count, currentIndex: $viewModel.currentIndex) {
-                ForEach(viewModel.entries, id: \.id) { entry in
-                    ZStack {
-                        // Your existing layout code
+            Group {
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let entry = viewModel.entries[viewModel.currentIndex]
+                    VStack {
                         if let imageURL = URL(string: entry.imageUrl) {
                             WebImage(url: imageURL)
                                 .resizable()
@@ -44,8 +44,7 @@ struct EntryView: View {
             }
             .edgesIgnoringSafeArea(.all)
             .onChange(of: viewModel.currentIndex) { _ in
-                // Reset the rating when changing index
-                self.rating = 0
+                self.rating = 0 // Reset the rating when changing index
             }
 
             // Top Left - Xmark button
@@ -81,7 +80,8 @@ struct EntryView: View {
 
             
             }
-            .padding([.top, .leading, .trailing])
+            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
+            .padding(.horizontal)
 
 
 
@@ -103,6 +103,16 @@ struct EntryView: View {
                                     let currentEntryId = viewModel.entries[viewModel.currentIndex].id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
 
+                                    if star == 5 {
+                                        triggerHapticFeedback(style: .heavy)
+                                        withAnimation(.spring()) {
+                                            self.fifthStarScale = 1.5 // Scale up
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                self.fifthStarScale = 1.0 // Scale back to normal
+                                            }
+                                        }
+                                    }
+                                    
                                     // Add check here to see if it's the last entry
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
@@ -113,15 +123,6 @@ struct EntryView: View {
                                         }
                                     } else {
                                         // Existing code to handle non-last entries
-                                        if star == 5 {
-                                            triggerHapticFeedback(style: .heavy)
-                                            withAnimation(.spring()) {
-                                                self.fifthStarScale = 1.5 // Scale up
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                    self.fifthStarScale = 1.0 // Scale back to normal
-                                                }
-                                            }
-                                        }
 
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                             if viewModel.currentIndex < viewModel.entries.count - 1 {
@@ -146,7 +147,8 @@ struct EntryView: View {
                         .foregroundColor(AppColors.white.opacity(0.95))) // Background color similar to the button
                     // Removed the shadow from the background
                 }
-                .padding(.bottom) // Adjusts the bottom padding of the entire block
+                .padding(.horizontal)
+                .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
         }
@@ -156,45 +158,3 @@ struct EntryView: View {
     }
 }
 
-
-struct VerticalPagerPics<Content: View>: View {
-    let pageCount: Int
-    @Binding var currentIndex: Int
-    let content: Content
-
-    @GestureState private var translation: CGFloat = 0
-
-    init(pageCount: Int, currentIndex: Binding<Int>, @ViewBuilder content: () -> Content) {
-        self.pageCount = pageCount
-        self._currentIndex = currentIndex
-        self.content = content()
-    }
-
-    var body: some View {
-        GeometryReader { geometry in
-            LazyVStack(spacing: 0) {
-                self.content.frame(width: geometry.size.width, height: geometry.size.height)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.primary.opacity(0.000000001))
-            .offset(y: -CGFloat(self.currentIndex) * geometry.size.height)
-            .offset(y: self.translation)
-            .animation(.interactiveSpring(response: 0.3), value: currentIndex)
-            .animation(.interactiveSpring(), value: translation)
-            .gesture(
-                DragGesture(minimumDistance: 1).updating(self.$translation) { value, state, _ in
-                    state = value.translation.height
-                }.onEnded { value in
-                    let offset = -Int(value.translation.height)
-                    if abs(offset) > 20 {
-                        let newIndex = currentIndex + min(max(offset, -1), 1)
-                        if newIndex >= 0 && newIndex < pageCount {
-                            self.currentIndex = newIndex
-                        }
-                    }
-                }
-            )
-        }
-        .edgesIgnoringSafeArea(.all)
-    }
-}
