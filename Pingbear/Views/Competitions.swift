@@ -38,6 +38,19 @@ struct CompetitionsView: View {
                 VStack(spacing: 20) {  // Increased spacing between items
                     ForEach(viewModel.competitions, id: \.id) { competition in
                         HStack {
+                            if competition.entriesNotVotedCount > 0 {
+                                Text("\(competition.entriesNotVotedCount)")
+                                    .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
+                                    .frame(width: 40, alignment: .center) // Centered and wider frame for position
+                                    .foregroundColor(Color(hex: "#7B68EE"))
+                            } else {
+                                Text("0")
+                                    .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
+                                    .frame(width: 40, alignment: .center) // Centered and wider frame for position
+                                    .foregroundColor(Color(hex: "#7B68EE"))
+                            }
+
+                            Divider() // Adds a visual separator
                             
                             Text(competition.description)
                                 .font(.system(size: 16, weight: .semibold))
