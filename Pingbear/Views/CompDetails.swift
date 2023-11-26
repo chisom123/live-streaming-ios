@@ -164,7 +164,7 @@ struct CompDetails: View {
                                 Spacer()
 
                                 // Stars and symbol
-                                HStack(spacing: 10) { // Increased spacing
+                                HStack(spacing: 8) { // Increased spacing
                                     Text("\(entry.stars)")
                                         .font(.system(size: 17, weight: .semibold)) // Slightly larger font for stars
                                         .foregroundColor(Color(hex: "#fff"))
