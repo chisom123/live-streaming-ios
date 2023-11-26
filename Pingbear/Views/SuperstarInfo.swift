@@ -45,7 +45,7 @@ struct SuperstarInfoView: View {
                     
                     VStack {
                         
-                        Text("A Superstar is worth 8 stars, double the usual amount")
+                        Text("A Superstar is worth 8 stars - double the usual amount")
                             .font(.system(size: 17, weight: .semibold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
@@ -63,7 +63,7 @@ struct SuperstarInfoView: View {
                     
                     VStack {
                         
-                        Text("Everyone can Superstar your photos, which will boost your leaderboard ranking")
+                        Text("Everyone can Superstar your photos - which will boost your leaderboard ranking")
                             .font(.system(size: 17, weight: .semibold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)

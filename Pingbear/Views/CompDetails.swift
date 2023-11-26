@@ -30,10 +30,10 @@ struct CompDetails: View {
             let seconds = Int(timeInterval) % 60
 
             // Return as a formatted string
-            return String(format: "%02i : %02i : %02i", hours, minutes, seconds)
+            return String(format: "%02i : %02i : %02i Left", hours, minutes, seconds)
         } else {
             // If the event is over, you might want to return something relevant
-            return "00 : 00 :00"
+            return "00 : 00 :00 Left"
         }
     }
 
