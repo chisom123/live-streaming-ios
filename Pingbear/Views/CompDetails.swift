@@ -87,32 +87,32 @@ struct CompDetails: View {
                         timer.upstream.connect().cancel()
                     }
         
-                Button(action: {
-                    joincomp()
-                }) {
-                    Text("Join Competition")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(Color(hex: "#1199FF"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
+                HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
+                    Button(action: {
+                        joincomp()
+                    }) {
+                        Text("Join")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                            .background(Color(hex: "#1199FF"))
+                            .foregroundColor(Color(hex: "#fff"))
+                            .cornerRadius(200)
+                    }
+
+                    Button(action: {
+                        vote()
+                    }) {
+                        Text("Vote")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+                            .background(Color(hex: "#7B68EE"))
+                            .foregroundColor(Color(hex: "#fff"))
+                            .cornerRadius(200)
+                    }
                 }
                 .padding(.top, 10)
-                .padding(.horizontal, 20)
-
-                Button(action: {
-                    vote()
-                }) {
-                    Text("Vote Now")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(Color(hex: "#7B68EE"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
-                }
-                .padding(.top, 20)
                 .padding(.horizontal, 20)
                 
                 Text("Leaderboard")
