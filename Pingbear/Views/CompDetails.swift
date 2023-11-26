@@ -166,16 +166,19 @@ struct CompDetails: View {
                                 // Stars and symbol
                                 HStack(spacing: 10) { // Increased spacing
                                     Text("\(entry.stars)")
-                                        .font(.system(size: 18, weight: .semibold)) // Slightly larger font for stars
-                                        .foregroundColor(Color(hex: "#DAA520"))
+                                        .font(.system(size: 17, weight: .semibold)) // Slightly larger font for stars
+                                        .foregroundColor(Color(hex: "#fff"))
                                     
                                     Image(systemName: "star.fill")
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(width: 20, height: 20) // Slightly larger star icon
-                                        .foregroundColor(Color(hex: "#DAA520"))
+                                        .frame(width: 18, height: 18) // Slightly larger star icon
+                                        .foregroundColor(Color(hex: "#fff"))
                                 }
-                                .padding(.trailing, 15) // Increased padding
+                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .background(Color(hex: "#DAA520"))
+                                .cornerRadius(200)
+                                .padding(.trailing, 10) // Increased padding
                             }
                             .padding(20)
                             .background(Color(hex: "#F5F5F5"))
