@@ -17,6 +17,8 @@ class EntryViewModel: ObservableObject {
     @Published var currentIndex: Int = 0
     @Published var isUserSubscribed: Bool = false
     @Published var userHasJoined: Bool = false
+    
+    private var listener: ListenerRegistration?
 
     enum FetchEntriesMode {
         case entryView
@@ -33,6 +35,10 @@ class EntryViewModel: ObservableObject {
         }
         fetchUserSubscriptionStatus() // Fetch subscription status when initializing
         checkIfUserHasJoined() // Check if the user has already joined the competition
+    }
+    
+    deinit {
+        listener?.remove() // Remove the listener when the view model is deinitialized
     }
     
     func checkIfUserHasJoined() {
@@ -63,13 +69,16 @@ class EntryViewModel: ObservableObject {
     
     func fetchEntriesForCompDetailsView() {
         let db = Firestore.firestore()
-        db.collection("competitions").document(competitionId).collection("entries").getDocuments { [weak self] (snapshot, error) in
+        listener = db.collection("competitions").document(competitionId).collection("entries")
+            .addSnapshotListener { [weak self] (snapshot, error) in
             guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")
                 return
             }
-
+                
+            self.entries.removeAll() // Clear existing entries
+                
             let group = DispatchGroup()
 
             if let documents = snapshot?.documents {
