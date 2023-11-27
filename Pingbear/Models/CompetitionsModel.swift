@@ -76,7 +76,6 @@ class CompetitionsModel: ObservableObject {
             }
     }
 
-
     func fetchUserCompetitions() {
         guard let userId = Auth.auth().currentUser?.uid else {
             print("No user logged in")
@@ -86,9 +85,13 @@ class CompetitionsModel: ObservableObject {
         let db = Firestore.firestore()
         var temporaryCompetitions: [Competition] = [] // Temporary storage for competitions
 
-        // Adding timestamp filter to fetch only competitions from the last 24 hours
+        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
+            print("Error calculating date")
+            return
+        }
+
         db.collection("competitions")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: Calendar.current.date(byAdding: .hour, value: -24, to: Date())!))
+            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
             .getDocuments { [weak self] (querySnapshot, err) in
                 if let err = err {
                     print("Error getting competitions: \(err)")
@@ -102,53 +105,87 @@ class CompetitionsModel: ObservableObject {
                 let group = DispatchGroup() // Use a dispatch group to track async tasks
 
                 for document in documents {
-                    group.enter()
+                    group.enter() // Enter the group for each async task
 
                     let competitionId = document.documentID
-                    let data = document.data()
-                    guard let description = data["description"] as? String,
-                          let timestamp = data["timestamp"] as? Timestamp else {
-                        group.leave()
-                        return
-                    }
 
-                    var competition = Competition(
-                        id: competitionId,
-                        description: description,
-                        date: timestamp.dateValue()
-                    )
+                    document.reference.collection("participants")
+                        .document(userId)
+                        .getDocument { (participantSnapshot, err) in
+                            if let err = err {
+                                print("Error getting participant data: \(err)")
+                                group.leave()
+                                return
+                            }
 
-                    // Fetch total entries for the competition
-                    db.collection("competitions").document(competitionId).collection("entries")
-                      .getDocuments { (entriesSnapshot, err) in
-                          if let entriesSnapshot = entriesSnapshot {
-                              let entries = entriesSnapshot.documents
-                              let totalEntriesCount = entries.count
-                              let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
+                            if let participantSnapshot = participantSnapshot, participantSnapshot.exists {
+                                let data = document.data()
+                                guard let description = data["description"] as? String,
+                                      let timestamp = data["timestamp"] as? Timestamp else {
+                                          group.leave()
+                                          return
+                                }
 
-                              // Fetch voted entries for the user in this competition
-                              let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
-                              participantRef.getDocument { (participantSnapshot, err) in
-                                  let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
-                                  let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+                                var competition = Competition(
+                                    id: competitionId,
+                                    description: description,
+                                    date: timestamp.dateValue()
+                                )
 
-                                  competition.entriesNotVotedCount = notVotedCount
-                                  temporaryCompetitions.append(competition)
-                                  group.leave()
-                              }
-                          } else {
-                              group.leave()
-                          }
-                      }
+                                self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in
+                                    competition.entriesNotVotedCount = entriesInfo.notVotedCount
+                                    temporaryCompetitions.append(competition)
+                                    group.leave()
+                                }
+                            } else {
+                                group.leave()
+                            }
+                        }
                 }
 
-                group.notify(queue: .main) {
-                    self?.competitions = temporaryCompetitions.sorted { $0.date > $1.date }
+                group.notify(queue: .main) { // When all async tasks are completed
+                    self?.competitions = temporaryCompetitions.sorted { $0.date > $1.date } // Sort in descending order
                 }
             }
     }
 
+    // Separated function to fetch competition entries
+    private func fetchCompetitionEntries(competitionId: String, userId: String, db: Firestore, completion: @escaping (EntriesInfo) -> Void) {
+        db.collection("competitions").document(competitionId).collection("entries")
+            .getDocuments { (entriesSnapshot, err) in
+                if let err = err {
+                    print("Error getting entries: \(err)")
+                    completion(EntriesInfo(notVotedCount: 0))
+                    return
+                }
 
+                guard let entriesSnapshot = entriesSnapshot else {
+                    completion(EntriesInfo(notVotedCount: 0))
+                    return
+                }
 
+                let entries = entriesSnapshot.documents
+                let totalEntriesCount = entries.count
+                let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
+
+                let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
+                participantRef.getDocument { (participantSnapshot, err) in
+                    if let err = err {
+                        print("Error getting participant document: \(err)")
+                        completion(EntriesInfo(notVotedCount: 0))
+                        return
+                    }
+
+                    let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
+                    let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+
+                    completion(EntriesInfo(notVotedCount: notVotedCount))
+                }
+            }
+    }
+
+    struct EntriesInfo {
+        let notVotedCount: Int
+    }
 
 }
