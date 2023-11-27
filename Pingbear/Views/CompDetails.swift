@@ -95,7 +95,7 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(self.entryViewModel.userHasJoined ? Color(hex: "#D3D3D3") : Color(hex: "#7B68EE")) // Gray out if user has joined
+                            .background(self.entryViewModel.userHasJoined ? Color(hex: "#D3D3D3") : Color(hex: "#1199FF")) // Gray out if user has joined
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
