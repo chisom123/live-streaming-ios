@@ -95,10 +95,11 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color(hex: "#fff"))
+                            .background(self.entryViewModel.userHasJoined ? Color(hex: "#D3D3D3") : Color(hex: "#7B68EE")) // Gray out if user has joined
+                            .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
+                    .disabled(self.entryViewModel.userHasJoined)
 
                     Button(action: {
                         vote()
@@ -107,10 +108,11 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(Color(hex: "#7B68EE"))
-                            .foregroundColor(Color(hex: "#fff"))
+                            .background(competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3")) // Gray out if no entries left
+                            .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
+                    .disabled(competition.entriesNotVotedCount == 0)
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)

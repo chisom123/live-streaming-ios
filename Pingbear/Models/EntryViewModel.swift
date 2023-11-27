@@ -16,6 +16,7 @@ class EntryViewModel: ObservableObject {
     var competitionId: String // Add a property to store the competition ID
     @Published var currentIndex: Int = 0
     @Published var isUserSubscribed: Bool = false
+    @Published var userHasJoined: Bool = false
 
     enum FetchEntriesMode {
         case entryView
@@ -31,6 +32,33 @@ class EntryViewModel: ObservableObject {
             fetchEntriesForCompDetailsView()
         }
         fetchUserSubscriptionStatus() // Fetch subscription status when initializing
+        checkIfUserHasJoined() // Check if the user has already joined the competition
+    }
+    
+    func checkIfUserHasJoined() {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            print("No user logged in")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
+
+        // Query for an entry with the current user's ID
+        entriesRef.whereField("userId", isEqualTo: currentUserId).getDocuments { (snapshot, error) in
+            if let error = error {
+                print("Error checking if user has joined: \(error)")
+                return
+            }
+
+            if let documents = snapshot?.documents, !documents.isEmpty {
+                // User has an entry in this competition
+                self.userHasJoined = true
+            } else {
+                // User has no entry in this competition
+                self.userHasJoined = false
+            }
+        }
     }
     
     func fetchEntriesForCompDetailsView() {
