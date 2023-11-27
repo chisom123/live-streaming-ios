@@ -49,6 +49,7 @@ struct CustomTabView: View {
                         Text("Home")
                     }
                     .tag(0)
+                    .padding([.top, .bottom], 10)
                 
                 MyCompsView()
                     .tabItem {
@@ -56,6 +57,7 @@ struct CustomTabView: View {
                         Text("My Competitions")
                     }
                     .tag(1)
+                    .padding([.top, .bottom], 10)
 
                 SettingsView()
                     .tabItem {
@@ -63,6 +65,7 @@ struct CustomTabView: View {
                         Text("Settings")
                     }
                     .tag(2)
+                    .padding([.top, .bottom], 10)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items
         }
