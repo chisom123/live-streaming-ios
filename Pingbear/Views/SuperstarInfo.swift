@@ -1,4 +1,5 @@
 import SwiftUI
+import NotificationBannerSwift
 
 struct SuperstarInfoView: View {
     
@@ -123,6 +124,9 @@ struct SuperstarInfoView: View {
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
                     presentationMode.wrappedValue.dismiss()
+        
+                    let banner = NotificationBanner(title: "Superstar Successfully Activated", style: .success)
+                    banner.show()
                 }
             }
             

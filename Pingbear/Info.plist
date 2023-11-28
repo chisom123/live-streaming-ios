@@ -17,18 +17,8 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
-		<string>location</string>
 		<string>remote-notification</string>
 	</array>
-    
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location for...</string>
-
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>We need your location for...</string> 
-
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>We need your location for...</string>
 
     <key>NSCameraUsageDescription</key>
     <string>We need access to your camera for capturing photos.</string>
