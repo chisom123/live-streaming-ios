@@ -19,8 +19,7 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
-
-    <key>NSCameraUsageDescription</key>
-    <string>We need access to your camera for capturing photos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera so you can take photos used to join competitions.</string>
 </dict>
 </plist>
