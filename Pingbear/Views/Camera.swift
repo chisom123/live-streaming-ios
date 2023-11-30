@@ -81,117 +81,124 @@ struct CameraView: View {
     var competitionId: String
     @ObservedObject var viewModel: EntryViewModel // Assuming this is your view model
     @State private var showSuperstarButton = true
+    @State private var isUploading = false
+
 
     
     var body: some View {
-        ZStack {
-            CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
-                .edgesIgnoringSafeArea(.all)
-            
-            if let image = capturedImage {
-                ZStack {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if isUploading {
+            ProgressView()
+                .padding()
+        } else {
+            ZStack {
+                CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
+                    .edgesIgnoringSafeArea(.all)
+                
+                if let image = capturedImage {
+                    ZStack {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .edgesIgnoringSafeArea(.all)
+                        
+                        VStack {
+                            HStack {
+                                Button(action: {
+                                    presentationMode.wrappedValue.dismiss()
+                                }) {
+                                    Image(systemName: "arrow.left")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(.white)
+                                        .padding(5)
+                                        .shadow(radius: 10)
+                                }
+                                
+                                Spacer()
+                                
+                                if !viewModel.isUserSubscribed {
+                                    Button(action: {
+                                        isPresentingInfo = true
+                                    }) {
+                                        Text("Turn on Superstar")
+                                            .font(.system(size: 16, weight: .bold, design: .default))
+                                            .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
+                                            .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
+                                            .foregroundColor(AppColors.primary)
+                                            .cornerRadius(200)
+                                        
+                                    }
+                                }
+                                
+                            }
+                            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
+                            .padding(.horizontal)
+                            
+                            Spacer()
+                            
+                            // "Continue" Button at the bottom
+                            Button(action: {
+                                submitEntry()
+                            }) {
+                                Text("Continue")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .font(.system(size: 18, weight: .bold, design: .default))
+                                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                    .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
+                                    .foregroundColor(.white)
+                                    .cornerRadius(200)
+                            }
+                            .padding(.horizontal)
+                            .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
+                        }
                         .edgesIgnoringSafeArea(.all)
-
+                    }
+                } else {
                     VStack {
                         HStack {
                             Button(action: {
                                 presentationMode.wrappedValue.dismiss()
                             }) {
                                 Image(systemName: "arrow.left")
-                                    .font(.system(size: 30))
+                                    .font(.system(size: 30)) // Increase the font size as needed
                                     .foregroundColor(.white)
-                                    .padding(5)
+                                    .padding(5) // Adjust the padding to balance the increased size
                                     .shadow(radius: 10)
                             }
-                            
                             Spacer()
-                            
-                            if !viewModel.isUserSubscribed {
-                                Button(action: {
-                                    isPresentingInfo = true
-                                }) {
-                                    Text("Turn on Superstar")
-                                        .font(.system(size: 16, weight: .bold, design: .default))
-                                        .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-                                        .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
-                                        .foregroundColor(AppColors.primary)
-                                        .cornerRadius(200)
-                                    
-                                }
+                            Button(action: {
+                                self.shouldToggleCamera.toggle()
+                            }) {
+                                Image(systemName: "arrow.2.circlepath")
+                                    .font(.system(size: 30)) // Increase the font size as needed
+                                    .foregroundColor(.white)
+                                    .padding(5) // Adjust the padding to balance the increased size
+                                    .shadow(radius: 10)
                             }
-                            
                         }
-                        .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
-                        .padding(.horizontal)
-
-                        Spacer()
-
-                        // "Continue" Button at the bottom
+                        .padding([.top, .leading, .trailing])
+                        
+                        Spacer() // This will create space between the top HStack and the bottom button
+                        
                         Button(action: {
-                            submitEntry()
+                            self.shouldTakePicture = true
                         }) {
-                            Text("Continue")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .font(.system(size: 18, weight: .bold, design: .default))
-                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
-                                .foregroundColor(.white)
-                                .cornerRadius(200)
+                            Circle()
+                                .stroke(Color.white, lineWidth: 8) // White outline
+                                .frame(width: 100, height: 100)
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
+                        .padding(.bottom)
                     }
-                    .edgesIgnoringSafeArea(.all)
-                }
-            } else {
-                VStack {
-                    HStack {
-                        Button(action: {
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 30)) // Increase the font size as needed
-                                .foregroundColor(.white)
-                                .padding(5) // Adjust the padding to balance the increased size
-                                .shadow(radius: 10)
-                        }
-                        Spacer()
-                        Button(action: {
-                            self.shouldToggleCamera.toggle()
-                        }) {
-                            Image(systemName: "arrow.2.circlepath")
-                                .font(.system(size: 30)) // Increase the font size as needed
-                                .foregroundColor(.white)
-                                .padding(5) // Adjust the padding to balance the increased size
-                                .shadow(radius: 10)
-                        }
-                    }
-                    .padding([.top, .leading, .trailing])
-
-                    Spacer() // This will create space between the top HStack and the bottom button
-
-                    Button(action: {
-                        self.shouldTakePicture = true
-                    }) {
-                        Circle()
-                            .stroke(Color.white, lineWidth: 8) // White outline
-                            .frame(width: 100, height: 100)
-                    }
-                    .padding(.bottom)
                 }
             }
-        }
-        .fullScreenCover(isPresented: $isPresentingInfo) {
-            SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
+            .fullScreenCover(isPresented: $isPresentingInfo) {
+                SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
+            }
         }
     }
     
     func submitEntry() {
-        self.presentationMode.wrappedValue.dismiss()
+        isUploading = true
 
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
@@ -239,6 +246,9 @@ struct CameraView: View {
                                 print("Participant added successfully.")
                             }
                         }
+                        
+                        isUploading = false
+                        self.presentationMode.wrappedValue.dismiss()
                         
                         let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
                         banner.show()
