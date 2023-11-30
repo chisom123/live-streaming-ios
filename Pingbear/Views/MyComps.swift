@@ -91,6 +91,9 @@ struct MyCompsView: View {
                     }
                 }
             }
+            .refreshable {
+                viewModel.fetchUserCompetitions()
+            }
             .fullScreenCover(item: $selectedCompetition) { comp in
                 CompDetails(competition: comp)
             }

@@ -90,6 +90,9 @@ struct CompetitionsView: View {
                 }
             }
             .navigationBarHidden(true)
+            .refreshable {
+                viewModel.fetchCompetitions()
+            }
             .onAppear {
                 viewModel.fetchCompetitions()
             }
