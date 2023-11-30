@@ -118,7 +118,7 @@ struct EntryView: View {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
                                             presentationMode.wrappedValue.dismiss()
                                             
-                                            let banner = NotificationBanner(title: "No More Photos Currently", style: .success)
+                                            let banner = NotificationBanner(title: "Voting empty. Check again later!", style: .warning)
                                             banner.show()
                                         }
                                     } else {

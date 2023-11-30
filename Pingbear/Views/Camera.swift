@@ -250,7 +250,7 @@ struct CameraView: View {
                         isUploading = false
                         self.presentationMode.wrappedValue.dismiss()
                         
-                        let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
+                        let banner = NotificationBanner(title: "Successfully Joined", style: .success)
                         banner.show()
                         
                         Flurry.log(eventName: "Competition picture created")
