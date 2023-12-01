@@ -63,16 +63,36 @@ struct AppLogo: View {
 
 struct DisclaimerText: View {
     var body: some View {
-        Text("By continuing, you agree to Chay's Privacy Policy and Terms of Service.")
-            .font(.system(size: 15.5, weight: .semibold, design: .default))
-            .multilineTextAlignment(.center)
-            .lineSpacing(13)
+        VStack {
+            
+            HStack(spacing: 5) {
+                Text("Privacy Policy")
+                    .onTapGesture {
+                        openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                    }
+                
+                Text("•")
+                    .font(.system(size: 15, weight: .semibold, design: .default))
+                
+                Text("Terms of Service")
+                    .onTapGesture {
+                        openURL("https://chay-b6172c.webflow.io")
+                    }
+            }
+            .font(.system(size: 15, weight: .semibold, design: .default))
             .foregroundColor(.black)
-            .padding(.horizontal, 25)
-            .padding(.bottom, 25)
-            .accessibilityLabel("Disclaimer: By continuing, you agree to Chay's Privacy Policy and Terms of Service.")
+            .padding(.bottom, 35)
+        }
     }
 }
+
+func openURL(_ urlString: String) {
+    if let url = URL(string: urlString) {
+        UIApplication.shared.open(url)
+    }
+}
+
+
 
 struct ContinueButton: View {
     let action: () -> Void
