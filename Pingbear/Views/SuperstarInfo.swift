@@ -34,71 +34,82 @@ struct SuperstarInfoView: View {
                         .scaledToFit()
                         .frame(width: 50, height: 50) // Slightly larger star icon
                         .foregroundColor(Color(hex: "#DAA520"))
+                        .padding(.top, 30)
                     
                     Text("Access the power of Superstar")
-                        .font(.system(size: 22, weight: .semibold, design: .default))
+                        .font(.system(size: 22, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
                         .foregroundColor(Color(hex: "#DAA520"))
-                        .padding(.bottom, 35)
-                        .padding(.top, 35)
+                        .padding(.bottom, 20)
+                        .padding(.top, 30)
                         .padding(.horizontal)
                     
-                    VStack {
-                        
-                        Text("A Superstar is worth 8 stars - double the usual amount")
-                            .font(.system(size: 17, weight: .semibold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .foregroundColor(.black)
-                            .padding(.bottom, 10)
-                            .padding(.horizontal)
-                            .padding(.top, 10)
-                        
-                    }
-                    .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
-                    .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .padding(.horizontal, 20)
+                    Text("$4.99 a month")
+                        .font(.system(size: 17, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(Color(hex: "#ababab"))
+                        .padding(.bottom, 30)
+                        .padding(.horizontal)
                     
-                    VStack {
+                    ScrollView(.vertical) {
+                        VStack {
+                            
+                            Text("A Superstar is worth 8 stars - double the usual amount")
+                                .font(.system(size: 17, weight: .semibold, design: .default))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(10)
+                                .foregroundColor(.black)
+                                .padding(.bottom, 10)
+                                .padding(.horizontal)
+                                .padding(.top, 10)
+                            
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
+                        .padding()
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
+                        .padding(.horizontal, 20)
                         
-                        Text("Everyone can Superstar your photos - which will boost your leaderboard ranking")
-                            .font(.system(size: 17, weight: .semibold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .foregroundColor(.black)
-                            .padding(.bottom, 10)
-                            .padding(.horizontal)
-                            .padding(.top, 10)
+                        VStack {
+                            
+                            Text("Everyone can Superstar your photos - which will boost your leaderboard ranking")
+                                .font(.system(size: 17, weight: .semibold, design: .default))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(10)
+                                .foregroundColor(.black)
+                                .padding(.bottom, 10)
+                                .padding(.horizontal)
+                                .padding(.top, 10)
+                            
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
+                        .padding()
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
                         
+                        VStack {
+                            
+                            Text("You can Superstar anyone's photos")
+                                .font(.system(size: 17, weight: .semibold, design: .default))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(10)
+                                .foregroundColor(.black)
+                                .padding(.bottom, 10)
+                                .padding(.horizontal)
+                                .padding(.top, 10)
+                            
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
+                        .padding()
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
                     }
-                    .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
-                    .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    
-                    VStack {
-                        
-                        Text("You can Superstar anyone's photos")
-                            .font(.system(size: 17, weight: .semibold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .foregroundColor(.black)
-                            .padding(.bottom, 10)
-                            .padding(.horizontal)
-                            .padding(.top, 10)
-                        
-                    }
-                    .frame(minWidth: 0, maxWidth: .infinity) // Making VStack full width
-                    .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
 
                     Button(action: {
                         if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "sup1" }) {
@@ -113,8 +124,27 @@ struct SuperstarInfoView: View {
                             .foregroundColor(Color(hex: "#fff"))
                             .cornerRadius(200)
                     }
-                    .padding(.top, 35)
+                    .padding(.top, 20)
                     .padding(.horizontal, 20)
+                    
+                    
+                    HStack(spacing: 5) {
+                        Text("Privacy Policy")
+                            .onTapGesture {
+                                openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                            }
+                        
+                        Text("•")
+                            .font(.system(size: 14, weight: .semibold, design: .default))
+                        
+                        Text("Terms of Use")
+                            .onTapGesture {
+                                openURL("https://chay-b6172c.webflow.io")
+                            }
+                    }
+                    .font(.system(size: 14, weight: .semibold, design: .default))
+                    .foregroundColor(.black)
+                    .padding(.top, 20)
 
                     Spacer()
                 }
