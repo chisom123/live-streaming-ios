@@ -11,7 +11,7 @@ class PbillViewModel: NSObject, ObservableObject {
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false
 
-    private var productIdentifiers: Set<String> = ["Bill1", "Bill2", "Bill3", "Bill4", "sup1"]
+    private var productIdentifiers: Set<String> = ["Bill1", "Bill2", "Bill3", "Bill4", "super"]
 
     override init() {
         super.init()

@@ -112,7 +112,7 @@ struct SuperstarInfoView: View {
                     }
 
                     Button(action: {
-                        if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "sup1" }) {
+                        if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "super" }) {
                             viewModel.purchase(product: subscriptionProduct)
                         }
                     }) {
