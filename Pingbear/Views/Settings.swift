@@ -37,7 +37,7 @@ struct SettingsView: View {
                         self.showChangeNameView = true // Toggle the state to show the ChangeNameView
                     }) {
                         HStack {
-                            Text("Change My Name")
+                            Text("Change My Username")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#1199FF"))
                             Spacer()

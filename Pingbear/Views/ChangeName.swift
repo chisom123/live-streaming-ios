@@ -36,7 +36,7 @@ struct ChangeNameView: View {
                 
                 Spacer()
 
-                Text("My Name")
+                Text("My Username")
                     .font(.system(size: 18, weight: .semibold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -44,7 +44,7 @@ struct ChangeNameView: View {
                     .padding(.bottom, 40)
                     .padding(.horizontal)
                 
-                TextField("My Name", text: $updatedName)
+                TextField("Enter new username", text: $updatedName)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
@@ -56,7 +56,7 @@ struct ChangeNameView: View {
                 if let status = messageStatus {
                     switch status {
                     case .error:
-                        Text("Please enter your name")
+                        Text(errorMessage ?? "An error occurred")
                             .foregroundColor(Color(hex: "#CC2255"))
                             .font(.system(size: 15, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
@@ -101,40 +101,52 @@ struct ChangeNameView: View {
     }
 
     func fetchUserName() {
-        if let userId = userId {
-            let docRef = db.collection("users").document(userId)
+        guard let userId = userId else { return }
+        let docRef = db.collection("users").document(userId)
 
-            docRef.getDocument { (document, error) in
-                if let document = document, document.exists {
-                    let data = document.data()
-                    if let name = data?["name"] as? String {
-                        self.userName = name
-                        self.updatedName = name
-                    }
-                } else {
-                    print("Document does not exist")
-                }
+        docRef.getDocument { (document, error) in
+            if let document = document, document.exists, let username = document.data()?["username"] as? String {
+                self.userName = username
+                self.updatedName = username
+            } else {
+                print("Document does not exist or username not found")
             }
         }
     }
     
     func updateUserName() {
-        if updatedName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        // Process and validate updated username
+        let processedUsername = updatedName.lowercased().replacingOccurrences(of: " ", with: "")
+        guard !processedUsername.isEmpty else {
             messageStatus = .error
+            errorMessage = "Please enter a username"
             return
         }
-        
-        if let userId = userId {
-            let docRef = db.collection("users").document(userId)
 
-            docRef.updateData([
-                "name": updatedName
-            ]) { err in
-                if let err = err {
-                    messageStatus = .error
-                } else {
-                    messageStatus = .success
+        guard let userId = userId else { return }
+        let docRef = db.collection("users").document(userId)
+
+        // Check if username already exists
+        db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { (querySnapshot, err) in
+            if let err = err {
+                self.messageStatus = .error
+                self.errorMessage = "Error checking username: \(err.localizedDescription)"
+            } else if querySnapshot!.documents.isEmpty || (querySnapshot!.documents.first?.documentID == userId) {
+                // Username is either unique or belongs to the current user, proceed to update
+                docRef.updateData([
+                    "username": processedUsername
+                ]) { err in
+                    if let err = err {
+                        self.messageStatus = .error
+                        self.errorMessage = "Error updating username: \(err.localizedDescription)"
+                    } else {
+                        self.messageStatus = .success
+                    }
                 }
+            } else {
+                // Username already exists
+                self.messageStatus = .error
+                self.errorMessage = "This username is already taken"
             }
         }
     }
