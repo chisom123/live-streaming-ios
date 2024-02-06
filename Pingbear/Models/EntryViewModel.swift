@@ -96,7 +96,7 @@ class EntryViewModel: ObservableObject {
                             return
                         }
 
-                        let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
+                        let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
 
                         // Create Entry instance with subscription status
                         let isCurrentUser = userId == currentUserId
@@ -158,7 +158,7 @@ class EntryViewModel: ObservableObject {
                                 return
                             }
 
-                            let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
+                            let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
 
                             let isCurrentUser = userId == currentUserId
                             let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser)
