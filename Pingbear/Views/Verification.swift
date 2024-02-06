@@ -1,5 +1,6 @@
 import SwiftUI
 import Firebase
+import FirebaseFirestore
 import FirebaseAuth
 
 struct VerificationView: View {
@@ -8,7 +9,9 @@ struct VerificationView: View {
     
     @State private var verificationCode: String = ""
     @State private var errorMessage: String? = nil
-    @State private var isAuthenticated = false
+    // Updated to include navigation to the home view
+    @State private var navigateToHome = false
+    @State private var navigateToNameEntry = false
 
     var body: some View {
         VStack {
@@ -53,7 +56,12 @@ struct VerificationView: View {
             }
             .padding(.top, 20)
             
-            NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $isAuthenticated) {
+            // Conditional navigation based on user state
+            NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
+                EmptyView()
+            }.isDetailLink(false)
+            
+            NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
                 EmptyView()
             }.isDetailLink(false)
         }
@@ -71,7 +79,27 @@ struct VerificationView: View {
                 return
             }
             
-            self.isAuthenticated = true
+            // After successful authentication, check for an existing username
+            guard let userID = Auth.auth().currentUser?.uid else {
+                self.errorMessage = "Error fetching user ID"
+                return
+            }
+            
+            let db = Firestore.firestore()
+            db.collection("users").document(userID).getDocument { (document, error) in
+                if let document = document, document.exists {
+                    if document.data()?["username"] != nil {
+                        // User already has a username, navigate directly to home view
+                        self.navigateToHome = true
+                    } else {
+                        // No username found, navigate to NameEntryView
+                        self.navigateToNameEntry = true
+                    }
+                } else {
+                    // Error or user document does not exist, navigate to NameEntryView
+                    self.navigateToNameEntry = true
+                }
+            }
         }
     }
 }

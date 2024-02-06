@@ -6,18 +6,18 @@ import Flurry_iOS_SDK
 
 struct NameEntryView: View {
     let phoneNumber: String
-    @State private var name: String = ""
+    @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var navigateToHome = false
     
-    func isValidName(_ name: String) -> Bool {
-        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    func isValidUsername(_ username: String) -> Bool {
+        let trimmedName = username.trimmingCharacters(in: .whitespacesAndNewlines)
         return !trimmedName.isEmpty
     }
 
     var body: some View {
         VStack {
-            Text("Enter your name")
+            Text("Create a username")
                 .font(.system(size: 18, weight: .semibold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -25,7 +25,7 @@ struct NameEntryView: View {
                 .padding(.bottom, 40)
                 .padding(.horizontal)
             
-            TextField("Enter your name", text: $name)
+            TextField("Enter your username", text: $username)
                 .padding()
                 .background(Color(hex: "#F5F5F5"))
                 .foregroundColor(Color(hex: "#000"))
@@ -44,7 +44,7 @@ struct NameEntryView: View {
             }
             
             Button(action: {
-                self.saveNameToFirestore()
+                self.checkUsernameAndSaveToFirestore()
             }) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -62,34 +62,53 @@ struct NameEntryView: View {
         }
         .padding()
     }
-
-    func saveNameToFirestore() {
-        guard let userID = Auth.auth().currentUser?.uid else {
-            errorMessage = "Error fetching user"
-            return
-        }
-
-        // Validate the name
-        guard isValidName(name) else {
-            errorMessage = "Please enter your name"
-            return
-        }
-
-        let db = Firestore.firestore()
+    
+    func checkUsernameAndSaveToFirestore() {
+        // Process username to be lowercase with no spaces
+        let processedUsername = username.lowercased().replacingOccurrences(of: " ", with: "")
         
-        db.collection("users").document(userID).setData([
-            "name": name,
-            "phoneNumber": phoneNumber
-        ], merge: true) { error in
-            if let error = error {
-                self.errorMessage = "Error saving user: \(error.localizedDescription)"
-            } else {
-                self.navigateToHome = true
-                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                UserDefaults.standard.synchronize()
-                Flurry.log(eventName: "Sign-In")
-            }
-        }
-    }
+       guard isValidUsername(processedUsername) else {
+           errorMessage = "Please enter your username"
+           return
+       }
+
+       let db = Firestore.firestore()
+       
+       // Check if username is already taken
+       db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { (querySnapshot, err) in
+           if let err = err {
+               self.errorMessage = "Error checking username: \(err.localizedDescription)"
+           } else if querySnapshot!.documents.isEmpty {
+               // Username is unique, proceed to save
+               self.saveUsernameToFirestore(processedUsername: processedUsername)
+           } else {
+               // Username already exists
+               self.errorMessage = "This username is already taken"
+           }
+       }
+   }
+
+    func saveUsernameToFirestore(processedUsername: String) {
+       guard let userID = Auth.auth().currentUser?.uid else {
+           errorMessage = "Error fetching user ID"
+           return
+       }
+       
+       let db = Firestore.firestore()
+       
+       db.collection("users").document(userID).setData([
+           "username": processedUsername, // Save username instead of name
+           "phoneNumber": phoneNumber
+       ], merge: true) { error in
+           if let error = error {
+               self.errorMessage = "Error saving user: \(error.localizedDescription)"
+           } else {
+               self.navigateToHome = true
+               UserDefaults.standard.set(true, forKey: "isLoggedIn")
+               UserDefaults.standard.synchronize()
+               Flurry.log(eventName: "Sign-In")
+           }
+       }
+   }
 
 }
