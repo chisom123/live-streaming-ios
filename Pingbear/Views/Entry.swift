@@ -60,23 +60,6 @@ struct EntryView: View {
                 }
                 
                 Spacer()
-                
-                // Conditionally show "Turn on Superstar" button
-                if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                    let isCurrentEntryUserSubscribed = viewModel.entries[viewModel.currentIndex].isEntryUserSubscribed
-                    if !(viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) {
-                        Button(action: {
-                            isPresentingInfo = true
-                        }) {
-                            Text("Turn on Superstar")
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-                                .background(AppColors.white.opacity(0.95))
-                                .foregroundColor(AppColors.primary)
-                                .cornerRadius(200)
-                        }
-                    }
-                }
 
             
             }
@@ -93,12 +76,11 @@ struct EntryView: View {
                 ZStack {
                     HStack(alignment: .center, spacing: 10) {
                         if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                            let isCurrentEntryUserSubscribed = viewModel.entries[viewModel.currentIndex].isEntryUserSubscribed
-                            let maxStars = (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? 5 : 4
+                            let maxStars = 5
 
                             ForEach(1...maxStars, id: \.self) { star in
                                 Button(action: {
-                                    let ratingIncrement = star == 5 ? 8 : star
+                                    let ratingIncrement = star
                                     self.rating = ratingIncrement
                                     let currentEntryId = viewModel.entries[viewModel.currentIndex].id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
@@ -132,7 +114,7 @@ struct EntryView: View {
                                     }
                                 }) {
                                     Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                        .foregroundColor(star == 5 && (viewModel.isUserSubscribed || isCurrentEntryUserSubscribed) ? Color(hex: "#DAA520") : (star <= self.rating ? Color(hex: "#FFD700") : Color.black))
+                                        .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.black)
                                         .font(.system(size: 33))
                                         .scaleEffect(star == 5 ? fifthStarScale : 1.0) // Apply scale effect to the 5th star
                                         .padding(5)
@@ -151,9 +133,6 @@ struct EntryView: View {
                 .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-        }
-        .fullScreenCover(isPresented: $isPresentingInfo) {
-            SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
         }
     }
 }

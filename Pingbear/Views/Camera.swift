@@ -116,20 +116,6 @@ struct CameraView: View {
                                 
                                 Spacer()
                                 
-                                if !viewModel.isUserSubscribed {
-                                    Button(action: {
-                                        isPresentingInfo = true
-                                    }) {
-                                        Text("Turn on Superstar")
-                                            .font(.system(size: 16, weight: .bold, design: .default))
-                                            .padding(EdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15))
-                                            .background(AppColors.white.opacity(0.95)) // Adjust opacity value as needed
-                                            .foregroundColor(AppColors.primary)
-                                            .cornerRadius(200)
-                                        
-                                    }
-                                }
-                                
                             }
                             .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
                             .padding(.horizontal)
@@ -190,9 +176,6 @@ struct CameraView: View {
                         .padding(.bottom)
                     }
                 }
-            }
-            .fullScreenCover(isPresented: $isPresentingInfo) {
-                SuperstarInfoView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
             }
         }
     }

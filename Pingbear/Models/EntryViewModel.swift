@@ -8,14 +8,12 @@ struct Entry: Identifiable {
     let userName: String // Add userName
     let stars: Int
     let isCurrentUser: Bool // Indicates if the entry belongs to the current user
-    let isEntryUserSubscribed: Bool  // Add this line
 }
 
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
     var competitionId: String // Add a property to store the competition ID
     @Published var currentIndex: Int = 0
-    @Published var isUserSubscribed: Bool = false
     @Published var userHasJoined: Bool = false
     
     private var listener: ListenerRegistration?
@@ -33,7 +31,6 @@ class EntryViewModel: ObservableObject {
         case .compDetailsView:
             fetchEntriesForCompDetailsView()
         }
-        fetchUserSubscriptionStatus() // Fetch subscription status when initializing
         checkIfUserHasJoined() // Check if the user has already joined the competition
     }
     
@@ -100,12 +97,11 @@ class EntryViewModel: ObservableObject {
                         }
 
                         let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
-                        let isSubscribed = userSnapshot?.data()?["subscribed"] as? Bool ?? false
 
                         // Create Entry instance with subscription status
                         let isCurrentUser = userId == currentUserId
                         
-                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isEntryUserSubscribed: isSubscribed)
+                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser)
                         self.entries.append(entry)
                     }
                 }
@@ -163,10 +159,9 @@ class EntryViewModel: ObservableObject {
                             }
 
                             let userName = userSnapshot?.data()?["name"] as? String ?? "Unknown"
-                            let isSubscribed = userSnapshot?.data()?["subscribed"] as? Bool ?? false
 
                             let isCurrentUser = userId == currentUserId
-                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isEntryUserSubscribed: isSubscribed)
+                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser)
                             self.entries.append(entry)
                         }
                     }
@@ -176,19 +171,6 @@ class EntryViewModel: ObservableObject {
                         self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
                     }
                 }
-            }
-        }
-    }
-
-    func fetchUserSubscriptionStatus() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("No user logged in")
-            return
-        }
-
-        Firestore.firestore().collection("users").document(userId).getDocument { [weak self] document, error in
-            if let document = document, document.exists {
-                self?.isUserSubscribed = document.get("subscribed") as? Bool ?? false
             }
         }
     }
@@ -206,7 +188,7 @@ class EntryViewModel: ObservableObject {
 
         let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
         
-        let starIncrement = (stars <= 4) ? stars : 8
+        let starIncrement = (stars <= 4) ? stars : 5
 
         // Increment the 'stars' field by the new rating
         entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
