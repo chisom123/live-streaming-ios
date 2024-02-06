@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
+import Flurry_iOS_SDK
 
 struct VerificationView: View {
     let phoneNumber: String
@@ -91,6 +92,9 @@ struct VerificationView: View {
                     if document.data()?["username"] != nil {
                         // User already has a username, navigate directly to home view
                         self.navigateToHome = true
+                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        UserDefaults.standard.synchronize()
+                        Flurry.log(eventName: "Sign-In")
                     } else {
                         // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true
