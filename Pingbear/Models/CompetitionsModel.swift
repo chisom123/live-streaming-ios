@@ -7,6 +7,7 @@ struct Competition: Identifiable {
     let description: String
     let date: Date
     var entriesNotVotedCount: Int = 0 // New property to indicate the number of entries not yet voted on
+    var username: String = "" // Add this line
 }
 
 class CompetitionsModel: ObservableObject {
@@ -34,39 +35,49 @@ class CompetitionsModel: ObservableObject {
                         let competitionId = document.documentID
                         let data = document.data()
                         guard let description = data["description"] as? String,
-                              let timestamp = data["timestamp"] as? Timestamp else {
+                              let timestamp = data["timestamp"] as? Timestamp,
+                              let creatorUserId = data["userID"] as? String else { // Assuming 'userId' is the field for the competition creator
                             group.leave()
                             return
                         }
 
-                        var competition = Competition(
-                            id: competitionId,
-                            description: description,
-                            date: timestamp.dateValue()
-                        )
+                        // Fetch the username for the competition creator
+                        db.collection("users").document(creatorUserId).getDocument { (userDoc, err) in
+                            var username = "Unknown" // Default username if not found or error
+                            if let userDoc = userDoc, let userData = userDoc.data(), let fetchedUsername = userData["username"] as? String {
+                                username = fetchedUsername
+                            }
 
-                        // Fetch total entries for the competition
-                        db.collection("competitions").document(competitionId).collection("entries")
-                          .getDocuments { (entriesSnapshot, err) in
-                              if let entriesSnapshot = entriesSnapshot {
-                                  let entries = entriesSnapshot.documents
-                                  let totalEntriesCount = entries.count
-                                  let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
+                            var competition = Competition(
+                                id: competitionId,
+                                description: description,
+                                date: timestamp.dateValue(),
+                                username: username // Set the fetched username here
+                            )
 
-                                  // Fetch voted entries for the user in this competition
-                                  let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
-                                  participantRef.getDocument { (participantSnapshot, err) in
-                                      let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
-                                      let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+                            // Fetch total entries for the competition
+                            db.collection("competitions").document(competitionId).collection("entries")
+                              .getDocuments { (entriesSnapshot, err) in
+                                  if let entriesSnapshot = entriesSnapshot {
+                                      let entries = entriesSnapshot.documents
+                                      let totalEntriesCount = entries.count
+                                      let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
 
-                                      competition.entriesNotVotedCount = notVotedCount
-                                      temporaryCompetitions.append(competition)
+                                      // Fetch voted entries for the user in this competition
+                                      let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
+                                      participantRef.getDocument { (participantSnapshot, err) in
+                                          let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
+                                          let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+
+                                          competition.entriesNotVotedCount = notVotedCount
+                                          temporaryCompetitions.append(competition)
+                                          group.leave()
+                                      }
+                                  } else {
                                       group.leave()
                                   }
-                              } else {
-                                  group.leave()
                               }
-                          }
+                        }
                     }
 
                     group.notify(queue: .main) {
@@ -108,39 +119,50 @@ class CompetitionsModel: ObservableObject {
                     group.enter() // Enter the group for each async task
 
                     let competitionId = document.documentID
+                    let creatorUserId = document.data()["userID"] as? String ?? "" // Assuming 'userId' is the field for the competition creator
 
-                    document.reference.collection("participants")
-                        .document(userId)
-                        .getDocument { (participantSnapshot, err) in
-                            if let err = err {
-                                print("Error getting participant data: \(err)")
-                                group.leave()
-                                return
-                            }
+                    // Fetch the username for the competition creator
+                    db.collection("users").document(creatorUserId).getDocument { (userDoc, err) in
+                        var username = "Unknown" // Default username if not found or error
+                        if let userDoc = userDoc, let userData = userDoc.data(), let fetchedUsername = userData["username"] as? String {
+                            username = fetchedUsername
+                        }
 
-                            if let participantSnapshot = participantSnapshot, participantSnapshot.exists {
-                                let data = document.data()
-                                guard let description = data["description"] as? String,
-                                      let timestamp = data["timestamp"] as? Timestamp else {
-                                          group.leave()
-                                          return
+                        // Proceed with fetching competition details
+                        document.reference.collection("participants")
+                            .document(userId)
+                            .getDocument { (participantSnapshot, err) in
+                                if let err = err {
+                                    print("Error getting participant data: \(err)")
+                                    group.leave()
+                                    return
                                 }
 
-                                var competition = Competition(
-                                    id: competitionId,
-                                    description: description,
-                                    date: timestamp.dateValue()
-                                )
+                                if let participantSnapshot = participantSnapshot, participantSnapshot.exists {
+                                    let data = document.data()
+                                    guard let description = data["description"] as? String,
+                                          let timestamp = data["timestamp"] as? Timestamp else {
+                                              group.leave()
+                                              return
+                                    }
 
-                                self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in
-                                    competition.entriesNotVotedCount = entriesInfo.notVotedCount
-                                    temporaryCompetitions.append(competition)
+                                    var competition = Competition(
+                                        id: competitionId,
+                                        description: description,
+                                        date: timestamp.dateValue(),
+                                        username: username // Set the fetched username here
+                                    )
+
+                                    self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in
+                                        competition.entriesNotVotedCount = entriesInfo.notVotedCount
+                                        temporaryCompetitions.append(competition)
+                                        group.leave()
+                                    }
+                                } else {
                                     group.leave()
                                 }
-                            } else {
-                                group.leave()
                             }
-                        }
+                    }
                 }
 
                 group.notify(queue: .main) { // When all async tasks are completed

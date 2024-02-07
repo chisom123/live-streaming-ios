@@ -41,13 +41,24 @@ struct MyCompsView: View {
                     ForEach(viewModel.competitions, id: \.id) { competition in
                         HStack {
                             
-                            Text(competition.description)
-                                .font(.system(size: 16, weight: .semibold))
-                                .lineLimit(2)
-                                .lineSpacing(9)
-                                .foregroundColor(.black)
-                                .truncationMode(.tail)
-                                .padding(.leading, 10) // Increased padding
+                            VStack(alignment: .leading) { // Use VStack for vertical stacking
+                                Text(competition.description)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .lineLimit(2)
+                                    .lineSpacing(9)
+                                    .foregroundColor(.black)
+                                    .truncationMode(.tail)
+                                    .padding(.leading, 10) // Increased padding
+                                
+                                Text(competition.username) // Display the username
+                                    .font(.system(size: 14.5, weight: .semibold))
+                                    .lineLimit(1)
+                                    .lineSpacing(9)
+                                    .foregroundColor(.gray)
+                                    .truncationMode(.tail)
+                                    .padding(.leading, 10) // Increased padding
+                                    .padding(.top, 0.75)
+                            }
 
                             Spacer()
                             

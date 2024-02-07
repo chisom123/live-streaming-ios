@@ -66,8 +66,17 @@ struct CompDetails: View {
                     .font(.system(size: 19, weight: .semibold, design: .default))
                     .lineSpacing(10)
                     .foregroundColor(.black)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 10)
                     .padding(.top, 30)
+                    .padding(.horizontal, 20)
+                
+                Text(competition.username)
+                    .font(.system(size: 17, weight: .bold, design: .default))
+                    .lineLimit(1)
+                    .lineSpacing(10)
+                    .foregroundColor(Color(hex: "#ababab"))
+                    .truncationMode(.tail)
+                    .padding(.bottom, 10)
                     .padding(.horizontal, 20)
 
                 Text(timeRemaining)
