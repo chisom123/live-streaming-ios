@@ -4,6 +4,7 @@ struct CompetitionsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
+    @State private var searchText = ""
 
     var body: some View {
         VStack {
@@ -29,14 +30,28 @@ struct CompetitionsView: View {
                         .padding(.horizontal, 20)
                 }
             }
-            .padding(.vertical, 20)
+            .padding(.vertical, 15)
             
             Spacer()
 
+            // Search box
+            TextField("Search", text: $searchText)
+                .padding()
+                .background(Color(.systemGray6))
+                .foregroundColor(Color(hex: "#000"))
+                .font(.system(size: 16, weight: .medium, design: .default))
+                .cornerRadius(5)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 15)
+            
             // Existing ScrollView content
             ScrollView {
                 VStack(spacing: 20) {  // Increased spacing between items
-                    ForEach(viewModel.competitions, id: \.id) { competition in
+                    ForEach(viewModel.competitions.filter { competition in
+                        searchText.isEmpty ||
+                        competition.description.localizedCaseInsensitiveContains(searchText) ||
+                        competition.username.localizedCaseInsensitiveContains(searchText)
+                    }, id: \.id) { competition in
                         HStack {
                             
                             VStack(alignment: .leading) { // Use VStack for vertical stacking
