@@ -111,18 +111,7 @@ struct SettingsView: View {
                     .alert(isPresented: $showDeleteAccountAlert) {
                         Alert(title: Text("Are you sure?"),
                               primaryButton: .destructive(Text("Yes")) {
-                            // Delete from Firebase Auth
-                            let user = Auth.auth().currentUser
-                            user?.delete { error in
-                                if let error = error {
-                                    print("Error deleting user: \(error)")
-                                    return
-                                } else {
-                                    UserDefaults.standard.set(false, forKey: "isLoggedIn")
-                                    didLogOut.send(())
-                                    Flurry.log(eventName: "Account Deleted")
-                                }
-                            }
+                            self.signOut()
                         },
                               secondaryButton: .cancel())
                     }
