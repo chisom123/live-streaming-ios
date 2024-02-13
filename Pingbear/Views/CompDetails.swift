@@ -196,8 +196,8 @@ struct CompDetails: View {
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
                             .onTapGesture {
-                                self.selectedImageUrl = entry.imageUrl
-                                self.showBigImageView = true
+//                                self.selectedImageUrl = entry.imageUrl
+//                                self.showBigImageView = true
                             }
                         }
                     }
