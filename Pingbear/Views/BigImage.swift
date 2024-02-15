@@ -9,7 +9,7 @@ struct BigImageView: View {
 
     var body: some View {
         ZStack {
-            // Load and display the image fullscreen, ignoring safe areas
+            // Load and display the image fullscreen, ignoring safe area
             if let imageURL = URL(string: imageUrl) {
                 WebImage(url: imageURL)
                     .resizable()
