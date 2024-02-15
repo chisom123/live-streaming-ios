@@ -36,6 +36,9 @@ struct EntryView: View {
                                 .resizable()
                                 .scaledToFill()
                                 .clipped()
+                                .onTapGesture {
+                                    presentationMode.wrappedValue.dismiss()
+                                }
                         } else {
                             ProgressView()
                         }
@@ -46,25 +49,6 @@ struct EntryView: View {
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
             }
-
-            // Top Left - Xmark button
-            HStack {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .padding(5)
-                        .shadow(radius: 10)
-                }
-                
-                Spacer()
-
-            
-            }
-            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
-            .padding(.horizontal)
 
 
 
