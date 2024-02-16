@@ -52,7 +52,7 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        if let url = URL(string: "mailto:pingbearapp@gmail.com") {
+                        if let url = URL(string: "mailto:info@ninorecruitment.com") {
                             UIApplication.shared.open(url)
                         }
                     }) {
