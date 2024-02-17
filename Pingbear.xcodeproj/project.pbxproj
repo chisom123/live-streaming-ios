@@ -95,6 +95,8 @@
 		4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
+		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
+		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -162,6 +164,8 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
+		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
+		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -313,6 +317,8 @@
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
 				4F382EA32B0917F400669A58 /* SuperstarInfo.swift */,
 				4F382EA52B0A56CC00669A58 /* BigImage.swift */,
+				4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */,
+				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -531,6 +537,7 @@
 				4F3E0D832A9BA19D0068F901 /* BearsViewModel.swift in Sources */,
 				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
 				4F3E0D772A9512D60068F901 /* HomeViewModel.swift in Sources */,
+				4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */,
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
 				4F3E0D7D2A977E140068F901 /* Bears.swift in Sources */,
@@ -545,6 +552,7 @@
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F3E0D792A951FFA0068F901 /* ChatModel.swift in Sources */,
+				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Landing.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
 				4F3E0D742A927FBD0068F901 /* Chat.swift in Sources */,

@@ -52,8 +52,8 @@ class CameraViewController: UIViewController, CameraDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        swiftttAddChild(camera)
-        camera.view.frame = view.frame
+//        swiftttAddChild(camera)
+//        camera.view.frame = view.frame
     }
 
     func takePicture() {
@@ -80,108 +80,103 @@ struct CameraView: View {
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     var competitionId: String
     @ObservedObject var viewModel: EntryViewModel // Assuming this is your view model
-    @State private var showSuperstarButton = true
-    @State private var isUploading = false
-
-
+    @State private var shouldNavigateToLocationCheck = false // Added for navigation to LocationCheckView
     
     var body: some View {
-        if isUploading {
-            ProgressView()
-                .padding()
-        } else {
-            ZStack {
-                CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
-                    .edgesIgnoringSafeArea(.all)
-                
-                if let image = capturedImage {
-                    ZStack {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .edgesIgnoringSafeArea(.all)
-                        
-                        VStack {
-                            HStack {
-                                Button(action: {
-                                    presentationMode.wrappedValue.dismiss()
-                                }) {
-                                    Image(systemName: "arrow.left")
-                                        .font(.system(size: 30))
-                                        .foregroundColor(.white)
-                                        .padding(5)
-                                        .shadow(radius: 10)
-                                }
-                                
-                                Spacer()
-                                
-                            }
-                            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
-                            .padding(.horizontal)
-                            
-                            Spacer()
-                            
-                            // "Continue" Button at the bottom
-                            Button(action: {
-                                submitEntry()
-                            }) {
-                                Text("Continue")
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .font(.system(size: 18, weight: .bold, design: .default))
-                                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                    .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
-                                    .foregroundColor(.white)
-                                    .cornerRadius(200)
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
-                        }
+        ZStack {
+            CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
+                .edgesIgnoringSafeArea(.all)
+            
+            if let image = capturedImage {
+                ZStack {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .edgesIgnoringSafeArea(.all)
-                    }
-                } else {
+                    
                     VStack {
                         HStack {
                             Button(action: {
                                 presentationMode.wrappedValue.dismiss()
                             }) {
                                 Image(systemName: "arrow.left")
-                                    .font(.system(size: 30)) // Increase the font size as needed
+                                    .font(.system(size: 30))
                                     .foregroundColor(.white)
-                                    .padding(5) // Adjust the padding to balance the increased size
+                                    .padding(5)
                                     .shadow(radius: 10)
                             }
+                            
                             Spacer()
-                            Button(action: {
-                                self.shouldToggleCamera.toggle()
-                            }) {
-                                Image(systemName: "arrow.2.circlepath")
-                                    .font(.system(size: 30)) // Increase the font size as needed
-                                    .foregroundColor(.white)
-                                    .padding(5) // Adjust the padding to balance the increased size
-                                    .shadow(radius: 10)
-                            }
+                            
                         }
-                        .padding([.top, .leading, .trailing])
+                        .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20) // Added 20 points more padding to the top
+                        .padding(.horizontal)
                         
-                        Spacer() // This will create space between the top HStack and the bottom button
+                        Spacer()
                         
+                        // "Continue" Button at the bottom
                         Button(action: {
-                            self.shouldTakePicture = true
+                            submitEntry()
                         }) {
-                            Circle()
-                                .stroke(Color.white, lineWidth: 8) // White outline
-                                .frame(width: 100, height: 100)
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
+                                .foregroundColor(.white)
+                                .cornerRadius(200)
                         }
-                        .padding(.bottom)
+                        .padding(.horizontal)
+                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
                     }
+                    .edgesIgnoringSafeArea(.all)
+                }
+            } else {
+                VStack {
+                    HStack {
+                        Button(action: {
+                            presentationMode.wrappedValue.dismiss()
+                        }) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 30)) // Increase the font size as needed
+                                .foregroundColor(.white)
+                                .padding(5) // Adjust the padding to balance the increased size
+                                .shadow(radius: 10)
+                        }
+                        Spacer()
+                        Button(action: {
+                            self.shouldToggleCamera.toggle()
+                        }) {
+                            Image(systemName: "arrow.2.circlepath")
+                                .font(.system(size: 30)) // Increase the font size as needed
+                                .foregroundColor(.white)
+                                .padding(5) // Adjust the padding to balance the increased size
+                                .shadow(radius: 10)
+                        }
+                    }
+                    .padding([.top, .leading, .trailing])
+                    
+                    Spacer() // This will create space between the top HStack and the bottom button
+                    
+                    Button(action: {
+                        self.shouldTakePicture = true
+                    }) {
+                        Circle()
+                            .stroke(Color.white, lineWidth: 8) // White outline
+                            .frame(width: 100, height: 100)
+                    }
+                    .padding(.bottom)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $shouldNavigateToLocationCheck) {
+            LocationCheckView() // Replace this with the actual view you want to present
         }
     }
     
     func submitEntry() {
-        isUploading = true
+        shouldNavigateToLocationCheck = true
 
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
@@ -230,10 +225,7 @@ struct CameraView: View {
                             }
                         }
                         
-                        isUploading = false
-                        self.presentationMode.wrappedValue.dismiss()
-                        
-                        let banner = NotificationBanner(title: "Successfully Joined", style: .success)
+                        let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
                         banner.show()
                         
                         Flurry.log(eventName: "Competition picture created")
