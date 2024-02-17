@@ -77,23 +77,7 @@ struct LocationCheckView: View {
             
             
             Button(action: {
-                // Request location access
-                self.locationManager.requestLocationAccess()
-                
-                navigateToNextView = true
-
-//                // Check if we already have a location; if not, the check will happen in the delegate methods
-//                if CLLocationManager.authorizationStatus() == .authorizedWhenInUse || CLLocationManager.authorizationStatus() == .authorizedAlways {
-//                    if let location = locationManager.lastLocation {
-//                        let coordinate = location.coordinate
-//                        // Simplified check for the UK location
-//                        if (49.9...60.9).contains(coordinate.latitude) && (-10.5...1.8).contains(coordinate.longitude) {
-//                            navigateToNextView = true
-//                        } else {
-//                            navigateToDeniedView = true
-//                        }
-//                    }
-//                }
+                checkLocationAndNavigate()
             }) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -119,5 +103,33 @@ struct LocationCheckView: View {
             SelectMoneyView() // Replace this with the actual view you want to present
         }
         .padding()
+    }
+    
+    private func checkLocationAndNavigate() {
+        self.locationManager.requestLocationAccess()
+
+        let status = CLLocationManager.authorizationStatus()
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
+            if let location = locationManager.lastLocation {
+                let coordinate = location.coordinate
+                if isLocationWithinUK(coordinate: coordinate) {
+                    navigateToNextView = true
+                } else {
+                    navigateToDeniedView = true
+                }
+            }
+        default:
+            // SORT OUT ALL THE EDGE CASES
+            // Handle other authorization statuses (denied, restricted, notDetermined)
+            navigateToDeniedView = true
+        }
+    }
+
+    private func isLocationWithinUK(coordinate: CLLocationCoordinate2D) -> Bool {
+        // Adjusted latitude and longitude range for a more accurate UK location check
+        let latitudeRange = 49.9...60.85
+        let longitudeRange = -8.0...1.78
+        return latitudeRange.contains(coordinate.latitude) && longitudeRange.contains(coordinate.longitude)
     }
 }
