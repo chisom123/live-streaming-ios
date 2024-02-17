@@ -45,7 +45,7 @@ struct SelectMoneyView: View {
                         .background(Color(hex: "#F5F5F5"))
                         .foregroundColor(Color(hex: "#000"))
                         .cornerRadius(5)
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .font(.system(size: 18, weight: .bold, design: .default))
                 }
                 
                 Button(action: {
