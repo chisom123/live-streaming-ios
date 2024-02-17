@@ -1,13 +1,12 @@
 import SwiftUI
+import NotificationBannerSwift
 
-struct PayView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @State private var cardNumber: String = ""
-    @State private var expiryDate: String = ""
-    @State private var cvv: String = ""
+struct SelectMoneyView: View {
     
-    @ObservedObject var viewModel = PaymentViewModel(clientID: "AWi9TmUagirOf6ev1JOMu4qPJO5N0GaFz24a2XvO1s_i17ipombKODIwNvs0yr3wPIu0Zt3rfuhS57mS")
-
+    @Environment(\.presentationMode) var presentationMode
+    @State private var navigatetopayview = false
+    @State private var amount: String = ""
+    
     var body: some View {
         VStack {
             HStack {
@@ -26,31 +25,31 @@ struct PayView: View {
             Spacer() // Creates space between the close button and input fields
             
             VStack(spacing: 20) {
-                Text("Enter your payment details")
-                    .font(.system(size: 19, weight: .semibold, design: .default))
+                Text("How much would you like to add to the prize pot?")
+                    .font(.system(size: 18, weight: .semibold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 40)
+                    .padding(.horizontal)
                 
-                TextField("Card Number", text: $cardNumber)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .keyboardType(.numberPad)
-                
-                HStack {
-                    TextField("MM/YY", text: $expiryDate)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                        .frame(maxWidth: .infinity)
+                HStack { // Added HStack to align the pound sign and the TextField horizontally
+                    Text("£") // Fixed £ symbol text
+                        .font(.system(size: 20, weight: .bold, design: .default))
+                        .foregroundColor(Color(hex: "#000"))
+                        .padding(.horizontal, 5)
                     
-                    TextField("CVV", text: $cvv)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                    TextField("5", text: $amount)
                         .keyboardType(.numberPad)
-                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(hex: "#F5F5F5"))
+                        .foregroundColor(Color(hex: "#000"))
+                        .cornerRadius(5)
+                        .font(.system(size: 16, weight: .bold, design: .default))
                 }
                 
                 Button(action: {
-                    viewModel.processPayment(cardNumber: cardNumber, expiryDate: expiryDate, cvv: cvv)
+                    navigatetopayview = true
                 }) {
                     Text("Continue")
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -65,6 +64,9 @@ struct PayView: View {
             .padding()
             
             Spacer() // Pushes everything to the top
+        }
+        .fullScreenCover(isPresented: $navigatetopayview) {
+            PayView() // Replace this with the actual view you want to present
         }
     }
 }

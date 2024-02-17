@@ -116,7 +116,7 @@ struct LocationCheckView: View {
             
         }
         .fullScreenCover(isPresented: $navigateToNextView) {
-            PayView() // Replace this with the actual view you want to present
+            SelectMoneyView() // Replace this with the actual view you want to present
         }
         .padding()
     }

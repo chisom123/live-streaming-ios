@@ -97,6 +97,14 @@
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
 		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
+		4F56AB442B80E732005FFC96 /* PaymentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB432B80E732005FFC96 /* PaymentViewModel.swift */; };
+		4F56AB472B80E89C005FFC96 /* CardPayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB462B80E89C005FFC96 /* CardPayments */; };
+		4F56AB492B80E89C005FFC96 /* CorePayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB482B80E89C005FFC96 /* CorePayments */; };
+		4F56AB4B2B80E89C005FFC96 /* FraudProtection in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB4A2B80E89C005FFC96 /* FraudProtection */; };
+		4F56AB4D2B80E89C005FFC96 /* PayPalNativePayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB4C2B80E89C005FFC96 /* PayPalNativePayments */; };
+		4F56AB4F2B80E89C005FFC96 /* PayPalWebPayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB4E2B80E89C005FFC96 /* PayPalWebPayments */; };
+		4F56AB512B80E89C005FFC96 /* PaymentButtons in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB502B80E89C005FFC96 /* PaymentButtons */; };
+		4F56AB602B814D93005FFC96 /* SelectMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -166,6 +174,8 @@
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
 		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
+		4F56AB432B80E732005FFC96 /* PaymentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentViewModel.swift; sourceTree = "<group>"; };
+		4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectMoney.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -173,12 +183,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F56AB4F2B80E89C005FFC96 /* PayPalWebPayments in Frameworks */,
 				4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */,
 				4F3E0D2F2A86F6BF0068F901 /* FirebaseDatabase in Frameworks */,
+				4F56AB492B80E89C005FFC96 /* CorePayments in Frameworks */,
 				4F3E0D3D2A86F6BF0068F901 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				4F3E0D352A86F6BF0068F901 /* FirebaseFirestore in Frameworks */,
 				4F3E0D212A86F6BF0068F901 /* FirebaseAnalyticsSwift in Frameworks */,
 				4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */,
+				4F56AB472B80E89C005FFC96 /* CardPayments in Frameworks */,
+				4F56AB4B2B80E89C005FFC96 /* FraudProtection in Frameworks */,
 				4F3E0D1D2A86F6BF0068F901 /* FirebaseAnalytics in Frameworks */,
 				4F3E0D1F2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */,
 				4F3E0D452A86F6BF0068F901 /* FirebaseMLModelDownloader in Frameworks */,
@@ -197,6 +211,7 @@
 				4F3E0D4B2A86F6BF0068F901 /* FirebaseRemoteConfig in Frameworks */,
 				4F3E0D272A86F6BF0068F901 /* FirebaseAppDistribution-Beta in Frameworks */,
 				4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */,
+				4F56AB4D2B80E89C005FFC96 /* PayPalNativePayments in Frameworks */,
 				4F3E0D2B2A86F6BF0068F901 /* FirebaseAuthCombine-Community in Frameworks */,
 				4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */,
 				4F3E0D492A86F6BF0068F901 /* FirebasePerformance in Frameworks */,
@@ -205,6 +220,7 @@
 				4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */,
 				4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */,
 				4F3E0D332A86F6BF0068F901 /* FirebaseDynamicLinks in Frameworks */,
+				4F56AB512B80E89C005FFC96 /* PaymentButtons in Frameworks */,
 				4F3E0D372A86F6BF0068F901 /* FirebaseFirestoreCombine-Community in Frameworks */,
 				4F3E0D472A86F6BF0068F901 /* FirebaseMessaging in Frameworks */,
 				4F3E0D432A86F6BF0068F901 /* FirebaseInstallations in Frameworks */,
@@ -319,6 +335,7 @@
 				4F382EA52B0A56CC00669A58 /* BigImage.swift */,
 				4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */,
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
+				4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -344,6 +361,7 @@
 				4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */,
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
 				4F375D152B0651EC0011F541 /* CompetitionsModel.swift */,
+				4F56AB432B80E732005FFC96 /* PaymentViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -401,6 +419,12 @@
 				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
 				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
 				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
+				4F56AB462B80E89C005FFC96 /* CardPayments */,
+				4F56AB482B80E89C005FFC96 /* CorePayments */,
+				4F56AB4A2B80E89C005FFC96 /* FraudProtection */,
+				4F56AB4C2B80E89C005FFC96 /* PayPalNativePayments */,
+				4F56AB4E2B80E89C005FFC96 /* PayPalWebPayments */,
+				4F56AB502B80E89C005FFC96 /* PaymentButtons */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -483,6 +507,7 @@
 				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
 				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
 				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
+				4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -560,10 +585,12 @@
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
+				4F56AB442B80E732005FFC96 /* PaymentViewModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F375D032AE7C67E0011F541 /* Map.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
+				4F56AB602B814D93005FFC96 /* SelectMoney.swift in Sources */,
 				4F382EA42B0917F400669A58 /* SuperstarInfo.swift in Sources */,
 				4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
@@ -1008,6 +1035,14 @@
 				minimumVersion = 12.0.0;
 			};
 		};
+		4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/paypal/paypal-ios/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1190,6 +1225,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
 			productName = FlurryMessaging;
+		};
+		4F56AB462B80E89C005FFC96 /* CardPayments */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = CardPayments;
+		};
+		4F56AB482B80E89C005FFC96 /* CorePayments */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = CorePayments;
+		};
+		4F56AB4A2B80E89C005FFC96 /* FraudProtection */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = FraudProtection;
+		};
+		4F56AB4C2B80E89C005FFC96 /* PayPalNativePayments */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = PayPalNativePayments;
+		};
+		4F56AB4E2B80E89C005FFC96 /* PayPalWebPayments */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = PayPalWebPayments;
+		};
+		4F56AB502B80E89C005FFC96 /* PaymentButtons */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F56AB452B80E89C005FFC96 /* XCRemoteSwiftPackageReference "paypal-ios" */;
+			productName = PaymentButtons;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
