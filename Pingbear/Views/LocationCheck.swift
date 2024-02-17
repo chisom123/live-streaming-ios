@@ -59,7 +59,7 @@ struct LocationCheckView: View {
                 )
                 .padding(.horizontal)
             
-            Text("Enter the Prize Pot")
+            Text("Win a Cash Prize")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
