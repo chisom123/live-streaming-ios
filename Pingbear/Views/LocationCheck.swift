@@ -43,8 +43,8 @@ struct LocationCheckView: View {
                 Button("Skip") {
                     
                 }
-                .font(.system(size: 16, weight: .bold, design: .default))
-                .foregroundColor(.black)
+                .font(.system(size: 15.5, weight: .bold, design: .default))
+                .foregroundColor(.gray)
                 .padding()
             }
             
@@ -52,10 +52,10 @@ struct LocationCheckView: View {
             
             Text("£")
                 .font(.system(size: 30, weight: .bold, design: .default))
-                .foregroundColor(Color(hex: "#DAA520"))
+                .foregroundColor(Color(hex: "#008000"))
                 .padding()
                 .background(Circle()
-                    .stroke(Color(hex: "#DAA520"), lineWidth: 3)
+                    .stroke(Color(hex: "#008000"), lineWidth: 3.5)
                 )
                 .padding(.horizontal)
             
@@ -63,7 +63,7 @@ struct LocationCheckView: View {
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
-                .foregroundColor(Color(hex: "#DAA520"))
+                .foregroundColor(Color(hex: "#008000"))
                 .padding(.bottom, 30)
                 .padding(.top, 20)
                 .padding(.horizontal)
@@ -83,17 +83,17 @@ struct LocationCheckView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
+                    .background(Color(hex: "#008000"))
                     .foregroundColor(Color(hex: "#fff"))
                     .cornerRadius(200)
             }
             .padding(.top, 30)
             
             Text("Available only in the UK")
-                .font(.system(size: 15, weight: .semibold, design: .default))
+                .font(.system(size: 15, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
-                .foregroundColor(.black)
+                .foregroundColor(.gray)
                 .padding(.top, 30)
             
             Spacer()

@@ -55,7 +55,7 @@ struct SelectMoneyView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(Color(hex: "#1199FF"))
+                        .background(Color(hex: "#008000"))
                         .foregroundColor(Color(hex: "#fff"))
                         .cornerRadius(200)
                         .padding(.top, 20)
