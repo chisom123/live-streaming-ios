@@ -104,7 +104,6 @@
 		4F56AB4D2B80E89C005FFC96 /* PayPalNativePayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB4C2B80E89C005FFC96 /* PayPalNativePayments */; };
 		4F56AB4F2B80E89C005FFC96 /* PayPalWebPayments in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB4E2B80E89C005FFC96 /* PayPalWebPayments */; };
 		4F56AB512B80E89C005FFC96 /* PaymentButtons in Frameworks */ = {isa = PBXBuildFile; productRef = 4F56AB502B80E89C005FFC96 /* PaymentButtons */; };
-		4F56AB602B814D93005FFC96 /* SelectMoney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -175,7 +174,6 @@
 		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F56AB432B80E732005FFC96 /* PaymentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentViewModel.swift; sourceTree = "<group>"; };
-		4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectMoney.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -335,7 +333,6 @@
 				4F382EA52B0A56CC00669A58 /* BigImage.swift */,
 				4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */,
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
-				4F56AB5F2B814D92005FFC96 /* SelectMoney.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -590,7 +587,6 @@
 				4F375D032AE7C67E0011F541 /* Map.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
-				4F56AB602B814D93005FFC96 /* SelectMoney.swift in Sources */,
 				4F382EA42B0917F400669A58 /* SuperstarInfo.swift in Sources */,
 				4F3E0D852A9BC9570068F901 /* Bear.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
