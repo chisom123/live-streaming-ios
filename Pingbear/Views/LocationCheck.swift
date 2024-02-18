@@ -50,20 +50,22 @@ struct LocationCheckView: View {
             
             Spacer()
             
-            Text("£")
-                .font(.system(size: 30, weight: .bold, design: .default))
-                .foregroundColor(Color(hex: "#008000"))
-                .padding()
-                .background(Circle()
-                    .stroke(Color(hex: "#008000"), lineWidth: 3.5)
-                )
-                .padding(.horizontal)
+            HStack {
+                Image(systemName: "star")
+            }
+            .font(.system(size: 30, weight: .bold, design: .default))
+            .foregroundColor(Color(hex: "#DAA520"))
+            .padding()
+            .background(Circle()
+                .stroke(Color(hex: "#DAA520"), lineWidth: 3.5)
+            )
+            .padding(.horizontal)
             
             Text("Win a Cash Prize")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
-                .foregroundColor(Color(hex: "#008000"))
+                .foregroundColor(Color(hex: "#DAA520"))
                 .padding(.bottom, 30)
                 .padding(.top, 20)
                 .padding(.horizontal)
@@ -83,18 +85,11 @@ struct LocationCheckView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#008000"))
+                    .background(Color(hex: "#DAA520"))
                     .foregroundColor(Color(hex: "#fff"))
                     .cornerRadius(200)
             }
             .padding(.top, 30)
-            
-            Text("Available only in the UK")
-                .font(.system(size: 15, weight: .bold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(.gray)
-                .padding(.top, 30)
             
             Spacer()
             
