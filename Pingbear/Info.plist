@@ -14,8 +14,6 @@
 		</dict>
 		<dict/>
 	</array>
-    <key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to find out if you are in the UK in order to join the prize pot and receive payouts</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

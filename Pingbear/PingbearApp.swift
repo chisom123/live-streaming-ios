@@ -42,7 +42,7 @@ struct PingbearApp: App {
     var body: some Scene {
         WindowGroup {
             if isLoggedIn && Auth.auth().currentUser != nil {
-                LocationCheckView()
+                ContentView()
                     .onAppear {
                         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = scene.windows.first {
