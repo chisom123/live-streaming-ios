@@ -3,6 +3,17 @@ import Firebase
 import FirebaseFirestore
 import UIKit
 
+struct ShareSheet: UIViewControllerRepresentable {
+    var items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 struct CompDetails: View {
     
     @Environment(\.presentationMode) var presentationMode
@@ -12,6 +23,8 @@ struct CompDetails: View {
     @State private var isVotingPresented = false
     @State private var selectedImageUrl: String = ""
     @State private var showBigImageView = false
+    @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
+    
     @ObservedObject var entryViewModel: EntryViewModel
 
     @State private var timeRemaining: String = ""
@@ -59,6 +72,19 @@ struct CompDetails: View {
                     }
                     
                     Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    
+                    // Step 2: Share Button
+                    Button(action: {
+                        self.showingShareSheet = true
+                    }) {
+                        HStack {
+                            Text("Share Competition") // Text to display next to the icon
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+                        }
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 20)
                 }
     
                 
@@ -220,6 +246,10 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)
         })
+        .sheet(isPresented: $showingShareSheet) {
+            // This closure needs to return a View.
+            ShareSheet(items: ["Check out this competition: \(competition.description)", URL(string: "https://apps.apple.com/app/chay/id6473705189")].compactMap { $0 })
+        }
     }
     func joincomp() {
         self.isCameraPresented = true

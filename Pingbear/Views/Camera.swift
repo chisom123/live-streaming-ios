@@ -52,8 +52,8 @@ class CameraViewController: UIViewController, CameraDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        swiftttAddChild(camera)
-        camera.view.frame = view.frame
+//        swiftttAddChild(camera)
+//        camera.view.frame = view.frame
     }
 
     func takePicture() {
@@ -178,61 +178,61 @@ struct CameraView: View {
     func submitEntry() {
         shouldNavigateToLocationCheck = true
 
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("User not logged in")
-            return
-        }
-
-        guard let capturedImage = self.capturedImage, let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
-            print("No image captured")
-            return
-        }
-
-        let db = Firestore.firestore()
-        let storage = Storage.storage()
-        let storageRef = storage.reference()
-        let imageRef = storageRef.child("images/\(UUID().uuidString).jpg")
-
-        imageRef.putData(imageData, metadata: nil) { metadata, error in
-            guard metadata != nil else {
-                print("Error uploading image: \(String(describing: error))")
-                return
-            }
-
-            imageRef.downloadURL { url, error in
-                guard let downloadURL = url else {
-                    print("Error getting download URL: \(String(describing: error))")
-                    return
-                }
-
-                // Now that you have the image URL, include it in the entryData
-                let entryData = ["userId": userId, "imageUrl": downloadURL.absoluteString]
-                
-                // Save to Firestore
-                let entriesCollection = db.collection("competitions").document(self.competitionId).collection("entries")
-                entriesCollection.addDocument(data: entryData) { error in
-                    if let error = error {
-                        print("Error saving entry: \(error)")
-                    } else {
-                        print("Entry saved successfully")
-                        // Add the user to the participants collection
-                        let participantRef = db.collection("competitions").document(self.competitionId).collection("participants").document(userId)
-                        participantRef.setData(["userId": userId]) { error in
-                            if let error = error {
-                                print("Error adding participant: \(error)")
-                            } else {
-                                print("Participant added successfully.")
-                            }
-                        }
-                        
-                        let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
-                        banner.show()
-                        
-                        Flurry.log(eventName: "Competition picture created")
-                    }
-                }
-            }
-        }
+//        guard let userId = Auth.auth().currentUser?.uid else {
+//            print("User not logged in")
+//            return
+//        }
+//
+//        guard let capturedImage = self.capturedImage, let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
+//            print("No image captured")
+//            return
+//        }
+//
+//        let db = Firestore.firestore()
+//        let storage = Storage.storage()
+//        let storageRef = storage.reference()
+//        let imageRef = storageRef.child("images/\(UUID().uuidString).jpg")
+//
+//        imageRef.putData(imageData, metadata: nil) { metadata, error in
+//            guard metadata != nil else {
+//                print("Error uploading image: \(String(describing: error))")
+//                return
+//            }
+//
+//            imageRef.downloadURL { url, error in
+//                guard let downloadURL = url else {
+//                    print("Error getting download URL: \(String(describing: error))")
+//                    return
+//                }
+//
+//                // Now that you have the image URL, include it in the entryData
+//                let entryData = ["userId": userId, "imageUrl": downloadURL.absoluteString]
+//
+//                // Save to Firestore
+//                let entriesCollection = db.collection("competitions").document(self.competitionId).collection("entries")
+//                entriesCollection.addDocument(data: entryData) { error in
+//                    if let error = error {
+//                        print("Error saving entry: \(error)")
+//                    } else {
+//                        print("Entry saved successfully")
+//                        // Add the user to the participants collection
+//                        let participantRef = db.collection("competitions").document(self.competitionId).collection("participants").document(userId)
+//                        participantRef.setData(["userId": userId]) { error in
+//                            if let error = error {
+//                                print("Error adding participant: \(error)")
+//                            } else {
+//                                print("Participant added successfully.")
+//                            }
+//                        }
+//
+//                        let banner = NotificationBanner(title: "Successfully Joined Competition", style: .success)
+//                        banner.show()
+//
+//                        Flurry.log(eventName: "Competition picture created")
+//                    }
+//                }
+//            }
+//        }
     }
 
 }
