@@ -248,7 +248,7 @@ struct CompDetails: View {
         })
         .sheet(isPresented: $showingShareSheet) {
             // This closure needs to return a View.
-            ShareSheet(items: ["Check out this competition: \(competition.description)", URL(string: "https://apps.apple.com/app/chay/id6473705189")].compactMap { $0 })
+            ShareSheet(items: ["Check out this competition - \(competition.description)", URL(string: "https://apps.apple.com/app/chay/id6473705189")].compactMap { $0 })
         }
     }
     func joincomp() {
