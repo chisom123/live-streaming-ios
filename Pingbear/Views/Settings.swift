@@ -68,6 +68,21 @@ struct SettingsView: View {
                     .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
                     
+                    Button(action: {
+                        let banner = NotificationBanner(title: "Purchases Successfully Restored", style: .success)
+                        banner.show()
+                    }) {
+                        HStack {
+                            Text("Restore Purchases")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+                            Spacer()
+                        }
+                        .padding([.top, .bottom], 20)
+                        .padding([.leading, .trailing], 20)
+                    }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
                     
                     // Log Out Button
                     Button(action: {
