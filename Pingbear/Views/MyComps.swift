@@ -121,7 +121,7 @@ struct MyCompsView: View {
                 viewModel.fetchUserCompetitions()
             }
             .fullScreenCover(item: $selectedCompetition) { comp in
-                CompDetails(competition: comp)
+                CompDetails(competition: comp, fromLocationCheckView: false)
             }
             .fullScreenCover(isPresented: $isPresentingNewCompetition) {
                 NewCompetition() // Replace this with the actual view you want to present

@@ -31,6 +31,7 @@ struct CompDetails: View {
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var competition: Competition // this holds the selected competition details
+    var fromLocationCheckView: Bool // Add this line
 
     func timeLeft(until endTime: Date) -> String {
         let currentTime = Date()
@@ -50,8 +51,9 @@ struct CompDetails: View {
         }
     }
 
-    init(competition: Competition) {
+    init(competition: Competition, fromLocationCheckView: Bool) {
         self.competition = competition
+        self.fromLocationCheckView = fromLocationCheckView // Initialize the fromLocationCheckView property
         _competitionTimestamp = State(initialValue: competition.date)
         self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
     }
@@ -62,7 +64,11 @@ struct CompDetails: View {
             VStack(alignment: .leading) {
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        if fromLocationCheckView {
+                            
+                        } else {
+                            presentationMode.wrappedValue.dismiss()
+                        }
                     }) {
                         Image("Close")
                             .resizable()
@@ -241,7 +247,7 @@ struct CompDetails: View {
             timeRemaining = timeLeft(until: endTime)
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView))
+            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView), competition: competition)
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)

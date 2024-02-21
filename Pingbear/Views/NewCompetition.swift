@@ -92,7 +92,7 @@ struct NewCompetition: View {
 
         }
         .fullScreenCover(item: $selectedCompetition) { competition in
-            CompDetails(competition: competition)
+            CompDetails(competition: competition, fromLocationCheckView: true)
         }
     }
 

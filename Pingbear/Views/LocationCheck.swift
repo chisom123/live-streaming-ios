@@ -2,6 +2,9 @@ import SwiftUI
 
 struct LocationCheckView: View {
     @State private var navigateToNextView = false
+    @State private var navigateBack = false
+
+    var competition: Competition // Add this line
     
     var body: some View {
         VStack {
@@ -10,7 +13,7 @@ struct LocationCheckView: View {
                 Spacer()
                 
                 Button("Skip") {
-                    
+                    navigateBack = true
                 }
                 .font(.system(size: 15.5, weight: .bold, design: .default))
                 .foregroundColor(.gray)
@@ -65,6 +68,9 @@ struct LocationCheckView: View {
         }
         .fullScreenCover(isPresented: $navigateToNextView) {
             PayView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
+        }
+        .fullScreenCover(isPresented: $navigateBack) {
+            CompDetails(competition: competition, fromLocationCheckView: true) // Pass the competition to the CompDetails view
         }
         .padding()
     }

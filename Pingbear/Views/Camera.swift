@@ -80,6 +80,7 @@ struct CameraView: View {
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     var competitionId: String
     @ObservedObject var viewModel: EntryViewModel // Assuming this is your view model
+    var competition: Competition // Change from competitionId to competition
     @State private var shouldNavigateToLocationCheck = false // Added for navigation to LocationCheckView
     
     var body: some View {
@@ -171,7 +172,7 @@ struct CameraView: View {
             }
         }
         .fullScreenCover(isPresented: $shouldNavigateToLocationCheck) {
-            LocationCheckView() // Replace this with the actual view you want to present
+            LocationCheckView(competition: competition)
         }
     }
     
