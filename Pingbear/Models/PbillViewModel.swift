@@ -6,17 +6,17 @@ import FirebaseFirestore
 import Combine
 import Flurry_iOS_SDK
 
-class PbillViewModel: NSObject, ObservableObject {
+class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
     @Published var products: [SKProduct] = []
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false
 
-    private var productIdentifiers: Set<String> = ["Bill1", "Bill2", "Bill3", "Bill4", "superstar"]
+    private var productIdentifiers: Set<String> = ["superstar"]
 
     override init() {
         super.init()
         fetchProducts()
-        SKPaymentQueue.default().add(self)  // Start observing the payment queue
+        SKPaymentQueue.default().add(self)
     }
 
     private func fetchProducts() {
@@ -33,24 +33,15 @@ class PbillViewModel: NSObject, ObservableObject {
         SKPaymentQueue.default().add(payment)
     }
 
-    // Handle completed payment
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
-        
-        // Get the current user's ID from Firebase Authentication
         guard let userID = Auth.auth().currentUser?.uid else {
             print("No logged-in user found!")
             return
         }
-        
-        // Access the user's document in the "users" collection using the userID
         let userDocRef = Firestore.firestore().collection("users").document(userID)
-        
-        // Update the user's P-Bills in Firestore
-        userDocRef.updateData([
-            "subscribed": true  // Directly assigning the boolean value true
-        ]) { error in
+        userDocRef.updateData(["subscribed": true]) { error in
             DispatchQueue.main.async {
-                self.isLoading = false // Set isLoading to false here
+                self.isLoading = false
             }
             if let error = error {
                 print("Error updating user data: \(error)")
@@ -60,31 +51,14 @@ class PbillViewModel: NSObject, ObservableObject {
                 Flurry.log(eventName: "Subscription-Purchased")
             }
         }
-
     }
 
-    private func amountForProductIdentifier(_ identifier: String) -> Int {
-        switch identifier {
-        case "Bill1": return 900
-        case "Bill2": return 2300
-        case "Bill3": return 4000
-        case "Bill4": return 11000
-        default: return 0
-        }
-    }
-}
-
-extension PbillViewModel: SKProductsRequestDelegate {
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         DispatchQueue.main.async {
-            self.products = response.products.sorted(by: {
-                self.amountForProductIdentifier($0.productIdentifier) < self.amountForProductIdentifier($1.productIdentifier)
-            })
+            self.products = response.products
         }
     }
-}
-
-extension PbillViewModel: SKPaymentTransactionObserver {
+    
     func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         for transaction in transactions {
             switch transaction.transactionState {
