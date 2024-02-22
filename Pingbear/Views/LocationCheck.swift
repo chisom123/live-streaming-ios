@@ -7,6 +7,9 @@ struct LocationCheckView: View {
 
     var competition: Competition // Add this line
     
+    var competitionId: String // Add this line to hold the competition ID
+    var entryDocId: String // Add this line to hold the entry document ID
+    
     var body: some View {
         VStack {
             HStack {
@@ -68,7 +71,7 @@ struct LocationCheckView: View {
             
         }
         .fullScreenCover(isPresented: $navigateToNextView) {
-            PayView(viewModel: PbillViewModel()) // Replace this with the actual view you want to present
+            PayView(viewModel: PbillViewModel(), competitionId: competitionId, entryDocId: entryDocId, competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $navigateBack) {
             CompDetails(competition: competition, fromLocationCheckView: true) // Pass the competition to the CompDetails view

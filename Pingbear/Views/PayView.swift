@@ -5,6 +5,13 @@ struct PayView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: PbillViewModel
     
+    var competitionId: String
+    var entryDocId: String
+    
+    @State private var navigateToCompDetails = false // State to control navigation
+    
+    var competition: Competition
+
     
     var body: some View {
         if viewModel.isLoading {
@@ -87,13 +94,22 @@ struct PayView: View {
             Spacer()
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
-                    presentationMode.wrappedValue.dismiss()
-        
                     let banner = NotificationBanner(title: "Superstar Successfully Activated", style: .success)
                     banner.show()
+
+                    // Delay the navigation to allow the banner to be displayed
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { // Adjust delay time as needed
+                        navigateToCompDetails = true
+                    }
                 }
             }
-            
+            .fullScreenCover(isPresented: $navigateToCompDetails) {
+                CompDetails(competition: competition, fromLocationCheckView: true) // Adjust according to your needs
+            }
+            .onAppear {
+                viewModel.competitionId = self.competitionId
+                viewModel.entryDocId = self.entryDocId
+            }
         }
     }
     

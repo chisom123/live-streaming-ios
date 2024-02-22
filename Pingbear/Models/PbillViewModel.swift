@@ -11,6 +11,9 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false
 
+    var competitionId: String = "" // Add this line
+    var entryDocId: String = "" // Add this line
+    
     private var productIdentifiers: Set<String> = ["superstar"]
 
     override init() {
@@ -34,23 +37,45 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
     }
 
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
+        // Check if the user is logged in before attempting to update Firestore.
         guard let userID = Auth.auth().currentUser?.uid else {
             print("No logged-in user found!")
             return
         }
-        let userDocRef = Firestore.firestore().collection("users").document(userID)
-        userDocRef.updateData(["subscribed": true]) { error in
+        
+        // Check if competitionId and entryDocId have been set properly.
+        guard !self.competitionId.isEmpty, !self.entryDocId.isEmpty else {
+            print("Competition ID or Entry Document ID is not set.")
+            return
+        }
+
+        // Reference to the specific Firestore document.
+        let entriesDocRef = Firestore.firestore()
+                                    .collection("competitions")
+                                    .document(self.competitionId)
+                                    .collection("entries")
+                                    .document(self.entryDocId)
+        
+        // Update the document in Firestore.
+        entriesDocRef.updateData(["superstar": true]) { [weak self] error in
+            guard let self = self else { return } // Check for self capture to avoid memory leaks
+            
             DispatchQueue.main.async {
-                self.isLoading = false
+                self.isLoading = false // Stop loading irrespective of error
             }
+
             if let error = error {
-                print("Error updating user data: \(error)")
+                print("Error updating entry data: \(error)")
             } else {
-                print("User data successfully updated!")
+                print("Entry data successfully updated to set superstar true!")
+                // Only set purchaseCompleted to true if the update was successful.
                 self.purchaseCompleted = true
                 Flurry.log(eventName: "Subscription-Purchased")
             }
         }
+        
+        // Finish the transaction after all updates are attempted.
+        SKPaymentQueue.default().finishTransaction(transaction)
     }
 
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
@@ -70,6 +95,7 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
                 }
             case .failed:
                 // Handle failed transaction
+                handleCompletedPayment(transaction: transaction)
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
