@@ -3,6 +3,7 @@ import SwiftUI
 struct LocationCheckView: View {
     @State private var navigateToNextView = false
     @State private var navigateBack = false
+    @EnvironmentObject var sharedViewModel: SharedViewModel
 
     var competition: Competition // Add this line
     

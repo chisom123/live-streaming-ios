@@ -97,6 +97,7 @@
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
 		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
+		4F56AB622B876642005FFC96 /* SharedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB612B876642005FFC96 /* SharedViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -166,6 +167,7 @@
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
 		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
+		4F56AB612B876642005FFC96 /* SharedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -344,6 +346,7 @@
 				4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */,
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
 				4F375D152B0651EC0011F541 /* CompetitionsModel.swift */,
+				4F56AB612B876642005FFC96 /* SharedViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -560,6 +563,7 @@
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
+				4F56AB622B876642005FFC96 /* SharedViewModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F375D032AE7C67E0011F541 /* Map.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,

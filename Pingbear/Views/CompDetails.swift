@@ -24,6 +24,7 @@ struct CompDetails: View {
     @State private var selectedImageUrl: String = ""
     @State private var showBigImageView = false
     @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
+    @EnvironmentObject var sharedViewModel: SharedViewModel
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -65,7 +66,7 @@ struct CompDetails: View {
                 HStack {
                     Button(action: {
                         if fromLocationCheckView {
-                            
+                            sharedViewModel.shouldNavigateToCompetitionsView = true
                         } else {
                             presentationMode.wrappedValue.dismiss()
                         }
