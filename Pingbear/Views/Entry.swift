@@ -63,18 +63,20 @@ struct EntryView: View {
                             let maxStars = 5
 
                             ForEach(1...maxStars, id: \.self) { star in
+                                let currentEntry = viewModel.entries[viewModel.currentIndex]
                                 Button(action: {
-                                    let ratingIncrement = star
+                                    let ratingIncrement = currentEntry.isSuperstar && star == 5 ? 8 : star
                                     self.rating = ratingIncrement
-                                    let currentEntryId = viewModel.entries[viewModel.currentIndex].id
+                                    let currentEntryId = currentEntry.id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
 
-                                    if star == 5 {
+                                    // Trigger scale-up and haptic feedback only if fifth star is a superstar and is selected
+                                    if currentEntry.isSuperstar && star == 5 {
                                         triggerHapticFeedback(style: .heavy)
                                         withAnimation(.spring()) {
-                                            self.fifthStarScale = 1.5 // Scale up
+                                            self.fifthStarScale = 1.5 // Scale up only for the superstar
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                self.fifthStarScale = 1.0 // Scale back to normal
+                                                self.fifthStarScale = 1.0 // Then scale back to normal
                                             }
                                         }
                                     }
@@ -83,8 +85,7 @@ struct EntryView: View {
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
                                             presentationMode.wrappedValue.dismiss()
-                                            
-                                            let banner = NotificationBanner(title: "Voting empty. Check again later!", style: .warning)
+                                            let banner = NotificationBanner(title: "Voting complete. Check again later", style: .warning)
                                             banner.show()
                                         }
                                     } else {
@@ -98,9 +99,13 @@ struct EntryView: View {
                                     }
                                 }) {
                                     Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                        .foregroundColor(star <= self.rating ? Color(hex: "#FFD700") : Color.black)
+                                        .foregroundColor(
+                                            (star == 5 && viewModel.entries.indices.contains(viewModel.currentIndex) && viewModel.entries[viewModel.currentIndex].isSuperstar)
+                                            ? (star <= self.rating ? Color(hex: "#FFD700") : Color(hex: "#DAA520")) // Superstar condition
+                                            : (star <= self.rating ? Color(hex: "#FFD700") : Color.black) // Regular stars condition
+                                        )
                                         .font(.system(size: 33))
-                                        .scaleEffect(star == 5 ? fifthStarScale : 1.0) // Apply scale effect to the 5th star
+                                        .scaleEffect(star == 5 && currentEntry.isSuperstar ? fifthStarScale : 1.0) // Apply scale effect only to the superstar
                                         .padding(5)
                                 }
                             }

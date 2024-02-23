@@ -8,6 +8,7 @@ struct Entry: Identifiable {
     let userName: String // Add userName
     let stars: Int
     let isCurrentUser: Bool // Indicates if the entry belongs to the current user
+    let isSuperstar: Bool // Indicates if the entry is marked as a "Superstar"
 }
 
 class EntryViewModel: ObservableObject {
@@ -87,6 +88,7 @@ class EntryViewModel: ObservableObject {
                     let userId = document.data()["userId"] as? String ?? ""
                     let imageUrl = document.data()["imageUrl"] as? String ?? ""
                     let stars = document.data()["stars"] as? Int ?? 0
+                    let isSuperstar = document.data()["superstar"] as? Bool ?? false
 
                     // Fetch the user name based on userId
                     db.collection("users").document(userId).getDocument { (userSnapshot, error) in
@@ -101,7 +103,7 @@ class EntryViewModel: ObservableObject {
                         // Create Entry instance with subscription status
                         let isCurrentUser = userId == currentUserId
                         
-                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser)
+                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar)
                         self.entries.append(entry)
                     }
                 }
@@ -143,6 +145,7 @@ class EntryViewModel: ObservableObject {
                         let userId = document.data()["userId"] as? String ?? ""
                         let imageUrl = document.data()["imageUrl"] as? String ?? ""
                         let stars = document.data()["stars"] as? Int ?? 0
+                        let isSuperstar = document.data()["superstar"] as? Bool ?? false
 
                         // Exclude if the entry is submitted by the current user or already voted on
                         if userId == currentUserId || votedEntries.contains(document.documentID) {
@@ -161,7 +164,7 @@ class EntryViewModel: ObservableObject {
                             let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
 
                             let isCurrentUser = userId == currentUserId
-                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser)
+                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar)
                             self.entries.append(entry)
                         }
                     }
@@ -188,7 +191,17 @@ class EntryViewModel: ObservableObject {
 
         let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
         
-        let starIncrement = (stars <= 4) ? stars : 5
+        // Adjust the logic to handle up to 8 stars
+        let starIncrement: Int
+        switch stars {
+            case 1...4:
+                starIncrement = stars
+            case 5...8:
+                starIncrement = stars // Allow increments up to 8 for "Superstar"
+            default:
+                print("Invalid star rating: \(stars)")
+                return
+        }
 
         // Increment the 'stars' field by the new rating
         entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
