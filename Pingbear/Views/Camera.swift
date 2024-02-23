@@ -52,8 +52,8 @@ class CameraViewController: UIViewController, CameraDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-//        swiftttAddChild(camera)
-//        camera.view.frame = view.frame
+        swiftttAddChild(camera)
+        camera.view.frame = view.frame
     }
 
     func takePicture() {
