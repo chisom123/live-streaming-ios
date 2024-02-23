@@ -46,7 +46,7 @@ struct LocationCheckView: View {
                 .padding(.top, 30)
                 .padding(.horizontal)
             
-            Text("I'm baby jianbing sartorial mlkshk vexillologist. Lomo small batch jean shorts, readymade migas squid paleo next level tumeric chicharrones fashion axe man bun.")
+            Text("A Superstar is worth 8 stars - double the usual amount. Everyone can Superstar your photos - which will boost your leaderboard ranking")
                 .font(.system(size: 17, weight: .semibold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
