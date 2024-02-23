@@ -89,13 +89,12 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
             switch transaction.transactionState {
             case .purchased:
                 handleCompletedPayment(transaction: transaction)
-                SKPaymentQueue.default().finishTransaction(transaction)
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
+                SKPaymentQueue.default().finishTransaction(transaction)
             case .failed:
                 // Handle failed transaction
-                handleCompletedPayment(transaction: transaction)
                 DispatchQueue.main.async {
                     self.isLoading = false
                 }
