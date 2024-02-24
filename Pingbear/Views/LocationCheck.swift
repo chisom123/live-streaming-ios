@@ -37,7 +37,7 @@ struct LocationCheckView: View {
             )
             .padding(.horizontal)
             
-            Text("Access the power of Superstar")
+            Text("Boost your chances of winning")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -46,7 +46,7 @@ struct LocationCheckView: View {
                 .padding(.top, 30)
                 .padding(.horizontal)
             
-            Text("A Superstar is worth 8 stars - double the usual amount. Everyone can Superstar your photos - which will boost your leaderboard ranking")
+            Text("With Superstar, your photo will earn up to eight stars from voters instead of the usual five stars. Skyrocket your leaderboard ranking and outshine the competition with Superstar.")
                 .font(.system(size: 17, weight: .semibold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)

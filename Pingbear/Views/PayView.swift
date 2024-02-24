@@ -36,7 +36,7 @@ struct PayView: View {
                     
                     Spacer()
                     
-                    Text("Access the power of Superstar")
+                    Text("Unlock the power of Superstar")
                         .font(.system(size: 22, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
@@ -61,7 +61,7 @@ struct PayView: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#1199FF"))
+                            .background(Color(hex: "#DAA520"))
                             .foregroundColor(Color(hex: "#fff"))
                             .cornerRadius(200)
                     }
