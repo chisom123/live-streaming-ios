@@ -44,7 +44,7 @@ struct PayView: View {
                         .padding(.bottom, 20)
                         .padding(.horizontal)
                     
-                    Text("£4.99")
+                    Text("$4.99")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
