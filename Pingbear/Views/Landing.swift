@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Theme or constants file
+// Theme or constants files
 struct AppColors {
     static let background = Color(hex: "#FFF")
     static let primary = Color(hex: "#1199FF")
