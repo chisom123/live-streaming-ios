@@ -21,6 +21,9 @@
 		4F382EA42B0917F400669A58 /* SuperstarInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382EA32B0917F400669A58 /* SuperstarInfo.swift */; };
 		4F382EA62B0A56CC00669A58 /* BigImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382EA52B0A56CC00669A58 /* BigImage.swift */; };
 		4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F382EA82B0F89D800669A58 /* NotificationBannerSwift */; };
+		4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F3991642B93CD1100CC54FF /* pop.mp3 */; };
+		4F3991672B93D0F300CC54FF /* win.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F3991662B93D0F300CC54FF /* win.mp3 */; };
+		4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F39916A2B9416F600CC54FF /* bgmusic.mp3 */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
@@ -130,6 +133,9 @@
 		4F382E9F2B07CAA600669A58 /* MyComps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyComps.swift; sourceTree = "<group>"; };
 		4F382EA32B0917F400669A58 /* SuperstarInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperstarInfo.swift; sourceTree = "<group>"; };
 		4F382EA52B0A56CC00669A58 /* BigImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigImage.swift; sourceTree = "<group>"; };
+		4F3991642B93CD1100CC54FF /* pop.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = pop.mp3; sourceTree = "<group>"; };
+		4F3991662B93D0F300CC54FF /* win.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = win.mp3; sourceTree = "<group>"; };
+		4F39916A2B9416F600CC54FF /* bgmusic.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bgmusic.mp3; sourceTree = "<group>"; };
 		4F3E0CE92A846CE80068F901 /* Pingbear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pingbear.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearApp.swift; sourceTree = "<group>"; };
 		4F3E0CF02A846CE90068F901 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -231,6 +237,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4F3991612B93C94200CC54FF /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				4F39916A2B9416F600CC54FF /* bgmusic.mp3 */,
+				4F3991662B93D0F300CC54FF /* win.mp3 */,
+				4F3991642B93CD1100CC54FF /* pop.mp3 */,
+			);
+			path = Sounds;
+			sourceTree = "<group>";
+		};
 		4F3E0CE02A846CE80068F901 = {
 			isa = PBXGroup;
 			children = (
@@ -255,6 +271,7 @@
 			isa = PBXGroup;
 			children = (
 				4F3E0D632A8702FE0068F901 /* Info.plist */,
+				4F3991612B93C94200CC54FF /* Sounds */,
 				4F3E0D662A895ACA0068F901 /* Extensions */,
 				4F3E0D752A95129D0068F901 /* Models */,
 				4F3E0D522A86F87C0068F901 /* Views */,
@@ -506,6 +523,9 @@
 				4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */,
 				4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */,
 				4F3E0D182A86EFF50068F901 /* GoogleService-Info.plist in Resources */,
+				4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */,
+				4F3991672B93D0F300CC54FF /* win.mp3 in Resources */,
+				4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

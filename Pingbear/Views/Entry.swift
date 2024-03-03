@@ -8,6 +8,24 @@
 import SwiftUI
 import SDWebImageSwiftUI
 import NotificationBannerSwift
+import AVFoundation
+
+struct CustomProgressView: View {
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: 0.7) // Adjust this to change the circle's "filled" portion
+            .stroke(style: StrokeStyle(lineWidth: 7, lineCap: .round)) // Make edges round
+            .foregroundColor(AppColors.primary) // Set the circle's color
+            .frame(width: 50, height: 50) // Set the size of the circle
+            .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
+            .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
+            .onAppear() {
+                self.isAnimating = true
+            }
+    }
+}
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
@@ -15,9 +33,37 @@ struct EntryView: View {
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     @State private var rating: Int = 0
     @State private var fifthStarScale: CGFloat = 1.0
+    @State private var backgroundMusicPlayer: AVAudioPlayer?
+    @State private var soundEffectPlayer: AVAudioPlayer?
+    @State private var isShowingLoadingOverlay = false
+
 
     init(competitionId: String) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
+        self._backgroundMusicPlayer = State(initialValue: self.setupBackgroundMusicPlayer())
+    }
+    
+    private func setupBackgroundMusicPlayer() -> AVAudioPlayer? {
+        guard let url = Bundle.main.url(forResource: "bgmusic", withExtension: "mp3") else { return nil }
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1 // Loop indefinitely
+            player.volume = 0.3 // Adjust this value between 0.0 and 1.0 to decrease or increase the volume
+            return player
+        } catch {
+            print("Cannot load the file")
+            return nil
+        }
+    }
+    
+    private func playSoundEffect(name: String) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return }
+        do {
+            soundEffectPlayer = try AVAudioPlayer(contentsOf: url)
+            soundEffectPlayer?.play()
+        } catch {
+            print("Cannot play the sound file")
+        }
     }
     
     private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
@@ -48,80 +94,103 @@ struct EntryView: View {
             .edgesIgnoringSafeArea(.all)
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
-            }
-
-
-
-            // Bottom - Heart button, horizontally centered
-            VStack {
-                Spacer() // Pushes the content to the bottom
-
-                // Container view for stars with background
-                ZStack {
-                    HStack(alignment: .center, spacing: 10) {
-                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                            let maxStars = 5
-
-                            ForEach(1...maxStars, id: \.self) { star in
-                                let currentEntry = viewModel.entries[viewModel.currentIndex]
-                                Button(action: {
-                                    let ratingIncrement = currentEntry.isSuperstar && star == 5 ? 8 : star
-                                    self.rating = ratingIncrement
-                                    let currentEntryId = currentEntry.id
-                                    viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
-
-                                    // Trigger scale-up and haptic feedback only if fifth star is a superstar and is selected
-                                    if currentEntry.isSuperstar && star == 5 {
-                                        triggerHapticFeedback(style: .heavy)
-                                        withAnimation(.spring()) {
-                                            self.fifthStarScale = 1.5 // Scale up only for the superstar
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                self.fifthStarScale = 1.0 // Then scale back to normal
-                                            }
-                                        }
-                                    }
-                                    
-                                    // Add check here to see if it's the last entry
-                                    if viewModel.currentIndex == viewModel.entries.count - 1 {
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
-                                            presentationMode.wrappedValue.dismiss()
-                                            let banner = NotificationBanner(title: "Voting complete. Check again later", style: .warning)
-                                            banner.show()
-                                        }
-                                    } else {
-                                        // Existing code to handle non-last entries
-
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                            if viewModel.currentIndex < viewModel.entries.count - 1 {
-                                                viewModel.currentIndex += 1
-                                            }
-                                        }
-                                    }
-                                }) {
-                                    Image(systemName: star <= self.rating ? "star.fill" : "star")
-                                        .foregroundColor(
-                                            (star == 5 && viewModel.entries.indices.contains(viewModel.currentIndex) && viewModel.entries[viewModel.currentIndex].isSuperstar)
-                                            ? (star <= self.rating ? Color(hex: "#FFD700") : Color(hex: "#DAA520")) // Superstar condition
-                                            : (star <= self.rating ? Color(hex: "#FFD700") : Color.black) // Regular stars condition
-                                        )
-                                        .font(.system(size: 33))
-                                        .scaleEffect(star == 5 && currentEntry.isSuperstar ? fifthStarScale : 1.0) // Apply scale effect only to the superstar
-                                        .padding(5)
-                                }
-                            }
-                            
-                        }
-                    }
-                    .padding(.horizontal) // Adds horizontal padding to the HStack
-                    .padding(.vertical, 10) // Increase vertical padding of the HStack
-                    .background(RoundedRectangle(cornerRadius: 200)
-                        .foregroundColor(AppColors.white.opacity(0.95))) // Background color similar to the button
-                    // Removed the shadow from the background
+                self.isShowingLoadingOverlay = true // Show loading overlay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
+                    self.isShowingLoadingOverlay = false // Hide loading overlay
                 }
-                .padding(.horizontal)
-                .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
             }
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+            
+            if isShowingLoadingOverlay {
+                AppColors.white.opacity(1) // Semi-transparent background
+                    .edgesIgnoringSafeArea(.all) // Make it cover the full screen
+                    .overlay(
+                        CustomProgressView() // Use your custom progress view here
+                            .scaleEffect(1) // Adjust the size as needed
+                    )
+            }
+
+
+            if !isShowingLoadingOverlay {
+                // Bottom - Heart button, horizontally centered
+                VStack {
+                    Spacer() // Pushes the content to the bottom
+                    
+                    // Container view for stars with background
+                    ZStack {
+                        HStack(alignment: .center, spacing: 10) {
+                            if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                                let maxStars = 5
+                                
+                                ForEach(1...maxStars, id: \.self) { star in
+                                    let currentEntry = viewModel.entries[viewModel.currentIndex]
+                                    Button(action: {
+                                        triggerHapticFeedback(style: .soft)
+                                        self.playSoundEffect(name: "pop")
+                                        let ratingIncrement = currentEntry.isSuperstar && star == 5 ? 8 : star
+                                        self.rating = ratingIncrement
+                                        let currentEntryId = currentEntry.id
+                                        viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
+                                        
+                                        // Trigger scale-up and haptic feedback only if fifth star is a superstar and is selected
+                                        if currentEntry.isSuperstar && star == 5 {
+                                            triggerHapticFeedback(style: .heavy)
+                                            self.playSoundEffect(name: "win")
+                                            withAnimation(.spring()) {
+                                                self.fifthStarScale = 1.5 // Scale up only for the superstar
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                    self.fifthStarScale = 1.0 // Then scale back to normal
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Add check here to see if it's the last entry
+                                        if viewModel.currentIndex == viewModel.entries.count - 1 {
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
+                                                presentationMode.wrappedValue.dismiss()
+                                                let banner = NotificationBanner(title: "Voting complete. Check again later", style: .warning)
+                                                banner.show()
+                                            }
+                                        } else {
+                                            // Existing code to handle non-last entries
+                                            
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                if viewModel.currentIndex < viewModel.entries.count - 1 {
+                                                    viewModel.currentIndex += 1
+                                                }
+                                            }
+                                        }
+                                    }) {
+                                        Image(systemName: star <= self.rating ? "star.fill" : "star.fill")
+                                            .foregroundColor(
+                                                (star == 5 && viewModel.entries.indices.contains(viewModel.currentIndex) && viewModel.entries[viewModel.currentIndex].isSuperstar)
+                                                ? (star <= self.rating ? Color(hex: "#FFD700") : Color.white) // Superstar condition
+                                                : (star <= self.rating ? Color(hex: "#FFD700") : Color.white) // Regular stars condition
+                                            )
+                                            .font(.system(size: 33))
+                                            .scaleEffect(star == 5 && currentEntry.isSuperstar ? fifthStarScale : 1.0) // Apply scale effect only to the superstar
+                                            .padding(5)
+                                    }
+                                }
+                                
+                            }
+                        }
+                        .padding(.horizontal) // Adds horizontal padding to the HStack
+                        .padding(.vertical, 10) // Increase vertical padding of the HStack
+                        .background(RoundedRectangle(cornerRadius: 200)
+                            .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
+                        // Removed the shadow from the background
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
+                }
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+            }
+        }
+        .onAppear {
+            self.backgroundMusicPlayer?.play()
+        }
+        .onDisappear {
+            self.backgroundMusicPlayer?.stop()
         }
     }
 }
