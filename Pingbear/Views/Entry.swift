@@ -9,6 +9,8 @@ import SwiftUI
 import SDWebImageSwiftUI
 import NotificationBannerSwift
 import AVFoundation
+import ReplayKit
+import Photos
 
 struct CustomProgressView: View {
     @State private var isAnimating = false
@@ -36,6 +38,9 @@ struct EntryView: View {
     @State private var backgroundMusicPlayer: AVAudioPlayer?
     @State private var soundEffectPlayer: AVAudioPlayer?
     @State private var isShowingLoadingOverlay = false
+    
+    @State var isRecording: Bool = false
+    @State var url: URL?
 
 
     init(competitionId: String) {
@@ -54,6 +59,30 @@ struct EntryView: View {
             print("Cannot load the file")
             return nil
         }
+    }
+    
+    func startRecording(enableMicrophone: Bool = false,completion: @escaping (Error?)->()){
+        let recorder = RPScreenRecorder.shared()
+        
+        recorder.isMicrophoneEnabled = false
+        
+        recorder.startRecording(handler: completion)
+    }
+    
+    func stopRecording()async throws->URL{
+        let name = UUID().uuidString + ".mov"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        
+        let recorder = RPScreenRecorder.shared()
+        
+        try await recorder.stopRecording(withOutput: url)
+        
+        return url
+    }
+    
+    func cancelRecording(){
+        let recorder = RPScreenRecorder.shared()
+        recorder.discardRecording {}
     }
     
     private func playSoundEffect(name: String) {
@@ -188,9 +217,43 @@ struct EntryView: View {
         }
         .onAppear {
             self.backgroundMusicPlayer?.play()
+            startRecording { error in
+                if let error = error {
+                    print(error.localizedDescription)
+                    return
+                }
+                
+                isRecording = true
+            }
         }
+        
         .onDisappear {
             self.backgroundMusicPlayer?.stop()
+            Task {
+                do {
+                    self.url = try await stopRecording()
+                    print(self.url)
+                    isRecording = false
+                    
+                    // Save the recording to the camera roll
+                    if let url = self.url {
+                        PHPhotoLibrary.shared().performChanges {
+                            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
+                        } completionHandler: { success, error in
+                            if success {
+                                print("Recording saved to camera roll successfully.")
+                            } else {
+                                if let error = error {
+                                    print("Error saving recording to camera roll: \(error.localizedDescription)")
+                                }
+                            }
+                        }
+                    }
+                }
+                catch {
+                    print(error.localizedDescription)
+                }
+            }
         }
     }
 }

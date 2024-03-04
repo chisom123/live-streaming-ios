@@ -54,10 +54,11 @@ struct MainContent: View {
 
 struct AppLogo: View {
     var body: some View {
-        Image("transparent-logo")
+        Image("Logo")
             .resizable()
             .scaledToFit()
-            .frame(width: 115, height: 115)
+            .frame(width: 100, height: 100)
+            .cornerRadius(200)
     }
 }
 

@@ -154,7 +154,7 @@ struct CompDetails: View {
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(competition.entriesNotVotedCount == 0)
+                    .disabled(competition.entriesNotVotedCount == 0) //DISABLE
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)

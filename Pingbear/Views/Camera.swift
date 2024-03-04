@@ -54,6 +54,7 @@ class CameraViewController: UIViewController, CameraDelegate {
         super.viewDidLoad()
         swiftttAddChild(camera)
         camera.view.frame = view.frame
+        camera.cameraDevice = .front
     }
 
     func takePicture() {

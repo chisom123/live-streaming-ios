@@ -759,7 +759,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Chay;
+				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can take photos used to join competitions.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
@@ -805,7 +805,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Chay;
+				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can take photos used to join competitions.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
