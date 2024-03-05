@@ -5,6 +5,7 @@ struct AppColors {
     static let background = Color(hex: "#FFF")
     static let primary = Color(hex: "#1199FF")
     static let white = Color(hex: "#fff")
+    static let orange = Color(hex: "#FF7F50")
 }
 
 struct LandingView: View {
