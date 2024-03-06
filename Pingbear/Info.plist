@@ -9,9 +9,10 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>app-1-958676880670-ios-f4396c17e7a5eac74a0d0f</string>
+				<string>app-1-958676880670-ios-c064e3782fcbe8be4a0d0f</string>
 			</array>
 		</dict>
+		<dict/>
 		<dict/>
 	</array>
 	<key>NSAppTransportSecurity</key>
@@ -27,7 +28,5 @@
 		<string>processing</string>
 		<string>remote-notification</string>
 	</array>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>To share a video of your voting experience with friends or save it to your camera roll, please enable screen recording.</string>
 </dict>
 </plist>

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F375D032AE7C67E0011F541 /* Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D022AE7C67E0011F541 /* Map.swift */; };
 		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
 		4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D062AE81F760011F541 /* NewCompetition.swift */; };
@@ -30,9 +31,6 @@
 		4F3E0CFF2A846CE90068F901 /* PingbearTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CFE2A846CE90068F901 /* PingbearTests.swift */; };
 		4F3E0D092A846CE90068F901 /* PingbearUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D082A846CE90068F901 /* PingbearUITests.swift */; };
 		4F3E0D0B2A846CE90068F901 /* PingbearUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D0A2A846CE90068F901 /* PingbearUITestsLaunchTests.swift */; };
-		4F3E0D182A86EFF50068F901 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */; };
-		4F3E0D192A86EFF50068F901 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */; };
-		4F3E0D1A2A86EFF50068F901 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */; };
 		4F3E0D1D2A86F6BF0068F901 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D1C2A86F6BF0068F901 /* FirebaseAnalytics */; };
 		4F3E0D1F2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D1E2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion */; };
 		4F3E0D212A86F6BF0068F901 /* FirebaseAnalyticsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D202A86F6BF0068F901 /* FirebaseAnalyticsSwift */; };
@@ -121,6 +119,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F375D022AE7C67E0011F541 /* Map.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Map.swift; sourceTree = "<group>"; };
 		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F375D062AE81F760011F541 /* NewCompetition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCompetition.swift; sourceTree = "<group>"; };
@@ -146,7 +145,6 @@
 		4F3E0D042A846CE90068F901 /* PingbearUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PingbearUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0D082A846CE90068F901 /* PingbearUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearUITests.swift; sourceTree = "<group>"; };
 		4F3E0D0A2A846CE90068F901 /* PingbearUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneEntry.swift; sourceTree = "<group>"; };
 		4F3E0D572A86FB1D0068F901 /* Verification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Verification.swift; sourceTree = "<group>"; };
 		4F3E0D5B2A86FC010068F901 /* NameEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameEntry.swift; sourceTree = "<group>"; };
@@ -277,7 +275,7 @@
 				4F3E0D522A86F87C0068F901 /* Views */,
 				4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */,
 				4F3E0CF02A846CE90068F901 /* Assets.xcassets */,
-				4F3E0D172A86EFF40068F901 /* GoogleService-Info.plist */,
+				4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */,
 				4F3E0CF22A846CE90068F901 /* Pingbear.entitlements */,
 				4F3E0CF32A846CE90068F901 /* Preview Content */,
 			);
@@ -522,7 +520,7 @@
 			files = (
 				4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */,
 				4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */,
-				4F3E0D182A86EFF50068F901 /* GoogleService-Info.plist in Resources */,
+				4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */,
 				4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */,
 				4F3991672B93D0F300CC54FF /* win.mp3 in Resources */,
 				4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */,
@@ -533,7 +531,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F3E0D192A86EFF50068F901 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -541,7 +538,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F3E0D1A2A86EFF50068F901 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -751,7 +747,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -763,7 +759,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can take photos used to join competitions.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record audio during screen recording.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "To share a video of your voting experience with friends or save it to your camera roll, please enable screen recording.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your voting replay video to your camera roll by allowing Pingbear access to your photo library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -799,7 +795,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -811,7 +807,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can take photos used to join competitions.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to record audio during screen recording.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "To share a video of your voting experience with friends or save it to your camera roll, please enable screen recording.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your voting replay video to your camera roll by allowing Pingbear access to your photo library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
