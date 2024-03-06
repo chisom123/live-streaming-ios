@@ -303,7 +303,7 @@ struct EntryView: View {
                         // Removed the shadow from the background
                     }
                     .padding(.horizontal)
-                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
+                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 70)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
             }
