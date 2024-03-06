@@ -64,6 +64,7 @@ struct EntryView: View {
     @State var isRecording: Bool = false
     @State var url: URL?
     @State private var showingShareSheet = false // Add this line to your EntryView's state variables
+    @State private var playerItemEndObserver: Any?
 
 
     init(competitionId: String) {
@@ -83,6 +84,14 @@ struct EntryView: View {
             return nil
         }
     }
+    
+    private func configureVideoPlayerLoop() {
+        playerItemEndObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: self.videoPlayer?.currentItem, queue: .main) { _ in
+            self.videoPlayer?.seek(to: CMTime.zero)
+            self.videoPlayer?.play()
+        }
+    }
+
     
     func startRecording(enableMicrophone: Bool = false,completion: @escaping (Error?)->()){
         let recorder = RPScreenRecorder.shared()
@@ -150,6 +159,7 @@ struct EntryView: View {
                                             if let previewURL = self.url {
                                                 DispatchQueue.main.async {
                                                     self.videoPlayer = AVPlayer(url: previewURL)
+                                                    self.configureVideoPlayerLoop()
                                                     self.showingVideoPreview = true // This triggers the video preview display
                                                 }
                                             } else {
@@ -319,18 +329,17 @@ struct EntryView: View {
                                             .stroke(Color.gray, lineWidth: 2) // Set the border color to red and adjust the line width as needed
                                     )
                             }
-                            .padding(.top, 20)
                             .padding(.bottom, 20)
 
                             
-                            Text("Your voting video") // Replace with your app's name or desired text
+                            Text("Voting Replay Video") // Replace with your app's name or desired text
                                 .font(.system(size: 20, weight: .bold, design: .default))
                                 .foregroundColor(.black)
                             
                             VideoPlayer(player: videoPlayer)
                                 .frame(width: UIScreen.main.bounds.width * 0.9, height: UIScreen.main.bounds.height * 0.6)
                                 .aspectRatio(contentMode: .fit) // Adjust aspect ratio to 'fit' to prevent stretching
-                                .cornerRadius(5)
+                                .cornerRadius(20)
                                 .padding(.top) // Add some space at the top
                                 .onAppear {
                                     videoPlayer?.playImmediately(atRate: 1.0)
@@ -369,7 +378,6 @@ struct EntryView: View {
                                 Button("Share") {
                                     self.showingShareSheet = true
                                 }
-
                                 .font(.system(size: 18, weight: .bold, design: .default))
                                 .padding(.vertical) // Keep the default vertical padding
                                 .padding(.horizontal, 20) // Increase horizontal padding
@@ -377,7 +385,6 @@ struct EntryView: View {
                                 .foregroundColor(Color.white)
                                 .cornerRadius(200)
                             } // End of HStack
-                            .padding(.bottom) // Add some bottom padding to lift buttons from the very bottom
                             
                             Spacer() // Push buttons up towards video
                         }
@@ -393,6 +400,18 @@ struct EntryView: View {
                 }
                 
                 isRecording = true
+            }
+        }
+        .onDisappear {
+            self.backgroundMusicPlayer?.stop()
+            self.backgroundMusicPlayer = nil  // Release the player
+            
+            self.videoPlayer?.pause()
+            self.videoPlayer = nil  // Release the player
+            
+            if let observer = playerItemEndObserver {
+                NotificationCenter.default.removeObserver(observer)
+                playerItemEndObserver = nil
             }
         }
         .sheet(isPresented: $showingShareSheet) {
