@@ -2,10 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CLIENT_ID</key>
-	<string>958676880670-j62n2usmpo2gqv0lgomqs7od6msfdiss.apps.googleusercontent.com</string>
-	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.958676880670-j62n2usmpo2gqv0lgomqs7od6msfdiss</string>
 	<key>API_KEY</key>
 	<string>AIzaSyANkXUYimjFFnOglLD97mUvTgouE5-Ms3w</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.nokeai.Pingbear</string>
+	<string>com.pordio.Chay</string>
 	<key>PROJECT_ID</key>
 	<string>pingbear-96b4c</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:958676880670:ios:f4396c17e7a5eac74a0d0f</string>
+	<string>1:958676880670:ios:c064e3782fcbe8be4a0d0f</string>
 </dict>
 </plist>
