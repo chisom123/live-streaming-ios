@@ -1,7 +1,6 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
-import Flurry_iOS_SDK
 
 class AddFriendsModel: ObservableObject {
     
@@ -43,7 +42,6 @@ class AddFriendsModel: ObservableObject {
                         return
                     }
                     completion(true, nil)
-                    Flurry.log(eventName: "Friends-Added")
                 }
             }
         }

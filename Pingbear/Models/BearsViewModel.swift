@@ -4,7 +4,6 @@ import Firebase
 import FirebaseFirestore
 import FirebaseAuth
 import Combine
-import Flurry_iOS_SDK
 
 class BearsViewModel: ObservableObject {
     @Published var pBills: Int = 0
@@ -72,7 +71,6 @@ class BearsViewModel: ObservableObject {
                         self.updateUserIcon(with: bear.imageUrl)
                         // Optionally, fetch the user's bears again or just append the new bear to a local list
                         self.ownedBears.append(bear)
-                        Flurry.log(eventName: "Bears-Purchased")
                     }
                 }
             }

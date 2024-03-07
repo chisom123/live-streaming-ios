@@ -1,5 +1,5 @@
 {
-  "originHash" : "badafdb7545cc1ea8ebfafddc4f06116365af5d6425b682d97cf105184793afd",
+  "originHash" : "ade5df4407b914d61668563f5dc8169ee34a183b2f11ac116ed9a853c12d7b31",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -35,15 +35,6 @@
       "state" : {
         "revision" : "fe09d61a539e11fdbe24f269bba10144b6145fe2",
         "version" : "10.22.0"
-      }
-    },
-    {
-      "identity" : "flurryswiftpackage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/flurry/FlurrySwiftPackage/",
-      "state" : {
-        "revision" : "70a9eff3929892a0de7c5480f559637fd7863afe",
-        "version" : "12.4.0"
       }
     },
     {

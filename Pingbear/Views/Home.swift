@@ -4,7 +4,6 @@ import Firebase
 import UIKit
 import SDWebImageSwiftUI
 import FirebaseFirestore
-import Flurry_iOS_SDK
 
 struct AppUser: Identifiable, Equatable {
     var id: String // UID of the user
@@ -157,7 +156,6 @@ struct VerticalPager<Content: View>: View {
                         let newIndex = currentIndex + min(max(offset, -1), 1)
                         if newIndex >= 0 && newIndex < pageCount {
                             self.currentIndex = newIndex
-                            Flurry.log(eventName: "Swipes")
                         }
                     }
                 }

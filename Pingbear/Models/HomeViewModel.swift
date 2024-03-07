@@ -3,7 +3,6 @@ import Firebase
 import Contacts
 import FirebaseFirestore
 import PhoneNumberKit
-import Flurry_iOS_SDK
 
 class HomeViewModel: ObservableObject {
     
@@ -146,7 +145,6 @@ class HomeViewModel: ObservableObject {
     private func addFriend(currentUserId: String, friendId: String) {
         db.collection(usersPath).document(currentUserId).collection(friendsPath).document(friendId).setData(["uid": friendId])
         db.collection(usersPath).document(friendId).collection(friendsPath).document(currentUserId).setData(["uid": currentUserId])
-        Flurry.log(eventName: "Friends-Added")
     }
     
     func fetchFriends() {

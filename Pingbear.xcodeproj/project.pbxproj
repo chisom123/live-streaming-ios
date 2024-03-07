@@ -91,9 +91,6 @@
 		4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */; };
 		4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */; };
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
-		4F3E0DB72AB1E5580068F901 /* Flurry in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB62AB1E5580068F901 /* Flurry */; };
-		4F3E0DB92AB1E5580068F901 /* FlurryConfig in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DB82AB1E5580068F901 /* FlurryConfig */; };
-		4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
 		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
@@ -185,14 +182,11 @@
 				4F3E0D3D2A86F6BF0068F901 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				4F3E0D352A86F6BF0068F901 /* FirebaseFirestore in Frameworks */,
 				4F3E0D212A86F6BF0068F901 /* FirebaseAnalyticsSwift in Frameworks */,
-				4F3E0DBB2AB1E5590068F901 /* FlurryMessaging in Frameworks */,
 				4F3E0D1D2A86F6BF0068F901 /* FirebaseAnalytics in Frameworks */,
 				4F3E0D1F2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */,
 				4F3E0D452A86F6BF0068F901 /* FirebaseMLModelDownloader in Frameworks */,
 				4F3E0D392A86F6BF0068F901 /* FirebaseFirestoreSwift in Frameworks */,
 				4F3E0D252A86F6BF0068F901 /* FirebaseAppCheck in Frameworks */,
-				4F3E0DB92AB1E5580068F901 /* FlurryConfig in Frameworks */,
-				4F3E0DB72AB1E5580068F901 /* Flurry in Frameworks */,
 				4F3E0D232A86F6BF0068F901 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
 				4F3E0D292A86F6BF0068F901 /* FirebaseAuth in Frameworks */,
 				4F3E0D2D2A86F6BF0068F901 /* FirebaseCrashlytics in Frameworks */,
@@ -416,9 +410,6 @@
 				4F3E0D922AA094FB0068F901 /* GrowingTextView */,
 				4F3E0D952AA0DED80068F901 /* CountryPicker */,
 				4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */,
-				4F3E0DB62AB1E5580068F901 /* Flurry */,
-				4F3E0DB82AB1E5580068F901 /* FlurryConfig */,
-				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
 				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
 				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
 				4FABA1392B996A3800289489 /* PostHog */,
@@ -501,7 +492,6 @@
 				4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */,
 				4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */,
 				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
-				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
 				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
 				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
 				4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */,
@@ -751,7 +741,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -799,7 +789,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 17;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1028,14 +1018,6 @@
 				minimumVersion = 3.6.0;
 			};
 		};
-		4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/flurry/FlurrySwiftPackage/";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.0.0;
-			};
-		};
 		4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
@@ -1211,21 +1193,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
 			productName = PhoneNumberKit;
-		};
-		4F3E0DB62AB1E5580068F901 /* Flurry */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
-			productName = Flurry;
-		};
-		4F3E0DB82AB1E5580068F901 /* FlurryConfig */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
-			productName = FlurryConfig;
-		};
-		4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
-			productName = FlurryMessaging;
 		};
 		4FABA1392B996A3800289489 /* PostHog */ = {
 			isa = XCSwiftPackageProductDependency;

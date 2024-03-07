@@ -1,7 +1,6 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
-import Flurry_iOS_SDK
 
 class MyFriendsModel: ObservableObject {
     @Published var friends: [AppUser] = []
