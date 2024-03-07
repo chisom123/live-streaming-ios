@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import UIKit
+import PostHog
 
 struct ShareSheet: UIViewControllerRepresentable {
     var items: [Any]
@@ -83,6 +84,7 @@ struct CompDetails: View {
                     // Step 2: Share Button
                     Button(action: {
                         self.showingShareSheet = true
+                        PostHogSDK.shared.capture("Competition Share Sheet Open")
                     }) {
                         HStack {
                             Text("Share Competition") // Text to display next to the icon
@@ -231,6 +233,7 @@ struct CompDetails: View {
                             .onTapGesture {
                                 self.selectedImageUrl = entry.imageUrl
                                 self.showBigImageView = true
+                                PostHogSDK.shared.capture("Leaderboard Image Open")
                             }
                         }
                     }

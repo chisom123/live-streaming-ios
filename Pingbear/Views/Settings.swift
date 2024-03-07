@@ -1,7 +1,7 @@
 import SwiftUI
 import Firebase
 import Combine
-import Flurry_iOS_SDK
+import PostHog
 import FirebaseFirestore
 import NotificationBannerSwift
 
@@ -21,6 +21,7 @@ struct SettingsView: View {
             try Auth.auth().signOut()
             UserDefaults.standard.set(false, forKey: "isLoggedIn")
             didLogOut.send(())
+            PostHogSDK.shared.capture("Sign Out")
         } catch let signOutError as NSError {
             print("Error signing out: %@", signOutError)
         }
@@ -52,7 +53,7 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
-                        if let url = URL(string: "mailto:info@ninorecruitment.com") {
+                        if let url = URL(string: "mailto:pingbearapp@gmail.com") {
                             UIApplication.shared.open(url)
                         }
                     }) {
@@ -87,7 +88,6 @@ struct SettingsView: View {
                     // Log Out Button
                     Button(action: {
                         self.showSignOutAlert = true
-                        Flurry.log(eventName: "Sign-Out")
                     }) {
                         HStack {
                             Text("Log Out")
@@ -104,7 +104,6 @@ struct SettingsView: View {
                         Alert(title: Text("Are you sure?"),
                               primaryButton: .destructive(Text("Yes")) {
                             self.signOut()
-                            Flurry.log(eventName: "Sign-Out")
                         },
                               secondaryButton: .cancel())
                     }

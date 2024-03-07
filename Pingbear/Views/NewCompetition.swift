@@ -9,6 +9,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import UIKit
+import PostHog
 
 struct NewCompetition: View {
     
@@ -141,6 +142,7 @@ struct NewCompetition: View {
                     } else {
                         print("Participant added successfully.")
                         self.fetchNewCompetitionDetails(newCompetitionId)
+                        PostHogSDK.shared.capture("New Competition")
 
                     }
                 }

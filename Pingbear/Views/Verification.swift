@@ -2,7 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
-import Flurry_iOS_SDK
+import PostHog
 
 struct VerificationView: View {
     let phoneNumber: String
@@ -94,7 +94,7 @@ struct VerificationView: View {
                         self.navigateToHome = true
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
                         UserDefaults.standard.synchronize()
-                        Flurry.log(eventName: "Sign-In")
+                        PostHogSDK.shared.capture("Returning User")
                     } else {
                         // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true

@@ -4,7 +4,7 @@ import Firebase
 import FirebaseAuth
 import FirebaseFirestore
 import Combine
-import Flurry_iOS_SDK
+import PostHog
 
 class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
     @Published var products: [SKProduct] = []
@@ -70,7 +70,7 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
                 print("Entry data successfully updated to set superstar true!")
                 // Only set purchaseCompleted to true if the update was successful.
                 self.purchaseCompleted = true
-                Flurry.log(eventName: "Subscription-Purchased")
+                PostHogSDK.shared.capture("Superstar Purchased!")
             }
         }
         

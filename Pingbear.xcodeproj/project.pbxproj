@@ -99,6 +99,7 @@
 		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F56AB622B876642005FFC96 /* SharedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB612B876642005FFC96 /* SharedViewModel.swift */; };
+		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -198,6 +199,7 @@
 				4F3E0D4D2A86F6BF0068F901 /* FirebaseRemoteConfigSwift in Frameworks */,
 				4F3E0D3F2A86F6BF0068F901 /* FirebaseInAppMessaging-Beta in Frameworks */,
 				4F3E0D312A86F6BF0068F901 /* FirebaseDatabaseSwift in Frameworks */,
+				4FABA13A2B996A3800289489 /* PostHog in Frameworks */,
 				4F3E0D3B2A86F6BF0068F901 /* FirebaseFunctions in Frameworks */,
 				4F3E0D512A86F6BF0068F901 /* FirebaseStorageCombine-Community in Frameworks */,
 				4F3E0D4B2A86F6BF0068F901 /* FirebaseRemoteConfig in Frameworks */,
@@ -419,6 +421,7 @@
 				4F3E0DBA2AB1E5590068F901 /* FlurryMessaging */,
 				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
 				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
+				4FABA1392B996A3800289489 /* PostHog */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -501,6 +504,7 @@
 				4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */,
 				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
 				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
+				4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -1032,6 +1036,14 @@
 				minimumVersion = 12.0.0;
 			};
 		};
+		4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.2.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1214,6 +1226,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0DB52AB1E5580068F901 /* XCRemoteSwiftPackageReference "FlurrySwiftPackage" */;
 			productName = FlurryMessaging;
+		};
+		4FABA1392B996A3800289489 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */;
+			productName = PostHog;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

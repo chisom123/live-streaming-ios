@@ -4,7 +4,7 @@ import Firebase
 import FirebaseStorage
 import FirebaseFirestore
 import NotificationBannerSwift
-import Flurry_iOS_SDK
+import PostHog
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     @Binding var shouldToggleCamera: Bool
@@ -246,6 +246,7 @@ struct CameraView: View {
                             self.shouldNavigateToLocationCheck = true
                         }
                         
+                        PostHogSDK.shared.capture("Competition Image Uploaded")
                         isUploading = false
 
                     }

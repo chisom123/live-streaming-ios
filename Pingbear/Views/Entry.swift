@@ -12,6 +12,7 @@ import AVFoundation
 import ReplayKit
 import Photos
 import AVKit
+import PostHog
 
 struct CustomProgressView: View {
     @State private var isAnimating = false
@@ -216,6 +217,7 @@ struct EntryView: View {
                                 ForEach(1...maxStars, id: \.self) { star in
                                     let currentEntry = viewModel.entries[viewModel.currentIndex]
                                     Button(action: {
+                                        PostHogSDK.shared.capture("Overall Star Rating Tap")
                                         triggerHapticFeedback(style: .soft)
                                         self.playSoundEffect(name: "pop")
                                         let ratingIncrement = currentEntry.isSuperstar && star == 5 ? 8 : star
@@ -225,6 +227,7 @@ struct EntryView: View {
                                         
                                         // Trigger scale-up and haptic feedback only if fifth star is a superstar and is selected
                                         if currentEntry.isSuperstar && star == 5 {
+                                            PostHogSDK.shared.capture("Superstar Tap")
                                             triggerHapticFeedback(style: .heavy)
                                             self.playSoundEffect(name: "win")
                                             withAnimation(.spring()) {
@@ -358,6 +361,7 @@ struct EntryView: View {
                                                 presentationMode.wrappedValue.dismiss()
                                                 let banner = NotificationBanner(title: "Successfully saved to camera roll", style: .success)
                                                 banner.show()
+                                                PostHogSDK.shared.capture("Saved Replay Video to Camera Roll")
                                             }
                                         } else {
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
@@ -377,6 +381,7 @@ struct EntryView: View {
                                 
                                 Button("Share") {
                                     self.showingShareSheet = true
+                                    PostHogSDK.shared.capture("Replay Video Share Sheet Open")
                                 }
                                 .font(.system(size: 18, weight: .bold, design: .default))
                                 .padding(.vertical) // Keep the default vertical padding

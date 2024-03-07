@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import Combine
 import Flurry_iOS_SDK
+import PostHog
 
 class AppDelegate: NSObject, UIApplicationDelegate {
   
@@ -9,6 +10,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
 
+        let POSTHOG_API_KEY = "phc_CWa3tntbLhQKIPoZ8CFX5Ydg1l3Kt6GVyO7ztgANLX8"
+        let POSTHOG_HOST = "https://eu.posthog.com"
+
+        let config = PostHogConfig(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
+        PostHogSDK.shared.setup(config)
+        
         let builder = FlurrySessionBuilder.init()
            builder.build(crashReportingEnabled: true)
            builder.build(logLevel: .all)
