@@ -135,6 +135,7 @@ struct EntryView: View {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
+            Color.white.edgesIgnoringSafeArea(.all) // Set the background color of the entire view to black
             Group {
                 if viewModel.entries.indices.contains(viewModel.currentIndex) {
                     let entry = viewModel.entries[viewModel.currentIndex]
@@ -142,8 +143,8 @@ struct EntryView: View {
                         if let imageURL = URL(string: entry.imageUrl) {
                             WebImage(url: imageURL)
                                 .resizable()
-                                .scaledToFill()
-                                .clipped()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .onTapGesture {
                                     self.backgroundMusicPlayer?.stop()
                                     // This block is triggered when the user taps on the image
@@ -394,6 +395,14 @@ struct EntryView: View {
                             Spacer() // Push buttons up towards video
                         }
                     )
+            }
+        }
+        .onTapGesture {
+            // Check if there is no video URL
+            if self.url == nil {
+                DispatchQueue.main.async {
+                    presentationMode.wrappedValue.dismiss()
+                }
             }
         }
         .onAppear {

@@ -5,6 +5,7 @@ import FirebaseStorage
 import FirebaseFirestore
 import NotificationBannerSwift
 import PostHog
+import PhotosUI
 
 struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
     @Binding var shouldToggleCamera: Bool
@@ -39,6 +40,51 @@ struct CameraViewControllerRepresentable: UIViewControllerRepresentable {
 
     typealias UIViewControllerType = CameraViewController
 }
+
+struct ImagePicker: UIViewControllerRepresentable {
+    @Environment(\.presentationMode) var presentationMode
+    @Binding var selectedImage: UIImage?
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.selectionLimit = 1
+        config.filter = .images
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        var parent: ImagePicker
+
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            picker.dismiss(animated: true)
+
+            let itemProvider = results.first?.itemProvider
+            if let itemProvider = itemProvider, itemProvider.canLoadObject(ofClass: UIImage.self) {
+                itemProvider.loadObject(ofClass: UIImage.self) { image, error in
+                    DispatchQueue.main.async {
+                        if let image = image as? UIImage {
+                            self.parent.selectedImage = image
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 class CameraViewController: UIViewController, CameraDelegate {
     var onImageCaptured: ((UIImage) -> Void)?
@@ -84,6 +130,8 @@ struct CameraView: View {
     @State private var shouldNavigateToLocationCheck = false // Added for navigation to LocationCheckView
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
     @State private var isUploading = false
+    @State private var isShowingImagePicker = false
+    @State private var inputImage: UIImage?
 
     
     var body: some View {
@@ -92,14 +140,19 @@ struct CameraView: View {
                 .padding()
         } else {
             ZStack {
-                CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
-                    .edgesIgnoringSafeArea(.all)
+                if capturedImage != nil {
+                    Color.black
+                        .edgesIgnoringSafeArea(.all) // Makes the entire background black when there is a captured image
+                } else {
+                    CameraViewControllerRepresentable(shouldToggleCamera: $shouldToggleCamera, shouldTakePicture: $shouldTakePicture, capturedImage: $capturedImage)
+                        .edgesIgnoringSafeArea(.all) // Shows the camera output view when there is no captured image
+                }
                 
                 if let image = capturedImage {
                     ZStack {
                         Image(uiImage: image)
                             .resizable()
-                            .scaledToFill()
+                            .scaledToFit()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .edgesIgnoringSafeArea(.all)
                         
@@ -168,6 +221,18 @@ struct CameraView: View {
                         Spacer() // This will create space between the top HStack and the bottom button
                         
                         Button(action: {
+                            openImagePicker()
+                        }) {
+                            Text("Choose from Photo Library")
+                                .font(.system(size: 15, weight: .bold, design: .default))
+                                .padding()
+                                .background(.white) // Assuming Color(hex: "#1199FF") is equivalent to blue
+                                .foregroundColor(Color(hex: "#1199FF"))
+                                .cornerRadius(200)
+                        }
+                        .padding(.bottom, 20)
+                        
+                        Button(action: {
                             self.shouldTakePicture = true
                         }) {
                             Circle()
@@ -185,7 +250,34 @@ struct CameraView: View {
                     
                 }
             }
+            .sheet(isPresented: $isShowingImagePicker) {
+                ImagePicker(selectedImage: $inputImage)
+            }
+            .onChange(of: inputImage) { _ in loadImage() }
         }
+    }
+    
+    // Add this function in your CameraView struct
+    func openImagePicker() {
+        let status = PHPhotoLibrary.authorizationStatus()
+        if status == .authorized || status == .limited {
+            isShowingImagePicker = true
+        } else {
+            PHPhotoLibrary.requestAuthorization { newStatus in
+                if newStatus == .authorized || newStatus == .limited {
+                    DispatchQueue.main.async {
+                        isShowingImagePicker = true
+                    }
+                }
+                // Handle other statuses if necessary
+            }
+        }
+    }
+
+    func loadImage() {
+        guard let inputImage = inputImage else { return }
+        capturedImage = inputImage // Set the capturedImage with the selected image
+        // Here, you might want to close the modal or update any other UI elements as necessary
     }
     
     func submitEntry() {
