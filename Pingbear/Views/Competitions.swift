@@ -10,7 +10,7 @@ struct CompetitionsView: View {
         VStack {
             // Button at the top
             HStack {
-                Text("All Competitions")
+                Text("All Groups")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)

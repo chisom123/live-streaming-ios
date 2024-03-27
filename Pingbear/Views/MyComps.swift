@@ -13,7 +13,7 @@ struct MyCompsView: View {
         VStack {
             // Top Bar with Title
             HStack {
-                Text("My Competitions")
+                Text("My Groups")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)

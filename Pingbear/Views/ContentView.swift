@@ -53,8 +53,8 @@ struct CustomTabView: View {
                 
                 MyCompsView()
                     .tabItem {
-                        Image(systemName: "list.number")
-                        Text("My Competitions")
+                        Image(systemName: "person.3.sequence.fill")
+                        Text("My Groups")
                     }
                     .tag(1)
                     .padding([.top, .bottom], 12)

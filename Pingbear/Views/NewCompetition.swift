@@ -44,7 +44,7 @@ struct NewCompetition: View {
                 
                 Spacer()
                 
-                Text("New Competition")
+                Text("New Group")
                     .font(.system(size: 18, weight: .semibold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -52,7 +52,7 @@ struct NewCompetition: View {
                     .padding(.bottom, 40)
                     .padding(.horizontal)
 
-                TextField("Describe Competition", text: $competitionDescription)
+                TextField("Group Name", text: $competitionDescription)
                     .keyboardType(.default)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))
