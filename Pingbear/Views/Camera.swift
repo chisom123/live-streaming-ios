@@ -338,7 +338,7 @@ struct CameraView: View {
                             self.shouldNavigateToLocationCheck = true
                         }
                         
-                        PostHogSDK.shared.capture("Competition Image Uploaded")
+                        PostHogSDK.shared.capture("Group Image Uploaded")
                         isUploading = false
 
                     }

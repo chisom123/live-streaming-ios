@@ -109,7 +109,7 @@ struct NewCompetition: View {
         
         // Validate the name
         guard isValidName(competitionDescription) else {
-            errorMessage = "Please enter a description"
+            errorMessage = "Please enter a name"
             return
         }
 
@@ -142,7 +142,7 @@ struct NewCompetition: View {
                     } else {
                         print("Participant added successfully.")
                         self.fetchNewCompetitionDetails(newCompetitionId)
-                        PostHogSDK.shared.capture("New Competition")
+                        PostHogSDK.shared.capture("New Group")
 
                     }
                 }

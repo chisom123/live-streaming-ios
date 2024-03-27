@@ -9,8 +9,6 @@ import SwiftUI
 import SDWebImageSwiftUI
 import NotificationBannerSwift
 import AVFoundation
-import ReplayKit
-import Photos
 import AVKit
 import PostHog
 
@@ -60,12 +58,6 @@ struct EntryView: View {
     @State private var backgroundMusicPlayer: AVAudioPlayer?
     @State private var soundEffectPlayer: AVAudioPlayer?
     @State private var isShowingLoadingOverlay = false
-    @State private var showingVideoPreview = false
-    @State private var videoPlayer: AVPlayer?
-    @State var isRecording: Bool = false
-    @State var url: URL?
-    @State private var showingShareSheet = false // Add this line to your EntryView's state variables
-    @State private var playerItemEndObserver: Any?
 
 
     init(competitionId: String) {
@@ -84,38 +76,6 @@ struct EntryView: View {
             print("Cannot load the file")
             return nil
         }
-    }
-    
-    private func configureVideoPlayerLoop() {
-        playerItemEndObserver = NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime, object: self.videoPlayer?.currentItem, queue: .main) { _ in
-            self.videoPlayer?.seek(to: CMTime.zero)
-            self.videoPlayer?.play()
-        }
-    }
-
-    
-    func startRecording(enableMicrophone: Bool = false,completion: @escaping (Error?)->()){
-        let recorder = RPScreenRecorder.shared()
-        
-        recorder.isMicrophoneEnabled = false
-        
-        recorder.startRecording(handler: completion)
-    }
-    
-    func stopRecording()async throws->URL{
-        let name = UUID().uuidString + ".mov"
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
-        
-        let recorder = RPScreenRecorder.shared()
-        
-        try await recorder.stopRecording(withOutput: url)
-        
-        return url
-    }
-    
-    func cancelRecording(){
-        let recorder = RPScreenRecorder.shared()
-        recorder.discardRecording {}
     }
     
     private func playSoundEffect(name: String) {
@@ -145,40 +105,6 @@ struct EntryView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .onTapGesture {
-                                    self.backgroundMusicPlayer?.stop()
-                                    // This block is triggered when the user taps on the image
-                                    Task {
-                                        do {
-                                            if isRecording {
-                                                // If still recording, stop the recording first
-                                                let videoURL = try await stopRecording()
-                                                print("Recording stopped: \(videoURL)")
-                                                isRecording = false
-                                                self.url = videoURL // Ensure this URL is the one from the recording
-                                            }
-                                            // Now that we are sure recording is stopped, check if a video URL is available
-                                            if let previewURL = self.url {
-                                                DispatchQueue.main.async {
-                                                    self.videoPlayer = AVPlayer(url: previewURL)
-                                                    self.configureVideoPlayerLoop()
-                                                    self.showingVideoPreview = true // This triggers the video preview display
-                                                }
-                                            } else {
-                                                // If no video URL is available, dismiss the view
-                                                DispatchQueue.main.async {
-                                                    presentationMode.wrappedValue.dismiss()
-                                                }
-                                            }
-                                        } catch {
-                                            print("Error stopping recording: \(error.localizedDescription)")
-                                            // If there was an error stopping the recording, consider dismissing the view or handle error
-                                            DispatchQueue.main.async {
-                                                presentationMode.wrappedValue.dismiss()
-                                            }
-                                        }
-                                    }
-                                }
                         } else {
                             ProgressView()
                         }
@@ -241,40 +167,12 @@ struct EntryView: View {
                                         
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                self.backgroundMusicPlayer?.stop()
-                                                let banner = NotificationBanner(title: "Voting complete. Check again later", style: .success)
-                                                banner.show()
-                                                
-                                                Task {
-                                                    do {
-                                                        if isRecording {
-                                                            // If still recording, stop the recording first
-                                                            let videoURL = try await stopRecording()
-                                                            print("Recording stopped: \(videoURL)")
-                                                            isRecording = false
-                                                            self.url = videoURL // Ensure this URL is the one from the recording
-                                                        }
-                                                        // Now that we are sure recording is stopped, check if a video URL is available
-                                                        if let previewURL = self.url {
-                                                            DispatchQueue.main.async {
-                                                                self.videoPlayer = AVPlayer(url: previewURL)
-                                                                self.showingVideoPreview = true // This triggers the video preview display
-                                                            }
-                                                        } else {
-                                                            // If no video URL is available, dismiss the view
-                                                            DispatchQueue.main.async {
-                                                                presentationMode.wrappedValue.dismiss()
-                                                            }
-                                                        }
-                                                    } catch {
-                                                        print("Error stopping recording: \(error.localizedDescription)")
-                                                        // If there was an error stopping the recording, consider dismissing the view or handle error
-                                                        DispatchQueue.main.async {
-                                                            presentationMode.wrappedValue.dismiss()
-                                                        }
-                                                    }
-                                                }
+                                            self.backgroundMusicPlayer?.stop()
+                                            let banner = NotificationBanner(title: "Voting complete. Check again later", style: .success)
+                                            banner.show()
+                                            
+                                            DispatchQueue.main.async {
+                                                presentationMode.wrappedValue.dismiss()
                                             }
                                         } else {
                                             // Existing code to handle non-last entries
@@ -311,126 +209,18 @@ struct EntryView: View {
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
             }
-            
-            if showingVideoPreview {
-                Color.white.edgesIgnoringSafeArea(.all) // Set the background to white and make it cover the whole screen
-                    .overlay(
-                        VStack { // Use VStack for vertical layout
-                            Spacer()
-                            
-                            Button(action: {
-                                presentationMode.wrappedValue.dismiss()
-                            }) {
-                                Text("Skip")
-                                    .foregroundColor(.gray) // Set the text color to red
-                                    .font(.system(size: 15, weight: .bold, design: .default))
-                                    .padding(.vertical, 5) // Add padding inside the border
-                                    .padding(.horizontal, 30)
-                                    .background(Color.white) // Set the background color of the button; change this as needed
-                                    .cornerRadius(200)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 200) // Change this value for desired corner radius
-                                            .stroke(Color.gray, lineWidth: 2) // Set the border color to red and adjust the line width as needed
-                                    )
-                            }
-                            .padding(.bottom, 20)
-
-                            
-                            Text("Voting Replay Video") // Replace with your app's name or desired text
-                                .font(.system(size: 20, weight: .bold, design: .default))
-                                .foregroundColor(.black)
-                            
-                            VideoPlayer(player: videoPlayer)
-                                .frame(width: UIScreen.main.bounds.width * 0.9, height: UIScreen.main.bounds.height * 0.6)
-                                .aspectRatio(contentMode: .fit) // Adjust aspect ratio to 'fit' to prevent stretching
-                                .cornerRadius(20)
-                                .padding(.top) // Add some space at the top
-                                .onAppear {
-                                    videoPlayer?.playImmediately(atRate: 1.0)
-                                }
-                            
-                            Spacer() // Pushes content to the top, you can adjust spacing as needed
-                            
-                            HStack(spacing: 20) { // Use HStack for horizontal layout of buttons
-                                Button("Save to Camera Roll") {
-                                    PHPhotoLibrary.shared().performChanges {
-                                        PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: self.url!)
-                                    } completionHandler: { success, error in
-                                        presentationMode.wrappedValue.dismiss()
-                                        if success {
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
-                                                presentationMode.wrappedValue.dismiss()
-                                                let banner = NotificationBanner(title: "Successfully saved to camera roll", style: .success)
-                                                banner.show()
-                                                PostHogSDK.shared.capture("Saved Replay Video to Camera Roll")
-                                            }
-                                        } else {
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { // Delay to allow for UI update
-                                                presentationMode.wrappedValue.dismiss()
-                                                let banner = NotificationBanner(title: "Unsuccessfully saved to camera roll", style: .danger)
-                                                banner.show()
-                                            }
-                                        }
-                                    }
-                                }
-                                .font(.system(size: 18, weight: .bold, design: .default))
-                                .padding(.vertical) // Keep the default vertical padding
-                                .padding(.horizontal, 20) // Increase horizontal padding
-                                .background(Color(hex: "#1199FF")) // Gray out if user has joined
-                                .foregroundColor(Color.white)
-                                .cornerRadius(200)
-                                
-                                Button("Share") {
-                                    self.showingShareSheet = true
-                                    PostHogSDK.shared.capture("Replay Video Share Sheet Open")
-                                }
-                                .font(.system(size: 18, weight: .bold, design: .default))
-                                .padding(.vertical) // Keep the default vertical padding
-                                .padding(.horizontal, 20) // Increase horizontal padding
-                                .background(Color(hex: "#7B68EE")) // Gray out if user has joined
-                                .foregroundColor(Color.white)
-                                .cornerRadius(200)
-                            } // End of HStack
-                            
-                            Spacer() // Push buttons up towards video
-                        }
-                    )
-            }
         }
         .onTapGesture {
-            // Check if there is no video URL
-            if self.url == nil {
-                DispatchQueue.main.async {
-                    presentationMode.wrappedValue.dismiss()
-                }
+            DispatchQueue.main.async {
+                presentationMode.wrappedValue.dismiss()
             }
         }
         .onAppear {
             self.backgroundMusicPlayer?.play()
-            startRecording { error in
-                if let error = error {
-                    print(error.localizedDescription)
-                    return
-                }
-                
-                isRecording = true
-            }
         }
         .onDisappear {
             self.backgroundMusicPlayer?.stop()
-            self.backgroundMusicPlayer = nil  // Release the player
-            
-            self.videoPlayer?.pause()
-            self.videoPlayer = nil  // Release the player
-            
-            if let observer = playerItemEndObserver {
-                NotificationCenter.default.removeObserver(observer)
-                playerItemEndObserver = nil
-            }
-        }
-        .sheet(isPresented: $showingShareSheet) {
-            // Modify this if you need to share something specific
-            ShareSheet(items: [self.url as Any]) // Casting URL to Any to prevent nil values from causing issues
+            self.backgroundMusicPlayer = nil
         }
     }
 }
