@@ -21,7 +21,6 @@ class CompetitionsModel: ObservableObject {
         }
 
         db.collection("competitions")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: Calendar.current.date(byAdding: .hour, value: -24, to: Date())!))
             .order(by: "timestamp", descending: true)
             .getDocuments { [weak self] (querySnapshot, err) in
                 if let err = err {
@@ -96,13 +95,7 @@ class CompetitionsModel: ObservableObject {
         let db = Firestore.firestore()
         var temporaryCompetitions: [Competition] = [] // Temporary storage for competitions
 
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
-            print("Error calculating date")
-            return
-        }
-
         db.collection("competitions")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
             .getDocuments { [weak self] (querySnapshot, err) in
                 if let err = err {
                     print("Error getting competitions: \(err)")

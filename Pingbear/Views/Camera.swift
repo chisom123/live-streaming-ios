@@ -310,8 +310,11 @@ struct CameraView: View {
                     return
                 }
 
-                // Now that you have the image URL, include it in the entryData
-                let entryData = ["userId": userId, "imageUrl": downloadURL.absoluteString]
+                let entryData = [
+                    "userId": userId,
+                    "imageUrl": downloadURL.absoluteString,
+                    "timestamp": FieldValue.serverTimestamp() // This line adds the current server timestamp
+                ]
 
                 // Save to Firestore and retrieve the document reference
                 var newEntryRef: DocumentReference? = nil

@@ -115,7 +115,7 @@ struct EntryView: View {
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
                 self.isShowingLoadingOverlay = true // Show loading overlay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { // Wait for 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
                     self.isShowingLoadingOverlay = false // Hide loading overlay
                 }
             }

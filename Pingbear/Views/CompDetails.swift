@@ -23,6 +23,7 @@ struct CompDetails: View {
     @State private var isCameraPresented = false
     @State private var isVotingPresented = false
     @State private var selectedImageUrl: String = ""
+    @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var showBigImageView = false
     @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
     @EnvironmentObject var sharedViewModel: SharedViewModel
@@ -113,23 +114,6 @@ struct CompDetails: View {
                     .truncationMode(.tail)
                     .padding(.bottom, 10)
                     .padding(.horizontal, 20)
-
-                Text(timeRemaining)
-                    .font(.system(size: 17, weight: .bold, design: .default))
-                    .lineSpacing(10)
-                    .foregroundColor(Color(hex: "#ababab"))
-                    .padding(.bottom, 20)
-                    .padding(.horizontal, 20)
-                    .onReceive(timer) { _ in
-                        // Calculate the end time (i.e., competition timestamp + 24 hours)
-                        let endTime = competitionTimestamp.addingTimeInterval(24 * 60 * 60)
-
-                        // Update the time remaining
-                        timeRemaining = timeLeft(until: endTime)
-                    }
-                    .onDisappear {
-                        timer.upstream.connect().cancel()
-                    }
         
                 HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
                     Button(action: {
@@ -231,6 +215,7 @@ struct CompDetails: View {
                             .padding(.horizontal, 20) // Padding on the sides of each row
                             .onTapGesture {
                                 self.selectedImageUrl = entry.imageUrl
+                                self.selectedEntryCreationDate = entry.creationDate
                                 self.showBigImageView = true
                                 PostHogSDK.shared.capture("Leaderboard Image Open")
                             }
@@ -239,7 +224,7 @@ struct CompDetails: View {
                 }
                 // Present BigImageView when an entry is tapped
                 .fullScreenCover(isPresented: $showBigImageView) {
-                    BigImageView(imageUrl: selectedImageUrl)
+                    BigImageView(imageUrl: selectedImageUrl, creationDate: selectedEntryCreationDate)
                 }
                 
             }
