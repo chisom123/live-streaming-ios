@@ -47,7 +47,7 @@ struct BigImageView: View {
                     HStack {
                         Spacer()
                         Text(timeAgo) // Use the statically computed timeAgo
-                            .font(.headline)
+                            .font(.system(size: 15, weight: .bold, design: .default))
                             .padding(.horizontal, 15)
                             .padding(.vertical, 8)
                             .background(Color.black.opacity(0.75))

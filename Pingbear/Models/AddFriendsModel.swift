@@ -1,11 +1,12 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import PostHog
 
 class AddFriendsModel: ObservableObject {
     
-    // Function to add a friend by phone number
-    func addFriend(byPhoneNumber phoneNumber: String, completion: @escaping (Bool, Error?) -> Void) {
+    // Function to add a friend by username
+    func addFriend(byUsername username: String, completion: @escaping (Bool, Error?) -> Void) {
         
         guard let currentUserID = Auth.auth().currentUser?.uid else {
             print("Failed to get current user ID")
@@ -14,7 +15,7 @@ class AddFriendsModel: ObservableObject {
         }
         
         let db = Firestore.firestore()
-        db.collection("users").whereField("phoneNumber", isEqualTo: phoneNumber).getDocuments { (snapshot, error) in
+        db.collection("users").whereField("username", isEqualTo: username).getDocuments { (snapshot, error) in
             if let error = error {
                 print("Error getting documents: \(error)")
                 completion(false, error)
@@ -22,7 +23,7 @@ class AddFriendsModel: ObservableObject {
             }
             
             guard let document = snapshot?.documents.first else {
-                print("No user found with this phone number.")
+                print("No user found with this username.")
                 completion(false, nil)
                 return
             }
@@ -42,6 +43,7 @@ class AddFriendsModel: ObservableObject {
                         return
                     }
                     completion(true, nil)
+                    PostHogSDK.shared.capture("Friend Added")
                 }
             }
         }

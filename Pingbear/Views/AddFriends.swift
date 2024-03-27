@@ -1,49 +1,20 @@
 import SwiftUI
 import Firebase
-import CountryPicker
-import PhoneNumberKit
+import FirebaseFirestore
 
 struct AddFriendsView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @State private var phoneNumber: String = ""
+    @State private var username: String = ""
     @ObservedObject var viewModel: AddFriendsModel
     @State private var messageStatus: MessageStatus? = nil
-    @State private var selectedCountry: Country?
-    @State private var showCountryPicker = false
 
     enum MessageStatus {
         case error, success, none
     }
-
-    var formattedPhoneNumber: String {
-        let phoneNumberKit = PhoneNumberKit()
-
-        guard let country = selectedCountry else {
-            return phoneNumber
-        }
-
-        let fullPhoneNumber = "+\(country.phoneCode)\(phoneNumber)"
-
-        do {
-            let parsedPhoneNumber = try phoneNumberKit.parse(fullPhoneNumber)
-            let formattedPhoneNumber = phoneNumberKit.format(parsedPhoneNumber, toType: .e164)
-            return formattedPhoneNumber
-        } catch {
-            return phoneNumber
-        }
-    }
     
-    init(viewModel: AddFriendsModel) {
-        self.viewModel = viewModel
-
-        if let countryCode = NSLocale.current.regionCode,
-           let country = CountryManager.shared.getCountries().first(where: { $0.isoCode == countryCode }) {
-            self._selectedCountry = State(initialValue: country)
-        }
-
-        let closeButton = DismissButtonStyle.title(title: "Close", textColor: UIColor(hex: "#1199FF"), font: UIFont.systemFont(ofSize: 16, weight: .bold))
-        CountryManager.shared.config.closeButtonStyle = closeButton
+    func processUsername(_ username: String) -> String {
+        return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     var body: some View {
@@ -73,38 +44,15 @@ struct AddFriendsView: View {
                     .padding(.bottom, 40)
                     .padding(.horizontal)
                 
-                HStack {
-                    // Country Picker Button
-                    Button(action: {
-                        showCountryPicker.toggle()
-                    }) {
-                        if let country = selectedCountry {
-                            Text("\(country.isoCode.getFlag()) +\(country.phoneCode)")
-                        } else {
-                            Text("🇬🇧 +44")
-                        }
-                    }
-                    .sheet(isPresented: $showCountryPicker) {
-                        CountryPickerViewControllerWrapper(selectedCountry: $selectedCountry)
-                    }
+                // Username TextField
+                TextField("Enter username", text: $username)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
                     .cornerRadius(5)
                     .font(.system(size: 16, weight: .medium, design: .default))
-
-                    // Phone Number TextField
-                    TextField("Enter phone number", text: $phoneNumber)
-                        .keyboardType(.phonePad)
-                        .padding()
-                        .background(Color(hex: "#F5F5F5"))
-                        .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(5)
-                        .font(.system(size: 16, weight: .medium, design: .default))
-                }
-                .padding(.horizontal)
-                .keyboardType(.phonePad)
-
+                    .padding(.horizontal)
+                
                 if let status = messageStatus {
                     switch status {
                     case .error:
@@ -132,7 +80,8 @@ struct AddFriendsView: View {
                 }
                 
                 Button(action: {
-                    viewModel.addFriend(byPhoneNumber: formattedPhoneNumber) { (success, error) in
+                    let processedUsername = processUsername(username)
+                    viewModel.addFriend(byUsername: processedUsername) { (success, error) in
                         if success {
                             messageStatus = .success
                         } else {
@@ -140,7 +89,7 @@ struct AddFriendsView: View {
                         }
                     }
                 }) {
-                    Text("Add")
+                    Text("Continue")
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))

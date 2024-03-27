@@ -41,11 +41,10 @@ class MyFriendsModel: ObservableObject {
                 guard let doc = document, doc.exists, let data = doc.data() else { return }
 
                 let friendPhoneNumber = data["phoneNumber"] as? String
-                let friendName = data["name"] as? String
-                let friendIcon = data["icon"] as? String
+                let friendName = data["username"] as? String
                     
                 // Removed the lastMessageTimestamp part
-                let user = AppUser(id: friendID, name: friendName ?? "", phoneNumber: friendPhoneNumber ?? "", icon: friendIcon)
+                let user = AppUser(id: friendID, name: friendName ?? "", phoneNumber: friendPhoneNumber ?? "")
                 
                 DispatchQueue.main.async {
                     if let index = self.friends.firstIndex(where: { $0.id == friendID }) {

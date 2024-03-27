@@ -32,6 +32,44 @@ struct SettingsView: View {
             VStack {
                 
                 VStack(spacing: 25) {
+                    // Change Name Button
+                    Button(action: {
+                        self.showAddFriendsView = true // Toggle the state to show the ChangeNameView
+                    }) {
+                        HStack {
+                            Text("Add Friends")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+                            Spacer()
+                        }
+                        .padding([.top, .bottom], 20)
+                        .padding([.leading, .trailing], 20)
+                    }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
+                    .fullScreenCover(isPresented: $showAddFriendsView) {  // Use the full screen cover modifier
+                        AddFriendsView(viewModel: AddFriendsModel())
+                    }
+                    
+                    // Change Name Button
+                    Button(action: {
+                        self.showMyFriendsView = true // Toggle the state to show the ChangeNameView
+                    }) {
+                        HStack {
+                            Text("My Friends")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+                            Spacer()
+                        }
+                        .padding([.top, .bottom], 20)
+                        .padding([.leading, .trailing], 20)
+                    }
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
+                    .fullScreenCover(isPresented: $showMyFriendsView) {  // Use the full screen cover modifier
+                        MyFriendsView(viewModel: MyFriendsModel())
+                    }
+                    
                     
                     // Change Name Button
                     Button(action: {

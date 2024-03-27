@@ -23,6 +23,7 @@ struct MyFriendsView: View {
                     }
                     Spacer()
                 }
+                .padding(.bottom, 10)
 
                 ScrollView {
                     VStack(spacing: 25) {
@@ -55,6 +56,9 @@ struct MyFriendsView: View {
                     .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
+            }
+            .refreshable {
+                viewModel.fetchFriends()
             }
             .onAppear {
                 viewModel.fetchFriends()
