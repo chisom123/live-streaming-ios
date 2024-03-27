@@ -8,6 +8,8 @@ struct Competition: Identifiable {
     let date: Date
     var entriesNotVotedCount: Int = 0 // New property to indicate the number of entries not yet voted on
     var username: String = "" // Add this line
+    var allow_join: [String] = []  // Add this line
+    var allow_vote: [String] = []  // Add this line
 }
 
 class CompetitionsModel: ObservableObject {
@@ -39,6 +41,9 @@ class CompetitionsModel: ObservableObject {
                             group.leave()
                             return
                         }
+                        
+                        let allowJoin = data["allow_join"] as? [String] ?? []
+                        let allowVote = data["allow_vote"] as? [String] ?? []
 
                         // Fetch the username for the competition creator
                         db.collection("users").document(creatorUserId).getDocument { (userDoc, err) in
@@ -51,7 +56,9 @@ class CompetitionsModel: ObservableObject {
                                 id: competitionId,
                                 description: description,
                                 date: timestamp.dateValue(),
-                                username: username // Set the fetched username here
+                                username: username,
+                                allow_join: allowJoin,
+                                allow_vote: allowVote
                             )
 
                             // Fetch total entries for the competition
@@ -138,12 +145,17 @@ class CompetitionsModel: ObservableObject {
                                               group.leave()
                                               return
                                     }
+                                    
+                                    let allowJoin = data["allow_join"] as? [String] ?? []
+                                    let allowVote = data["allow_vote"] as? [String] ?? []
 
                                     var competition = Competition(
                                         id: competitionId,
                                         description: description,
                                         date: timestamp.dateValue(),
-                                        username: username // Set the fetched username here
+                                        username: username,
+                                        allow_join: allowJoin,
+                                        allow_vote: allowVote
                                     )
 
                                     self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in

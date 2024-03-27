@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import UIKit
+import FirebaseAuth
 import PostHog
 
 struct ShareSheet: UIViewControllerRepresentable {
@@ -25,6 +26,7 @@ struct CompDetails: View {
     @State private var selectedImageUrl: String = ""
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var showBigImageView = false
+    @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
     @EnvironmentObject var sharedViewModel: SharedViewModel
     
@@ -127,6 +129,7 @@ struct CompDetails: View {
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
+                    .disabled(!(competition.allow_join.contains("Everyone") || competition.allow_join.contains(currentUserId))) // Disable if not allowed to join
 
                     Button(action: {
                         vote()
@@ -139,7 +142,7 @@ struct CompDetails: View {
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(competition.entriesNotVotedCount == 0)
+                    .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)) || competition.entriesNotVotedCount == 0)
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)

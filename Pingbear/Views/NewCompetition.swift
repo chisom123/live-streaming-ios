@@ -93,7 +93,7 @@ struct NewCompetition: View {
 
         }
         .fullScreenCover(item: $selectedCompetition) { competition in
-            CompDetails(competition: competition, fromLocationCheckView: true)
+            JoinSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel())
         }
     }
 
@@ -117,7 +117,9 @@ struct NewCompetition: View {
         let competitionData: [String: Any] = [
             "description": competitionDescription,
             "timestamp": Timestamp(), // Current time
-            "userID": userID // Adding the user ID
+            "userID": userID, // Adding the user ID
+            "allow_join": ["Everyone"], // Default allow_join to Everyone when creating a new competition
+            "allow_vote": ["Everyone"]
         ]
 
         // Add a new document with the competition data

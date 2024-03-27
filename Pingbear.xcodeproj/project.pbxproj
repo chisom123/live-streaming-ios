@@ -96,6 +96,8 @@
 		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F56AB622B876642005FFC96 /* SharedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB612B876642005FFC96 /* SharedViewModel.swift */; };
+		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
+		4F5C2C3C2BB4ACE90081CB59 /* VoteSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C3B2BB4ACE90081CB59 /* VoteSelect.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 /* End PBXBuildFile section */
 
@@ -170,6 +172,8 @@
 		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F56AB612B876642005FFC96 /* SharedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedViewModel.swift; sourceTree = "<group>"; };
+		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
+		4F5C2C3B2BB4ACE90081CB59 /* VoteSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoteSelect.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -332,6 +336,8 @@
 				4F382EA52B0A56CC00669A58 /* BigImage.swift */,
 				4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */,
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
+				4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */,
+				4F5C2C3B2BB4ACE90081CB59 /* VoteSelect.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -553,6 +559,7 @@
 				4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */,
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
+				4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */,
 				4F3E0D7D2A977E140068F901 /* Bears.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */,
@@ -573,6 +580,7 @@
 				4F3E0D602A86FD200068F901 /* Home.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
+				4F5C2C3C2BB4ACE90081CB59 /* VoteSelect.swift in Sources */,
 				4F56AB622B876642005FFC96 /* SharedViewModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F375D032AE7C67E0011F541 /* Map.swift in Sources */,
