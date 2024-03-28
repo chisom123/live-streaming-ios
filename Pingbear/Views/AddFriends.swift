@@ -50,7 +50,7 @@ struct AddFriendsView: View {
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
                     .cornerRadius(5)
-                    .font(.system(size: 16, weight: .medium, design: .default))
+                    .font(.system(size: 16, weight: .bold, design: .default))
                     .padding(.horizontal)
                 
                 if let status = messageStatus {
