@@ -3,6 +3,7 @@ import SwiftUI
 struct LocationCheckView: View {
     @State private var navigateToNextView = false
     @State private var navigateBack = false
+    @State private var rotateAngle: Double = 0
     @EnvironmentObject var sharedViewModel: SharedViewModel
 
     var competition: Competition // Add this line
@@ -20,52 +21,36 @@ struct LocationCheckView: View {
                     navigateBack = true
                 }
                 .font(.system(size: 15.5, weight: .bold, design: .default))
-                .foregroundColor(.gray)
+                .foregroundColor(.black)
                 .padding()
             }
             
             Spacer()
             
-            HStack {
-                Image(systemName: "star")
+            ZStack {
+                // Star with rotation animation
+                Image(systemName: "star.fill")
+                    .font(.system(size: 55, weight: .bold, design: .default))
+                    .foregroundColor(Color(hex: "#FF4500"))
+                    .rotationEffect(.degrees(rotateAngle))
+                    .onAppear {
+                        withAnimation(Animation.linear(duration: 5).repeatForever(autoreverses: false)) {
+                            rotateAngle = 360
+                        }
+                    }
             }
-            .font(.system(size: 30, weight: .bold, design: .default))
-            .foregroundColor(Color(hex: "#DAA520"))
             .padding()
-            .background(Circle()
-                .stroke(Color(hex: "#DAA520"), lineWidth: 3.5)
-            )
-            .padding(.horizontal)
-            
-            Text("Boost your chances of winning")
-                .font(.system(size: 22, weight: .bold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(Color(hex: "#DAA520"))
-                .padding(.bottom, 30)
-                .padding(.top, 30)
-                .padding(.horizontal)
-            
-            Text("With Superstar, your photo will earn up to eight stars from voters instead of the usual five stars. Skyrocket your leaderboard ranking and outshine the competition with Superstar.")
-                .font(.system(size: 17, weight: .semibold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(.black)
-                .padding(.bottom, 10)
             
             
             Button(action: {
                 navigateToNextView = true
             }) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#DAA520"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
+                Text("Activate Superstar!")
             }
-            .padding(.top, 30)
+            .buttonStyle(ChunkyButton())
+            .padding(.top, 50)
+            .padding(.horizontal)
+            
             
             Spacer()
             
@@ -77,5 +62,36 @@ struct LocationCheckView: View {
             CompDetails(competition: competition, fromLocationCheckView: true) // Pass the competition to the CompDetails view
         }
         .padding()
+        .background(Color(hex: "#FFD700")) // Set the background color to gray
+    }
+    
+    struct ChunkyButton: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    ZStack{
+                        if #available(iOS 17.0, *) {
+                            Capsule()
+                                .fill(.blue)
+                                .stroke(.black, lineWidth:3)
+                                .offset(y:configuration.isPressed ? 0 : 10)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                        
+                        if #available(iOS 17.0, *) {
+                            Capsule()
+                                .fill(.white)
+                                .stroke(.black, lineWidth:3)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                    }
+                )
+                .offset(y:configuration.isPressed ? 10 : 0)
+        }
     }
 }

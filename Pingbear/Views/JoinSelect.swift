@@ -17,35 +17,37 @@ struct JoinSelectView: View {
 
     var body: some View {
         VStack {
-            Text("Who can join your group")
-                .font(.system(size: 22, weight: .bold, design: .default))
+            Text("Who is allowed to add images to this group?")
+                .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
-                .foregroundColor(Color(hex: "#000"))
-                .padding(.bottom, 20)
-                .padding(.top, 20)
+                .foregroundColor(.black)
+                .padding(.top, 40)
+                .padding(.bottom, 30)
                 .padding(.horizontal)
-
+            
             // Radio buttons for selection
-            HStack {
+            HStack(alignment: .center, spacing: 20) {
                 RadioButtonField(id: "Everyone", label: "Everyone", isMarked: selection == "Everyone", callback: { selected in
                     self.selection = selected
                     self.selectedFriends.removeAll()
                 })
 
-                RadioButtonField(id: "Just me", label: "Just me", isMarked: selection == "Just me", callback: { selected in
+                RadioButtonField(id: "Just me", label: "Only Me", isMarked: selection == "Just me", callback: { selected in
                     self.selection = selected
                     self.selectedFriends.removeAll()
                 })
-            }.padding(.horizontal)
+            }
 
             // List of friends
-            Text("Friends")
-                .font(.headline)
+            Text("My Friends")
+                .font(.system(size: 16, weight: .bold, design: .default))
+                .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
                 .padding(.top, 20)
+                .padding(.bottom, 20)
 
             ScrollView {
-                VStack(spacing: 25) {
+                VStack(spacing: 20) {
                     ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
                         SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
                             if self.selectedFriends.contains(friend.id) {
@@ -56,20 +58,26 @@ struct JoinSelectView: View {
                             // Clear the radio button selection when a custom friend list is made
                             self.selection = ""  // Or "Custom" if you want to use a specific state
                         }
-                        .padding(.horizontal)
                     }
                 }
             }
             
-            Button("Confirm Selection") {
+            Button(action: {
                 updateCompetitionAllowJoin()  // Call this when the confirm button is pressed
-                showingVoteSelectView = true 
+                showingVoteSelectView = true
+            }) {
+                Text("Continue")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
             }
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(Color.white)
-            .cornerRadius(8)
+            .padding(.top, 10)
+            .padding(.bottom, 10)
         }
+        .padding(.horizontal)
         .refreshable {
             viewModel.fetchFriends()
         }
@@ -119,15 +127,21 @@ struct SelectableFriendView: View {
         Button(action: action) {
             HStack {
                 Text(friend)
-                    .padding()
+                    .font(.system(size: 16, weight: .semibold))
+                    .lineLimit(2)
+                    .lineSpacing(9)
+                    .foregroundColor(.black)
+                    .truncationMode(.tail)
+                    .padding(.leading, 10) // Increased padding
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                if isSelected {
-                    Image(systemName: "checkmark")
-                }
+                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                    .foregroundColor(isSelected ? Color(hex: "#1199FF") : .black)
+                
             }
-            .background(isSelected ? Color.blue.opacity(0.2) : Color.gray.opacity(0.2))
-            .cornerRadius(10)
+            .padding(20)
+            .background(isSelected ? Color(hex: "#1199FF").opacity(0.2) : Color(hex: "#F5F5F5"))
+            .cornerRadius(5)
         }
     }
 }
@@ -155,15 +169,17 @@ struct RadioButtonField: View {
         Button(action: {
             self.callback(self.id)
         }) {
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 20) {
                 Image(systemName: self.isMarked ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(self.isMarked ? .blue : .gray)
+                    .foregroundColor(self.isMarked ? Color(hex: "#1199FF") : .black)
                 Text(self.label)
-                    .foregroundColor(Color.purple)
+                    .foregroundColor(Color.black)
+                    .font(.system(size: 16, weight: .semibold))
             }
-            .padding(15)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
+            .background(Color(hex: "#F5F5F5")) 
+            .cornerRadius(20)
         }
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

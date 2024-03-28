@@ -36,37 +36,38 @@ struct PayView: View {
                     
                     Spacer()
                     
-                    Text("Unlock the power of Superstar")
-                        .font(.system(size: 22, weight: .bold, design: .default))
+                    (Text("With Superstar you will earn ")
+                        + Text("three extra stars")
+                            .foregroundColor(Color(hex: "#1199FF")) // Apply unique styling here
+                        + Text(" every time the 5th star is selected on your image."))
+                        .font(.system(size: 18, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .foregroundColor(Color(hex: "#000"))
-                        .padding(.bottom, 20)
+                        .foregroundColor(.black) // This affects the entire Text view, might need adjustment if it overrides individual colors
                         .padding(.horizontal)
-                    
-                    Text("$4.99")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .foregroundColor(Color(hex: "#ababab"))
-                        .padding(.bottom, 20)
                         .padding(.horizontal)
 
+                     
+                    
                     Button(action: {
                         if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "superstar" }) {
                             viewModel.purchase(product: subscriptionProduct)
                         }
                     }) {
-                        Text("Get Superstar")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#DAA520"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
+                        Text("Activate Superstar!")
                     }
-                    .padding(.top, 10)
-                    .padding(.horizontal, 20)
+                    .buttonStyle(ChunkyButton())
+                    .padding(.top, 50)
+                    .padding(.horizontal)
+                    .padding(.horizontal)
+                    
+                    Text("$4.99")
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(Color(hex: "#ababab"))
+                        .padding(.top, 40)
+                        .padding(.horizontal)
                     
                     Spacer()
                     
@@ -112,6 +113,35 @@ struct PayView: View {
             }
         }
     }
-    
+ 
+    struct ChunkyButton: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    ZStack{
+                        if #available(iOS 17.0, *) {
+                            Capsule()
+                                .fill(Color(hex: "#FFD700"))
+                                .stroke(.black, lineWidth:3)
+                                .offset(y:configuration.isPressed ? 0 : 10)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                        
+                        if #available(iOS 17.0, *) {
+                            Capsule()
+                                .fill(.white)
+                                .stroke(.black, lineWidth:3)
+                        } else {
+                            // Fallback on earlier versions
+                        }
+                    }
+                )
+                .offset(y:configuration.isPressed ? 10 : 0)
+        }
+    }
     
 }

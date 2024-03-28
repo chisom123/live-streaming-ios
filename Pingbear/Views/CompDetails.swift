@@ -5,15 +5,9 @@ import UIKit
 import FirebaseAuth
 import PostHog
 
-struct ShareSheet: UIViewControllerRepresentable {
-    var items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+struct ImageDisplayState {
+    var imageUrl: String = ""
+    var show: Bool = false
 }
 
 struct CompDetails: View {
@@ -22,12 +16,11 @@ struct CompDetails: View {
     @State private var competitionDescription: String = ""
     @State private var competitionTimestamp: Date
     @State private var isCameraPresented = false
+    @State private var isMembersPresented = false
     @State private var isVotingPresented = false
-    @State private var selectedImageUrl: String = ""
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
-    @State private var showBigImageView = false
+    @State private var imageDisplayState = ImageDisplayState()
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
     @EnvironmentObject var sharedViewModel: SharedViewModel
     
     @ObservedObject var entryViewModel: EntryViewModel
@@ -86,11 +79,10 @@ struct CompDetails: View {
                     
                     // Step 2: Share Button
                     Button(action: {
-                        self.showingShareSheet = true
-                        PostHogSDK.shared.capture("Competition Share Sheet Open")
+                        isMembersPresented = true
                     }) {
                         HStack {
-                            Text("Share Competition") // Text to display next to the icon
+                            Text("View Members") // Text to display next to the icon
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#1199FF"))
                         }
@@ -104,24 +96,15 @@ struct CompDetails: View {
                     .font(.system(size: 19, weight: .semibold, design: .default))
                     .lineSpacing(10)
                     .foregroundColor(.black)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 20)
                     .padding(.top, 30)
-                    .padding(.horizontal, 20)
-                
-                Text(competition.username)
-                    .font(.system(size: 17, weight: .bold, design: .default))
-                    .lineLimit(1)
-                    .lineSpacing(10)
-                    .foregroundColor(Color(hex: "#ababab"))
-                    .truncationMode(.tail)
-                    .padding(.bottom, 10)
                     .padding(.horizontal, 20)
         
                 HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
                     Button(action: {
                         joincomp()
                     }) {
-                        Text("Join")
+                        Text("Add")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -143,6 +126,7 @@ struct CompDetails: View {
                             .cornerRadius(200)
                     }
                     .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)) || competition.entriesNotVotedCount == 0)
+//                    .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)))
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)
@@ -217,17 +201,17 @@ struct CompDetails: View {
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
                             .onTapGesture {
-                                self.selectedImageUrl = entry.imageUrl
+                                self.imageDisplayState.imageUrl = entry.imageUrl
+                                self.imageDisplayState.show = true
                                 self.selectedEntryCreationDate = entry.creationDate
-                                self.showBigImageView = true
                                 PostHogSDK.shared.capture("Leaderboard Image Open")
                             }
                         }
                     }
                 }
                 // Present BigImageView when an entry is tapped
-                .fullScreenCover(isPresented: $showBigImageView) {
-                    BigImageView(imageUrl: selectedImageUrl, creationDate: selectedEntryCreationDate)
+                .fullScreenCover(isPresented: $imageDisplayState.show) {
+                    BigImageView(imageUrl: imageDisplayState.imageUrl, creationDate: selectedEntryCreationDate)
                 }
                 
             }
@@ -243,9 +227,8 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)
         })
-        .sheet(isPresented: $showingShareSheet) {
-            // This closure needs to return a View.
-            ShareSheet(items: ["Check out this competition - \(competition.description)", URL(string: "https://apps.apple.com/app/chay/id6473705189")].compactMap { $0 })
+        .fullScreenCover(isPresented: $isMembersPresented) {
+            MembersView(competition: competition) // Replace this with the actual view you want to present
         }
     }
     func joincomp() {

@@ -60,10 +60,14 @@ class CompetitionsModel: ObservableObject {
                                 allow_join: allowJoin,
                                 allow_vote: allowVote
                             )
+                            
+                            let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+                            let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo!)
 
                             // Fetch total entries for the competition
                             db.collection("competitions").document(competitionId).collection("entries")
-                              .getDocuments { (entriesSnapshot, err) in
+                                .whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
+                                .getDocuments { (entriesSnapshot, err) in
                                   if let entriesSnapshot = entriesSnapshot {
                                       let entries = entriesSnapshot.documents
                                       let totalEntriesCount = entries.count
@@ -178,7 +182,11 @@ class CompetitionsModel: ObservableObject {
 
     // Separated function to fetch competition entries
     private func fetchCompetitionEntries(competitionId: String, userId: String, db: Firestore, completion: @escaping (EntriesInfo) -> Void) {
+        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo!)
+        
         db.collection("competitions").document(competitionId).collection("entries")
+            .whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
             .getDocuments { (entriesSnapshot, err) in
                 if let err = err {
                     print("Error getting entries: \(err)")

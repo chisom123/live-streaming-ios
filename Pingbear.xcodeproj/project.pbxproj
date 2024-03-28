@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0416192BB5A97C00E3C7C0 /* Members.swift */; };
+		4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */; };
 		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F375D032AE7C67E0011F541 /* Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D022AE7C67E0011F541 /* Map.swift */; };
 		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
@@ -119,6 +121,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F0416192BB5A97C00E3C7C0 /* Members.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Members.swift; sourceTree = "<group>"; };
+		4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersViewModel.swift; sourceTree = "<group>"; };
 		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F375D022AE7C67E0011F541 /* Map.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Map.swift; sourceTree = "<group>"; };
 		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -338,6 +342,7 @@
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
 				4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */,
 				4F5C2C3B2BB4ACE90081CB59 /* VoteSelect.swift */,
+				4F0416192BB5A97C00E3C7C0 /* Members.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -364,6 +369,7 @@
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
 				4F375D152B0651EC0011F541 /* CompetitionsModel.swift */,
 				4F56AB612B876642005FFC96 /* SharedViewModel.swift */,
+				4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -569,9 +575,11 @@
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
+				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F3E0D792A951FFA0068F901 /* ChatModel.swift in Sources */,
+				4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */,
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Landing.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,

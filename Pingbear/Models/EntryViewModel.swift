@@ -198,6 +198,54 @@ class EntryViewModel: ObservableObject {
             }
         }
     }
+    
+//        func fetchEntriesForEntryView() {
+//            let db = Firestore.firestore()
+//            db.collection("competitions").document(competitionId).collection("entries").getDocuments { [weak self] (snapshot, error) in
+//                guard let self = self else { return }
+//                if let error = error {
+//                    print("Error getting entries: \(error)")
+//                    return
+//                }
+//    
+//                let group = DispatchGroup()
+//    
+//                if let documents = snapshot?.documents {
+//    
+//                    let currentUserId = Auth.auth().currentUser?.uid // Get the current user's ID
+//    
+//                    for document in documents {
+//                        group.enter()
+//                        let userId = document.data()["userId"] as? String ?? ""
+//                        let imageUrl = document.data()["imageUrl"] as? String ?? ""
+//                        let stars = document.data()["stars"] as? Int ?? 0
+//                        let isSuperstar = document.data()["superstar"] as? Bool ?? false
+//                        let timestamp = document.data()["timestamp"] as? Timestamp
+//                        let creationDate = timestamp?.dateValue() ?? Date() // Default to current time if null
+//    
+//                        // Fetch the user name based on userId
+//                        db.collection("users").document(userId).getDocument { (userSnapshot, error) in
+//                            defer { group.leave() }
+//                            if let error = error {
+//                                print("Error getting user: \(error)")
+//                                return
+//                            }
+//    
+//                            let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
+//    
+//                            let isCurrentUser = userId == currentUserId
+//                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+//                            self.entries.append(entry)
+//                        }
+//                    }
+//    
+//                    // Wait for all user names to be fetched
+//                    group.notify(queue: .main) {
+//                        self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
+//                    }
+//                }
+//            }
+//        }
 
     
     func updateStarRating(for entryId: String, with stars: Int) {
