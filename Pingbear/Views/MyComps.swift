@@ -37,15 +37,15 @@ struct MyCompsView: View {
 
             Spacer()
             
-            // Search box
-            TextField("Search", text: $searchText)
-                .padding()
-                .background(Color(.systemGray6))
-                .foregroundColor(Color(hex: "#000"))
-                .font(.system(size: 16, weight: .medium, design: .default))
-                .cornerRadius(5)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 15)
+//            // Search box
+//            TextField("Search", text: $searchText)
+//                .padding()
+//                .background(Color(.systemGray6))
+//                .foregroundColor(Color(hex: "#000"))
+//                .font(.system(size: 16, weight: .medium, design: .default))
+//                .cornerRadius(5)
+//                .padding(.horizontal, 20)
+//                .padding(.bottom, 15)
             
             ScrollView {
                 VStack(spacing: 20) {  // Increased spacing between items

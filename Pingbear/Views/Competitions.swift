@@ -39,7 +39,7 @@ struct CompetitionsView: View {
                 .padding()
                 .background(Color(.systemGray6))
                 .foregroundColor(Color(hex: "#000"))
-                .font(.system(size: 16, weight: .medium, design: .default))
+                .font(.system(size: 16, weight: .bold, design: .default))
                 .cornerRadius(5)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 15)
