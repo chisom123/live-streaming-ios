@@ -123,7 +123,7 @@ struct MembersView: View {
                             .cornerRadius(5)
                         }
                         
-                        Text("Allowed to vote on images")
+                        Text("Allowed to rate images")
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
                             .padding(.top, 20)

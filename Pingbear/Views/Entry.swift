@@ -168,7 +168,7 @@ struct EntryView: View {
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
                                             self.backgroundMusicPlayer?.stop()
-                                            let banner = NotificationBanner(title: "Voting complete. Check again later", style: .success)
+                                            let banner = NotificationBanner(title: "Rating complete. Check again later", style: .success)
                                             banner.show()
                                             
                                             DispatchQueue.main.async {

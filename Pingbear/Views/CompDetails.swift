@@ -117,7 +117,7 @@ struct CompDetails: View {
                     Button(action: {
                         vote()
                     }) {
-                        Text("Vote")
+                        Text("Rate")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))

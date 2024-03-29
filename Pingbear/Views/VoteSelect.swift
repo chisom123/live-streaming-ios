@@ -18,7 +18,10 @@ struct VoteSelectView: View {
 
     var body: some View {
         VStack {
-            Text("Who is allowed to rate images in this group?")
+            (Text("Who is allowed to ")
+                + Text("rate")
+                    .foregroundColor(Color(hex: "#1199FF")) // Apply unique styling here
+                + Text(" images in this group?"))
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)

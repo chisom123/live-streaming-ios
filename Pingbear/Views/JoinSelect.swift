@@ -18,7 +18,11 @@ struct JoinSelectView: View {
 
     var body: some View {
         VStack {
-            Text("Who is allowed to add images to this group?")
+            
+            (Text("Who is allowed to ")
+                + Text("add")
+                    .foregroundColor(Color(hex: "#1199FF")) // Apply unique styling here
+                + Text(" images to this group?"))
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
