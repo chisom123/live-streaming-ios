@@ -99,7 +99,7 @@ struct PayView: View {
                     banner.show()
 
                     // Delay the navigation to allow the banner to be displayed
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) { // Adjust delay time as needed
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { // Adjust delay time as needed
                         navigateToCompDetails = true
                     }
                 }
