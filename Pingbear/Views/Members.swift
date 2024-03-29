@@ -1,10 +1,36 @@
 import SwiftUI
+import Firebase
+import FirebaseAuth
+import FirebaseFirestore
 
 struct MembersView: View {
     
     @Environment(\.presentationMode) var presentationMode
     var competition: Competition
+    @State private var showingJoinSelectView = false
+    @State private var currentUsername: String?
+    @State private var isLoadingCurrentUser = true
     @ObservedObject private var viewModel = MembersViewModel()
+    
+    func fetchCurrentUsername() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("Error: User not logged in")
+            isLoadingCurrentUser = false
+            return
+        }
+        
+        let db = Firestore.firestore()
+        db.collection("users").document(userId).getDocument { (document, error) in
+            if let document = document, document.exists {
+                let data = document.data()
+                currentUsername = data?["username"] as? String
+            } else {
+                print("Document does not exist")
+            }
+            isLoadingCurrentUser = false
+        }
+    }
+
     
     var body: some View {
         ZStack {
@@ -21,6 +47,21 @@ struct MembersView: View {
                     }
                     
                     Spacer()
+                    
+                    // Step 2: Share Button
+                    if !isLoadingCurrentUser && currentUsername == competition.username {
+                        Button(action: {
+                            showingJoinSelectView = true
+                        }) {
+                            HStack {
+                                Text("Edit Members") // Text to display next to the icon
+                                    .font(.system(size: 16, weight: .bold, design: .default))
+                                    .foregroundColor(Color(hex: "#1199FF"))
+                            }
+                        }
+                        .padding(.trailing, 20)
+                        .padding(.top, 20)
+                    }
                 }
                 .padding(.bottom, 15)
                 
@@ -122,11 +163,15 @@ struct MembersView: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showingJoinSelectView) {
+            JoinSelectView(competition: competition, fromLocationCheckView: false, viewModel: MyFriendsModel())
+        }
         .refreshable {
             viewModel.fetchMembersDetails(for: competition)
         }
         .onAppear {
             viewModel.fetchMembersDetails(for: competition)
+            fetchCurrentUsername()
         }
     }
 

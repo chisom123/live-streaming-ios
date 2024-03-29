@@ -9,6 +9,7 @@ struct VoteSelectView: View {
     @State var selectedFriends: Set<String> = [] // Tracks selected friends
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
+    @State private var showingAddFriendsView = false
     
     var competition: Competition // this holds the selected competition details
     var fromLocationCheckView: Bool // Add this line
@@ -23,7 +24,7 @@ struct VoteSelectView: View {
                 .lineSpacing(10)
                 .foregroundColor(.black)
                 .padding(.top, 40)
-                .padding(.bottom, 30)
+                .padding(.bottom, 40)
                 .padding(.horizontal)
 
             // Radio buttons for selection
@@ -39,12 +40,27 @@ struct VoteSelectView: View {
                 })
             }
             
-            // List of friends
-            Text("My Friends")
-                .font(.system(size: 16, weight: .bold, design: .default))
-                .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
-                .padding(.top, 20)
-                .padding(.bottom, 20)
+            // List of friends and Add Friends Button
+            HStack {
+                Text("My Friends")
+                    .font(.system(size: 16, weight: .bold, design: .default))
+
+                Spacer()
+                
+                Button(action: {
+                    showingAddFriendsView = true
+                }) {
+                    Image(systemName: "person.crop.circle.badge.plus")
+                        .font(.system(size: 22, weight: .bold)) // Adjust size and weight as needed
+                        .foregroundColor(Color(hex: "#1199FF")) // Adjust color as needed
+                        .padding(10) // Add padding to increase tap area
+                }
+
+            }
+            .padding(.top, 25)
+            .padding(.bottom, 25)
+            .frame(maxWidth: .infinity)
+
 
             ScrollView {
                 VStack(spacing: 20) {
@@ -83,10 +99,26 @@ struct VoteSelectView: View {
         }
         .onAppear {
             viewModel.fetchFriends() // Fetch friends when the view appears
+            
+            // Additional setup for pre-selecting options based on `competition.allow_join`
+            if competition.allow_vote.contains("Everyone") {
+                self.selection = "Everyone"
+            } else if competition.allow_vote.contains(currentUserId) && competition.allow_vote.count == 1 {
+                self.selection = "Just me"
+            } else {
+                // For specific friends selection
+                self.selection = ""
+                // Assuming `viewModel.friends` are already fetched or will be fetched. Adjust as necessary for asynchronous loading.
+                self.selectedFriends = Set(competition.allow_vote.filter { $0 != currentUserId })
+            }
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             // Pass the competition object to CompDetails
             CompDetails(competition: competition, fromLocationCheckView: true)
+        }
+        .fullScreenCover(isPresented: $showingAddFriendsView) {
+            // Assuming AddFriendsView is properly set up to dismiss itself by setting presentationMode.wrappedValue.dismiss()
+            AddFriendsView(viewModel: AddFriendsModel())
         }
     }
     

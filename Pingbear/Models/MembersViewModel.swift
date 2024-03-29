@@ -25,7 +25,8 @@ class MembersViewModel: ObservableObject {
         }
 
         group.notify(queue: .main) {
-            completion(usernames)
+            let sortedUsernames = usernames.sorted(by: <)
+            completion(sortedUsernames)
         }
     }
 
