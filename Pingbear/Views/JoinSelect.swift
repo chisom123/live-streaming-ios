@@ -86,10 +86,11 @@ struct JoinSelectView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
+                    .background(self.selection == "Everyone" || self.selection == "Just me" || !self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
                     .foregroundColor(Color(hex: "#fff"))
                     .cornerRadius(200)
             }
+            .disabled(self.selection != "Everyone" && self.selection != "Just me" && self.selectedFriends.isEmpty) // Disable the button if no valid selection is made
             .padding(.top, 10)
             .padding(.bottom, 10)
         }
