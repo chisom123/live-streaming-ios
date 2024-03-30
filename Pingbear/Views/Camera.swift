@@ -326,11 +326,28 @@ struct CameraView: View {
             
                         // Add the user to the participants collection
                         let participantRef = db.collection("competitions").document(self.competitionId).collection("participants").document(userId)
-                        participantRef.setData(["userId": userId]) { error in
-                            if let error = error {
-                                print("Error adding participant: \(error)")
+                        
+                        participantRef.getDocument { documentSnapshot, error in
+                            if let documentSnapshot = documentSnapshot, documentSnapshot.exists {
+                                // Document exists, update it without overwriting existing data
+                                let updates = ["userId": userId] // Assuming you want to ensure the userId is correct
+                                participantRef.updateData(updates) { error in
+                                    if let error = error {
+                                        print("Error updating participant: \(error)")
+                                    } else {
+                                        print("Participant updated successfully.")
+                                    }
+                                }
                             } else {
-                                print("Participant added successfully.")
+                                // Document does not exist, create a new one
+                                let newData = ["userId": userId, "voted_entries": []] // Initializes voted_entries as empty
+                                participantRef.setData(newData) { error in
+                                    if let error = error {
+                                        print("Error creating new participant: \(error)")
+                                    } else {
+                                        print("New participant created successfully.")
+                                    }
+                                }
                             }
                         }
                         
