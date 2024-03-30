@@ -79,7 +79,12 @@ struct LocationCheckView: View {
                                 .stroke(.black, lineWidth:3)
                                 .offset(y:configuration.isPressed ? 0 : 10)
                         } else {
-                            // Fallback on earlier versions
+                            Capsule()
+                                .fill(Color.blue)
+                                .overlay(
+                                    Capsule().stroke(Color.black, lineWidth: 3)
+                                        .offset(y:configuration.isPressed ? 0 : 10)
+                                )
                         }
                         
                         if #available(iOS 17.0, *) {
@@ -87,7 +92,11 @@ struct LocationCheckView: View {
                                 .fill(.white)
                                 .stroke(.black, lineWidth:3)
                         } else {
-                            // Fallback on earlier versions
+                            Capsule()
+                                .fill(Color.white)
+                                .overlay(
+                                    Capsule().stroke(Color.black, lineWidth: 3)
+                                )
                         }
                     }
                 )
