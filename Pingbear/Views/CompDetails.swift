@@ -4,6 +4,7 @@ import FirebaseFirestore
 import UIKit
 import FirebaseAuth
 import PostHog
+import NotificationBannerSwift
 
 struct ImageDisplayState {
     var imageUrl: String = ""
@@ -108,7 +109,7 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(Color(hex: "#1199FF")) // Gray out if user has joined
+                            .background(competition.allow_join.contains("Everyone") || competition.allow_join.contains(currentUserId) ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
@@ -121,7 +122,7 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3")) // Gray out if no entries left
+                            .background((competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)) && competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
@@ -201,10 +202,18 @@ struct CompDetails: View {
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
                             .onTapGesture {
-                                self.imageDisplayState.imageUrl = entry.imageUrl
-                                self.imageDisplayState.show = true
-                                self.selectedEntryCreationDate = entry.creationDate
-                                PostHogSDK.shared.capture("Leaderboard Image Open")
+                                if competition.allow_join.contains("Everyone") ||
+                                   competition.allow_vote.contains("Everyone") ||
+                                   competition.allow_join.contains(currentUserId) ||
+                                   competition.allow_vote.contains(currentUserId) {
+                                    self.imageDisplayState.imageUrl = entry.imageUrl
+                                    self.imageDisplayState.show = true
+                                    self.selectedEntryCreationDate = entry.creationDate
+                                    PostHogSDK.shared.capture("Leaderboard Image Open")
+                                } else {
+                                    let banner = NotificationBanner(title: "Contact the group admin for access", style: .warning)
+                                    banner.show()
+                                }
                             }
                         }
                     }
