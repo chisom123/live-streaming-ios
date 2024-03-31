@@ -164,7 +164,8 @@ struct NewCompetition: View {
             if let document = document, document.exists {
                 let data = document.data()
                 guard let description = data?["description"] as? String,
-                      let timestamp = data?["timestamp"] as? Timestamp else {
+                      let timestamp = data?["timestamp"] as? Timestamp,
+                      let userId = data?["userID"] as? String else { // Fetch the userID as well
                     print("Error reading competition data")
                     return
                 }
@@ -172,7 +173,8 @@ struct NewCompetition: View {
                 let competition = Competition(
                     id: document.documentID,
                     description: description,
-                    date: timestamp.dateValue()
+                    date: timestamp.dateValue(), 
+                    userId: userId
                 )
 
                 DispatchQueue.main.async {

@@ -49,15 +49,6 @@ struct VoteSelectView: View {
                     .font(.system(size: 16, weight: .bold, design: .default))
 
                 Spacer()
-                
-                Button(action: {
-                    showingAddFriendsView = true
-                }) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.system(size: 22, weight: .bold)) // Adjust size and weight as needed
-                        .foregroundColor(Color(hex: "#1199FF")) // Adjust color as needed
-                        .padding(10) // Add padding to increase tap area
-                }
 
             }
             .padding(.top, 25)

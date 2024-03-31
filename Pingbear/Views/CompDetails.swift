@@ -24,29 +24,96 @@ struct CompDetails: View {
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @EnvironmentObject var sharedViewModel: SharedViewModel
     
+    @State private var competitionUsername: String = ""
+    
     @ObservedObject var entryViewModel: EntryViewModel
 
-    @State private var timeRemaining: String = ""
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @ObservedObject var competition: Competition
 
-    var competition: Competition // this holds the selected competition details
     var fromLocationCheckView: Bool // Add this line
+    @State private var listeners: [ListenerRegistration] = []
+    
+    private let db = Firestore.firestore()
+    
+    private func refreshEntriesNotVotedCount() {
+        let competitionId = competition.id
+        let userId = currentUserId // Ensure this is the current user's ID
+        
+        // Define the timestamp for entries within the last 24 hours
+        let twentyFourHoursAgoTimestamp = Timestamp(date: Date().addingTimeInterval(-86400)) // 24 hours ago
 
-    func timeLeft(until endTime: Date) -> String {
-        let currentTime = Date()
-        let timeInterval = endTime.timeIntervalSince(currentTime)
+        // Reference to the competition entries
+        let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
+        
+        // Query to fetch entries added within the last 24 hours
+        let listener = entriesRef.whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp).addSnapshotListener { (entriesSnapshot, error) in
+            if let error = error {
+                print("Error getting entries: \(error.localizedDescription)")
+                return
+            }
+            
+            let totalEntriesCount = entriesSnapshot?.documents.count ?? 0
+            let userEntriesCount = entriesSnapshot?.documents.filter { $0["userId"] as? String == userId }.count ?? 0
+            
+            // Reference to the participant's voted entries
+            let participantRef = self.db.collection("competitions").document(competitionId).collection("participants").document(userId)
+            
+            // Fetch the document containing the voted entries
+            let listener_part = participantRef.addSnapshotListener { (participantDocument, error) in
+                if let error = error {
+                    print("Error getting participant document: \(error.localizedDescription)")
+                    return
+                }
+                
+                let votedEntries = participantDocument?.data()?["voted_entries"] as? [String] ?? []
+                let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+                
+                DispatchQueue.main.async {
+                    self.competition.entriesNotVotedCount = notVotedCount
+                }
+            }
+            listeners.append(listener_part)
+        }
+        listeners.append(listener)
+    }
 
-        // Ensure the time interval is not negative (event has not passed)
-        if timeInterval > 0 {
-            let hours = Int(timeInterval) / 3600
-            let minutes = Int(timeInterval) / 60 % 60
-            let seconds = Int(timeInterval) % 60
+    
+    private func refreshCompetitionData() {
+        let competitionRef = db.collection("competitions").document(competition.id)
 
-            // Return as a formatted string
-            return String(format: "%02i : %02i : %02i Left", hours, minutes, seconds)
-        } else {
-            // If the event is over, you might want to return something relevant
-            return "00 : 00 :00 Left"
+        let listener_comp = competitionRef.addSnapshotListener { (document, error) in
+            guard let document = document, document.exists, error == nil else {
+                print("Error fetching document: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            let data = document.data()
+            DispatchQueue.main.async {
+                // Update the properties of the Competition object directly.
+                // Being in a struct (the SwiftUI view), we don't have the same concerns about strong reference cycles here.
+                self.competition.description = data?["description"] as? String ?? ""
+                self.competition.date = (data?["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                self.competition.username = data?["username"] as? String ?? ""
+                self.competition.allow_join = data?["allow_join"] as? [String] ?? []
+                self.competition.allow_vote = data?["allow_vote"] as? [String] ?? []
+            }
+            
+            self.refreshEntriesNotVotedCount()
+        }
+        listeners.append(listener_comp)
+    }
+
+    private func fetchCompetitionCreatorUsername(userId: String) {
+        let userRef = db.collection("users").document(userId)
+        userRef.getDocument { (document, error) in
+            if let document = document, document.exists {
+                let username = document.data()?["username"] as? String ?? "Unknown"
+                DispatchQueue.main.async {
+                    self.competitionUsername = username
+                }
+            } else {
+                print("Document does not exist or error: \(error?.localizedDescription ?? "Unknown error")")
+            }
         }
     }
 
@@ -55,6 +122,7 @@ struct CompDetails: View {
         self.fromLocationCheckView = fromLocationCheckView // Initialize the fromLocationCheckView property
         _competitionTimestamp = State(initialValue: competition.date)
         self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
+        fetchCompetitionCreatorUsername(userId: competition.userId) // Assuming competition has a userId attribute
     }
 
     
@@ -226,9 +294,14 @@ struct CompDetails: View {
             }
         }
         .onAppear {
-            // Now that the view has appeared, we can calculate the initial time remaining
-            let endTime = competitionTimestamp.addingTimeInterval(24 * 60 * 60)  // 12 hours from timestamp
-            timeRemaining = timeLeft(until: endTime)
+            refreshCompetitionData()
+            refreshEntriesNotVotedCount()
+        }
+        .onDisappear {
+            for listener in listeners {
+                listener.remove()
+            }
+            listeners.removeAll()
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView), competition: competition)

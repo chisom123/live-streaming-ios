@@ -1,15 +1,29 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import Combine
 
-struct Competition: Identifiable {
+class Competition: ObservableObject, Identifiable {
     let id: String
-    let description: String
-    let date: Date
-    var entriesNotVotedCount: Int = 0 // New property to indicate the number of entries not yet voted on
-    var username: String = "" // Add this line
-    var allow_join: [String] = []  // Add this line
-    var allow_vote: [String] = []  // Add this line
+    
+    @Published var description: String
+    @Published var date: Date
+    @Published var entriesNotVotedCount: Int = 0
+    @Published var username: String = "" // Add this line
+    @Published var allow_join: [String] = []
+    @Published var allow_vote: [String] = []
+    @Published var userId: String // Add this line
+
+    init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0, username: String = "", allow_join: [String] = [], allow_vote: [String] = [], userId: String) {
+        self.id = id
+        self.description = description
+        self.date = date
+        self.entriesNotVotedCount = entriesNotVotedCount
+        self.username = username
+        self.allow_join = allow_join
+        self.allow_vote = allow_vote
+        self.userId = userId // Initialize userId
+    }
 }
 
 class CompetitionsModel: ObservableObject {
@@ -58,7 +72,8 @@ class CompetitionsModel: ObservableObject {
                                 date: timestamp.dateValue(),
                                 username: username,
                                 allow_join: allowJoin,
-                                allow_vote: allowVote
+                                allow_vote: allowVote,
+                                userId: creatorUserId
                             )
                             
                             let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())
@@ -159,7 +174,8 @@ class CompetitionsModel: ObservableObject {
                                         date: timestamp.dateValue(),
                                         username: username,
                                         allow_join: allowJoin,
-                                        allow_vote: allowVote
+                                        allow_vote: allowVote,
+                                        userId: creatorUserId
                                     )
 
                                     self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in

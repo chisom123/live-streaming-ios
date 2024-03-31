@@ -10,6 +10,7 @@ struct JoinSelectView: View {
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var showingVoteSelectView = false
     @State private var showingAddFriendsView = false
+    @State private var isPresentingCompDetails = false
     
     var competition: Competition // this holds the selected competition details
     var fromLocationCheckView: Bool // Add this line
@@ -50,15 +51,6 @@ struct JoinSelectView: View {
                     .font(.system(size: 16, weight: .bold, design: .default))
 
                 Spacer()
-                
-                Button(action: {
-                    showingAddFriendsView = true
-                }) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .font(.system(size: 22, weight: .bold)) // Adjust size and weight as needed
-                        .foregroundColor(Color(hex: "#1199FF")) // Adjust color as needed
-                        .padding(10) // Add padding to increase tap area
-                }
 
             }
             .padding(.top, 25)
@@ -83,8 +75,12 @@ struct JoinSelectView: View {
             }
             
             Button(action: {
-                updateCompetitionAllowJoin()  // Call this when the confirm button is pressed
-                showingVoteSelectView = true
+                updateCompetitionAllowJoin()
+                if fromLocationCheckView {
+                    showingVoteSelectView = true
+                } else {
+                    isPresentingCompDetails = true
+                }
             }) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -119,6 +115,10 @@ struct JoinSelectView: View {
         }
         .fullScreenCover(isPresented: $showingVoteSelectView) {
             VoteSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel())
+        }
+        .fullScreenCover(isPresented: $isPresentingCompDetails) {
+            // Pass the competition object to CompDetails
+            CompDetails(competition: competition, fromLocationCheckView: true)
         }
         .fullScreenCover(isPresented: $showingAddFriendsView) {
             // Assuming AddFriendsView is properly set up to dismiss itself by setting presentationMode.wrappedValue.dismiss()
