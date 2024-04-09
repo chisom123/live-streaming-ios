@@ -117,6 +117,7 @@ struct MyCompsView: View {
                     }
                 }
             }
+            .navigationBarHidden(true)
             .refreshable {
                 viewModel.fetchUserCompetitions()
             }
