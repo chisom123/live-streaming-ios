@@ -43,26 +43,23 @@ struct CustomTabView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $selection) {
-                CompetitionsView()
+                MyCompsView()
                     .tabItem {
-                        Image(systemName: "house")
-                        Text("Home")
+                        Image(systemName: "house.fill")
                     }
                     .tag(0)
                     .padding([.top, .bottom], 12)
                 
-                MyCompsView()
+                CompetitionsView()
                     .tabItem {
-                        Image(systemName: "person.3.sequence.fill")
-                        Text("My Groups")
+                        Image(systemName: "magnifyingglass")
                     }
                     .tag(1)
                     .padding([.top, .bottom], 12)
 
                 SettingsView()
                     .tabItem {
-                        Image(systemName: "slider.horizontal.3")
-                        Text("Settings")
+                        Image(systemName: "gearshape.fill")
                     }
                     .tag(2)
                     .padding([.top, .bottom], 12)
