@@ -107,6 +107,17 @@ struct NameEntryView: View {
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
                PostHogSDK.shared.capture("New User")
+               
+               // Add the user to the participants collection of the new competition
+               let participantRef = db.collection("competitions").document("NME35S5xac4Qbh0QsxEc").collection("participants").document(userID)
+               participantRef.setData(["userId": userID]) { error in
+                   if let error = error {
+                       print("Error adding participant: \(error)")
+                   } else {
+                       print("Participant added successfully.")
+                   }
+               }
+               
            }
        }
    }
