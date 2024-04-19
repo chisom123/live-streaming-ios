@@ -116,12 +116,6 @@ struct CompetitionsView: View {
                 }
             }
             .navigationBarHidden(true)
-            .refreshable {
-                viewModel.fetchCompetitions()
-            }
-            .onAppear {
-                viewModel.fetchCompetitions()
-            }
             .fullScreenCover(item: $selectedCompetition) { comp in
                 CompDetails(competition: comp, fromLocationCheckView: false)
             }

@@ -13,7 +13,7 @@ struct MyCompsView: View {
         VStack {
             // Top Bar with Title
             HStack {
-                Text("Home")
+                Text("Groups")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)
@@ -56,24 +56,13 @@ struct MyCompsView: View {
                     }, id: \.id) { competition in
                         HStack {
                             
-                            VStack(alignment: .leading) { // Use VStack for vertical stacking
-                                Text(competition.description)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .lineLimit(2)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.black)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
-                                
-                                Text(competition.username) // Display the username
-                                    .font(.system(size: 14.5, weight: .semibold))
-                                    .lineLimit(1)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.gray)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
-                                    .padding(.top, 0.75)
-                            }
+                            Text(competition.description)
+                                .font(.system(size: 16, weight: .semibold))
+                                .lineLimit(2)
+                                .lineSpacing(9)
+                                .foregroundColor(.black)
+                                .truncationMode(.tail)
+                                .padding(.leading, 10) // Increased padding
 
                             Spacer()
                             

@@ -58,7 +58,7 @@ struct NewCompetition: View {
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
                     .cornerRadius(5)
-                    .font(.system(size: 16, weight: .medium, design: .default))
+                    .font(.system(size: 16, weight: .semibold, design: .default))
                     .padding(.horizontal)
                 
                 if let error = errorMessage {
@@ -93,7 +93,7 @@ struct NewCompetition: View {
 
         }
         .fullScreenCover(item: $selectedCompetition) { competition in
-            JoinSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel())
+            JoinSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
     }
 
@@ -118,8 +118,6 @@ struct NewCompetition: View {
             "description": competitionDescription,
             "timestamp": Timestamp(), // Current time
             "userID": userID, // Adding the user ID
-            "allow_join": ["Everyone"], // Default allow_join to Everyone when creating a new competition
-            "allow_vote": ["Everyone"]
         ]
 
         // Add a new document with the competition data

@@ -12,7 +12,7 @@ class MyFriendsModel: ObservableObject {
         }
         
         let db = Firestore.firestore()
-        db.collection("users").document(currentUserID).collection("friends").getDocuments { (snapshot, error) in
+        db.collection("users").document(currentUserID).collection("friends").addSnapshotListener { (snapshot, error) in
             if let error = error {
                 print("Error getting friends: \(error)")
                 return

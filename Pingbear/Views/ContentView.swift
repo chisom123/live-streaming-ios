@@ -45,23 +45,16 @@ struct CustomTabView: View {
             TabView(selection: $selection) {
                 MyCompsView()
                     .tabItem {
-                        Image(systemName: "house.fill")
+                        Image(systemName: "person.3.fill")
                     }
                     .tag(0)
-                    .padding([.top, .bottom], 12)
-                
-                CompetitionsView()
-                    .tabItem {
-                        Image(systemName: "magnifyingglass")
-                    }
-                    .tag(1)
                     .padding([.top, .bottom], 12)
 
                 SettingsView()
                     .tabItem {
                         Image(systemName: "gearshape.fill")
                     }
-                    .tag(2)
+                    .tag(1)
                     .padding([.top, .bottom], 12)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items

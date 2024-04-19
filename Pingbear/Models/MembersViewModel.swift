@@ -3,7 +3,6 @@ import FirebaseFirestore
 
 class MembersViewModel: ObservableObject {
     @Published var joinUsernames: [String] = []
-    @Published var voteUsernames: [String] = []
 
     private var db = Firestore.firestore()
 
@@ -33,9 +32,6 @@ class MembersViewModel: ObservableObject {
     func fetchMembersDetails(for competition: Competition) {
         fetchUsernames(for: competition.allow_join) { [weak self] usernames in
             self?.joinUsernames = usernames
-        }
-        fetchUsernames(for: competition.allow_vote) { [weak self] usernames in
-            self?.voteUsernames = usernames
         }
     }
 }

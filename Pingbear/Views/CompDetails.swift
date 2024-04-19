@@ -14,17 +14,14 @@ struct ImageDisplayState {
 struct CompDetails: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @State private var competitionDescription: String = ""
-    @State private var competitionTimestamp: Date
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
     @State private var isVotingPresented = false
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var imageDisplayState = ImageDisplayState()
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
+    @State private var showingJoinSelectView = false
     @EnvironmentObject var sharedViewModel: SharedViewModel
-    
-    @State private var competitionUsername: String = ""
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -103,26 +100,10 @@ struct CompDetails: View {
         listeners.append(listener_comp)
     }
 
-    private func fetchCompetitionCreatorUsername(userId: String) {
-        let userRef = db.collection("users").document(userId)
-        userRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                let username = document.data()?["username"] as? String ?? "Unknown"
-                DispatchQueue.main.async {
-                    self.competitionUsername = username
-                }
-            } else {
-                print("Document does not exist or error: \(error?.localizedDescription ?? "Unknown error")")
-            }
-        }
-    }
-
     init(competition: Competition, fromLocationCheckView: Bool) {
         self.competition = competition
         self.fromLocationCheckView = fromLocationCheckView // Initialize the fromLocationCheckView property
-        _competitionTimestamp = State(initialValue: competition.date)
         self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
-        fetchCompetitionCreatorUsername(userId: competition.userId) // Assuming competition has a userId attribute
     }
 
     
@@ -151,7 +132,7 @@ struct CompDetails: View {
                         isMembersPresented = true
                     }) {
                         HStack {
-                            Text("View Members") // Text to display next to the icon
+                            Text("Group Members") // Text to display next to the icon
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#1199FF"))
                         }
@@ -173,28 +154,27 @@ struct CompDetails: View {
                     Button(action: {
                         joincomp()
                     }) {
-                        Text("Add")
+                        Text("Add Image")
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .font(.system(size: 17.5, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(competition.allow_join.contains("Everyone") || competition.allow_join.contains(currentUserId) ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
+                            .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(!(competition.allow_join.contains("Everyone") || competition.allow_join.contains(currentUserId))) // Disable if not allowed to join
 
                     Button(action: {
                         vote()
                     }) {
-                        Text("Rate")
+                        Text("Rate Images")
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .font(.system(size: 17.5, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background((competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)) && competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
+                            .background(competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)) || competition.entriesNotVotedCount == 0)
+                    .disabled(competition.entriesNotVotedCount == 0)
 //                    .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)))
                 }
                 .padding(.top, 10)
@@ -204,8 +184,29 @@ struct CompDetails: View {
                     .font(.system(size: 17, weight: .semibold, design: .default))
                     .foregroundColor(.black)
                     .padding(.top, 35)
-                    .padding(.bottom, 20)
                     .padding(.horizontal, 20)
+            
+                Button(action: {
+                    showingJoinSelectView = true
+                }) {
+                    HStack {
+                        Text("Add Friends to this Group")
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .foregroundColor(Color.white)
+                            .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
+
+                        Image(systemName: "plus") // System name for '+' icon
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(Color.white)
+                            .frame(alignment: .trailing) // Align icon to the right
+                    }
+                    .padding(20)
+                    .background(Color(hex: "#FF4500"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(5)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 15)
 
                 ScrollView {
                     VStack(spacing: 15) { // Increased spacing between items
@@ -270,18 +271,9 @@ struct CompDetails: View {
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
                             .onTapGesture {
-                                if competition.allow_join.contains("Everyone") ||
-                                   competition.allow_vote.contains("Everyone") ||
-                                   competition.allow_join.contains(currentUserId) ||
-                                   competition.allow_vote.contains(currentUserId) {
-                                    self.imageDisplayState.imageUrl = entry.imageUrl
-                                    self.imageDisplayState.show = true
-                                    self.selectedEntryCreationDate = entry.creationDate
-                                    PostHogSDK.shared.capture("Leaderboard Image Open")
-                                } else {
-                                    let banner = NotificationBanner(title: "Contact the group admin for access", style: .warning)
-                                    banner.show()
-                                }
+                                self.imageDisplayState.imageUrl = entry.imageUrl
+                                self.imageDisplayState.show = true
+                                self.selectedEntryCreationDate = entry.creationDate
                             }
                         }
                     }
@@ -311,6 +303,9 @@ struct CompDetails: View {
         })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
+        }
+        .fullScreenCover(isPresented: $showingJoinSelectView) {
+            JoinSelectView(competition: competition, fromLocationCheckView: false, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
     }
     func joincomp() {

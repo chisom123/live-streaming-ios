@@ -2,28 +2,29 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
+import NotificationBannerSwift
 
 struct JoinSelectView: View {
     
-    @State var selection: String = "Everyone" // Used for radio buttons selection
     @State var selectedFriends: Set<String> = [] // Tracks selected friends
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    @State private var showingVoteSelectView = false
-    @State private var showingAddFriendsView = false
     @State private var isPresentingCompDetails = false
+    @State private var username: String = ""
     
     var competition: Competition // this holds the selected competition details
     var fromLocationCheckView: Bool // Add this line
     
     @ObservedObject var viewModel: MyFriendsModel // Add this line
+    @ObservedObject var viewModel2: AddFriendsModel
 
+    func processUsername(_ username: String) -> String {
+        return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
     var body: some View {
         VStack {
             
-            (Text("Who is allowed to ")
-                + Text("add")
-                    .foregroundColor(Color(hex: "#1199FF")) // Apply unique styling here
-                + Text(" images to this group?"))
+            Text("Add Friends to this Group")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -32,17 +33,38 @@ struct JoinSelectView: View {
                 .padding(.bottom, 40)
                 .padding(.horizontal)
             
-            // Radio buttons for selection
-            HStack(alignment: .center, spacing: 20) {
-                RadioButtonField(id: "Everyone", label: "Everyone", isMarked: selection == "Everyone", callback: { selected in
-                    self.selection = selected
-                    self.selectedFriends.removeAll()
-                })
 
-                RadioButtonField(id: "Just me", label: "Only Me", isMarked: selection == "Just me", callback: { selected in
-                    self.selection = selected
-                    self.selectedFriends.removeAll()
-                })
+            
+            // Radio buttons for selection
+            HStack(alignment: .center, spacing: 10) {
+                TextField("Enter Friend's Username", text: $username)
+                    .padding()
+                    .background(Color(hex: "#F5F5F5"))
+                    .foregroundColor(Color(hex: "#000"))
+                    .cornerRadius(5)
+                    .font(.system(size: 16, weight: .bold, design: .default))
+                
+                Button(action: {
+                    let processedUsername = processUsername(username)
+                    viewModel2.addFriend(byUsername: processedUsername) { (success, error) in
+                        if success {
+                            findAndAddFriendByUsername(processedUsername)
+                            let banner = NotificationBanner(title: "Friend added successfully", style: .success)
+                            banner.show()
+                            username = ""
+                        } else {
+                            let banner = NotificationBanner(title: "Failed to add friend", style: .danger)
+                            banner.show()
+                        }
+                    }
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .bold, design: .default))
+                        .padding()
+                        .background(Color(hex: "#1199FF"))
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(5)
+                }
             }
             
             // List of friends and Add Friends Button
@@ -67,8 +89,6 @@ struct JoinSelectView: View {
                             } else {
                                 self.selectedFriends.insert(friend.id)
                             }
-                            // Clear the radio button selection when a custom friend list is made
-                            self.selection = ""  // Or "Custom" if you want to use a specific state
                         }
                     }
                 }
@@ -76,21 +96,16 @@ struct JoinSelectView: View {
             
             Button(action: {
                 updateCompetitionAllowJoin()
-                if fromLocationCheckView {
-                    showingVoteSelectView = true
-                } else {
-                    isPresentingCompDetails = true
-                }
+                isPresentingCompDetails = true
             }) {
                 Text("Continue")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(self.selection == "Everyone" || self.selection == "Just me" || !self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
+                    .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
                     .foregroundColor(Color(hex: "#fff"))
                     .cornerRadius(200)
             }
-            .disabled(self.selection != "Everyone" && self.selection != "Just me" && self.selectedFriends.isEmpty) // Disable the button if no valid selection is made
             .padding(.top, 10)
             .padding(.bottom, 10)
         }
@@ -100,29 +115,23 @@ struct JoinSelectView: View {
         }
         .onAppear {
             viewModel.fetchFriends() // Fetch friends when the view appears
-            
-            // Additional setup for pre-selecting options based on `competition.allow_join`
-            if competition.allow_join.contains("Everyone") {
-                self.selection = "Everyone"
-            } else if competition.allow_join.contains(currentUserId) && competition.allow_join.count == 1 {
-                self.selection = "Just me"
-            } else {
-                // For specific friends selection
-                self.selection = ""
-                // Assuming `viewModel.friends` are already fetched or will be fetched. Adjust as necessary for asynchronous loading.
-                self.selectedFriends = Set(competition.allow_join.filter { $0 != currentUserId })
-            }
-        }
-        .fullScreenCover(isPresented: $showingVoteSelectView) {
-            VoteSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel())
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             // Pass the competition object to CompDetails
             CompDetails(competition: competition, fromLocationCheckView: true)
         }
-        .fullScreenCover(isPresented: $showingAddFriendsView) {
-            // Assuming AddFriendsView is properly set up to dismiss itself by setting presentationMode.wrappedValue.dismiss()
-            AddFriendsView(viewModel: AddFriendsModel())
+    }
+    
+    private func findAndAddFriendByUsername(_ username: String) {
+        let db = Firestore.firestore()
+        db.collection("users").whereField("username", isEqualTo: username).getDocuments { (querySnapshot, err) in
+            if let err = err {
+                print("Error getting documents: \(err)")
+            } else {
+                for document in querySnapshot!.documents {
+                    self.selectedFriends.insert(document.documentID) // Assuming documentID is the user ID
+                }
+            }
         }
     }
     
@@ -130,27 +139,59 @@ struct JoinSelectView: View {
         let db = Firestore.firestore()
         let competitionID = competition.id // Ensure you have the competition ID
 
-        let allowJoinIds: [String]
-        if selection == "Everyone" {
-            allowJoinIds = ["Everyone"]
-        } else if selection == "Just me" {
-            // Set to current user's ID, ensure this is correct for your app's user identification logic
-            allowJoinIds = [currentUserId]
-        } else {
-            var allSelectedFriends = selectedFriends
-            allSelectedFriends.insert(currentUserId)  // Add the current user's ID
-            allowJoinIds = Array(allSelectedFriends)
-        }
+        var allSelectedFriends = selectedFriends
+        allSelectedFriends.insert(currentUserId)  // Add the current user's ID
+        let allowJoinIds = Array(allSelectedFriends)
 
         db.collection("competitions").document(competitionID).updateData([
-            "allow_join": allowJoinIds
+            "allow_join": FieldValue.arrayUnion(allowJoinIds)
         ]) { err in
             if let err = err {
                 print("Error updating document: \(err)")
             } else {
-                print("Document successfully updated")
+                if !self.selectedFriends.isEmpty {
+                    let banner2 = NotificationBanner(title: "Friends added successfully", style: .success)
+                    banner2.show()
+                }
             }
         }
+        
+        for userId in allSelectedFriends {
+            let participantRef = db.collection("competitions")
+                                   .document(competitionID)
+                                   .collection("participants")
+                                   .document(userId)
+            
+            // Use a transaction to ensure atomic add
+            db.runTransaction({ (transaction, errorPointer) -> Any? in
+                let participantDocument: DocumentSnapshot
+                do {
+                    try participantDocument = transaction.getDocument(participantRef)
+                } catch let fetchError as NSError {
+                    errorPointer?.pointee = fetchError
+                    return nil
+                }
+                
+                if participantDocument.exists {
+                    // Update existing participant if needed
+                    transaction.updateData(["userId": userId], forDocument: participantRef)
+                } else {
+                    // Add a new participant entry
+                    transaction.setData([
+                        "userId": userId,
+                        "voted_entries": [],
+                    ], forDocument: participantRef)
+                }
+                return nil
+            }) { _, error in
+                if let error = error {
+                    print("Failed to add/update participant with ID \(userId): \(error)")
+                } else {
+                    print("Participant with ID \(userId) processed successfully.")
+                }
+            }
+        }
+        
     }
 }
 

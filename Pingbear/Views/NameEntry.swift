@@ -108,6 +108,8 @@ struct NameEntryView: View {
                UserDefaults.standard.synchronize()
                PostHogSDK.shared.capture("New User")
                
+               newcomp()
+               
                // Add the user to the participants collection of the new competition
                let participantRef = db.collection("competitions").document("NME35S5xac4Qbh0QsxEc").collection("participants").document(userID)
                participantRef.setData(["userId": userID]) { error in
@@ -120,6 +122,52 @@ struct NameEntryView: View {
                
            }
        }
+        
+        func newcomp() {
+            // Firestore reference
+            let db = Firestore.firestore()
+
+            // Get the current user's ID
+            guard let userID = Auth.auth().currentUser?.uid else {
+                print("Error: User not logged in")
+                return
+            }
+
+            // Data to save, including the user ID
+            let competitionData: [String: Any] = [
+                "description": "\(processedUsername)'s group 😁",
+                "timestamp": Timestamp(), // Current time
+                "userID": userID, // Adding the user ID
+            ]
+
+            // Add a new document with the competition data
+            var ref: DocumentReference? = nil
+            ref = db.collection("competitions").addDocument(data: competitionData) { err in
+                if let err = err {
+                    print("Error adding document: \(err)")
+                } else {
+                    print("Document added with user ID")
+
+                    // Get the reference to the newly created competition
+                    guard let newCompetitionId = ref?.documentID else {
+                        print("Error fetching new competition ID")
+                        return
+                    }
+
+                    // Add the user to the participants collection of the new competition
+                    let participantRef = db.collection("competitions").document(newCompetitionId).collection("participants").document(userID)
+                    participantRef.setData(["userId": userID]) { error in
+                        if let error = error {
+                            print("Error adding participant: \(error)")
+                        } else {
+                            print("Participant added successfully.")
+
+                        }
+                    }
+                }
+            }
+        }
+        
    }
 
 }
