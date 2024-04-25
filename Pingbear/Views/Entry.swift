@@ -208,11 +208,39 @@ struct EntryView: View {
                     .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 70)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-            }
-        }
-        .onTapGesture {
-            DispatchQueue.main.async {
-                presentationMode.wrappedValue.dismiss()
+                
+                HStack {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 25))
+                            .foregroundColor(.black)
+                    }
+                    .padding(10)
+                    .background(Circle() // Creates a circular background
+                        .fill(Color(hex: "#F5F5F5")) // Sets the fill of the circle to white
+                        .shadow(radius: 0)) // Optional: Adds a shadow for a subtle lift effect
+                    .clipShape(Circle()) // Ensures the clickable area is also circular
+
+                    Spacer()
+
+                    Button(action: {
+                        let banner = NotificationBanner(title: "Image Successfully Reported", style: .success)
+                        banner.show()
+                    }) {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 25))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(10)
+                    .background(Circle() // Creates a circular background
+                        .fill(Color(hex: "#F5F5F5")) // Sets the fill of the circle to white
+                        .shadow(radius: 0)) // Optional: Adds a shadow for a subtle lift effect
+                    .clipShape(Circle()) // Ensures the clickable area is also circular
+                }
+                .padding(.horizontal) // Ensures there's some spacing on the horizontal sides of the HStack
+                .padding(.vertical)
             }
         }
         .onAppear {
