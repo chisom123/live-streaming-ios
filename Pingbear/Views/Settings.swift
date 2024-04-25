@@ -105,7 +105,7 @@ struct SettingsView: View {
                                 self.showChangeNameView = true // Toggle the state to show the ChangeNameView
                             }) {
                                 HStack {
-                                    Text("Change My Username")
+                                    Text("My Username")
                                         .font(.system(size: 16, weight: .bold, design: .default))
                                         .foregroundColor(Color(hex: "#1199FF"))
                                     Spacer()
@@ -183,7 +183,7 @@ struct SettingsView: View {
                                 self.showDeleteAccountAlert = true
                             }) {
                                 HStack {
-                                    Text("Delete My Account")
+                                    Text("Delete Account")
                                         .font(.system(size: 16, weight: .bold, design: .default))
                                         .foregroundColor(Color(hex: "#ababab"))
                                     Spacer()
