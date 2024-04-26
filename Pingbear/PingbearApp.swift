@@ -55,7 +55,7 @@ struct PingbearApp: App {
                         isLoggedIn = false
                     }
             } else {
-                LandingView()
+                DemoView()
                     .onAppear {
                         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = scene.windows.first {

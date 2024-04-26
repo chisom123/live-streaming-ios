@@ -79,6 +79,9 @@ struct PhoneEntryView: View {
     
     var body: some View {
         VStack {
+            
+            Spacer()
+            
             Text("Enter your phone number")
                 .font(.system(size: 18, weight: .semibold, design: .default))
                 .multilineTextAlignment(.center)
@@ -144,6 +147,28 @@ struct PhoneEntryView: View {
                         .cornerRadius(200)
                 }
                 .padding(.top, 20)
+            }
+            
+            Spacer()
+            
+            VStack {
+                HStack(spacing: 5) {
+                    Text("Privacy Policy")
+                        .onTapGesture {
+                            openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                        }
+                    
+                    Text("•")
+                        .font(.system(size: 15, weight: .semibold, design: .default))
+                    
+                    Text("Terms of Service")
+                        .onTapGesture {
+                            openURL("https://chay-b6172c.webflow.io")
+                        }
+                }
+                .font(.system(size: 15, weight: .semibold, design: .default))
+                .foregroundColor(.black)
+                .padding(.bottom, 35)
             }
 
             NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
