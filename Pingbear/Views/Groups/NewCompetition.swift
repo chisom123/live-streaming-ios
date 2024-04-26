@@ -16,7 +16,6 @@ struct NewCompetition: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionDescription: String = ""
     @State private var errorMessage: String? = nil
-    @State private var isCameraPresented = false
     @State private var selectedCompetition: Competition?
 
     
@@ -98,8 +97,6 @@ struct NewCompetition: View {
     }
 
     func newcomp() {
-        // Firestore reference
-        let db = Firestore.firestore()
 
         // Get the current user's ID
         guard let userID = Auth.auth().currentUser?.uid else {
@@ -112,78 +109,36 @@ struct NewCompetition: View {
             errorMessage = "Please enter a name"
             return
         }
-
-        // Data to save, including the user ID
+        
+        let db = Firestore.firestore()
+        let batch = db.batch()
+        
+        let competitionRef = db.collection("competitions").document()
+        let participantRef = competitionRef.collection("participants").document(userID)
+        
         let competitionData: [String: Any] = [
             "description": competitionDescription,
-            "timestamp": Timestamp(), // Current time
-            "userID": userID, // Adding the user ID
+            "timestamp": Timestamp(),
+            "userID": userID
         ]
-
-        // Add a new document with the competition data
-        var ref: DocumentReference? = nil
-        ref = db.collection("competitions").addDocument(data: competitionData) { err in
+        
+        batch.setData(competitionData, forDocument: competitionRef)
+        batch.setData(["userId": userID], forDocument: participantRef)
+        
+        batch.commit { err in
             if let err = err {
-                print("Error adding document: \(err)")
+                errorMessage = "Failed to create competition: \(err.localizedDescription)"
             } else {
-                print("Document added with user ID")
-
-                // Get the reference to the newly created competition
-                guard let newCompetitionId = ref?.documentID else {
-                    print("Error fetching new competition ID")
-                    return
-                }
-
-                // Add the user to the participants collection of the new competition
-                let participantRef = db.collection("competitions").document(newCompetitionId).collection("participants").document(userID)
-                participantRef.setData(["userId": userID]) { error in
-                    if let error = error {
-                        print("Error adding participant: \(error)")
-                    } else {
-                        print("Participant added successfully.")
-                        self.fetchNewCompetitionDetails(newCompetitionId)
-                        PostHogSDK.shared.capture("New Group")
-
-                    }
-                }
-            }
-        }
-    }
-
-    func fetchNewCompetitionDetails(_ competitionId: String) {
-        let db = Firestore.firestore()
-
-        db.collection("competitions").document(competitionId).getDocument { (document, error) in
-            if let error = error {
-                print("Error fetching competition details: \(error)")
-                return
-            }
-
-            if let document = document, document.exists {
-                let data = document.data()
-                guard let description = data?["description"] as? String,
-                      let timestamp = data?["timestamp"] as? Timestamp,
-                      let userId = data?["userID"] as? String else { // Fetch the userID as well
-                    print("Error reading competition data")
-                    return
-                }
-
-                let competition = Competition(
-                    id: document.documentID,
-                    description: description,
-                    date: timestamp.dateValue(), 
-                    userId: userId
-                )
-
                 DispatchQueue.main.async {
-                    self.selectedCompetition = competition
+                    selectedCompetition = Competition(
+                        id: competitionRef.documentID,
+                        description: competitionDescription,
+                        date: Date(), // Using current date as timestamp
+                        userId: userID
+                    )
                 }
-            } else {
-                print("Competition does not exist")
+                PostHogSDK.shared.capture("New Group")
             }
         }
     }
-
-
-
 }
