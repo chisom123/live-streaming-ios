@@ -22,90 +22,107 @@ struct JoinSelectView: View {
     
     var body: some View {
         VStack {
-            
-            Text("Add Friends to this Group")
-                .font(.system(size: 18, weight: .bold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(.black)
-                .padding(.top, 40)
-                .padding(.bottom, 40)
-                .padding(.horizontal)
-            
-
-            
-            // Radio buttons for selection
-            HStack(alignment: .center, spacing: 10) {
-                TextField("Enter Friend's Username", text: $username)
-                    .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .foregroundColor(Color(hex: "#000"))
-                    .cornerRadius(5)
-                    .font(.system(size: 16, weight: .bold, design: .default))
-                
-                Button(action: {
-                    let processedUsername = processUsername(username)
-                    viewModel2.addFriend(byUsername: processedUsername) { (success, error) in
-                        if success {
-                            findAndAddFriendByUsername(processedUsername)
-                        } else {
-                            let banner = NotificationBanner(title: "Failed to add friend", style: .danger)
-                            banner.show()
-                        }
-                    }
-                }) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .bold, design: .default))
-                        .padding()
-                        .background(Color(hex: "#1199FF"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(5)
-                }
-            }
-            
-            // List of friends and Add Friends Button
             HStack {
-                Text("My Friends")
-                    .font(.system(size: 16, weight: .bold, design: .default))
-
+                Button(action: {
+                    isPresentingCompDetails = true
+                }) {
+                    Image("Close")
+                        .resizable()
+                        .frame(width: 40, height: 40)
+                        .padding(.leading, 20)
+                        .padding(.top, 20)
+                }
+                
                 Spacer()
-
             }
-            .padding(.top, 25)
-            .padding(.bottom, 25)
-            .frame(maxWidth: .infinity)
-
-
-            ScrollView {
-                VStack(spacing: 20) {
-                    ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
-                        SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
-                            if self.selectedFriends.contains(friend.id) {
-                                self.selectedFriends.remove(friend.id)
+            
+            VStack {
+                
+                Text("Add Friends to this Group")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(10)
+                    .foregroundColor(.black)
+                    .padding(.top, 40)
+                    .padding(.bottom, 40)
+                    .padding(.horizontal)
+                
+                
+                
+                // Radio buttons for selection
+                HStack(alignment: .center, spacing: 10) {
+                    TextField("Enter Friend's Username", text: $username)
+                        .padding()
+                        .background(Color(hex: "#F5F5F5"))
+                        .foregroundColor(Color(hex: "#000"))
+                        .cornerRadius(5)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    
+                    Button(action: {
+                        let processedUsername = processUsername(username)
+                        viewModel2.addFriend(byUsername: processedUsername) { (success, error) in
+                            if success {
+                                findAndAddFriendByUsername(processedUsername)
                             } else {
-                                self.selectedFriends.insert(friend.id)
+                                let banner = NotificationBanner(title: "Failed to add friend", style: .danger)
+                                banner.show()
+                            }
+                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 22, weight: .bold, design: .default))
+                            .padding()
+                            .background(Color(hex: "#1199FF"))
+                            .foregroundColor(Color(hex: "#fff"))
+                            .cornerRadius(5)
+                    }
+                }
+                
+                // List of friends and Add Friends Button
+                HStack {
+                    Text("My Friends")
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    
+                    Spacer()
+                    
+                }
+                .padding(.top, 25)
+                .padding(.bottom, 25)
+                .frame(maxWidth: .infinity)
+                
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
+                            SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
+                                if self.selectedFriends.contains(friend.id) {
+                                    self.selectedFriends.remove(friend.id)
+                                } else {
+                                    self.selectedFriends.insert(friend.id)
+                                }
                             }
                         }
                     }
                 }
+                
+                Button(action: {
+                    updateCompetitionAllowJoin()
+                    isPresentingCompDetails = true
+                }) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(200)
+                }
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+                
             }
-            
-            Button(action: {
-                updateCompetitionAllowJoin()
-                isPresentingCompDetails = true
-            }) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
-            }
-            .padding(.top, 10)
-            .padding(.bottom, 10)
+            .padding(.horizontal)
         }
-        .padding(.horizontal)
         .refreshable {
             viewModel.fetchFriends()
         }
