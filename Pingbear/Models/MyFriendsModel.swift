@@ -2,6 +2,18 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 
+class AppUser: Identifiable {
+    var id: String
+    var name: String
+    var phoneNumber: String
+
+    init(id: String, name: String, phoneNumber: String) {
+        self.id = id
+        self.name = name
+        self.phoneNumber = phoneNumber
+    }
+}
+
 class MyFriendsModel: ObservableObject {
     @Published var friends: [AppUser] = []
 
@@ -43,7 +55,6 @@ class MyFriendsModel: ObservableObject {
                 let friendPhoneNumber = data["phoneNumber"] as? String
                 let friendName = data["username"] as? String
                     
-                // Removed the lastMessageTimestamp part
                 let user = AppUser(id: friendID, name: friendName ?? "", phoneNumber: friendPhoneNumber ?? "")
                 
                 DispatchQueue.main.async {
