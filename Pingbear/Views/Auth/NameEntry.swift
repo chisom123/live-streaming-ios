@@ -106,7 +106,7 @@ struct NameEntryView: View {
                self.navigateToHome = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
-               PostHogSDK.shared.capture("New User")
+               PostHogSDK.shared.capture("New User - \(userID)")
                
                newcomp()
                

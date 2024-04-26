@@ -1,4 +1,5 @@
 import SwiftUI
+import PostHog
 
 struct LocationCheckView: View {
     @State private var navigateToNextView = false
@@ -43,6 +44,7 @@ struct LocationCheckView: View {
             
             Button(action: {
                 navigateToNextView = true
+                PostHogSDK.shared.capture("Superstar Info Page Open")
             }) {
                 Text("Activate Superstar!")
             }
