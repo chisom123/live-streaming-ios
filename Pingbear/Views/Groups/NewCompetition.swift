@@ -93,7 +93,7 @@ struct NewCompetition: View {
 
         }
         .fullScreenCover(item: $selectedCompetition) { competition in
-            JoinSelectView(competition: competition, fromLocationCheckView: true, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
     }
 

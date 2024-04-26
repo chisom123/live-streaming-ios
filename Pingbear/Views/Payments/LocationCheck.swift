@@ -4,7 +4,6 @@ struct LocationCheckView: View {
     @State private var navigateToNextView = false
     @State private var navigateBack = false
     @State private var rotateAngle: Double = 0
-    @EnvironmentObject var sharedViewModel: SharedViewModel
 
     var competition: Competition // Add this line
     
@@ -59,7 +58,7 @@ struct LocationCheckView: View {
             PayView(viewModel: PbillViewModel(), competitionId: competitionId, entryDocId: entryDocId, competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $navigateBack) {
-            CompDetails(competition: competition, fromLocationCheckView: true) // Pass the competition to the CompDetails view
+            CompDetails(competition: competition) // Pass the competition to the CompDetails view
         }
         .padding()
         .background(Color(hex: "#FFD700")) // Set the background color to gray

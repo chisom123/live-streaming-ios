@@ -105,7 +105,7 @@ struct PayView: View {
                 }
             }
             .fullScreenCover(isPresented: $navigateToCompDetails) {
-                CompDetails(competition: competition, fromLocationCheckView: true) // Adjust according to your needs
+                CompDetails(competition: competition) // Adjust according to your needs
             }
             .onAppear {
                 viewModel.competitionId = self.competitionId

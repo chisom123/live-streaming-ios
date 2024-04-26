@@ -12,7 +12,6 @@ struct JoinSelectView: View {
     @State private var username: String = ""
     
     var competition: Competition // this holds the selected competition details
-    var fromLocationCheckView: Bool // Add this line
     
     @ObservedObject var viewModel: MyFriendsModel // Add this line
     @ObservedObject var viewModel2: AddFriendsModel
@@ -118,7 +117,7 @@ struct JoinSelectView: View {
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             // Pass the competition object to CompDetails
-            CompDetails(competition: competition, fromLocationCheckView: true)
+            CompDetails(competition: competition)
         }
     }
     

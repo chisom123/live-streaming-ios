@@ -1,16 +1,19 @@
 import SwiftUI
+import FirebaseAuth // Ensure you have imported FirebaseAuth
 
-struct CompetitionsView: View {
+
+struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var searchText = ""
 
+
     var body: some View {
         VStack {
-            // Button at the top
+            // Top Bar with Title
             HStack {
-                Text("Search")
+                Text("Groups")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)
@@ -31,20 +34,19 @@ struct CompetitionsView: View {
                 }
             }
             .padding(.vertical, 15)
-            
-            Spacer()
 
-            // Search box
-            TextField("Search", text: $searchText)
-                .padding()
-                .background(Color(.systemGray6))
-                .foregroundColor(Color(hex: "#000"))
-                .font(.system(size: 16, weight: .bold, design: .default))
-                .cornerRadius(5)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 15)
+            Spacer()
             
-            // Existing ScrollView content
+//            // Search box
+//            TextField("Search", text: $searchText)
+//                .padding()
+//                .background(Color(.systemGray6))
+//                .foregroundColor(Color(hex: "#000"))
+//                .font(.system(size: 16, weight: .medium, design: .default))
+//                .cornerRadius(5)
+//                .padding(.horizontal, 20)
+//                .padding(.bottom, 15)
+            
             ScrollView {
                 VStack(spacing: 20) {  // Increased spacing between items
                     ForEach(viewModel.competitions.filter { competition in
@@ -54,27 +56,16 @@ struct CompetitionsView: View {
                     }, id: \.id) { competition in
                         HStack {
                             
-                            VStack(alignment: .leading) { // Use VStack for vertical stacking
-                                Text(competition.description)
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .lineLimit(2)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.black)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
-                                
-                                Text(competition.username) // Display the username
-                                    .font(.system(size: 14.5, weight: .semibold))
-                                    .lineLimit(1)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.gray)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
-                                    .padding(.top, 0.75)
-                            }
+                            Text(competition.description)
+                                .font(.system(size: 16, weight: .semibold))
+                                .lineLimit(2)
+                                .lineSpacing(9)
+                                .foregroundColor(.black)
+                                .truncationMode(.tail)
+                                .padding(.leading, 10) // Increased padding
 
                             Spacer()
-                
+                            
                             // Stars and symbol
                             HStack(spacing: 8) { // Increased spacing
                                 if competition.entriesNotVotedCount > 0 {
@@ -116,12 +107,18 @@ struct CompetitionsView: View {
                 }
             }
             .navigationBarHidden(true)
+            .refreshable {
+                viewModel.fetchUserCompetitions()
+            }
             .fullScreenCover(item: $selectedCompetition) { comp in
-                CompDetails(competition: comp, fromLocationCheckView: false)
+                CompDetails(competition: comp)
             }
             .fullScreenCover(isPresented: $isPresentingNewCompetition) {
                 NewCompetition() // Replace this with the actual view you want to present
             }
+        }
+        .onAppear {
+            viewModel.fetchUserCompetitions()
         }
     }
 }

@@ -52,7 +52,7 @@ struct MembersView: View {
             }
         }
         .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, fromLocationCheckView: false, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
         .refreshable {
             viewModel.fetchMembersDetails(for: competition)

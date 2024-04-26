@@ -14,6 +14,7 @@ struct ImageDisplayState {
 struct CompDetails: View {
     
     @Environment(\.presentationMode) var presentationMode
+    @State private var goHome = false
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
     @State private var isVotingPresented = false
@@ -21,13 +22,11 @@ struct CompDetails: View {
     @State private var imageDisplayState = ImageDisplayState()
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var showingJoinSelectView = false
-    @EnvironmentObject var sharedViewModel: SharedViewModel
     
     @ObservedObject var entryViewModel: EntryViewModel
 
     @ObservedObject var competition: Competition
-
-    var fromLocationCheckView: Bool // Add this line
+    
     @State private var listeners: [ListenerRegistration] = []
     
     private let db = Firestore.firestore()
@@ -100,9 +99,8 @@ struct CompDetails: View {
         listeners.append(listener_comp)
     }
 
-    init(competition: Competition, fromLocationCheckView: Bool) {
+    init(competition: Competition) {
         self.competition = competition
-        self.fromLocationCheckView = fromLocationCheckView // Initialize the fromLocationCheckView property
         self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
     }
 
@@ -112,11 +110,7 @@ struct CompDetails: View {
             VStack(alignment: .leading) {
                 HStack {
                     Button(action: {
-                        if fromLocationCheckView {
-                            sharedViewModel.shouldNavigateToCompetitionsView = true
-                        } else {
-                            presentationMode.wrappedValue.dismiss()
-                        }
+                        goHome = true
                     }) {
                         Image("Close")
                             .resizable()
@@ -301,11 +295,14 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)
         })
+        .fullScreenCover(isPresented: $goHome, content: {
+            ContentView()
+        })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, fromLocationCheckView: false, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
     }
     func joincomp() {
