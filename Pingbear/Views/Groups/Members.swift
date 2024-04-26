@@ -7,8 +7,6 @@ struct MembersView: View {
     
     @Environment(\.presentationMode) var presentationMode
     var competition: Competition
-    @State private var showingJoinSelectView = false
-    @State private var isLoadingCurrentUser = true
     @ObservedObject private var viewModel = MembersViewModel()
     
     var body: some View {
@@ -50,9 +48,6 @@ struct MembersView: View {
                     .padding(.horizontal, 20)
                 }
             }
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
         .refreshable {
             viewModel.fetchMembersDetails(for: competition)

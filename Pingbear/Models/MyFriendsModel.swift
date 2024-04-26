@@ -42,32 +42,26 @@ class MyFriendsModel: ObservableObject {
         let db = Firestore.firestore()
         let usersRef = db.collection("users")
         var users = [AppUser]()
-
-        // Fetch details in a single batch request if possible
-        db.runTransaction({ (transaction, errorPointer) -> Any? in
-            for friendID in friendIDs {
-                let docRef = usersRef.document(friendID)
-                do {
-                    let document = try transaction.getDocument(docRef)
-                    if let name = document.data()?["username"] as? String,
-                       let phoneNumber = document.data()?["phoneNumber"] as? String {
-                        let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
-                        users.append(user)
-                    }
-                } catch let fetchError as NSError {
-                    errorPointer?.pointee = fetchError
-                    return nil
+        
+        let group = DispatchGroup()
+        
+        for friendID in friendIDs {
+            group.enter()
+            usersRef.document(friendID).getDocument { (document, error) in
+                defer { group.leave() }
+                if let document = document, document.exists,
+                   let name = document.data()?["username"] as? String,
+                   let phoneNumber = document.data()?["phoneNumber"] as? String {
+                    let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
+                    users.append(user)
+                } else if let error = error {
+                    print("Error fetching user details: \(error)")
                 }
             }
-            return nil
-        }) { (object, error) in
-            if let error = error {
-                print("Transaction failed: \(error)")
-            } else {
-                DispatchQueue.main.async {
-                    self.friends = users.sorted(by: { $0.name < $1.name })
-                }
-            }
+        }
+        
+        group.notify(queue: .main) {
+            self.friends = users.sorted(by: { $0.name < $1.name })
         }
     }
 
@@ -81,11 +75,11 @@ class MyFriendsModel: ObservableObject {
         let currentUserRef = db.collection("users").document(currentUserID).collection("friends").document(id)
         let friendRef = db.collection("users").document(id).collection("friends").document(currentUserID)
 
-        db.runTransaction({ (transaction, errorPointer) -> Any? in
-            transaction.deleteDocument(currentUserRef)
-            transaction.deleteDocument(friendRef)
-            return nil
-        }) { (object, error) in
+        let batch = db.batch()
+        batch.deleteDocument(currentUserRef)
+        batch.deleteDocument(friendRef)
+
+        batch.commit { error in
             if let error = error {
                 print("Error removing friendship: \(error)")
             } else {
@@ -96,5 +90,6 @@ class MyFriendsModel: ObservableObject {
             }
         }
     }
+
 
 }

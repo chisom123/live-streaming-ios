@@ -30,8 +30,18 @@ class MembersViewModel: ObservableObject {
     }
 
     func fetchMembersDetails(for competition: Competition) {
-        fetchUsernames(for: competition.allow_join) { [weak self] usernames in
-            self?.joinUsernames = usernames
+        // Fetch user IDs from participants sub-collection
+        db.collection("competitions").document(competition.id).collection("participants")
+          .getDocuments { (snapshot, error) in
+            if let error = error {
+                print("Error fetching participants: \(error)")
+                return
+            }
+
+            let userIds = snapshot?.documents.map { $0.documentID } ?? []
+              self.fetchUsernames(for: userIds) { [weak self] usernames in
+                self?.joinUsernames = usernames
+            }
         }
     }
 }

@@ -29,29 +29,19 @@ class AddFriendsModel: ObservableObject {
             
             let friendID = document.documentID
             
-            // Check if the friendship already exists
+            // Setup references
             let currentUserFriendsRef = userRef.document(currentUserID).collection("friends").document(friendID)
             let friendUserFriendsRef = userRef.document(friendID).collection("friends").document(currentUserID)
             
-            db.runTransaction({ (transaction, errorPointer) -> Any? in
-                let currentUserFriendDocument: DocumentSnapshot
-                let friendUserFriendDocument: DocumentSnapshot
-                do {
-                    try currentUserFriendDocument = transaction.getDocument(currentUserFriendsRef)
-                    try friendUserFriendDocument = transaction.getDocument(friendUserFriendsRef)
-                } catch let fetchError as NSError {
-                    errorPointer?.pointee = fetchError
-                    return nil
-                }
-                
-                if currentUserFriendDocument.exists && friendUserFriendDocument.exists {
-                    return nil  // Already friends
-                }
-                
-                transaction.setData(["uid": friendID], forDocument: currentUserFriendsRef)
-                transaction.setData(["uid": currentUserID], forDocument: friendUserFriendsRef)
-                return nil
-            }) { (object, error) in
+            // Prepare a batch write
+            let batch = db.batch()
+            
+            // Add operations to the batch
+            batch.setData(["uid": friendID], forDocument: currentUserFriendsRef)
+            batch.setData(["uid": currentUserID], forDocument: friendUserFriendsRef)
+            
+            // Commit the batch
+            batch.commit { error in
                 if let error = error {
                     completion(false, error)
                     return
