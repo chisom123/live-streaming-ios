@@ -95,13 +95,7 @@ struct PayView: View {
             Spacer()
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
-                    let banner = NotificationBanner(title: "Superstar Successfully Activated", style: .success)
-                    banner.show()
-
-                    // Delay the navigation to allow the banner to be displayed
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { // Adjust delay time as needed
-                        navigateToCompDetails = true
-                    }
+                    navigateToCompDetails = true
                 }
             }
             .fullScreenCover(isPresented: $navigateToCompDetails) {

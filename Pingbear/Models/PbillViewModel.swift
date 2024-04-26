@@ -37,44 +37,40 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
     }
 
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
-        // Check if the user is logged in before attempting to update Firestore.
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("No logged-in user found!")
-            return
-        }
-        
-        // Check if competitionId and entryDocId have been set properly.
-        guard !self.competitionId.isEmpty, !self.entryDocId.isEmpty else {
-            print("Competition ID or Entry Document ID is not set.")
+        guard let userID = Auth.auth().currentUser?.uid, !self.competitionId.isEmpty, !self.entryDocId.isEmpty else {
+            print("Validation failed!")
             return
         }
 
-        // Reference to the specific Firestore document.
         let entriesDocRef = Firestore.firestore()
                                     .collection("competitions")
                                     .document(self.competitionId)
                                     .collection("entries")
                                     .document(self.entryDocId)
         
-        // Update the document in Firestore.
-        entriesDocRef.updateData(["superstar": true]) { [weak self] error in
-            guard let self = self else { return } // Check for self capture to avoid memory leaks
-            
-            DispatchQueue.main.async {
-                self.isLoading = false // Stop loading irrespective of error
+        entriesDocRef.getDocument { (document, error) in
+            if let document = document, document.exists {
+                let data = document.data() as? [String: Bool] ?? [:]
+                if data["superstar"] == true {
+                    print("Already a superstar, no need to update.")
+                    return
+                }
             }
 
-            if let error = error {
-                print("Error updating entry data: \(error)")
-            } else {
-                print("Entry data successfully updated to set superstar true!")
-                // Only set purchaseCompleted to true if the update was successful.
-                self.purchaseCompleted = true
-                PostHogSDK.shared.capture("Superstar Purchased!")
+            entriesDocRef.updateData(["superstar": true]) { [weak self] error in
+                guard let self = self else { return }
+                if let error = error {
+                    print("Error updating entry data: \(error)")
+                } else {
+                    self.purchaseCompleted = true
+                    PostHogSDK.shared.capture("Superstar Purchased!")
+                    
+                    DispatchQueue.main.async {
+                        self.isLoading = false
+                    }
+                }
             }
         }
-        
-        // Finish the transaction after all updates are attempted.
         SKPaymentQueue.default().finishTransaction(transaction)
     }
 
