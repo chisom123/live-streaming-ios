@@ -48,9 +48,6 @@ struct JoinSelectView: View {
                     viewModel2.addFriend(byUsername: processedUsername) { (success, error) in
                         if success {
                             findAndAddFriendByUsername(processedUsername)
-                            let banner = NotificationBanner(title: "Friend added successfully", style: .success)
-                            banner.show()
-                            username = ""
                         } else {
                             let banner = NotificationBanner(title: "Failed to add friend", style: .danger)
                             banner.show()
@@ -129,6 +126,8 @@ struct JoinSelectView: View {
             } else {
                 for document in querySnapshot!.documents {
                     self.selectedFriends.insert(document.documentID) // Assuming documentID is the user ID
+                    updateCompetitionAllowJoin()
+                    isPresentingCompDetails = true
                 }
             }
         }
@@ -147,11 +146,6 @@ struct JoinSelectView: View {
         ]) { err in
             if let err = err {
                 print("Error updating document: \(err)")
-            } else {
-                if !self.selectedFriends.isEmpty {
-                    let banner2 = NotificationBanner(title: "Friends added successfully", style: .success)
-                    banner2.show()
-                }
             }
         }
         

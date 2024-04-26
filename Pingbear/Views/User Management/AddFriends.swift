@@ -84,6 +84,7 @@ struct AddFriendsView: View {
                     viewModel.addFriend(byUsername: processedUsername) { (success, error) in
                         if success {
                             messageStatus = .success
+                            username = ""
                         } else {
                             messageStatus = .error
                         }
