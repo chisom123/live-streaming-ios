@@ -1,13 +1,12 @@
 import SwiftUI
-import FirebaseAuth // Ensure you have imported FirebaseAuth
-
+import FirebaseAuth
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var searchText = ""
-
+    @State private var userId: String? = Auth.auth().currentUser?.uid
 
     var body: some View {
         VStack {
@@ -51,13 +50,12 @@ struct MyCompsView: View {
                 VStack(spacing: 20) {  // Increased spacing between items
                     ForEach(viewModel.competitions.filter { competition in
                         searchText.isEmpty ||
-                        competition.description.localizedCaseInsensitiveContains(searchText) ||
-                        competition.username.localizedCaseInsensitiveContains(searchText)
+                        competition.description.localizedCaseInsensitiveContains(searchText)
                     }, id: \.id) { competition in
                         HStack {
                             
                             Text(competition.description)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 16, weight: .bold))
                                 .lineLimit(2)
                                 .lineSpacing(9)
                                 .foregroundColor(.black)
@@ -70,25 +68,19 @@ struct MyCompsView: View {
                             HStack(spacing: 8) { // Increased spacing
                                 if competition.entriesNotVotedCount > 0 {
                                     Text("\(competition.entriesNotVotedCount)")
-                                        .font(.system(size: 17, weight: .semibold)) // Slightly larger font for stars
-                                        .foregroundColor(Color(hex: "#fff"))
-                        
-                                    Image(systemName: "photo.on.rectangle.angled")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18) // Slightly larger star icon
+                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
                                         .foregroundColor(Color(hex: "#fff"))
                                 } else {
                                     Text("0")
-                                        .font(.system(size: 17, weight: .semibold)) // Slightly larger font for stars
-                                        .foregroundColor(Color(hex: "#fff"))
-                                    
-                                    Image(systemName: "photo.on.rectangle.angled")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18) // Slightly larger star icon
+                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
                                         .foregroundColor(Color(hex: "#fff"))
                                 }
+                                
+                                Image(systemName: "photo.on.rectangle.angled")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 18, height: 18) // Slightly larger star icon
+                                    .foregroundColor(Color(hex: "#fff"))
                             }
                             .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
                             .background(Color(hex: "#7B68EE"))
@@ -107,9 +99,6 @@ struct MyCompsView: View {
                 }
             }
             .navigationBarHidden(true)
-            .refreshable {
-                viewModel.fetchUserCompetitions()
-            }
             .fullScreenCover(item: $selectedCompetition) { comp in
                 CompDetails(competition: comp)
             }
@@ -118,7 +107,13 @@ struct MyCompsView: View {
             }
         }
         .onAppear {
-            viewModel.fetchUserCompetitions()
+            self.userId = Auth.auth().currentUser?.uid
+            if let userId = self.userId {
+                viewModel.setupCompetitionListeners(userId: userId)
+            }
+        }
+        .onDisappear {
+            viewModel.deactivateListeners()
         }
     }
 }

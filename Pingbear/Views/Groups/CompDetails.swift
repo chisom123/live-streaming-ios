@@ -89,9 +89,6 @@ struct CompDetails: View {
                 // Being in a struct (the SwiftUI view), we don't have the same concerns about strong reference cycles here.
                 self.competition.description = data?["description"] as? String ?? ""
                 self.competition.date = (data?["timestamp"] as? Timestamp)?.dateValue() ?? Date()
-                self.competition.username = data?["username"] as? String ?? ""
-                self.competition.allow_join = data?["allow_join"] as? [String] ?? []
-                self.competition.allow_vote = data?["allow_vote"] as? [String] ?? []
             }
             
             self.refreshEntriesNotVotedCount()
@@ -137,7 +134,7 @@ struct CompDetails: View {
     
                 
                 Text(competition.description)
-                    .font(.system(size: 19, weight: .semibold, design: .default))
+                    .font(.system(size: 19, weight: .bold, design: .default))
                     .lineSpacing(10)
                     .foregroundColor(.black)
                     .padding(.bottom, 20)
@@ -169,13 +166,12 @@ struct CompDetails: View {
                             .cornerRadius(200)
                     }
                     .disabled(competition.entriesNotVotedCount == 0)
-//                    .disabled(!(competition.allow_vote.contains("Everyone") || competition.allow_vote.contains(currentUserId)))
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)
                 
                 Text("Leaderboard")
-                    .font(.system(size: 17, weight: .semibold, design: .default))
+                    .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black)
                     .padding(.top, 35)
                     .padding(.horizontal, 20)
@@ -218,7 +214,7 @@ struct CompDetails: View {
 
                                     // User's name
                                     Text("Me")
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.system(size: 16, weight: .bold))
                                         .lineLimit(1)
                                         .foregroundColor(Color(hex: "#DAA520"))
                                         .truncationMode(.tail)
@@ -234,7 +230,7 @@ struct CompDetails: View {
 
                                     // User's name
                                     Text(entry.userName)
-                                        .font(.system(size: 16, weight: .semibold))
+                                        .font(.system(size: 16, weight: .bold))
                                         .lineLimit(1)
                                         .foregroundColor(.black)
                                         .truncationMode(.tail)
@@ -246,7 +242,7 @@ struct CompDetails: View {
                                 // Stars and symbol
                                 HStack(spacing: 8) { // Increased spacing
                                     Text("\(entry.stars)")
-                                        .font(.system(size: 17, weight: .semibold)) // Slightly larger font for stars
+                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
                                         .foregroundColor(Color(hex: "#fff"))
                                     
                                     Image(systemName: "star.fill")

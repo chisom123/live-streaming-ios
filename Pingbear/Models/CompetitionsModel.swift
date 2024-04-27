@@ -9,155 +9,127 @@ class Competition: ObservableObject, Identifiable {
     @Published var description: String
     @Published var date: Date
     @Published var entriesNotVotedCount: Int = 0
-    @Published var username: String = "" // Add this line
-    @Published var allow_join: [String] = []
-    @Published var allow_vote: [String] = []
-    @Published var userId: String // Add this line
-
-    init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0, username: String = "", allow_join: [String] = [], allow_vote: [String] = [], userId: String) {
+    
+    init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0) {
         self.id = id
         self.description = description
         self.date = date
         self.entriesNotVotedCount = entriesNotVotedCount
-        self.username = username
-        self.allow_join = allow_join
-        self.allow_vote = allow_vote
-        self.userId = userId // Initialize userId
     }
 }
 
 class CompetitionsModel: ObservableObject {
     @Published var competitions: [Competition] = []
-    private var competitionsListener: ListenerRegistration?
-
-    func fetchUserCompetitions() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            print("No user logged in")
-            return
-        }
-
+    var listeners: [ListenerRegistration] = []
+    
+    func setupCompetitionListeners(userId: String) {
         let db = Firestore.firestore()
-
-        competitionsListener?.remove()  // Remove previous listener if any
-
-        competitionsListener = db.collection("competitions")
-            .addSnapshotListener { [weak self] (querySnapshot, err) in
-                if let err = err {
-                    print("Error getting competitions: \(err)")
-                    return
-                }
-
-                var newCompetitions: [Competition] = []  // Initialize a new temporary storage for competitions
-
-                guard let documents = querySnapshot?.documents else {
-                    return
-                }
-
-                let group = DispatchGroup()  // Use a dispatch group to track async tasks
-
-                for document in documents {
-                    group.enter()  // Enter the group for each async task
-
-                    let competitionId = document.documentID
-                    let creatorUserId = document.data()["userID"] as? String ?? ""  // Assuming 'userId' is the field for the competition creator
-
-                    // Fetch the username for the competition creator
-                    db.collection("users").document(creatorUserId).getDocument { (userDoc, err) in
-                        var username = "Unknown"  // Default username if not found or error
-                        if let userDoc = userDoc, let userData = userDoc.data(), let fetchedUsername = userData["username"] as? String {
-                            username = fetchedUsername
-                        }
-
-                        // Proceed with fetching competition details
-                        document.reference.collection("participants")
-                            .document(userId)
-                            .getDocument { (participantSnapshot, err) in
-                                if let err = err {
-                                    print("Error getting participant data: \(err)")
-                                    group.leave()
-                                    return
-                                }
-
-                                if let participantSnapshot = participantSnapshot, participantSnapshot.exists {
-                                    let data = document.data()
-                                    guard let description = data["description"] as? String,
-                                          let timestamp = data["timestamp"] as? Timestamp else {
-                                              group.leave()
-                                              return
-                                    }
-                                    
-                                    let allowJoin = data["allow_join"] as? [String] ?? []
-                                    let allowVote = data["allow_vote"] as? [String] ?? []
-
-                                    let competition = Competition(
-                                        id: competitionId,
-                                        description: description,
-                                        date: timestamp.dateValue(),
-                                        username: username,
-                                        allow_join: allowJoin,
-                                        allow_vote: allowVote,
-                                        userId: creatorUserId
-                                    )
-
-                                    self?.fetchCompetitionEntries(competitionId: competitionId, userId: userId, db: db) { entriesInfo in
-                                        competition.entriesNotVotedCount = entriesInfo.notVotedCount
-                                        newCompetitions.append(competition)
-                                        group.leave()
-                                    }
-                                } else {
-                                    group.leave()
-                                }
-                            }
+        let competitionListener = db.collection("competitions").addSnapshotListener { [weak self] (querySnapshot, error) in
+            guard let self = self, let snapshot = querySnapshot else {
+                print("Error fetching competitions: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            
+            snapshot.documents.forEach { document in
+                let participantListener = self.checkIfUserIsParticipant(competitionId: document.documentID, userId: userId) { isParticipant in
+                    if isParticipant {
+                        self.fetchCompetitionDetailsAndCalculateVotes(competitionId: document.documentID, userId: userId)
                     }
                 }
-
-                group.notify(queue: .main) {  // When all async tasks are completed
-                    self?.competitions = newCompetitions.sorted { $0.date > $1.date }  // Assign sorted to published competitions array
-                }
+                self.listeners.append(participantListener)
             }
+        }
+        listeners.append(competitionListener)
+    }
+    
+    func checkIfUserIsParticipant(competitionId: String, userId: String, completion: @escaping (Bool) -> Void) -> ListenerRegistration {
+        let db = Firestore.firestore()
+        let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
+        
+        let listener = participantRef.addSnapshotListener { documentSnapshot, error in
+            guard let documentSnapshot = documentSnapshot, error == nil else {
+                print("Error listening to participant updates: \(error?.localizedDescription ?? "Unknown error")")
+                completion(false)
+                return
+            }
+            completion(documentSnapshot.exists)
+        }
+        
+        return listener
     }
 
-    // Separated function to fetch competition entries
-    private func fetchCompetitionEntries(competitionId: String, userId: String, db: Firestore, completion: @escaping (EntriesInfo) -> Void) {
-        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-        let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo!)
+    
+    func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String) {
+        let db = Firestore.firestore()
+        db.collection("competitions").document(competitionId).getDocument { [weak self] (documentSnapshot, err) in
+            guard let self = self, let documentSnapshot = documentSnapshot, let data = documentSnapshot.data() else {
+                print("Error or missing data in competition document: \(err?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            let competition = Competition(
+                id: documentSnapshot.documentID,
+                description: data["description"] as? String ?? "No Description",
+                date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+            )
+            self.setupEntriesListener(competition: competition, userId: userId)
+        }
+    }
+    
+    func setupEntriesListener(competition: Competition, userId: String) {
+        let db = Firestore.firestore()
+        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo)
         
-        db.collection("competitions").document(competitionId).collection("entries")
+        let entriesListener = db.collection("competitions").document(competition.id).collection("entries")
             .whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
-            .getDocuments { (entriesSnapshot, err) in
-                if let err = err {
+            .addSnapshotListener { [weak self] (entriesSnapshot, error) in
+                if let err = error {
                     print("Error getting entries: \(err)")
-                    completion(EntriesInfo(notVotedCount: 0))
                     return
                 }
 
-                guard let entriesSnapshot = entriesSnapshot else {
-                    completion(EntriesInfo(notVotedCount: 0))
-                    return
-                }
-
-                let entries = entriesSnapshot.documents
+                guard let entries = entriesSnapshot?.documents else { return }
+                let entryIds = Set(entries.map { $0.documentID })
                 let totalEntriesCount = entries.count
                 let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
 
-                let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
-                participantRef.getDocument { (participantSnapshot, err) in
+                let votesListener = db.collection("competitions").document(competition.id).collection("participants")
+                  .document(userId).addSnapshotListener { (participantSnapshot, err) in
                     if let err = err {
-                        print("Error getting participant document: \(err)")
-                        completion(EntriesInfo(notVotedCount: 0))
+                        print("Error getting participant details: \(err)")
                         return
                     }
 
                     let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
-                    let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
+                    let validVotedEntries = votedEntries.filter { entryIds.contains($0) }
+                    let notVotedCount = totalEntriesCount - validVotedEntries.count - userEntriesCount
 
-                    completion(EntriesInfo(notVotedCount: notVotedCount))
+                    DispatchQueue.main.async {
+                        competition.entriesNotVotedCount = notVotedCount
+                        self?.updateOrAppendCompetition(competition)
+                    }
                 }
+                self?.listeners.append(votesListener)
             }
+        listeners.append(entriesListener)
+    }
+    
+    func updateOrAppendCompetition(_ competition: Competition) {
+        DispatchQueue.main.async {
+            if let index = self.competitions.firstIndex(where: { $0.id == competition.id }) {
+                // Update existing competition
+                self.competitions[index] = competition
+            } else {
+                // Append new competition
+                self.competitions.append(competition)
+            }
+        }
     }
 
-    struct EntriesInfo {
-        let notVotedCount: Int
+    func deactivateListeners() {
+        for listener in listeners {
+            listener.remove()
+        }
+        listeners.removeAll()
     }
-
 }

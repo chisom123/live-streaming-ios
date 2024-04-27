@@ -18,7 +18,7 @@ struct NameEntryView: View {
     var body: some View {
         VStack {
             Text("Create a username")
-                .font(.system(size: 18, weight: .semibold, design: .default))
+                .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
                 .foregroundColor(.black)
@@ -30,7 +30,7 @@ struct NameEntryView: View {
                 .background(Color(hex: "#F5F5F5"))
                 .foregroundColor(Color(hex: "#000"))
                 .cornerRadius(5)
-                .font(.system(size: 16, weight: .medium, design: .default))
+                .font(.system(size: 16, weight: .bold, design: .default))
             
             if let error = errorMessage {
                 Text(error)

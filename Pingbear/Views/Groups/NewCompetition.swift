@@ -44,7 +44,7 @@ struct NewCompetition: View {
                 Spacer()
                 
                 Text("New Group")
-                    .font(.system(size: 18, weight: .semibold, design: .default))
+                    .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)
@@ -57,7 +57,7 @@ struct NewCompetition: View {
                     .background(Color(hex: "#F5F5F5"))
                     .foregroundColor(Color(hex: "#000"))
                     .cornerRadius(5)
-                    .font(.system(size: 16, weight: .semibold, design: .default))
+                    .font(.system(size: 16, weight: .bold, design: .default))
                     .padding(.horizontal)
                 
                 if let error = errorMessage {
@@ -118,12 +118,11 @@ struct NewCompetition: View {
         
         let competitionData: [String: Any] = [
             "description": competitionDescription,
-            "timestamp": Timestamp(),
-            "userID": userID
+            "timestamp": Timestamp()
         ]
         
         batch.setData(competitionData, forDocument: competitionRef)
-        batch.setData(["userId": userID], forDocument: participantRef)
+        batch.setData(["userId": userID, "voted_entries": []], forDocument: participantRef)
         
         batch.commit { err in
             if let err = err {
@@ -133,8 +132,7 @@ struct NewCompetition: View {
                     selectedCompetition = Competition(
                         id: competitionRef.documentID,
                         description: competitionDescription,
-                        date: Date(), // Using current date as timestamp
-                        userId: userID
+                        date: Date()
                     )
                 }
                 PostHogSDK.shared.capture("New Group")

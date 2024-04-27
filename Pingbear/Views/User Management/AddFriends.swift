@@ -37,7 +37,7 @@ struct AddFriendsView: View {
                 Spacer()
 
                 Text("Add Friend")
-                    .font(.system(size: 18, weight: .semibold, design: .default))
+                    .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)

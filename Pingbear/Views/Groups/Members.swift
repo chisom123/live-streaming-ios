@@ -32,7 +32,7 @@ struct MembersView: View {
                         
                         ForEach(viewModel.joinUsernames, id: \.self) { username in
                             Text(username)
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(.system(size: 16, weight: .bold))
                                 .lineLimit(2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .lineSpacing(9)

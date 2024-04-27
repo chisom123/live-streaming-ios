@@ -215,7 +215,7 @@ struct SelectableFriendView: View {
         Button(action: action) {
             HStack {
                 Text(friend)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold))
                     .lineLimit(2)
                     .lineSpacing(9)
                     .foregroundColor(.black)
@@ -262,7 +262,7 @@ struct RadioButtonField: View {
                     .foregroundColor(self.isMarked ? Color(hex: "#1199FF") : .black)
                 Text(self.label)
                     .foregroundColor(Color.black)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .bold))
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
