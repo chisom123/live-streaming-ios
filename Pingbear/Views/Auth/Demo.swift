@@ -54,7 +54,7 @@ struct DemoView: View {
                         if let imageName = viewModel.currentImageName {
                             Image(imageName)
                                 .resizable()
-                                .scaledToFit()
+                                .scaledToFill()
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             ProgressView()
@@ -146,7 +146,7 @@ struct DemoView: View {
 
 class DemoViewModel: ObservableObject {
     @Published var currentImageName: String?
-    private var images = ["image1", "image2", "image3"] // Replace with your actual image names in Assets
+    private var images = ["demo_image1", "demo_image2", "demo_image3"] // Replace with your actual image names in Assets
     private var index = 0
 
     func fetchDemoImages() {
