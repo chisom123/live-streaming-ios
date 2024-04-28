@@ -117,9 +117,12 @@ struct ChangeNameView: View {
     func updateUserName() {
         // Process and validate updated username
         let processedUsername = updatedName.lowercased().replacingOccurrences(of: " ", with: "")
-        guard !processedUsername.isEmpty else {
+        
+        // Use the new validation function
+        let validation = isValidUsername(processedUsername)
+        guard validation.isValid else {
             messageStatus = .error
-            errorMessage = "Please enter a username"
+            errorMessage = validation.error
             return
         }
 
