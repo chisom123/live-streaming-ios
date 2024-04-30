@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0416192BB5A97C00E3C7C0 /* Members.swift */; };
 		4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */; };
-		4F31B8902BDA71FB007892BC /* CodePick.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F31B88F2BDA71FB007892BC /* CodePick.swift */; };
+		4F31B8902BDA71FB007892BC /* UsernameShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F31B88F2BDA71FB007892BC /* UsernameShield.swift */; };
 		4F31B8982BDC38FD007892BC /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F31B8972BDC38FD007892BC /* Demo.swift */; };
 		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
@@ -24,7 +24,6 @@
 		4F382EA62B0A56CC00669A58 /* BigImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382EA52B0A56CC00669A58 /* BigImage.swift */; };
 		4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F382EA82B0F89D800669A58 /* NotificationBannerSwift */; };
 		4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F3991642B93CD1100CC54FF /* pop.mp3 */; };
-		4F3991672B93D0F300CC54FF /* win.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F3991662B93D0F300CC54FF /* win.mp3 */; };
 		4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F39916A2B9416F600CC54FF /* bgmusic.mp3 */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
@@ -102,7 +101,7 @@
 /* Begin PBXFileReference section */
 		4F0416192BB5A97C00E3C7C0 /* Members.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Members.swift; sourceTree = "<group>"; };
 		4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersViewModel.swift; sourceTree = "<group>"; };
-		4F31B88F2BDA71FB007892BC /* CodePick.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodePick.swift; sourceTree = "<group>"; };
+		4F31B88F2BDA71FB007892BC /* UsernameShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsernameShield.swift; sourceTree = "<group>"; };
 		4F31B8972BDC38FD007892BC /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -115,7 +114,6 @@
 		4F382E9F2B07CAA600669A58 /* MyComps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyComps.swift; sourceTree = "<group>"; };
 		4F382EA52B0A56CC00669A58 /* BigImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigImage.swift; sourceTree = "<group>"; };
 		4F3991642B93CD1100CC54FF /* pop.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = pop.mp3; sourceTree = "<group>"; };
-		4F3991662B93D0F300CC54FF /* win.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = win.mp3; sourceTree = "<group>"; };
 		4F39916A2B9416F600CC54FF /* bgmusic.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bgmusic.mp3; sourceTree = "<group>"; };
 		4F3E0CE92A846CE80068F901 /* Pingbear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pingbear.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearApp.swift; sourceTree = "<group>"; };
@@ -211,7 +209,7 @@
 				4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */,
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
-				4F31B88F2BDA71FB007892BC /* CodePick.swift */,
+				4F31B88F2BDA71FB007892BC /* UsernameShield.swift */,
 				4F31B8972BDC38FD007892BC /* Demo.swift */,
 			);
 			path = Auth;
@@ -256,7 +254,6 @@
 			isa = PBXGroup;
 			children = (
 				4F39916A2B9416F600CC54FF /* bgmusic.mp3 */,
-				4F3991662B93D0F300CC54FF /* win.mp3 */,
 				4F3991642B93CD1100CC54FF /* pop.mp3 */,
 			);
 			path = Sounds;
@@ -513,7 +510,6 @@
 				4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */,
 				4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */,
 				4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */,
-				4F3991672B93D0F300CC54FF /* win.mp3 in Resources */,
 				4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -561,7 +557,7 @@
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Global.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
-				4F31B8902BDA71FB007892BC /* CodePick.swift in Sources */,
+				4F31B8902BDA71FB007892BC /* UsernameShield.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,

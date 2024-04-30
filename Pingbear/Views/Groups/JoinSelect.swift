@@ -64,7 +64,7 @@ struct JoinSelectView: View {
                             if success {
                                 findAndAddFriendByUsername(processedUsername)
                             } else {
-                                let banner = NotificationBanner(title: "Failed to add friend", style: .danger)
+                                let banner = NotificationBanner(title: "Failed to Add Friend", style: .danger)
                                 banner.show()
                             }
                         }
@@ -152,52 +152,43 @@ struct JoinSelectView: View {
     
     func updateCompetitionAllowJoin() {
         let db = Firestore.firestore()
-        let competitionID = competition.id // Ensure you have the competition ID
+        let competitionID = competition.id
+        let batch = db.batch() // Create a batch write object
 
-        var allSelectedFriends = selectedFriends
-        allSelectedFriends.insert(currentUserId)  // Add the current user's ID
-        let allowJoinIds = Array(allSelectedFriends)
+        var completionCounter = 0 // Counter to track the completion of getDocument calls
 
-        db.collection("competitions").document(competitionID).updateData([
-            "allow_join": FieldValue.arrayUnion(allowJoinIds)
-        ]) { err in
-            if let err = err {
-                print("Error updating document: \(err)")
-            }
-        }
-        
-        for userId in allSelectedFriends {
+        for userId in selectedFriends {
             let participantRef = db.collection("competitions")
-                                   .document(competitionID)
-                                   .collection("participants")
-                                   .document(userId)
-            
-            // Use a transaction to ensure atomic add
-            db.runTransaction({ (transaction, errorPointer) -> Any? in
-                let participantDocument: DocumentSnapshot
-                do {
-                    try participantDocument = transaction.getDocument(participantRef)
-                } catch let fetchError as NSError {
-                    errorPointer?.pointee = fetchError
-                    return nil
-                }
-                
-                if participantDocument.exists {
-                    // Update existing participant if needed
-                    transaction.updateData(["userId": userId], forDocument: participantRef)
+                                    .document(competitionID)
+                                    .collection("participants")
+                                    .document(userId)
+
+            // Perform a document check
+            participantRef.getDocument { (document, error) in
+                completionCounter += 1  // Increment the counter for each completion
+
+                if let document = document, document.exists {
+                    print("User already a participant")
                 } else {
-                    // Add a new participant entry
-                    transaction.setData([
+                    // Add a new participant
+                    batch.setData([
                         "userId": userId,
-                        "voted_entries": [],
+                        "voted_entries": []
                     ], forDocument: participantRef)
                 }
-                return nil
-            }) { _, error in
-                if let error = error {
-                    print("Failed to add/update participant with ID \(userId): \(error)")
-                } else {
-                    print("Participant with ID \(userId) processed successfully.")
+
+                // Commit the batch if all document checks are completed
+                if completionCounter == selectedFriends.count {
+                    batch.commit { err in
+                        if let err = err {
+                            print("Error writing batch: \(err)")
+                        } else {
+                            print("Batch write succeeded.")
+                            DispatchQueue.main.async {
+                                isPresentingCompDetails = true
+                            }
+                        }
+                    }
                 }
             }
         }

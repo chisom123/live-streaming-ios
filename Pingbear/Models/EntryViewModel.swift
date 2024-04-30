@@ -5,21 +5,19 @@ import FirebaseFirestore
 struct Entry: Identifiable {
     let id: String
     let imageUrl: String
-    let userName: String // Add userName
+    let userName: String
     let stars: Int
-    let isCurrentUser: Bool // Indicates if the entry belongs to the current user
-    let isSuperstar: Bool // Indicates if the entry is marked as a "Superstar"
-    let creationDate: Date // Add this line
+    let isCurrentUser: Bool
+    let isSuperstar: Bool
+    let creationDate: Date
 }
 
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
-    var competitionId: String // Add a property to store the competition ID
+    var competitionId: String
     @Published var currentIndex: Int = 0
-    @Published var userHasJoined: Bool = false
+    var listeners: [ListenerRegistration] = []
     
-    private var listener: ListenerRegistration?
-
     enum FetchEntriesMode {
         case entryView
         case compDetailsView
@@ -27,179 +25,102 @@ class EntryViewModel: ObservableObject {
 
     init(competitionId: String, mode: FetchEntriesMode) {
         self.competitionId = competitionId
-        switch mode {
-        case .entryView:
-            fetchEntriesForEntryView()
-        case .compDetailsView:
-            fetchEntriesForCompDetailsView()
-        }
-        checkIfUserHasJoined() // Check if the user has already joined the competition
+        fetchEntries(mode: mode)
     }
     
-    deinit {
-        listener?.remove() // Remove the listener when the view model is deinitialized
-    }
-    
-    func checkIfUserHasJoined() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else {
-            print("No user logged in")
+    func fetchEntries(mode: FetchEntriesMode) {
+        let db = Firestore.firestore()
+        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
+            print("Error calculating date 24 hours ago")
             return
         }
+        
+        let collection = db.collection("competitions").document(competitionId).collection("entries")
+        let query = collection.whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
+        
+        if mode == .entryView {
+            fetchEntryViewEntries(query: query)
+        } else {
+            fetchCompDetailsViewEntries(query: query)
+        }
+    }
 
-        let db = Firestore.firestore()
-        let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
-
-        // Query for an entry with the current user's ID
-        entriesRef.whereField("userId", isEqualTo: currentUserId).getDocuments { (snapshot, error) in
+    private func fetchEntryViewEntries(query: Query) {
+        let currentUserId = Auth.auth().currentUser?.uid
+        
+        let entryViewListener = query.addSnapshotListener { [weak self] (snapshot, error) in
+            guard let self = self else { return }
             if let error = error {
-                print("Error checking if user has joined: \(error)")
+                print("Error getting entries: \(error)")
                 return
             }
 
-            if let documents = snapshot?.documents, !documents.isEmpty {
-                // User has an entry in this competition
-                self.userHasJoined = true
-            } else {
-                // User has no entry in this competition
-                self.userHasJoined = false
-            }
-        }
-    }
-    
-    func fetchEntriesForCompDetailsView() {
-        let db = Firestore.firestore()
-        
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
-            print("Error calculating date 24 hours ago")
-            return
-        }
-        
-        listener = db.collection("competitions").document(competitionId).collection("entries")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo)) // Filter to only get entries from the last 24 hours
-            .addSnapshotListener { [weak self] (snapshot, error) in
-                guard let self = self else { return }
+            // Fetch the list of voted entries
+            Firestore.firestore().collection("competitions").document(self.competitionId).collection("participants").document(currentUserId ?? "").getDocument { (participantSnapshot, error) in
                 if let error = error {
-                    print("Error getting entries: \(error)")
+                    print("Error getting participant info: \(error)")
                     return
                 }
-                
-            self.entries.removeAll() // Clear existing entries
-                
-            let group = DispatchGroup()
-
-            if let documents = snapshot?.documents {
-                
-                let currentUserId = Auth.auth().currentUser?.uid // Get the current user's ID
-
-                for document in documents {
-                    group.enter()
-                    let userId = document.data()["userId"] as? String ?? ""
-                    let imageUrl = document.data()["imageUrl"] as? String ?? ""
-                    let stars = document.data()["stars"] as? Int ?? 0
-                    let isSuperstar = document.data()["superstar"] as? Bool ?? false
-                    let timestamp = document.data()["timestamp"] as? Timestamp
-                    let creationDate = timestamp?.dateValue() ?? Date() // Default to current time if null
-
-                    // Fetch the user name based on userId
-                    db.collection("users").document(userId).getDocument { (userSnapshot, error) in
-                        defer { group.leave() }
-                        if let error = error {
-                            print("Error getting user: \(error)")
-                            return
-                        }
-
-                        let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
-
-                        // Create Entry instance with subscription status
-                        let isCurrentUser = userId == currentUserId
-                        
-                        let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
-                        self.entries.append(entry)
-                    }
-                }
-            }
-
-            // Wait for all user names to be fetched
-            group.notify(queue: .main) {
-                self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
+                let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
+                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries)
             }
         }
+        listeners.append(entryViewListener)
     }
-    
-    func fetchEntriesForEntryView() {
-        let db = Firestore.firestore()
-        
-        // Calculate the time 24 hours ago from the current moment
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
-            print("Error calculating date 24 hours ago")
-            return
-        }
 
-        db.collection("competitions").document(competitionId).collection("entries")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo)) // Filter to only get entries from the last 24 hours
-            .getDocuments { [weak self] (snapshot, error) in
-                guard let self = self else { return }
+    private func fetchCompDetailsViewEntries(query: Query) {
+        let currentUserId = Auth.auth().currentUser?.uid
+        
+        let compViewListener = query.addSnapshotListener { [weak self] (snapshot, error) in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error getting entries: \(error)")
+                return
+            }
+            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
+        }
+        
+        listeners.append(compViewListener)
+    }
+
+
+    private func processEntries(snapshot: QuerySnapshot?, excludeCurrentAndVoted: Bool, currentUserId: String?, votedEntries: [String] = []) {
+        guard let documents = snapshot?.documents else { return }
+        let group = DispatchGroup()
+        var localEntries = [Entry]()
+
+        for document in documents {
+            let userId = document.data()["userId"] as? String ?? ""
+            let documentId = document.documentID
+            if excludeCurrentAndVoted && (userId == currentUserId || votedEntries.contains(documentId)) {
+                continue // Skip current user's entries and already voted entries
+            }
+
+            group.enter()
+            let imageUrl = document.data()["imageUrl"] as? String ?? ""
+            let stars = document.data()["stars"] as? Int ?? 0
+            let isSuperstar = document.data()["superstar"] as? Bool ?? false
+            let timestamp = document.data()["timestamp"] as? Timestamp
+            let creationDate = timestamp?.dateValue() ?? Date()
+
+            Firestore.firestore().collection("users").document(userId).getDocument { (userSnapshot, error) in
+                defer { group.leave() }
                 if let error = error {
-                    print("Error getting entries: \(error)")
+                    print("Error getting user: \(error)")
                     return
                 }
-
-                let group = DispatchGroup()
-
-            if let documents = snapshot?.documents {
-                
-                let currentUserId = Auth.auth().currentUser?.uid // Get the current user's ID
-
-                // Fetch the current user's voted entries
-                db.collection("competitions").document(competitionId).collection("participants").document(currentUserId ?? "").getDocument { (participantSnapshot, error) in
-                    if let error = error {
-                        print("Error getting participant info: \(error)")
-                        return
-                    }
-
-                    let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
-
-                    for document in documents {
-                        group.enter()
-                        let userId = document.data()["userId"] as? String ?? ""
-                        let imageUrl = document.data()["imageUrl"] as? String ?? ""
-                        let stars = document.data()["stars"] as? Int ?? 0
-                        let isSuperstar = document.data()["superstar"] as? Bool ?? false
-                        let timestamp = document.data()["timestamp"] as? Timestamp
-                        let creationDate = timestamp?.dateValue() ?? Date() // Default to current time if null
-
-                        // Exclude if the entry is submitted by the current user or already voted on
-                        if userId == currentUserId || votedEntries.contains(document.documentID) {
-                            group.leave()
-                            continue
-                        }
-
-                        // Fetch the user name based on userId
-                        db.collection("users").document(userId).getDocument { (userSnapshot, error) in
-                            defer { group.leave() }
-                            if let error = error {
-                                print("Error getting user: \(error)")
-                                return
-                            }
-
-                            let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
-
-                            let isCurrentUser = userId == currentUserId
-                            let entry = Entry(id: document.documentID, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
-                            self.entries.append(entry)
-                        }
-                    }
-
-                    // Wait for all user names to be fetched
-                    group.notify(queue: .main) {
-                        self.entries.sort { $0.stars > $1.stars } // Sort the entries by stars
-                    }
-                }
+                let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
+                let isCurrentUser = userId == currentUserId
+                let entry = Entry(id: documentId, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+                localEntries.append(entry)
             }
+        }
+
+        group.notify(queue: .main) {
+            self.entries = localEntries.sorted { $0.stars > $1.stars }
         }
     }
 
-    
     func updateStarRating(for entryId: String, with stars: Int) {
         let db = Firestore.firestore()
         let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
@@ -212,51 +133,52 @@ class EntryViewModel: ObservableObject {
 
         let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
         
-        // Adjust the logic to handle up to 8 stars
-        let starIncrement: Int
-        switch stars {
-            case 1...4:
-                starIncrement = stars
-            case 5...8:
-                starIncrement = stars // Allow increments up to 8 for "Superstar"
-            default:
-                print("Invalid star rating: \(stars)")
-                return
-        }
-
-        // Increment the 'stars' field by the new rating
-        entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
+        // Fetch the entry to determine if it is a superstar
+        entryRef.getDocument { [weak self] (document, error) in
             if let error = error {
-                print("Error updating star rating: \(error)")
-            } else {
-                print("Star rating updated successfully.")
-
-                // Check if the participant document exists
-                 participantRef.getDocument { (document, error) in
-                     if let document = document, document.exists {
-                         // Document exists, update the 'voted_entries' array
-                         participantRef.updateData(["voted_entries": FieldValue.arrayUnion([entryId])]) { error in
-                             if let error = error {
-                                 print("Error updating voted entries: \(error)")
-                             } else {
-                                 print("Voted entries updated successfully.")
-                             }
-                         }
-                     } else {
-                         // Document does not exist, create a new one with the user ID and the voted entry
-                         participantRef.setData(["userId": currentUserId, "voted_entries": [entryId]]) { error in
-                             if let error = error {
-                                 print("Error adding participant: \(error)")
-                             } else {
-                                 print("Participant added successfully.")
-                             }
-                         }
-                     }
-                 }
-                
+                print("Error fetching entry: \(error)")
+                return
+            }
+            
+            guard let document = document, let data = document.data() else {
+                print("Entry data not found")
+                return
+            }
+            
+            let isSuperstar = data["superstar"] as? Bool ?? false
+            let starIncrement = isSuperstar ? stars * 2 : stars
+            
+            // Increment the 'stars' field by the new rating, adjusted for superstar status
+            entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
+                if let error = error {
+                    print("Error updating star rating: \(error)")
+                } else {
+                    print("Star rating updated successfully.")
+                    
+                    // Check if the participant document exists
+                    participantRef.getDocument { (document, error) in
+                        if let document = document, document.exists {
+                            // Document exists, update the 'voted_entries' array
+                            participantRef.updateData(["voted_entries": FieldValue.arrayUnion([entryId])]) { error in
+                                if let error = error {
+                                    print("Error updating voted entries: \(error)")
+                                } else {
+                                    print("Voted entries updated successfully.")
+                                }
+                            }
+                        } else {
+                            print("User not a participant")
+                        }
+                    }
+                }
             }
         }
     }
 
-
+    func deactivateListeners() {
+        for listener in listeners {
+            listener.remove()
+        }
+        listeners.removeAll()
+    }
 }

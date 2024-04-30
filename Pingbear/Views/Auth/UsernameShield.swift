@@ -2,7 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 
-struct CodePickView: View {
+struct UsernameShieldView: View {
     
     @State private var userCode: String = ""
     @State private var errorMessage: String = ""
@@ -51,8 +51,7 @@ struct CodePickView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensures VStack fills all available space
-        .background(Color.yellow) // Applies background to the expanded VStack
-        .ignoresSafeArea(edges: .all)
+        .background(Color(hex: "00BFFF")) // Applies background to the expanded VStack
         .fullScreenCover(isPresented: $navigateToHome) {
             ContentView()
         }

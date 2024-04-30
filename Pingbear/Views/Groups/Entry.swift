@@ -54,10 +54,10 @@ struct EntryView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     @State private var rating: Int = 0
-    @State private var fifthStarScale: CGFloat = 1.0
     @State private var backgroundMusicPlayer: AVAudioPlayer?
     @State private var soundEffectPlayer: AVAudioPlayer?
     @State private var isShowingLoadingOverlay = false
+    @State private var isRatingEnabled: Bool = true
 
 
     init(competitionId: String) {
@@ -116,6 +116,7 @@ struct EntryView: View {
                 self.rating = 0 // Reset the rating when changing index
                 self.isShowingLoadingOverlay = true // Show loading overlay
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
+                    self.isRatingEnabled = true
                     self.isShowingLoadingOverlay = false // Hide loading overlay
                 }
             }
@@ -144,26 +145,14 @@ struct EntryView: View {
                                 ForEach(1...maxStars, id: \.self) { star in
                                     let currentEntry = viewModel.entries[viewModel.currentIndex]
                                     Button(action: {
+                                        isRatingEnabled = false
                                         PostHogSDK.shared.capture("Overall Star Rating Tap")
                                         triggerHapticFeedback(style: .soft)
                                         self.playSoundEffect(name: "pop")
-                                        let ratingIncrement = currentEntry.isSuperstar && star == 5 ? 8 : star
+                                        let ratingIncrement = star
                                         self.rating = ratingIncrement
                                         let currentEntryId = currentEntry.id
                                         viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
-                                        
-                                        // Trigger scale-up and haptic feedback only if fifth star is a superstar and is selected
-                                        if currentEntry.isSuperstar && star == 5 {
-                                            PostHogSDK.shared.capture("Superstar Tap")
-                                            triggerHapticFeedback(style: .heavy)
-                                            self.playSoundEffect(name: "win")
-                                            withAnimation(.spring()) {
-                                                self.fifthStarScale = 1.5 // Scale up only for the superstar
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                    self.fifthStarScale = 1.0 // Then scale back to normal
-                                                }
-                                            }
-                                        }
                                         
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
@@ -184,16 +173,12 @@ struct EntryView: View {
                                             }
                                         }
                                     }) {
-                                        Image(systemName: star <= self.rating ? "star.fill" : "star.fill")
-                                            .foregroundColor(
-                                                (star == 5 && viewModel.entries.indices.contains(viewModel.currentIndex) && viewModel.entries[viewModel.currentIndex].isSuperstar)
-                                                ? (star <= self.rating ? Color(hex: "#FFD700") : Color.white) // Superstar condition
-                                                : (star <= self.rating ? Color(hex: "#FFD700") : Color.white) // Regular stars condition
-                                            )
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
                                             .font(.system(size: 33))
-                                            .scaleEffect(star == 5 && currentEntry.isSuperstar ? fifthStarScale : 1.0) // Apply scale effect only to the superstar
                                             .padding(5)
                                     }
+                                    .disabled(!isRatingEnabled)
                                 }
                                 
                             }
@@ -249,6 +234,7 @@ struct EntryView: View {
         .onDisappear {
             self.backgroundMusicPlayer?.stop()
             self.backgroundMusicPlayer = nil
+            viewModel.deactivateListeners()
         }
     }
 }

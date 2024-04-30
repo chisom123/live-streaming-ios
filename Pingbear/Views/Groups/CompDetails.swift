@@ -27,74 +27,7 @@ struct CompDetails: View {
 
     @ObservedObject var competition: Competition
     
-    @State private var listeners: [ListenerRegistration] = []
-    
     private let db = Firestore.firestore()
-    
-    private func refreshEntriesNotVotedCount() {
-        let competitionId = competition.id
-        let userId = currentUserId // Ensure this is the current user's ID
-        
-        // Define the timestamp for entries within the last 24 hours
-        let twentyFourHoursAgoTimestamp = Timestamp(date: Date().addingTimeInterval(-86400)) // 24 hours ago
-
-        // Reference to the competition entries
-        let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
-        
-        // Query to fetch entries added within the last 24 hours
-        let listener = entriesRef.whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp).addSnapshotListener { (entriesSnapshot, error) in
-            if let error = error {
-                print("Error getting entries: \(error.localizedDescription)")
-                return
-            }
-            
-            let totalEntriesCount = entriesSnapshot?.documents.count ?? 0
-            let userEntriesCount = entriesSnapshot?.documents.filter { $0["userId"] as? String == userId }.count ?? 0
-            
-            // Reference to the participant's voted entries
-            let participantRef = self.db.collection("competitions").document(competitionId).collection("participants").document(userId)
-            
-            // Fetch the document containing the voted entries
-            let listener_part = participantRef.addSnapshotListener { (participantDocument, error) in
-                if let error = error {
-                    print("Error getting participant document: \(error.localizedDescription)")
-                    return
-                }
-                
-                let votedEntries = participantDocument?.data()?["voted_entries"] as? [String] ?? []
-                let notVotedCount = totalEntriesCount - votedEntries.count - userEntriesCount
-                
-                DispatchQueue.main.async {
-                    self.competition.entriesNotVotedCount = notVotedCount
-                }
-            }
-            listeners.append(listener_part)
-        }
-        listeners.append(listener)
-    }
-
-    
-    private func refreshCompetitionData() {
-        let competitionRef = db.collection("competitions").document(competition.id)
-
-        let listener_comp = competitionRef.addSnapshotListener { (document, error) in
-            guard let document = document, document.exists, error == nil else {
-                print("Error fetching document: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-
-            let data = document.data()
-            DispatchQueue.main.async {
-                // Update the properties of the Competition object directly.
-                // Being in a struct (the SwiftUI view), we don't have the same concerns about strong reference cycles here.
-                self.competition.description = data?["description"] as? String ?? ""
-                self.competition.date = (data?["timestamp"] as? Timestamp)?.dateValue() ?? Date()
-            }
-            
-            self.refreshEntriesNotVotedCount()
-        }
-        listeners.append(listener_comp)
-    }
 
     init(competition: Competition) {
         self.competition = competition
@@ -275,16 +208,6 @@ struct CompDetails: View {
                 
             }
         }
-        .onAppear {
-            refreshCompetitionData()
-            refreshEntriesNotVotedCount()
-        }
-        .onDisappear {
-            for listener in listeners {
-                listener.remove()
-            }
-            listeners.removeAll()
-        }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView), competition: competition)
         })
@@ -299,6 +222,9 @@ struct CompDetails: View {
         }
         .fullScreenCover(isPresented: $showingJoinSelectView) {
             JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+        }
+        .onDisappear {
+            entryViewModel.deactivateListeners()
         }
     }
     func joincomp() {
