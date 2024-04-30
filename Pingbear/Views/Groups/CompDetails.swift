@@ -5,6 +5,7 @@ import UIKit
 import FirebaseAuth
 import PostHog
 import NotificationBannerSwift
+import SDWebImageSwiftUI
 
 struct ImageDisplayState {
     var imageUrl: String = ""
@@ -201,11 +202,41 @@ struct CompDetails: View {
                         }
                     }
                 }
-                // Present BigImageView when an entry is tapped
-                .fullScreenCover(isPresented: $imageDisplayState.show) {
-                    BigImageView(imageUrl: imageDisplayState.imageUrl, creationDate: selectedEntryCreationDate)
+            }
+            
+            if imageDisplayState.show {
+                ZStack {
+                    Color.white.edgesIgnoringSafeArea(.all)
+                    
+                    if let imageURL = URL(string: imageDisplayState.imageUrl) {
+                        WebImage(url: imageURL)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Text(timeAgo) // Use the statically computed timeAgo
+                                    .font(.system(size: 15, weight: .bold, design: .default))
+                                    .padding(.horizontal, 15)
+                                    .padding(.vertical, 8)
+                                    .background(Color.black.opacity(0.75))
+                                    .foregroundColor(.white)
+                                    .cornerRadius(200)
+                            }
+                            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20)
+                            .padding(.trailing, (UIApplication.shared.windows.first?.safeAreaInsets.right ?? 0) + 20)
+                            Spacer()
+                        }
+                    } else {
+                        ProgressView()
+                    }
                 }
-                
+                .edgesIgnoringSafeArea(.all)
+                .onTapGesture {
+                    self.imageDisplayState.show = false
+                }
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
@@ -232,5 +263,25 @@ struct CompDetails: View {
     }
     func vote() {
         self.isVotingPresented = true
+    }
+    func timeSince(date: Date) -> String {
+        let currentTime = Date()
+        let timeInterval = currentTime.timeIntervalSince(date)
+
+        if timeInterval < 60 {
+            return "Just now"
+        } else if timeInterval < 3600 {
+            let minutes = Int(timeInterval / 60)
+            return minutes == 1 ? "1 min ago" : "\(minutes) mins ago"
+        } else if timeInterval < 86400 {
+            let hours = Int(timeInterval / 3600)
+            return hours == 1 ? "1 hour ago" : "\(hours) hours ago"
+        } else {
+            let days = Int(timeInterval / 86400)
+            return days == 1 ? "1 day ago" : "\(days) days ago"
+        }
+    }
+    var timeAgo: String {
+        timeSince(date: selectedEntryCreationDate)
     }
 }

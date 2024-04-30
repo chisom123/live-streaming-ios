@@ -48,7 +48,7 @@ class EntryViewModel: ObservableObject {
     private func fetchEntryViewEntries(query: Query) {
         let currentUserId = Auth.auth().currentUser?.uid
         
-        let entryViewListener = query.addSnapshotListener { [weak self] (snapshot, error) in
+        query.getDocuments { [weak self] (snapshot, error) in
             guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")
@@ -65,7 +65,6 @@ class EntryViewModel: ObservableObject {
                 self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries)
             }
         }
-        listeners.append(entryViewListener)
     }
 
     private func fetchCompDetailsViewEntries(query: Query) {
