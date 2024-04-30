@@ -286,7 +286,7 @@ struct CameraView: View {
             return
         }
 
-        guard let capturedImage = self.capturedImage, let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
+        guard let capturedImage = self.capturedImage, let imageData = capturedImage.jpegData(compressionQuality: 0.7) else {
             print("No image captured")
             return
         }
