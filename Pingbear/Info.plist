@@ -20,8 +20,6 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-    <key>NSPhotoLibraryUsageDescription</key>
-    <string>We need access to your photo library so you can select a photo to add to a group.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

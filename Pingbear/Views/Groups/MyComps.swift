@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseMessaging
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
@@ -7,7 +8,8 @@ struct MyCompsView: View {
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var searchText = ""
     @State private var userId: String? = Auth.auth().currentUser?.uid
-
+    @StateObject private var pushNotificationManager = PushNotificationManager()  // StateObject for lifecycle management
+    
     var body: some View {
         VStack {
             // Top Bar with Title
@@ -110,6 +112,9 @@ struct MyCompsView: View {
             self.userId = Auth.auth().currentUser?.uid
             if let userId = self.userId {
                 viewModel.setupCompetitionListeners(userId: userId)
+                if pushNotificationManager.userID == nil {
+                    pushNotificationManager.setupWithUserID(userId)
+                }
             }
         }
         .onDisappear {

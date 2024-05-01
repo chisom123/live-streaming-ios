@@ -132,6 +132,7 @@ struct CameraView: View {
     @State private var isUploading = false
     @State private var isShowingImagePicker = false
     @State private var inputImage: UIImage?
+    @StateObject private var notificationSender = PushNotificationSender()
 
     
     var body: some View {
@@ -331,11 +332,61 @@ struct CameraView: View {
                         
                         PostHogSDK.shared.capture("Group Image Uploaded")
                         isUploading = false
+                        
+                        // Send notification to all group participants
+                        db.collection("users").document(userId).getDocument { (document, error) in
+                            guard let document = document, document.exists, let username = document.data()?["username"] as? String else {
+                                print("Error fetching user details: \(error?.localizedDescription ?? "User not found")")
+                                return
+                            }
+                            self.notifyParticipants(username: username)
+                        }
 
                     }
                 }
             }
         }
     }
+    
+    func notifyParticipants(username: String) {
+        let db = Firestore.firestore()
+        // Fetch participant IDs from the 'participants' sub-collection
+        db.collection("competitions").document(self.competitionId).collection("participants").getDocuments { (snapshot, error) in
+            guard let documents = snapshot?.documents else {
+                print("Error fetching participants: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+            // Extract user IDs from the documents
+            let userIds = documents.compactMap { $0.documentID }
+            self.fetchTokensAndSendNotifications(userIds: userIds, username: username)
+        }
+    }
+    
+    func fetchTokensAndSendNotifications(userIds: [String], username: String) {
+        let db = Firestore.firestore()
+        let group = DispatchGroup()
+        var tokens = [String]()
 
+        // Fetch FCM tokens for each user
+        userIds.forEach { userId in
+            group.enter()
+            db.collection("users").document(userId).getDocument { (document, error) in
+                defer { group.leave() }
+                if let document = document, document.exists, let token = document.data()?["fcmToken"] as? String {
+                    tokens.append(token)
+                } else {
+                    print("Failed to fetch FCM token for user \(userId): \(error?.localizedDescription ?? "Unknown error")")
+                }
+            }
+        }
+
+        // Once all tokens are fetched, send notifications
+        group.notify(queue: .main) {
+            tokens.forEach { token in
+                let title = competition.description
+                let body = "Rate \(username)'s new picture"
+                notificationSender.sendPushNotification(to: token, title: title, body: body)
+            }
+        }
+    }
 }
