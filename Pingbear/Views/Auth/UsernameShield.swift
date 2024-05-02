@@ -1,212 +1,226 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import FirebaseAuth
+import PostHog
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
 
 struct UsernameShieldView: View {
-    
-    @State private var userCode: String = ""
-    @State private var errorMessage: String = ""
+    @ObservedObject var addFriendModel: AddFriendsModel
+    @State private var username: String = ""
+    @State private var currentUserUsername: String = ""  // Default text while username is loading
+    @State private var messageStatus: MessageStatus? = nil
     @State private var navigateToHome = false
-    @State private var listenerRegistration: ListenerRegistration?
+    @State private var showingShareSheet = false // Step 1: State variable for showing the share sheet
+
+    enum MessageStatus {
+        case error, success, none
+    }
 
     var body: some View {
         VStack {
+            HStack {
+                Text("Hi \(currentUserUsername)!")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .foregroundColor(.black)
+                
+                Spacer()
+                
+                Button(action: {
+                    self.showingShareSheet = true
+                    PostHogSDK.shared.capture("Invite friend button pressed")
+                }) {
+                    Text("Invite Friend")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color(hex: "#7B68EE"))
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(200)
+                }
+            }
+            .padding(.top)
+            .padding(.horizontal, 5)
+            
             Spacer()
             
-            Text("You need a code to access Pingbear")
-                .font(.system(size: 20, weight: .bold, design: .default)) // Apply common styling here
+            Text("Add a friend to play with")
+                .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
-                .foregroundColor(.black) // This affects the entire Text view, might need adjustment if it overrides individual colors
+                .foregroundColor(.black)
+                .padding(.bottom, 40)
                 .padding(.horizontal)
-            
-            ChunkyTextField("Enter Code", text: $userCode)
-                .padding(.horizontal)
-                .padding(.horizontal)
-                .padding(.top, 10)
-            
+
+            TextField("Enter your friend's username", text: $username)
+                .padding()
+                .background(Color(hex: "#F5F5F5"))
+                .foregroundColor(Color(hex: "#000"))
+                .cornerRadius(5)
+                .font(.system(size: 16, weight: .bold, design: .default))
+
+            if let status = messageStatus {
+                switch status {
+                case .error:
+                    Text("Failed to add friend")
+                        .foregroundColor(Color(hex: "#CC2255"))
+                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .padding(.bottom, 10)
+                        .padding(.top, 20)
+                        .padding(.horizontal)
+                case .success:
+                    Text("Friend added successfully")
+                        .foregroundColor(Color(hex: "#556B2F"))
+                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .padding(.bottom, 10)
+                        .padding(.top, 20)
+                        .padding(.horizontal)
+                case .none:
+                    EmptyView()
+                }
+            }
+
             Button(action: {
-                generateCode()
+                let processedUsername = processUsername(username)
+                saveFriendAndCreateGroup(processedUsername)
             }) {
-                Text("Create a new code")
-                    .underline()
+                Text("Continue")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
             }
-            .font(.system(size: 20, weight: .bold, design: .default))
-            .foregroundColor(.blue)
-            .padding(.top, 50)
-            
-            
-            if !errorMessage.isEmpty {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-            }
-            
-//            Button("Access Pingbear!") {
-//                validateEnteredCode()
-//            }
-//            .padding(.top, 50)
-//            .padding(.horizontal)
-//            .padding(.horizontal)
+            .padding(.top, 20)
             
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensures VStack fills all available space
-        .background(Color(hex: "00BFFF")) // Applies background to the expanded VStack
+        .onAppear {
+            fetchCurrentUserUsername { username in
+                if let username = username {
+                    self.currentUserUsername = username
+                } else {
+                    self.currentUserUsername = ""
+                }
+            }
+        }
         .fullScreenCover(isPresented: $navigateToHome) {
             ContentView()
         }
-        .onAppear {
-            setupListener()
+        .sheet(isPresented: $showingShareSheet) {
+            // This closure needs to return a View.
+            ShareSheet(items: ["Hey play with me on Pingbear - my username is \(currentUserUsername)", URL(string: "https://apps.apple.com/gb/app/pingbear-picture-rating-game/id6473705189")].compactMap { $0 })
         }
-        .onDisappear {
-            removeListener()
-        }
+        .padding()
     }
     
-    private func setupListener() {
-        let userId = Auth.auth().currentUser?.uid ?? ""
-        guard !userId.isEmpty else { return }
-        
-        let db = Firestore.firestore()
-        listenerRegistration = db.collection("users").document(userId)
-            .addSnapshotListener { documentSnapshot, error in
-                if let document = documentSnapshot, document.exists {
-                    let allowIn = document.get("allow_in") as? Bool ?? false
-                    if allowIn {
-                        navigateToHome = true
+    func processUsername(_ username: String) -> String {
+        return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    func saveFriendAndCreateGroup(_ processedFriendUsername: String) {
+        addFriendModel.addFriend(byUsername: processedFriendUsername) { success, error in
+            if success {
+                // Fetch the user ID of the newly added friend
+                fetchFriendUserId(username: processedFriendUsername) { friendUserId in
+                    guard let friendUserId = friendUserId else {
+                        self.messageStatus = .error
+                        return
                     }
-                } else if let error = error {
-                    errorMessage = "Error listening to user changes: \(error.localizedDescription)"
-                }
-            }
-    }
-    
-    private func removeListener() {
-        listenerRegistration?.remove()
-    }
-    
-    private func generateCode() {
-        let newCode = generateRandomCode()
-        let userId = Auth.auth().currentUser?.uid ?? ""
-        
-        let db = Firestore.firestore()
-        db.collection("codes").document(newCode).setData(["active_users": [userId]]) { error in
-            if let error = error {
-                errorMessage = "Failed to save code: \(error.localizedDescription)"
-            } else {
-                userCode = newCode
-                setupListener()
-            }
-        }
-    }
-    
-    private func validateEnteredCode() {
-        let userId = Auth.auth().currentUser?.uid ?? ""
-        let db = Firestore.firestore()
-        let codeDocument = db.collection("codes").document(userCode)
-
-        db.runTransaction({ (transaction, errorPointer) -> Any? in
-            let codeDocumentSnapshot: DocumentSnapshot
-            do {
-                try codeDocumentSnapshot = transaction.getDocument(codeDocument)
-            } catch let fetchError as NSError {
-                errorPointer?.pointee = fetchError
-                return nil
-            }
-
-            guard let activeUsers = codeDocumentSnapshot.data()?["active_users"] as? [String] else {
-                errorMessage = "Invalid code."
-                return nil
-            }
-
-            if !activeUsers.contains(userId) {
-                var updatedUsers = activeUsers
-                updatedUsers.append(userId)
-                transaction.updateData(["active_users": updatedUsers], forDocument: codeDocument)
-
-                // Check if this is the second user
-                if updatedUsers.count == 2 {
-                    for user in updatedUsers {
-                        let userDoc = db.collection("users").document(user)
-                        transaction.updateData(["allow_in": true], forDocument: userDoc)
-                    }
-                }
-            } else {
-                errorMessage = "This code has already been used by you."
-            }
-
-            return nil
-        }) { (object, error) in
-            if let error = error {
-                errorMessage = "Transaction failed: \(error.localizedDescription)"
-            } else {
-                navigateToHome = true
-                
-                let db = Firestore.firestore()
-                db.collection("codes").document(userCode).delete() { error in
-                    if let error = error {
-                        // Handle deletion error if necessary
-                        print("Error deleting code: \(error.localizedDescription)")
-                    }
-                }
-            }
-        }
-    }
-
-    
-    private func generateRandomCode() -> String {
-        let characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return String((0..<6).compactMap { _ in characters.randomElement() })
-    }
-    
-    
-    struct ChunkyTextField: View {
-        @Binding var text: String
-        private var placeholder: String
-
-        init(_ placeholder: String, text: Binding<String>) {
-            self._text = text
-            self.placeholder = placeholder
-        }
-
-        var body: some View {
-            TextField(placeholder, text: $text)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(.black)
-                .multilineTextAlignment(.center)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    ZStack {
-                        if #available(iOS 17.0, *) {
-                            Capsule()
-                                .fill(.blue)
-                                .stroke(.black, lineWidth:3)
-                                .offset(y: 10)
-                        } else {
-                            Capsule()
-                                .fill(Color.blue)
-                                .overlay(
-                                    Capsule().stroke(Color.black, lineWidth: 3)
-                                        .offset(y: 10)
-                                )
+                    
+                    // Fetch current user's username and process it
+                    fetchCurrentUserUsername { currentUserUsername in
+                        guard let currentUserUsername = currentUserUsername else {
+                            self.messageStatus = .error
+                            return
                         }
                         
-                        if #available(iOS 17.0, *) {
-                            Capsule()
-                                .fill(.white)
-                                .stroke(.black, lineWidth:3)
-                        } else {
-                            Capsule()
-                                .fill(Color.white)
-                                .overlay(
-                                    Capsule().stroke(Color.black, lineWidth: 3)
-                                )
-                        }
+                        let processedCurrentUserUsername = processUsername(currentUserUsername)
+                        
+                        // Create a new competition
+                        createCompetition(friendUserId: friendUserId, friendUsername: processedFriendUsername, currentUserUsername: processedCurrentUserUsername)
                     }
-                )
-                .offset(y: 10)
-                .padding(.vertical, 10)
+                }
+            } else {
+                messageStatus = .error
+            }
+        }
+    }
+    
+    func fetchFriendUserId(username: String, completion: @escaping (String?) -> Void) {
+        let db = Firestore.firestore()
+        db.collection("users").whereField("username", isEqualTo: username).getDocuments { (snapshot, error) in
+            if let error = error {
+                print("Error getting documents: \(error)")
+                completion(nil)
+            } else {
+                let userIds = snapshot?.documents.compactMap { $0.documentID }
+                completion(userIds?.first)
+            }
+        }
+    }
+
+    func fetchCurrentUserUsername(completion: @escaping (String?) -> Void) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            completion(nil)
+            return
+        }
+        let db = Firestore.firestore()
+        db.collection("users").document(currentUserId).getDocument { (document, error) in
+            if let document = document, document.exists, let username = document.data()?["username"] as? String {
+                completion(username)
+            } else {
+                print("Document does not exist")
+                completion(nil)
+            }
+        }
+    }
+
+    func createCompetition(friendUserId: String, friendUsername: String, currentUserUsername: String) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            self.messageStatus = .error
+            return
+        }
+
+        let db = Firestore.firestore()
+        let competitionRef = db.collection("competitions").document()
+        let batch = db.batch()
+        let currentParticipantRef = competitionRef.collection("participants").document(currentUserId)
+        let friendParticipantRef = competitionRef.collection("participants").document(friendUserId)
+
+        let competitionDescription = "\(currentUserUsername) and \(friendUsername) 😁"
+        let competitionData: [String: Any] = [
+            "description": competitionDescription,
+            "timestamp": Timestamp()
+        ]
+
+        batch.setData(competitionData, forDocument: competitionRef)
+        batch.setData(["userId": currentUserId, "voted_entries": []], forDocument: currentParticipantRef)
+        batch.setData(["userId": friendUserId, "voted_entries": []], forDocument: friendParticipantRef)
+
+        batch.commit { err in
+            if let err = err {
+                print("Error writing document: \(err)")
+                self.messageStatus = .error
+            } else {
+                self.navigateToHome = true
+                PostHogSDK.shared.capture("Entered Pingbear with new friend and group")
+            }
         }
     }
 }

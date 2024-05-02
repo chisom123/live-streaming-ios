@@ -8,7 +8,7 @@ struct NameEntryView: View {
     let phoneNumber: String
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
-    @State private var navigateToHome = false
+    @State private var navigateToPlayGame = false
 
     var body: some View {
         VStack {
@@ -51,7 +51,7 @@ struct NameEntryView: View {
             }
             .padding(.top, 20)
 
-            NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
+            NavigationLink(destination: PlayGameView(), isActive: $navigateToPlayGame) {
                 EmptyView()
             }.isDetailLink(false) // To avoid any potential navigation issues
         }
@@ -100,7 +100,7 @@ struct NameEntryView: View {
            if let error = error {
                self.errorMessage = "Error saving user: \(error.localizedDescription)"
            } else {
-               self.navigateToHome = true
+               self.navigateToPlayGame = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
                PostHogSDK.shared.capture("New User - \(userID)")

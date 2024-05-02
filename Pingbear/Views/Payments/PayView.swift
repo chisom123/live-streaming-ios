@@ -36,10 +36,10 @@ struct PayView: View {
                     
                     Spacer()
                     
-                    (Text("With Superstar you will receive ")
-                        + Text("three extra stars")
+                    (Text("With Superstar your image will receive ")
+                        + Text("double")
                             .foregroundColor(Color(hex: "#1199FF")) // Apply unique styling here
-                        + Text(" every time your image is rated five stars."))
+                        + Text(" the amount of stars every time it's rated."))
                         .font(.system(size: 18, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)

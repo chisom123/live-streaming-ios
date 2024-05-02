@@ -198,6 +198,7 @@ struct CompDetails: View {
                                 self.imageDisplayState.imageUrl = entry.imageUrl
                                 self.imageDisplayState.show = true
                                 self.selectedEntryCreationDate = entry.creationDate
+                                PostHogSDK.shared.capture("Leaderboard image open")
                             }
                         }
                     }
