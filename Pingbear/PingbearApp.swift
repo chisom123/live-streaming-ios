@@ -44,7 +44,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct PingbearApp: App {
     // Register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    @StateObject private var pageViewModel = PageViewModel()
 
     // Check UserDefaults
     @State private var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn")
@@ -66,31 +65,17 @@ struct PingbearApp: App {
                         isLoggedIn = false
                     }
             } else {
-                if pageViewModel.showDemo {
-                    LandingView()
-                        .onAppear {
-                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let window = scene.windows.first {
-                                window.overrideUserInterfaceStyle = .light
-                            }
+                LandingView()
+                    .onAppear {
+                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = scene.windows.first {
+                            window.overrideUserInterfaceStyle = .light
                         }
-                        .environment(\.didLogOut, didLogOut)
-                        .onReceive(didLogOut) { _ in
-                            isLoggedIn = false
-                        }
-                } else {
-                    DemoView()
-                        .onAppear {
-                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let window = scene.windows.first {
-                                window.overrideUserInterfaceStyle = .light
-                            }
-                        }
-                        .environment(\.didLogOut, didLogOut)
-                        .onReceive(didLogOut) { _ in
-                            isLoggedIn = false
-                        }
-                }
+                    }
+                    .environment(\.didLogOut, didLogOut)
+                    .onReceive(didLogOut) { _ in
+                        isLoggedIn = false
+                    }
             }
         }
     }

@@ -80,7 +80,6 @@
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
 		4F8FEE5D2BE30C840087479A /* PlayGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5C2BE30C840087479A /* PlayGame.swift */; };
-		4F8FEE5F2BE512530087479A /* PageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5E2BE512530087479A /* PageViewModel.swift */; };
 		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 /* End PBXBuildFile section */
@@ -148,7 +147,6 @@
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4F8FEE5C2BE30C840087479A /* PlayGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayGame.swift; sourceTree = "<group>"; };
-		4F8FEE5E2BE512530087479A /* PageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageViewModel.swift; sourceTree = "<group>"; };
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -362,7 +360,6 @@
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
 				4F375D152B0651EC0011F541 /* CompetitionsModel.swift */,
 				4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */,
-				4F8FEE5E2BE512530087479A /* PageViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -578,7 +575,6 @@
 				4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */,
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Global.swift in Sources */,
-				4F8FEE5F2BE512530087479A /* PageViewModel.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
 				4F31B8902BDA71FB007892BC /* UsernameShield.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
@@ -741,7 +737,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -788,7 +784,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27;
+				CURRENT_PROJECT_VERSION = 28;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;

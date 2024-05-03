@@ -32,7 +32,7 @@ struct PlayGameView: View {
             
         }
         .fullScreenCover(isPresented: $navigateToNextView) {
-            UsernameShieldView(addFriendModel: AddFriendsModel())
+            DemoView()
         }
         .padding()
         .navigationBarBackButtonHidden(true)
