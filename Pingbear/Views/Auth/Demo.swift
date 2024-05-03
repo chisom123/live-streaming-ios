@@ -149,6 +149,10 @@ class DemoViewModel: ObservableObject {
     private var images = ["demo_image1", "demo_image2"] // Replace with your actual image names in Assets
     private var index = 0
 
+    init() {
+        fetchDemoImages()
+    }
+
     func fetchDemoImages() {
         currentImageName = images.first
     }
