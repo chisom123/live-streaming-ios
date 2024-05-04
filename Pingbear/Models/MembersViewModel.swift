@@ -44,4 +44,14 @@ class MembersViewModel: ObservableObject {
             }
         }
     }
+    
+    func leaveCompetition(competitionId: String, userId: String) {
+        db.collection("competitions").document(competitionId).collection("participants").document(userId).delete() { error in
+            if let error = error {
+                print("Error removing participant: \(error)")
+            } else {
+                print("Participant successfully removed!")
+            }
+        }
+    }
 }

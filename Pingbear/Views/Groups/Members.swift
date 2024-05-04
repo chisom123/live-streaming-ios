@@ -8,6 +8,8 @@ struct MembersView: View {
     @Environment(\.presentationMode) var presentationMode
     var competition: Competition
     @ObservedObject private var viewModel = MembersViewModel()
+    @State private var leaveGroupAlert = false
+    @State private var goHome = false
     
     var body: some View {
         ZStack {
@@ -24,6 +26,26 @@ struct MembersView: View {
                     }
                     
                     Spacer()
+                    
+                    Button(action: {
+                        self.leaveGroupAlert = true
+                    }) {
+                        HStack {
+                            Text("Leave Group") // Text to display next to the icon
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#ababab"))
+                        }
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.top, 20)
+                    .alert(isPresented: $leaveGroupAlert) {
+                        Alert(title: Text("Are you sure?"),
+                              primaryButton: .destructive(Text("Yes")) {
+                            viewModel.leaveCompetition(competitionId: competition.id, userId: Auth.auth().currentUser?.uid ?? "")
+                            goHome = true
+                        },
+                              secondaryButton: .cancel())
+                    }
                 }
                 .padding(.bottom, 15)
                 
@@ -55,6 +77,9 @@ struct MembersView: View {
         .onAppear {
             viewModel.fetchMembersDetails(for: competition)
         }
+        .fullScreenCover(isPresented: $goHome, content: {
+            ContentView()
+        })
     }
 
 }
