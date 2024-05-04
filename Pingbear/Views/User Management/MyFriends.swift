@@ -5,8 +5,8 @@ import FirebaseFirestore
 struct MyFriendsView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: MyFriendsModel
-    @State private var showRemoveFriendAlert: Bool = false
-    @State private var friendToRemove: String? = nil
+    @State private var showActionSheet: Bool = false
+    @State private var friendToManage: String? = nil
     
     var body: some View {
         ZStack {
@@ -29,8 +29,8 @@ struct MyFriendsView: View {
                     VStack(spacing: 25) {
                         ForEach(viewModel.friends, id: \.id) { friend in
                             Button(action: {
-                                self.friendToRemove = friend.id
-                                self.showRemoveFriendAlert = true
+                                self.friendToManage = friend.id
+                                self.showActionSheet = true
                             }) {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 18) {
@@ -40,7 +40,7 @@ struct MyFriendsView: View {
                                     }
                                     Spacer()
                                     
-                                    Text("Remove")
+                                    Text("Options")
                                         .font(.system(size: 16, weight: .bold, design: .default))
                                         .foregroundColor(Color(hex: "#1199FF"))
                                 }
@@ -63,14 +63,24 @@ struct MyFriendsView: View {
             .onAppear {
                 viewModel.fetchFriends()
             }
-            .alert(isPresented: $showRemoveFriendAlert) {
-                Alert(title: Text("Are you sure?"),
-                      primaryButton: .destructive(Text("Yes")) {
-                          if let id = self.friendToRemove {
-                              viewModel.removeFriend(id: id)
-                          }
-                      },
-                      secondaryButton: .cancel())
+            .actionSheet(isPresented: $showActionSheet) {
+                ActionSheet(
+                    title: Text("Select an option for \(viewModel.friends.first(where: { $0.id == friendToManage })?.name ?? "this friend")"),
+                    message: Text("Remove or Block?"),
+                    buttons: [
+                        .destructive(Text("Remove Friend")) {
+                            if let id = self.friendToManage {
+                                viewModel.removeFriend(id: id)
+                            }
+                        },
+                        .default(Text("Block Friend")) {
+                            if let id = self.friendToManage {
+                                viewModel.removeFriend(id: id)
+                            }
+                        },
+                        .cancel()
+                    ]
+                )
             }
         }
     }
