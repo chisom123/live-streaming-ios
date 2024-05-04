@@ -47,23 +47,39 @@ struct PingbearApp: App {
 
     // Check UserDefaults
     @State private var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn")
+    @State private var isFriendActivated: Bool = UserDefaults.standard.bool(forKey: "isFriendActivated")
     
     let didLogOut = PassthroughSubject<Void, Never>()
     
     var body: some Scene {
         WindowGroup {
             if isLoggedIn && Auth.auth().currentUser != nil {
-                ContentView()
-                    .onAppear {
-                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = scene.windows.first {
-                            window.overrideUserInterfaceStyle = .light
+                if isFriendActivated {
+                    ContentView()
+                        .onAppear {
+                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = scene.windows.first {
+                                window.overrideUserInterfaceStyle = .light
+                            }
                         }
-                    }
-                    .environment(\.didLogOut, didLogOut)
-                    .onReceive(didLogOut) { _ in
-                        isLoggedIn = false
-                    }
+                        .environment(\.didLogOut, didLogOut)
+                        .onReceive(didLogOut) { _ in
+                            isLoggedIn = false
+                        }
+                } else {
+                    // User is not activated
+                    PlayGameView() // Assuming there's an ActivationView to handle non-activated users
+                        .onAppear {
+                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = scene.windows.first {
+                                window.overrideUserInterfaceStyle = .light
+                            }
+                        }
+                        .environment(\.didLogOut, didLogOut)
+                        .onReceive(didLogOut) { _ in
+                            isLoggedIn = false
+                        }
+                }
             } else {
                 LandingView()
                     .onAppear {

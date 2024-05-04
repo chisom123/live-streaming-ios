@@ -81,6 +81,7 @@
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
 		4F8FEE5D2BE30C840087479A /* PlayGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5C2BE30C840087479A /* PlayGame.swift */; };
 		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
+		4F8FEE632BE673410087479A /* WhyFriend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE622BE673410087479A /* WhyFriend.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 /* End PBXBuildFile section */
 
@@ -148,6 +149,7 @@
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4F8FEE5C2BE30C840087479A /* PlayGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayGame.swift; sourceTree = "<group>"; };
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
+		4F8FEE622BE673410087479A /* WhyFriend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhyFriend.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +221,7 @@
 				4F31B8972BDC38FD007892BC /* Demo.swift */,
 				4F8FEE5C2BE30C840087479A /* PlayGame.swift */,
 				4F8FEE602BE516AC0087479A /* Landing.swift */,
+				4F8FEE622BE673410087479A /* WhyFriend.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -582,6 +585,7 @@
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F31B8982BDC38FD007892BC /* Demo.swift in Sources */,
+				4F8FEE632BE673410087479A /* WhyFriend.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,

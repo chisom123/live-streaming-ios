@@ -104,40 +104,7 @@ struct NameEntryView: View {
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
                PostHogSDK.shared.capture("New User - \(userID)")
-               newcomp()
            }
        }
    }
-    
-    func newcomp() {
-        let processedUsername = username.lowercased().replacingOccurrences(of: " ", with: "")
-
-        // Get the current user's ID
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("Error: User not logged in")
-            return
-        }
-        
-        let db = Firestore.firestore()
-        let batch = db.batch()
-        
-        let competitionRef = db.collection("competitions").document()
-        let participantRef = competitionRef.collection("participants").document(userID)
-        
-        let competitionData: [String: Any] = [
-            "description": "\(processedUsername)'s group 🔥",
-            "timestamp": Timestamp()
-        ]
-        
-        batch.setData(competitionData, forDocument: competitionRef)
-        batch.setData(["userId": userID, "voted_entries": []], forDocument: participantRef)
-        
-        batch.commit { err in
-            if let err = err {
-                print("Failed to create group")
-            } else {
-                print("Group created")
-            }
-        }
-    }
 }

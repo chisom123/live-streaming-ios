@@ -16,6 +16,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 }
 
 struct UsernameShieldView: View {
+    @Environment(\.presentationMode) var presentationMode
     @ObservedObject var addFriendModel: AddFriendsModel
     @State private var username: String = ""
     @State private var currentUserUsername: String = ""  // Default text while username is loading
@@ -30,9 +31,13 @@ struct UsernameShieldView: View {
     var body: some View {
         VStack {
             HStack {
-                Text("Hi \(currentUserUsername)!")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .foregroundColor(.black)
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image("Close")
+                        .resizable()
+                        .frame(width: 40, height: 40)
+                }
                 
                 Spacer()
                 
@@ -40,11 +45,11 @@ struct UsernameShieldView: View {
                     self.showingShareSheet = true
                     PostHogSDK.shared.capture("Invite friend button pressed")
                 }) {
-                    Text("Invite Friend")
+                    Text("Invite Friends")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(Color(hex: "#7B68EE"))
+                        .background(Color(hex: "#FF4500"))
                         .foregroundColor(Color(hex: "#fff"))
                         .cornerRadius(200)
                 }
@@ -54,7 +59,7 @@ struct UsernameShieldView: View {
             
             Spacer()
             
-            Text("Add a friend to play with")
+            Text("Enter your friend's username")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -62,7 +67,7 @@ struct UsernameShieldView: View {
                 .padding(.bottom, 40)
                 .padding(.horizontal)
 
-            TextField("Enter your friend's username", text: $username)
+            TextField("Enter username", text: $username)
                 .padding()
                 .background(Color(hex: "#F5F5F5"))
                 .foregroundColor(Color(hex: "#000"))
@@ -109,6 +114,13 @@ struct UsernameShieldView: View {
             .padding(.top, 20)
             
             Spacer()
+            
+            HStack {
+                Text("\(currentUserUsername)")
+            }
+            .font(.system(size: 16, weight: .bold, design: .default))
+            .foregroundColor(.black)
+            .padding(.bottom, 35)
         }
         .onAppear {
             fetchCurrentUserUsername { username in
@@ -124,7 +136,7 @@ struct UsernameShieldView: View {
         }
         .sheet(isPresented: $showingShareSheet) {
             // This closure needs to return a View.
-            ShareSheet(items: ["Hey play with me on Pingbear - my username is \(currentUserUsername)", URL(string: "https://apps.apple.com/gb/app/pingbear-picture-rating-game/id6473705189")].compactMap { $0 })
+            ShareSheet(items: ["Hey I just downloaded Pingbear. Add me! Username - \(currentUserUsername)", URL(string: "https://apps.apple.com/gb/app/pingbear-picture-rating-game/id6473705189")].compactMap { $0 })
         }
         .padding()
     }
@@ -219,6 +231,8 @@ struct UsernameShieldView: View {
                 self.messageStatus = .error
             } else {
                 self.navigateToHome = true
+                UserDefaults.standard.set(true, forKey: "isFriendActivated")
+                UserDefaults.standard.synchronize()
                 PostHogSDK.shared.capture("Entered Pingbear with new friend and group")
             }
         }

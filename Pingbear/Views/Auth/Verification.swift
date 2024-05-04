@@ -93,6 +93,7 @@ struct VerificationView: View {
                         // User already has a username, navigate directly to home view
                         self.navigateToHome = true
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                        UserDefaults.standard.set(true, forKey: "isFriendActivated")
                         UserDefaults.standard.synchronize()
                         PostHogSDK.shared.capture("Returning User")
                     } else {

@@ -29,6 +29,12 @@ class AddFriendsModel: ObservableObject {
             
             let friendID = document.documentID
             
+            // Check if the user is trying to add themselves
+            if friendID == currentUserID {
+                completion(false, NSError(domain: "", code: 2, userInfo: [NSLocalizedDescriptionKey: "Cannot add yourself as a friend"]))
+                return
+            }
+            
             // Setup references
             let currentUserFriendsRef = userRef.document(currentUserID).collection("friends").document(friendID)
             let friendUserFriendsRef = userRef.document(friendID).collection("friends").document(currentUserID)

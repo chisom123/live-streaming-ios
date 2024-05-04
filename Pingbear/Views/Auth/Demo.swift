@@ -9,7 +9,7 @@ struct DemoView: View {
     @State private var rating: Int = 0
     @State private var isRatingEnabled: Bool = true
     @State private var backgroundMusicPlayer: AVAudioPlayer?
-    @State private var navigateToUsernameShield = false // Updated for navigation link
+    @State private var navigateToWhyFriend = false // Updated for navigation link
     @State private var soundEffectPlayer: AVAudioPlayer?
     @State private var isShowingLoadingOverlay: Bool = false
 
@@ -96,7 +96,7 @@ struct DemoView: View {
                                     
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                         if viewModel.isLastImage() {
-                                            navigateToUsernameShield = true
+                                            navigateToWhyFriend = true
                                             self.backgroundMusicPlayer?.stop()
                                         } else {
                                             viewModel.nextImage()
@@ -123,8 +123,8 @@ struct DemoView: View {
                 
             }
         }
-        .fullScreenCover(isPresented: $navigateToUsernameShield) {
-            UsernameShieldView(addFriendModel: AddFriendsModel())
+        .fullScreenCover(isPresented: $navigateToWhyFriend) {
+            WhyFriendView()
         }
         .onAppear {
             viewModel.fetchDemoImages()

@@ -21,6 +21,7 @@ struct SettingsView: View {
         do {
             try Auth.auth().signOut()
             UserDefaults.standard.set(false, forKey: "isLoggedIn")
+            UserDefaults.standard.set(false, forKey: "isFriendActivated")
             didLogOut.send(())
             PostHogSDK.shared.capture("Sign Out")
         } catch let signOutError as NSError {
