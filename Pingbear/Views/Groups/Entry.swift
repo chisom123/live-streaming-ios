@@ -213,6 +213,7 @@ struct EntryView: View {
                     Button(action: {
                         let banner = NotificationBanner(title: "Image Successfully Reported", style: .success)
                         banner.show()
+                        PostHogSDK.shared.capture("Image Reported")
                     }) {
                         Image(systemName: "flag.fill")
                             .font(.system(size: 25))
