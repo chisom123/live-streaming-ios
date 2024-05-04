@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import PostHog
 
 struct MyFriendsView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -71,11 +72,13 @@ struct MyFriendsView: View {
                         .destructive(Text("Remove Friend")) {
                             if let id = self.friendToManage {
                                 viewModel.removeFriend(id: id)
+                                PostHogSDK.shared.capture("Remove Friend Tapped")
                             }
                         },
                         .default(Text("Block Friend")) {
                             if let id = self.friendToManage {
                                 viewModel.removeFriend(id: id)
+                                PostHogSDK.shared.capture("Block Friend Tapped")
                             }
                         },
                         .cancel()
