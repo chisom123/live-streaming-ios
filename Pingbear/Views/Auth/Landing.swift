@@ -60,15 +60,19 @@ struct DisclaimerText: View {
         VStack {
             
             HStack(spacing: 5) {
+                Text("Read our")
+                
                 Text("Privacy Policy")
+                    .underline()
                     .onTapGesture {
                         openURL("https://chay-b6172c.webflow.io/privacy-policy")
                     }
                 
-                Text("•")
+                Text("and")
                     .font(.system(size: 15, weight: .semibold, design: .default))
                 
                 Text("Terms of Service")
+                    .underline()
                     .onTapGesture {
                         openURL("https://chay-b6172c.webflow.io")
                     }
@@ -86,7 +90,7 @@ struct ContinueButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text("Continue")
+            Text("Agree & Continue")
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
