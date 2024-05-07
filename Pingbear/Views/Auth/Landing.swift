@@ -71,7 +71,7 @@ struct DisclaimerText: View {
                 Text("and")
                     .font(.system(size: 15, weight: .semibold, design: .default))
                 
-                Text("Terms of Service")
+                Text("Terms of Use")
                     .underline()
                     .onTapGesture {
                         openURL("https://chay-b6172c.webflow.io")
