@@ -8,7 +8,7 @@ struct WhyFriendView: View {
     
     var body: some View {
         VStack {
-            Text("Oh sorry, you can only rate your friend's pictures 😅")
+            Text("Oh sorry, you can only rate your friend's pictures")
                 .font(.system(size: 20, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -16,7 +16,7 @@ struct WhyFriendView: View {
                 .padding(.bottom, 40)
                 .padding(.horizontal)
             
-            HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
+            HStack { // Add an HStack with some spacing between the buttons
                 Button(action: {
                     navigateToUsernameShield = true
                     PostHogSDK.shared.capture("Username Shield Opened")
@@ -26,19 +26,6 @@ struct WhyFriendView: View {
                         .font(.system(size: 17.5, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6))
                         .background(Color(hex: "#1199FF"))
-                        .foregroundColor(Color.white)
-                        .cornerRadius(200)
-                }
-
-                Button(action: {
-                    openURL("https://www.wikihow.com/Make-New-Friends-Quickly")
-                    PostHogSDK.shared.capture("I have no friends button pressed")
-                }) {
-                    Text("I have no Friends")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .font(.system(size: 17.5, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6))
-                        .background(Color(hex: "#7B68EE"))
                         .foregroundColor(Color.white)
                         .cornerRadius(200)
                 }
