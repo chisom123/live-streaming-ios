@@ -8,7 +8,7 @@ struct NameEntryView: View {
     let phoneNumber: String
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
-    @State private var navigateToPlayGame = false
+    @State private var navigateToHome = false
 
     var body: some View {
         VStack {
@@ -51,7 +51,7 @@ struct NameEntryView: View {
             }
             .padding(.top, 20)
 
-            NavigationLink(destination: PlayGameView(), isActive: $navigateToPlayGame) {
+            NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
                 EmptyView()
             }.isDetailLink(false) // To avoid any potential navigation issues
         }
@@ -100,11 +100,43 @@ struct NameEntryView: View {
            if let error = error {
                self.errorMessage = "Error saving user: \(error.localizedDescription)"
            } else {
-               self.navigateToPlayGame = true
+               newgroup(processedUsername: processedUsername)
+               self.navigateToHome = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
                PostHogSDK.shared.capture("New User - \(userID)")
            }
        }
    }
+    
+    func newgroup(processedUsername: String) {
+
+        // Get the current user's ID
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("Error: User not logged in")
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let batch = db.batch()
+        
+        let competitionRef = db.collection("competitions").document()
+        let participantRef = competitionRef.collection("participants").document(userID)
+        
+        let competitionData: [String: Any] = [
+            "description": "\(processedUsername)'s group ✨",
+            "timestamp": Timestamp()
+        ]
+        
+        batch.setData(competitionData, forDocument: competitionRef)
+        batch.setData(["userId": userID, "voted_entries": []], forDocument: participantRef)
+        
+        batch.commit { err in
+            if let err = err {
+                errorMessage = "Failed to create group: \(err.localizedDescription)"
+            } else {
+                PostHogSDK.shared.capture("Initial User Group Created")
+            }
+        }
+    }
 }

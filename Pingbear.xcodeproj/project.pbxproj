@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0416192BB5A97C00E3C7C0 /* Members.swift */; };
 		4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */; };
-		4F31B8902BDA71FB007892BC /* UsernameShield.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F31B88F2BDA71FB007892BC /* UsernameShield.swift */; };
-		4F31B8982BDC38FD007892BC /* Demo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F31B8972BDC38FD007892BC /* Demo.swift */; };
 		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
 		4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D062AE81F760011F541 /* NewCompetition.swift */; };
@@ -22,8 +20,6 @@
 		4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D152B0651EC0011F541 /* CompetitionsModel.swift */; };
 		4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F382E9F2B07CAA600669A58 /* MyComps.swift */; };
 		4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4F382EA82B0F89D800669A58 /* NotificationBannerSwift */; };
-		4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F3991642B93CD1100CC54FF /* pop.mp3 */; };
-		4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4F39916A2B9416F600CC54FF /* bgmusic.mp3 */; };
 		4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */; };
 		4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF02A846CE90068F901 /* Assets.xcassets */; };
 		4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F3E0CF42A846CE90068F901 /* Preview Assets.xcassets */; };
@@ -79,9 +75,7 @@
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
-		4F8FEE5D2BE30C840087479A /* PlayGame.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5C2BE30C840087479A /* PlayGame.swift */; };
 		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
-		4F8FEE632BE673410087479A /* WhyFriend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE622BE673410087479A /* WhyFriend.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 /* End PBXBuildFile section */
 
@@ -105,8 +99,6 @@
 /* Begin PBXFileReference section */
 		4F0416192BB5A97C00E3C7C0 /* Members.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Members.swift; sourceTree = "<group>"; };
 		4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersViewModel.swift; sourceTree = "<group>"; };
-		4F31B88F2BDA71FB007892BC /* UsernameShield.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsernameShield.swift; sourceTree = "<group>"; };
-		4F31B8972BDC38FD007892BC /* Demo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Demo.swift; sourceTree = "<group>"; };
 		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F375D062AE81F760011F541 /* NewCompetition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewCompetition.swift; sourceTree = "<group>"; };
@@ -116,8 +108,6 @@
 		4F375D112B02A1FC0011F541 /* EntryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryViewModel.swift; sourceTree = "<group>"; };
 		4F375D152B0651EC0011F541 /* CompetitionsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionsModel.swift; sourceTree = "<group>"; };
 		4F382E9F2B07CAA600669A58 /* MyComps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyComps.swift; sourceTree = "<group>"; };
-		4F3991642B93CD1100CC54FF /* pop.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = pop.mp3; sourceTree = "<group>"; };
-		4F39916A2B9416F600CC54FF /* bgmusic.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = bgmusic.mp3; sourceTree = "<group>"; };
 		4F3E0CE92A846CE80068F901 /* Pingbear.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pingbear.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4F3E0CEC2A846CE80068F901 /* PingbearApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingbearApp.swift; sourceTree = "<group>"; };
 		4F3E0CF02A846CE90068F901 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -147,9 +137,7 @@
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
-		4F8FEE5C2BE30C840087479A /* PlayGame.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayGame.swift; sourceTree = "<group>"; };
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
-		4F8FEE622BE673410087479A /* WhyFriend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhyFriend.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,11 +205,7 @@
 				4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */,
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
-				4F31B88F2BDA71FB007892BC /* UsernameShield.swift */,
-				4F31B8972BDC38FD007892BC /* Demo.swift */,
-				4F8FEE5C2BE30C840087479A /* PlayGame.swift */,
 				4F8FEE602BE516AC0087479A /* Landing.swift */,
-				4F8FEE622BE673410087479A /* WhyFriend.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -260,15 +244,6 @@
 			path = Payments;
 			sourceTree = "<group>";
 		};
-		4F3991612B93C94200CC54FF /* Sounds */ = {
-			isa = PBXGroup;
-			children = (
-				4F39916A2B9416F600CC54FF /* bgmusic.mp3 */,
-				4F3991642B93CD1100CC54FF /* pop.mp3 */,
-			);
-			path = Sounds;
-			sourceTree = "<group>";
-		};
 		4F3E0CE02A846CE80068F901 = {
 			isa = PBXGroup;
 			children = (
@@ -293,7 +268,6 @@
 			isa = PBXGroup;
 			children = (
 				4F3E0D632A8702FE0068F901 /* Info.plist */,
-				4F3991612B93C94200CC54FF /* Sounds */,
 				4F8FEE572BE22A920087479A /* Notifications */,
 				4F3E0D662A895ACA0068F901 /* Extensions */,
 				4F3E0D752A95129D0068F901 /* Models */,
@@ -529,8 +503,6 @@
 				4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */,
 				4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */,
 				4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */,
-				4F3991652B93CD1100CC54FF /* pop.mp3 in Resources */,
-				4F39916B2B9416F600CC54FF /* bgmusic.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -579,13 +551,9 @@
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Global.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
-				4F31B8902BDA71FB007892BC /* UsernameShield.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
-				4F8FEE5D2BE30C840087479A /* PlayGame.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
-				4F31B8982BDC38FD007892BC /* Demo.swift in Sources */,
-				4F8FEE632BE673410087479A /* WhyFriend.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
@@ -741,7 +709,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -768,7 +736,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -788,7 +756,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 34;
+				CURRENT_PROJECT_VERSION = 35;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -815,7 +783,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

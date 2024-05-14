@@ -10,6 +10,7 @@ struct MembersView: View {
     @ObservedObject private var viewModel = MembersViewModel()
     @State private var leaveGroupAlert = false
     @State private var goHome = false
+    @State private var showingJoinSelectView = false
     
     var body: some View {
         ZStack {
@@ -49,6 +50,28 @@ struct MembersView: View {
                 }
                 .padding(.bottom, 15)
                 
+                Button(action: {
+                    showingJoinSelectView = true
+                }) {
+                    HStack {
+                        Text("Add Friends to this Group")
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .foregroundColor(Color.white)
+                            .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
+
+                        Image(systemName: "plus") // System name for '+' icon
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(Color.white)
+                            .frame(alignment: .trailing) // Align icon to the right
+                    }
+                    .padding(20)
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(5)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 15)
+                
                 ScrollView {
                     VStack(spacing: 20) {
                         
@@ -66,7 +89,6 @@ struct MembersView: View {
                         .background(Color(hex: "#F5F5F5"))
                         .cornerRadius(5)
                     }
-                    .padding(.top, 30)
                     .padding(.horizontal, 20)
                 }
             }
@@ -80,6 +102,9 @@ struct MembersView: View {
         .fullScreenCover(isPresented: $goHome, content: {
             ContentView()
         })
+        .fullScreenCover(isPresented: $showingJoinSelectView) {
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+        }
     }
 
 }

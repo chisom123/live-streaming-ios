@@ -92,7 +92,7 @@ class EntryViewModel: ObservableObject {
         for document in documents {
             let userId = document.data()["userId"] as? String ?? ""
             let documentId = document.documentID
-            if excludeCurrentAndVoted && (userId == currentUserId || votedEntries.contains(documentId)) {
+            if excludeCurrentAndVoted && (votedEntries.contains(documentId)) {
                 continue // Skip current user's entries and already voted entries
             }
 

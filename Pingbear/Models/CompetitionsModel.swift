@@ -91,7 +91,6 @@ class CompetitionsModel: ObservableObject {
                 guard let entries = entriesSnapshot?.documents else { return }
                 let entryIds = Set(entries.map { $0.documentID })
                 let totalEntriesCount = entries.count
-                let userEntriesCount = entries.filter { $0.data()["userId"] as? String == userId }.count
 
                 let votesListener = db.collection("competitions").document(competition.id).collection("participants")
                   .document(userId).addSnapshotListener { (participantSnapshot, err) in
@@ -102,7 +101,7 @@ class CompetitionsModel: ObservableObject {
 
                     let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
                     let validVotedEntries = votedEntries.filter { entryIds.contains($0) }
-                    let notVotedCount = totalEntriesCount - validVotedEntries.count - userEntriesCount
+                    let notVotedCount = totalEntriesCount - validVotedEntries.count
 
                     DispatchQueue.main.async {
                         competition.entriesNotVotedCount = notVotedCount

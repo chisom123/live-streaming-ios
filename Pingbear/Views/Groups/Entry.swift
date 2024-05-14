@@ -8,8 +8,6 @@
 import SwiftUI
 import SDWebImageSwiftUI
 import NotificationBannerSwift
-import AVFoundation
-import AVKit
 import PostHog
 
 struct CustomProgressView: View {
@@ -54,38 +52,12 @@ struct EntryView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var isPresentingInfo = false // State to control the presentation of the New Competition View
     @State private var rating: Int = 0
-    @State private var backgroundMusicPlayer: AVAudioPlayer?
-    @State private var soundEffectPlayer: AVAudioPlayer?
     @State private var isShowingLoadingOverlay = false
     @State private var isRatingEnabled: Bool = true
 
 
     init(competitionId: String) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
-        self._backgroundMusicPlayer = State(initialValue: self.setupBackgroundMusicPlayer())
-    }
-    
-    private func setupBackgroundMusicPlayer() -> AVAudioPlayer? {
-        guard let url = Bundle.main.url(forResource: "bgmusic", withExtension: "mp3") else { return nil }
-        do {
-            let player = try AVAudioPlayer(contentsOf: url)
-            player.numberOfLoops = -1 // Loop indefinitely
-            player.volume = 0.3 // Adjust this value between 0.0 and 1.0 to decrease or increase the volume
-            return player
-        } catch {
-            print("Cannot load the file")
-            return nil
-        }
-    }
-    
-    private func playSoundEffect(name: String) {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return }
-        do {
-            soundEffectPlayer = try AVAudioPlayer(contentsOf: url)
-            soundEffectPlayer?.play()
-        } catch {
-            print("Cannot play the sound file")
-        }
     }
     
     private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
@@ -148,7 +120,6 @@ struct EntryView: View {
                                         isRatingEnabled = false
                                         PostHogSDK.shared.capture("Overall Star Rating Tap")
                                         triggerHapticFeedback(style: .soft)
-                                        self.playSoundEffect(name: "pop")
                                         let ratingIncrement = star
                                         self.rating = ratingIncrement
                                         let currentEntryId = currentEntry.id
@@ -156,11 +127,7 @@ struct EntryView: View {
                                         
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
-                                            self.backgroundMusicPlayer?.stop()
-                                            let banner = NotificationBanner(title: "Rating complete. Check again later", style: .success)
-                                            banner.show()
-                                            
-                                            DispatchQueue.main.async {
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                                 presentationMode.wrappedValue.dismiss()
                                             }
                                         } else {
@@ -228,14 +195,6 @@ struct EntryView: View {
                 .padding(.horizontal) // Ensures there's some spacing on the horizontal sides of the HStack
                 .padding(.vertical)
             }
-        }
-        .onAppear {
-            self.backgroundMusicPlayer?.play()
-        }
-        .onDisappear {
-            self.backgroundMusicPlayer?.stop()
-            self.backgroundMusicPlayer = nil
-            viewModel.deactivateListeners()
         }
     }
 }

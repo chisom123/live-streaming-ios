@@ -22,7 +22,6 @@ struct CompDetails: View {
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var imageDisplayState = ImageDisplayState()
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    @State private var showingJoinSelectView = false
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -108,29 +107,8 @@ struct CompDetails: View {
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black)
                     .padding(.top, 35)
+                    .padding(.bottom, 20)
                     .padding(.horizontal, 20)
-            
-                Button(action: {
-                    showingJoinSelectView = true
-                }) {
-                    HStack {
-                        Text("Add Friends to this Group")
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .foregroundColor(Color.white)
-                            .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
-
-                        Image(systemName: "plus") // System name for '+' icon
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color.white)
-                            .frame(alignment: .trailing) // Align icon to the right
-                    }
-                    .padding(20)
-                    .background(Color(hex: "#FF4500"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(5)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
 
                 ScrollView {
                     VStack(spacing: 15) { // Increased spacing between items
@@ -251,9 +229,6 @@ struct CompDetails: View {
         })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         }
         .onDisappear {
             entryViewModel.deactivateListeners()
