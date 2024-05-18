@@ -1,5 +1,5 @@
 {
-  "originHash" : "ade5df4407b914d61668563f5dc8169ee34a183b2f11ac116ed9a853c12d7b31",
+  "originHash" : "e6582b6f6aea3726a88367c3303ce0aec426ca571b9d909d3588080b43c5393a",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -62,15 +62,6 @@
       "state" : {
         "revision" : "26c898aed8bed13b8a63057ee26500abbbcb8d55",
         "version" : "7.13.1"
-      }
-    },
-    {
-      "identity" : "growingtextview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/KennethTsang/GrowingTextView",
-      "state" : {
-        "revision" : "0cda2caf03bf6cb2ec6dc006873c3c865933be09",
-        "version" : "0.7.2"
       }
     },
     {
@@ -197,15 +188,6 @@
       "state" : {
         "revision" : "9f0c76544701845ad98716f3f6a774a892152bcb",
         "version" : "1.26.0"
-      }
-    },
-    {
-      "identity" : "swiftttcamera",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/rogerluan/SwiftttCamera",
-      "state" : {
-        "revision" : "8c418c68a20b990c94644add4906d74d94592a80",
-        "version" : "0.9.0"
       }
     }
   ],

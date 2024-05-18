@@ -219,7 +219,7 @@ struct CompDetails: View {
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView(competitionId: competition.id, viewModel: EntryViewModel(competitionId: competition.id, mode: .entryView), competition: competition)
+            CameraView()
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)

@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import Combine
 import PostHog
+import AVFoundation
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     
@@ -17,7 +18,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         let config = PostHogConfig(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
         PostHogSDK.shared.setup(config)
         
+        setupDefaultCameraPosition()
+        
         return true
+    }
+    
+    private func setupDefaultCameraPosition() {
+        let key = "CameraPosition"
+        if UserDefaults.standard.object(forKey: key) == nil {
+            UserDefaults.standard.set(AVCaptureDevice.Position.front.rawValue, forKey: key)
+        }
     }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

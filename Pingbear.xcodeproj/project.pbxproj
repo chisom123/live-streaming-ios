@@ -14,7 +14,6 @@
 		4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D062AE81F760011F541 /* NewCompetition.swift */; };
 		4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D082AEBBF990011F541 /* CompDetails.swift */; };
 		4F375D0B2AF444B70011F541 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0A2AF444B70011F541 /* Camera.swift */; };
-		4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 4F375D0D2AFBDA780011F541 /* SwiftttCamera */; };
 		4F375D102B02A1320011F541 /* Entry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0F2B02A1320011F541 /* Entry.swift */; };
 		4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D112B02A1FC0011F541 /* EntryViewModel.swift */; };
 		4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D152B0651EC0011F541 /* CompetitionsModel.swift */; };
@@ -60,7 +59,6 @@
 		4F3E0D682A895AE40068F901 /* Colour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D672A895AE40068F901 /* Colour.swift */; };
 		4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */; };
 		4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */; };
-		4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D922AA094FB0068F901 /* GrowingTextView */; };
 		4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D952AA0DED80068F901 /* CountryPicker */; };
 		4F3E0DA02AA777240068F901 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9F2AA777240068F901 /* Settings.swift */; };
 		4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DA12AA782DE0068F901 /* ChangeName.swift */; };
@@ -77,6 +75,8 @@
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
 		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
+		4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */; };
+		4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +138,8 @@
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
+		4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
+		4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraInit.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,14 +168,12 @@
 				4F3E0D512A86F6BF0068F901 /* FirebaseStorageCombine-Community in Frameworks */,
 				4F3E0D4B2A86F6BF0068F901 /* FirebaseRemoteConfig in Frameworks */,
 				4F3E0D272A86F6BF0068F901 /* FirebaseAppDistribution-Beta in Frameworks */,
-				4F375D0E2AFBDA780011F541 /* SwiftttCamera in Frameworks */,
 				4F3E0D2B2A86F6BF0068F901 /* FirebaseAuthCombine-Community in Frameworks */,
 				4F382EA92B0F89D800669A58 /* NotificationBannerSwift in Frameworks */,
 				4F3E0D492A86F6BF0068F901 /* FirebasePerformance in Frameworks */,
 				4F3E0D412A86F6BF0068F901 /* FirebaseInAppMessagingSwift-Beta in Frameworks */,
 				4F3E0D4F2A86F6BF0068F901 /* FirebaseStorage in Frameworks */,
 				4F3E0DB22AB067DC0068F901 /* PhoneNumberKit in Frameworks */,
-				4F3E0D932AA094FB0068F901 /* GrowingTextView in Frameworks */,
 				4F3E0D332A86F6BF0068F901 /* FirebaseDynamicLinks in Frameworks */,
 				4F3E0D372A86F6BF0068F901 /* FirebaseFirestoreCombine-Community in Frameworks */,
 				4F3E0D472A86F6BF0068F901 /* FirebaseMessaging in Frameworks */,
@@ -226,7 +226,6 @@
 			children = (
 				4F375D062AE81F760011F541 /* NewCompetition.swift */,
 				4F375D082AEBBF990011F541 /* CompDetails.swift */,
-				4F375D0A2AF444B70011F541 /* Camera.swift */,
 				4F375D0F2B02A1320011F541 /* Entry.swift */,
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
 				4F0416192BB5A97C00E3C7C0 /* Members.swift */,
@@ -309,6 +308,7 @@
 		4F3E0D522A86F87C0068F901 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4FED5C5A2BF61F6D00CC5BFE /* Camera */,
 				4F31B8952BDBAB7D007892BC /* Groups */,
 				4F31B8932BDBAA85007892BC /* Auth */,
 				4F31B8942BDBAB22007892BC /* User Management */,
@@ -337,6 +337,7 @@
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
 				4F375D152B0651EC0011F541 /* CompetitionsModel.swift */,
 				4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */,
+				4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -348,6 +349,15 @@
 				4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */,
 			);
 			path = Notifications;
+			sourceTree = "<group>";
+		};
+		4FED5C5A2BF61F6D00CC5BFE /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				4F375D0A2AF444B70011F541 /* Camera.swift */,
+				4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */,
+			);
+			path = Camera;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -395,10 +405,8 @@
 				4F3E0D4E2A86F6BF0068F901 /* FirebaseStorage */,
 				4F3E0D502A86F6BF0068F901 /* FirebaseStorageCombine-Community */,
 				4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */,
-				4F3E0D922AA094FB0068F901 /* GrowingTextView */,
 				4F3E0D952AA0DED80068F901 /* CountryPicker */,
 				4F3E0DB12AB067DC0068F901 /* PhoneNumberKit */,
-				4F375D0D2AFBDA780011F541 /* SwiftttCamera */,
 				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
 				4FABA1392B996A3800289489 /* PostHog */,
 			);
@@ -477,10 +485,8 @@
 			packageReferences = (
 				4F3E0D1B2A86F6BF0068F901 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
-				4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */,
 				4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */,
 				4F3E0DB02AB067DC0068F901 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
-				4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */,
 				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
 				4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 			);
@@ -531,6 +537,7 @@
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
 				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
+				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
 				4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */,
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
@@ -541,6 +548,7 @@
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */,
 				4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */,
+				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
@@ -709,7 +717,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 39;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -719,9 +727,8 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
-				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can add photos to a group.";
-				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library so you can select a photo to add to a group.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to record videos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -736,7 +743,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -756,7 +763,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 39;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -766,9 +773,8 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
-				INFOPLIST_KEY_NSCameraUsageDescription = "We need access to your camera so you can add photos to a group.";
-				INFOPLIST_KEY_NSContactsUsageDescription = "Allow us to access your contacts so you can easily connect with friends already on Pingbear.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "We need access to your photo library so you can select a photo to add to a group.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to record videos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -783,7 +789,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 2.7;
+				MARKETING_VERSION = 2.8;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -928,14 +934,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/rogerluan/SwiftttCamera";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.0;
-			};
-		};
 		4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Daltron/NotificationBanner";
@@ -958,14 +956,6 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
-			};
-		};
-		4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/KennethTsang/GrowingTextView";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.7.2;
 			};
 		};
 		4F3E0D942AA0DED80068F901 /* XCRemoteSwiftPackageReference "CountryPicker" */ = {
@@ -995,11 +985,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		4F375D0D2AFBDA780011F541 /* SwiftttCamera */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F375D0C2AFBDA780011F541 /* XCRemoteSwiftPackageReference "SwiftttCamera" */;
-			productName = SwiftttCamera;
-		};
 		4F382EA82B0F89D800669A58 /* NotificationBannerSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */;
@@ -1144,11 +1129,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4F3E0D862A9BCB330068F901 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
 			productName = SDWebImageSwiftUI;
-		};
-		4F3E0D922AA094FB0068F901 /* GrowingTextView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4F3E0D912AA094FB0068F901 /* XCRemoteSwiftPackageReference "GrowingTextView" */;
-			productName = GrowingTextView;
 		};
 		4F3E0D952AA0DED80068F901 /* CountryPicker */ = {
 			isa = XCSwiftPackageProductDependency;
