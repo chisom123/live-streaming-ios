@@ -54,11 +54,15 @@ struct PayView: View {
                             viewModel.purchase(product: subscriptionProduct)
                         }
                     }) {
-                        Text("Activate Superstar!")
+                        Text("Continue")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .background(Color(hex: "#1199FF"))
+                            .foregroundColor(Color(hex: "#fff"))
+                            .cornerRadius(200)
                     }
-                    .buttonStyle(ChunkyButton())
                     .padding(.top, 50)
-                    .padding(.horizontal)
                     .padding(.horizontal)
                     
                     Text("$0.99")
@@ -105,45 +109,6 @@ struct PayView: View {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
             }
-        }
-    }
- 
-    struct ChunkyButton: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(
-                    ZStack{
-                        if #available(iOS 17.0, *) {
-                            Capsule()
-                                .fill(Color(hex: "#FFD700"))
-                                .stroke(.black, lineWidth:3)
-                                .offset(y:configuration.isPressed ? 0 : 10)
-                        } else {
-                            Capsule()
-                                .fill(Color(hex: "#FFD700"))
-                                .overlay(
-                                    Capsule().stroke(Color.black, lineWidth: 3)
-                                        .offset(y:configuration.isPressed ? 0 : 10)
-                                )
-                        }
-                        
-                        if #available(iOS 17.0, *) {
-                            Capsule()
-                                .fill(.white)
-                                .stroke(.black, lineWidth:3)
-                        } else {
-                            Capsule()
-                                .fill(Color.white)
-                                .overlay(
-                                    Capsule().stroke(Color.black, lineWidth: 3)
-                                )
-                        }
-                    }
-                )
-                .offset(y:configuration.isPressed ? 10 : 0)
         }
     }
     

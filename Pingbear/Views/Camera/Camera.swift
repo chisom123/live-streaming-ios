@@ -1,10 +1,14 @@
 import SwiftUI
 import AVKit
 import Combine
+import Firebase
+import FirebaseStorage
+import FirebaseFirestore
 
 struct CameraView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject var cameraModel = CameraViewModel()
+    var competition: Competition
     
     var body: some View {
         ZStack {
@@ -116,7 +120,7 @@ struct CameraView: View {
         }
         .fullScreenCover(isPresented: $cameraModel.showPreview, content: {
             if let url = cameraModel.previewURL {
-                FinalPreview(url: url, showPreview: $cameraModel.showPreview)
+                FinalPreview(url: url, showPreview: $cameraModel.showPreview,  competition: competition, competitionId: competition.id)
             }
         })
     }
@@ -233,6 +237,10 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
 struct FinalPreview: View {
     var url: URL
     @Binding var showPreview: Bool
+    var competition: Competition
+    var competitionId: String
+    @State private var entrySaved = false
+    @State private var newentryDocId: String? // Add this line to hold the entries document ID
 
     var body: some View {
         GeometryReader { proxy in
@@ -265,7 +273,7 @@ struct FinalPreview: View {
                 VStack {
                     Spacer()
                     Button(action: {
-                     
+                        submitEntry()
                     }) {
                         Text("Send")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -281,6 +289,60 @@ struct FinalPreview: View {
             }
         }
         .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
+        .fullScreenCover(isPresented: $entrySaved) {
+            if let entryDocId = newentryDocId {
+                LocationCheckView(competition: competition, competitionId: competitionId, entryDocId: entryDocId) // Assume this is a view you want to navigate to
+            }
+        }
+    }
+    
+    func submitEntry() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("User not logged in")
+            return
+        }
+
+        let videoURL = self.url // Direct use without unwrapping
+
+        let db = Firestore.firestore()
+        let storage = Storage.storage()
+        let storageRef = storage.reference()
+        let videoRef = storageRef.child("videos/\(UUID().uuidString).mov")
+
+        // Upload video from the file URL
+        videoRef.putFile(from: videoURL, metadata: nil) { metadata, error in
+            guard let _ = metadata, error == nil else {
+                print("Error uploading video: \(error?.localizedDescription ?? "unknown error")")
+                return
+            }
+
+            videoRef.downloadURL { result in
+                switch result {
+                case .success(let downloadURL):
+                    let entryData = [
+                        "userId": userId,
+                        "videoUrl": downloadURL.absoluteString,
+                        "timestamp": FieldValue.serverTimestamp()
+                    ]
+                    
+                    var newEntryRef: DocumentReference? = nil
+                    newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
+                        if let error = error {
+                            print("Error saving entry: \(error)")
+                        } else {
+                            self.newentryDocId = newEntryRef?.documentID
+                            
+                            print("Entry saved successfully")
+                            DispatchQueue.main.async {
+                                self.entrySaved = true // Trigger navigation
+                            }
+                        }
+                    }
+                case .failure(let error):
+                    print("Error getting download URL: \(error)")
+                }
+            }
+        }
     }
 }
 

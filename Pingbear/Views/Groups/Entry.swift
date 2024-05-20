@@ -9,6 +9,7 @@ import SwiftUI
 import SDWebImageSwiftUI
 import NotificationBannerSwift
 import PostHog
+import AVKit
 
 struct CustomProgressView: View {
     @State private var isAnimating = false
@@ -72,11 +73,11 @@ struct EntryView: View {
                 if viewModel.entries.indices.contains(viewModel.currentIndex) {
                     let entry = viewModel.entries[viewModel.currentIndex]
                     VStack {
-                        if let imageURL = URL(string: entry.imageUrl) {
-                            WebImage(url: imageURL)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        if let videoURL = URL(string: entry.videoUrl) {
+                            CustomVideoPlayer(url: videoURL)
+                                .id(viewModel.currentIndex)
+                                .aspectRatio(contentMode: .fill)
+                                .ignoresSafeArea()
                         } else {
                             ProgressView()
                         }
@@ -157,7 +158,7 @@ struct EntryView: View {
                         // Removed the shadow from the background
                     }
                     .padding(.horizontal)
-                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 70)
+                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
                 }
                 .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
                 

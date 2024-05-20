@@ -5,12 +5,6 @@ import UIKit
 import FirebaseAuth
 import PostHog
 import NotificationBannerSwift
-import SDWebImageSwiftUI
-
-struct ImageDisplayState {
-    var imageUrl: String = ""
-    var show: Bool = false
-}
 
 struct CompDetails: View {
     
@@ -20,7 +14,6 @@ struct CompDetails: View {
     @State private var isMembersPresented = false
     @State private var isVotingPresented = false
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
-    @State private var imageDisplayState = ImageDisplayState()
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     
     @ObservedObject var entryViewModel: EntryViewModel
@@ -78,7 +71,7 @@ struct CompDetails: View {
                     Button(action: {
                         joincomp()
                     }) {
-                        Text("Add Image")
+                        Text("Add Video")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 17.5, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -90,7 +83,7 @@ struct CompDetails: View {
                     Button(action: {
                         vote()
                     }) {
-                        Text("Rate Images")
+                        Text("Rate Videos")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 17.5, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -172,54 +165,13 @@ struct CompDetails: View {
                             .background(Color(hex: "#F5F5F5"))
                             .cornerRadius(5)
                             .padding(.horizontal, 20) // Padding on the sides of each row
-                            .onTapGesture {
-                                self.imageDisplayState.imageUrl = entry.imageUrl
-                                self.imageDisplayState.show = true
-                                self.selectedEntryCreationDate = entry.creationDate
-                                PostHogSDK.shared.capture("Leaderboard image open")
-                            }
                         }
                     }
-                }
-            }
-            
-            if imageDisplayState.show {
-                ZStack {
-                    Color.white.edgesIgnoringSafeArea(.all)
-                    
-                    if let imageURL = URL(string: imageDisplayState.imageUrl) {
-                        WebImage(url: imageURL)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Text(timeAgo) // Use the statically computed timeAgo
-                                    .font(.system(size: 15, weight: .bold, design: .default))
-                                    .padding(.horizontal, 15)
-                                    .padding(.vertical, 8)
-                                    .background(Color.black.opacity(0.75))
-                                    .foregroundColor(.white)
-                                    .cornerRadius(200)
-                            }
-                            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 20)
-                            .padding(.trailing, (UIApplication.shared.windows.first?.safeAreaInsets.right ?? 0) + 20)
-                            Spacer()
-                        }
-                    } else {
-                        ProgressView()
-                    }
-                }
-                .edgesIgnoringSafeArea(.all)
-                .onTapGesture {
-                    self.imageDisplayState.show = false
                 }
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView()
+            CameraView(competition: competition)
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id)

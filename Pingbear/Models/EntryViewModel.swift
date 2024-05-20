@@ -4,7 +4,7 @@ import FirebaseFirestore
 
 struct Entry: Identifiable {
     let id: String
-    let imageUrl: String
+    let videoUrl: String
     let userName: String
     let stars: Int
     let isCurrentUser: Bool
@@ -97,7 +97,7 @@ class EntryViewModel: ObservableObject {
             }
 
             group.enter()
-            let imageUrl = document.data()["imageUrl"] as? String ?? ""
+            let videoUrl = document.data()["videoUrl"] as? String ?? ""
             let stars = document.data()["stars"] as? Int ?? 0
             let isSuperstar = document.data()["superstar"] as? Bool ?? false
             let timestamp = document.data()["timestamp"] as? Timestamp
@@ -111,7 +111,7 @@ class EntryViewModel: ObservableObject {
                 }
                 let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
                 let isCurrentUser = userId == currentUserId
-                let entry = Entry(id: documentId, imageUrl: imageUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+                let entry = Entry(id: documentId, videoUrl: videoUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
                 localEntries.append(entry)
             }
         }
