@@ -18,17 +18,17 @@ struct PayView: View {
             ZStack {
                 VStack {
                     HStack {
+                        Spacer()
+                        
                         Button(action: {
-                            presentationMode.wrappedValue.dismiss()
+                            navigateToCompDetails = true
                         }) {
-                            Image("Close")
-                                .resizable()
-                                .frame(width: 40, height: 40)
-                                .padding(.leading, 20)
+                            Image(systemName: "xmark")
+                                .font(.system(size: 30)) // Increase the font size as needed
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 20)
                                 .padding(.top, 20)
                         }
-                        
-                        Spacer() // This spacer will ensure the two buttons are at opposite ends.
                     }
                     
                     Spacer()

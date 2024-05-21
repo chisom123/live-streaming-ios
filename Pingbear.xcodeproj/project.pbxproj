@@ -68,7 +68,6 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
-		4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
@@ -132,7 +131,6 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
-		4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationCheck.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
@@ -237,7 +235,6 @@
 		4F31B8962BDBABB4007892BC /* Payments */ = {
 			isa = PBXGroup;
 			children = (
-				4F56AB2F2B80CA29005FFC96 /* LocationCheck.swift */,
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
 			);
 			path = Payments;
@@ -538,7 +535,6 @@
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
 				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
-				4F56AB302B80CA29005FFC96 /* LocationCheck.swift in Sources */,
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
 				4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */,

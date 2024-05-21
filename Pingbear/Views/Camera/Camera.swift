@@ -291,7 +291,7 @@ struct FinalPreview: View {
         .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
         .fullScreenCover(isPresented: $entrySaved) {
             if let entryDocId = newentryDocId {
-                LocationCheckView(competition: competition) // Assume this is a view you want to navigate to
+                PayView(viewModel: PbillViewModel(), competition: competition) // Replace this with the actual view you want to present
             }
         }
     }
