@@ -5,9 +5,6 @@ struct PayView: View {
     @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: PbillViewModel
     
-    var competitionId: String
-    var entryDocId: String
-    
     @State private var navigateToCompDetails = false // State to control navigation
     
     var competition: Competition
@@ -50,7 +47,7 @@ struct PayView: View {
                      
                     
                     Button(action: {
-                        if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "superstar" }) {
+                        if let subscriptionProduct = viewModel.products.first(where: { $0.productIdentifier == "one_day_boost" }) {
                             viewModel.purchase(product: subscriptionProduct)
                         }
                     }) {
@@ -97,17 +94,13 @@ struct PayView: View {
             }
             
             Spacer()
+            .fullScreenCover(isPresented: $navigateToCompDetails) {
+                CompDetails(competition: competition) // Adjust according to your needs
+            }
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
                     navigateToCompDetails = true
                 }
-            }
-            .fullScreenCover(isPresented: $navigateToCompDetails) {
-                CompDetails(competition: competition) // Adjust according to your needs
-            }
-            .onAppear {
-                viewModel.competitionId = self.competitionId
-                viewModel.entryDocId = self.entryDocId
             }
         }
     }

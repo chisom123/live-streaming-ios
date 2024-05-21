@@ -10,11 +10,8 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
     @Published var products: [SKProduct] = []
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false
-
-    var competitionId: String = "" // Add this line
-    var entryDocId: String = "" // Add this line
     
-    private var productIdentifiers: Set<String> = ["superstar"]
+    private var productIdentifiers: Set<String> = ["one_day_boost", "one_month_boost", "one_week_boost"]
 
     override init() {
         super.init()
@@ -37,37 +34,39 @@ class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKP
     }
 
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
-        guard let userID = Auth.auth().currentUser?.uid, !self.competitionId.isEmpty, !self.entryDocId.isEmpty else {
-            print("Validation failed!")
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("Validation failed")
             return
         }
-
-        let entriesDocRef = Firestore.firestore()
-                                    .collection("competitions")
-                                    .document(self.competitionId)
-                                    .collection("entries")
-                                    .document(self.entryDocId)
         
-        entriesDocRef.getDocument { (document, error) in
-            if let document = document, document.exists {
-                let data = document.data() as? [String: Bool] ?? [:]
-                if data["superstar"] == true {
-                    print("Already a superstar, no need to update.")
-                    return
-                }
-            }
-
-            entriesDocRef.updateData(["superstar": true]) { [weak self] error in
-                guard let self = self else { return }
-                if let error = error {
-                    print("Error updating entry data: \(error)")
-                } else {
-                    self.purchaseCompleted = true
-                    PostHogSDK.shared.capture("Superstar Purchased!")
-                    
-                    DispatchQueue.main.async {
-                        self.isLoading = false
-                    }
+        let userDocRef = Firestore.firestore().collection("users").document(userID)
+        
+        let currentDate = Date()
+        var expirationDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
+        
+        switch transaction.payment.productIdentifier {
+        case "one_day_boost":
+            expirationDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
+        case "one_week_boost":
+            expirationDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: currentDate)!
+        case "one_month_boost":
+            expirationDate = Calendar.current.date(byAdding: .month, value: 1, to: currentDate)!
+        default:
+            print("Unknown or unsupported product identifier")
+            return
+        }
+        
+        // Updating Firestore with the expiration timestamp for the boost
+        userDocRef.updateData(["boost": expirationDate]) { [weak self] error in
+            guard let self = self else { return }
+            if let error = error {
+                print("Error updating user data: \(error)")
+            } else {
+                self.purchaseCompleted = true
+                PostHogSDK.shared.capture("\(transaction.payment.productIdentifier) Purchased")
+                
+                DispatchQueue.main.async {
+                    self.isLoading = false
                 }
             }
         }

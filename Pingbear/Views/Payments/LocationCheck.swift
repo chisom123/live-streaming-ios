@@ -8,9 +8,6 @@ struct LocationCheckView: View {
 
     var competition: Competition // Add this line
     
-    var competitionId: String // Add this line to hold the competition ID
-    var entryDocId: String // Add this line to hold the entry document ID
-    
     var body: some View {
         VStack {
             HStack {
@@ -46,7 +43,7 @@ struct LocationCheckView: View {
                 navigateToNextView = true
                 PostHogSDK.shared.capture("Superstar Info Page Open")
             }) {
-                Text("Activate Superstar!")
+                Text("Activate Boost!")
             }
             .buttonStyle(ChunkyButton())
             .padding(.top, 50)
@@ -57,7 +54,7 @@ struct LocationCheckView: View {
             
         }
         .fullScreenCover(isPresented: $navigateToNextView) {
-            PayView(viewModel: PbillViewModel(), competitionId: competitionId, entryDocId: entryDocId, competition: competition) // Replace this with the actual view you want to present
+            PayView(viewModel: PbillViewModel(), competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $navigateBack) {
             CompDetails(competition: competition) // Pass the competition to the CompDetails view

@@ -291,7 +291,7 @@ struct FinalPreview: View {
         .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
         .fullScreenCover(isPresented: $entrySaved) {
             if let entryDocId = newentryDocId {
-                LocationCheckView(competition: competition, competitionId: competitionId, entryDocId: entryDocId) // Assume this is a view you want to navigate to
+                LocationCheckView(competition: competition) // Assume this is a view you want to navigate to
             }
         }
     }
