@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 // Theme or constants files
 struct AppColors {
@@ -42,4 +43,11 @@ func isValidUsername(_ username: String) -> (isValid: Bool, error: String?) {
     }
     
     return (true, nil)
+}
+
+func formattedPrice(for product: SKProduct) -> String {
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .currency
+    formatter.locale = product.priceLocale
+    return formatter.string(from: product.price) ?? "\(product.price)"
 }
