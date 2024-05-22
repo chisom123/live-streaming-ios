@@ -28,7 +28,10 @@ struct PayView: View {
                     .padding(.top, 20)
                     .padding(.horizontal, 25)
                     
-                    Text("Get an extra star every time your videos are rated")
+                    (Text("Get an ")
+                        + Text("extra star")
+                            .underline()
+                        + Text(" every time your videos are rated"))
                         .font(.system(size: 22, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
