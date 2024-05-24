@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import Combine
 
 // MARK: Camera View Model
 class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDelegate{
@@ -15,10 +16,28 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     @Published var previewURL: URL?
     @Published var showPreview: Bool = false
     
+    private var cancellables = Set<AnyCancellable>()
+    private var pressTimer: AnyCancellable?
+    
     // Top Progress Bar
     @Published var recordedDuration: CGFloat = 0
     // YOUR OWN TIMING
     @Published var maxDuration: CGFloat = 7.5
+    
+    func handlePress(isPressing: Bool) {
+        if isPressing {
+            // Start a timer when the press begins
+            pressTimer = Just(true)
+                .delay(for: .seconds(0.15), scheduler: RunLoop.main)
+                .sink(receiveValue: { [weak self] _ in
+                    self?.startRecording()
+                })
+        } else {
+            // Cancel the timer if the press ends before the delay
+            pressTimer?.cancel()
+            stopRecording()
+        }
+    }
     
     func toggleCamera() {
         let newCameraPosition: AVCaptureDevice.Position = (currentCameraPosition == .front) ? .back : .front
@@ -106,7 +125,8 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     }
     
     func startRecording(){
-        // MARK: Temporary URL for recording Video
+        guard !isRecording else { return }
+        
         let tempURL = NSTemporaryDirectory() + "\(Date()).mov"
         output.startRecording(to: URL(fileURLWithPath: tempURL), recordingDelegate: self)
         isRecording = true

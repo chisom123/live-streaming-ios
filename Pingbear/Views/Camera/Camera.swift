@@ -17,13 +17,7 @@ struct CameraView: View {
                 .environmentObject(cameraModel)
                 .ignoresSafeArea()
                 .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity, pressing: { isPressing in
-                    if isPressing {
-                        if cameraModel.recordedDuration < cameraModel.maxDuration {
-                            cameraModel.startRecording()
-                        }
-                    } else {
-                        cameraModel.stopRecording()
-                    }
+                    cameraModel.handlePress(isPressing: isPressing)
                 }, perform: {})
             
             // Other controls (Preview and Reset) remain the same
