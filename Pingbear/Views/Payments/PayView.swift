@@ -8,6 +8,8 @@ struct PayView: View {
     @State private var navigateToCompDetails = false // State to control navigation
     
     var competition: Competition
+    var competitionId: String // Add this line to hold the competition ID
+    var entryDocId: String // Add this line to hold the entry document ID
 
     
     var body: some View {
@@ -172,6 +174,10 @@ struct PayView: View {
                 if completed {
                     navigateToCompDetails = true
                 }
+            }
+            .onAppear {
+                viewModel.competitionId = self.competitionId
+                viewModel.entryDocId = self.entryDocId
             }
         }
     }

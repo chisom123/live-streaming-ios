@@ -147,7 +147,7 @@ class EntryViewModel: ObservableObject {
             
             let ownerId = data["userId"] as? String ?? ""
             let isSuperstar = data["superstar"] as? Bool ?? false
-            let starIncrement = isSuperstar ? stars * 2 : stars
+            let starIncrement = isSuperstar ? stars + 1 : stars
             
             // Increment the 'stars' field by the new rating, adjusted for superstar status
             entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in

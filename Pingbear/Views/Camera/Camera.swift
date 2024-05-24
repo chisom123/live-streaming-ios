@@ -126,6 +126,7 @@ struct FinalPreview: View {
     var competition: Competition
     var competitionId: String
     @State private var entrySaved = false
+    @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
 
@@ -182,7 +183,12 @@ struct FinalPreview: View {
             .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
             .fullScreenCover(isPresented: $entrySaved) {
                 if let entryDocId = newentryDocId {
-                    PayView(viewModel: PbillViewModel(), competition: competition) // Replace this with the actual view you want to present
+                    PayView(viewModel: PbillViewModel(), competition: competition, competitionId: competitionId, entryDocId: entryDocId) // Replace this with the actual view you want to present
+                }
+            }
+            .fullScreenCover(isPresented: $navigateToCompDetails) {
+                if let entryDocId = newentryDocId {
+                    CompDetails(competition: competition) // Adjust according to your needs
                 }
             }
         }
@@ -213,29 +219,49 @@ struct FinalPreview: View {
             videoRef.downloadURL { result in
                 switch result {
                 case .success(let downloadURL):
-                    let entryData = [
-                        "userId": userId,
-                        "videoUrl": downloadURL.absoluteString,
-                        "timestamp": FieldValue.serverTimestamp()
-                    ]
-                    
-                    var newEntryRef: DocumentReference? = nil
-                    newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
-                        if let error = error {
-                            print("Error saving entry: \(error)")
-                        } else {
-                            self.newentryDocId = newEntryRef?.documentID
-                            
-                            print("Entry saved successfully")
-                            DispatchQueue.main.async {
-                                self.entrySaved = true // Trigger navigation
+                    // Check for boost expiration in user document
+                    let userDocRef = Firestore.firestore().collection("users").document(userId)
+                    userDocRef.getDocument { (document, error) in
+                        var superstar = false // Default value if boost doesn't exist
+                        
+                        if let document = document, document.exists {
+                            if let boostDate = document.data()?["boost"] as? Timestamp {
+                                let now = Timestamp(date: Date())
+                                superstar = boostDate.compare(now) == .orderedDescending // Check if boost is in the future
                             }
-                            
-                            isUploading = false
+                        } else {
+                            print("User document not found or boost data unavailable, setting superstar to false")
+                        }
+
+                        let entryData = [
+                            "userId": userId,
+                            "videoUrl": downloadURL.absoluteString,
+                            "timestamp": FieldValue.serverTimestamp(),
+                            "superstar": superstar // Add superstar status based on boost check
+                        ]
+                        
+                        var newEntryRef: DocumentReference? = nil
+                        newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
+                            if let error = error {
+                                print("Error saving entry: \(error)")
+                            } else {
+                                self.newentryDocId = newEntryRef?.documentID
+                                print("Entry saved successfully")
+                                
+                                DispatchQueue.main.async {
+                                    if superstar {
+                                        self.navigateToCompDetails = true // Navigate to competition details if superstar
+                                    } else {
+                                        self.entrySaved = true // Trigger entry saved flow if not superstar
+                                    }
+                                }
+                            }
+                            self.isUploading = false
                         }
                     }
                 case .failure(let error):
                     print("Error getting download URL: \(error)")
+                    self.isUploading = false
                 }
             }
         }
