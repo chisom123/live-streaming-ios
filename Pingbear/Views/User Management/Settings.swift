@@ -9,6 +9,7 @@ struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
+    @State private var showBoostView = false  // State to control the full screen cover for ChangeNameView
     @State private var showMyFriendsView = false  // State to control the full screen cover for ChangeNameView
     @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
     @State private var showSignOutAlert = false
@@ -117,6 +118,24 @@ struct SettingsView: View {
                             .cornerRadius(5)
                             .fullScreenCover(isPresented: $showChangeNameView) {  // Use the full screen cover modifier
                                 ChangeNameView()
+                            }
+                            
+                            Button(action: {
+                                self.showBoostView = true // Toggle the state to show the ChangeNameView
+                            }) {
+                                HStack {
+                                    Text("Boost")
+                                        .font(.system(size: 16, weight: .bold, design: .default))
+                                        .foregroundColor(Color(hex: "#1199FF"))
+                                    Spacer()
+                                }
+                                .padding([.top, .bottom], 20)
+                                .padding([.leading, .trailing], 20)
+                            }
+                            .background(Color(hex: "#F5F5F5"))
+                            .cornerRadius(5)
+                            .fullScreenCover(isPresented: $showBoostView) {  // Use the full screen cover modifier
+                                BoostView(viewModel: BoostViewModel())
                             }
                             
                             Button(action: {

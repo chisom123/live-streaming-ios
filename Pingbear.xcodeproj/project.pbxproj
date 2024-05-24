@@ -75,6 +75,7 @@
 		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 		4FE6E5932C009A1C002E389C /* VideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE6E5922C009A1C002E389C /* VideoPlayer.swift */; };
+		4FE6E5952C00D515002E389C /* Boost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE6E5942C00D515002E389C /* Boost.swift */; };
 		4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */; };
 		4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */; };
 /* End PBXBuildFile section */
@@ -138,6 +139,7 @@
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
 		4FE6E5922C009A1C002E389C /* VideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayer.swift; sourceTree = "<group>"; };
+		4FE6E5942C00D515002E389C /* Boost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boost.swift; sourceTree = "<group>"; };
 		4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
 		4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraInit.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -217,6 +219,7 @@
 				4F3E0DBC2AB342440068F901 /* MyFriends.swift */,
 				4F3E0D9F2AA777240068F901 /* Settings.swift */,
 				4F3E0DA12AA782DE0068F901 /* ChangeName.swift */,
+				4FE6E5942C00D515002E389C /* Boost.swift */,
 			);
 			path = "User Management";
 			sourceTree = "<group>";
@@ -547,6 +550,7 @@
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */,
 				4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */,
+				4FE6E5952C00D515002E389C /* Boost.swift in Sources */,
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4FE6E5932C009A1C002E389C /* VideoPlayer.swift in Sources */,
