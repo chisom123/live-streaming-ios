@@ -126,177 +126,77 @@ struct CameraView: View {
     }
 }
 
-struct CustomVideoPlayer: UIViewControllerRepresentable {
-    var url: URL
-
-    // Create a Coordinator for managing observers and player updates
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    // This function creates the custom AVPlayerViewController with necessary settings
-    func makeUIViewController(context: Context) -> AVPlayerViewController {
-        let playerViewController = AVPlayerViewController()
-        context.coordinator.setupPlayer(for: playerViewController, with: url)
-        return playerViewController
-    }
-
-    // This function updates the AVPlayerViewController during its lifecycle
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        context.coordinator.updatePlayer(uiViewController)
-    }
-
-    // Use this method to cleanup when the view is being deinitialized
-    static func dismantleUIViewController(_ uiViewController: AVPlayerViewController, coordinator: Coordinator) {
-        coordinator.cleanup(uiViewController)
-    }
-
-    class Coordinator {
-        var parent: CustomVideoPlayer
-        var player: AVPlayer?
-
-        init(_ parent: CustomVideoPlayer) {
-            self.parent = parent
-        }
-
-        func setupPlayer(for playerViewController: AVPlayerViewController, with url: URL) {
-            self.player = AVPlayer(url: url)
-            playerViewController.player = self.player
-            playerViewController.showsPlaybackControls = false
-
-            setupLifecycleNotifications(playerViewController)
-        }
-
-        func updatePlayer(_ uiViewController: AVPlayerViewController) {
-            if uiViewController.player == nil {
-                uiViewController.player = player
-            }
-
-            uiViewController.player?.play()
-            uiViewController.player?.actionAtItemEnd = .none
-
-            // Debugging: Check for errors
-            if let error = uiViewController.player?.currentItem?.error {
-                print("AVPlayer Error: \(error.localizedDescription)")
-            }
-        }
-
-        func cleanup(_ uiViewController: AVPlayerViewController) {
-            uiViewController.player?.pause()
-            removeLifecycleNotifications()
-        }
-
-        private func setupLifecycleNotifications(_ playerViewController: AVPlayerViewController) {
-            guard let player = playerViewController.player else { return }
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(appDidEnterBackground),
-                name: UIApplication.didEnterBackgroundNotification,
-                object: nil
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(appWillEnterForeground),
-                name: UIApplication.willEnterForegroundNotification,
-                object: nil
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(playerItemDidReachEnd),
-                name: .AVPlayerItemDidPlayToEndTime,
-                object: player.currentItem
-            )
-        }
-
-        private func removeLifecycleNotifications() {
-            NotificationCenter.default.removeObserver(self)
-        }
-
-        @objc func appDidEnterBackground() {
-            player?.pause()
-            print("App did enter background: Video paused.")
-        }
-
-        @objc func appWillEnterForeground() {
-            player?.play()
-            print("App will enter foreground: Resuming video.")
-        }
-
-        @objc func playerItemDidReachEnd(notification: Notification) {
-            guard let playerItem = notification.object as? AVPlayerItem else { return }
-            playerItem.seek(to: CMTime.zero, completionHandler: nil)
-            player?.play()
-            print("Video looped: Playing from beginning.")
-        }
-    }
-}
-
 struct FinalPreview: View {
     var url: URL
     @Binding var showPreview: Bool
     var competition: Competition
     var competitionId: String
     @State private var entrySaved = false
+    @State private var isUploading = false
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
-
-            ZStack(alignment: .leading) {
-                CustomVideoPlayer(url: url)
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size.width, height: size.height)
-                    .ignoresSafeArea()
-
-                // Back Button
-                VStack {
-                    HStack {
-                        Button(action: {
-                            showPreview.toggle()
-                        }) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 35))
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
+        if isUploading {
+            ProgressView()
+                .padding()
+        } else {
+            GeometryReader { proxy in
+                let size = proxy.size
+                
+                ZStack(alignment: .leading) {
+                    CustomVideoPlayer(url: url)
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: size.width, height: size.height)
+                        .ignoresSafeArea()
+                    
+                    // Back Button
+                    VStack {
+                        HStack {
+                            Button(action: {
+                                showPreview.toggle()
+                            }) {
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 35))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 10)
+                            }
+                            .padding(.top, 50)  // Adds padding from the top of the screen
+                            .padding(20)
                         }
-                        .padding(.top, 50)  // Adds padding from the top of the screen
-                        .padding(20)
+                        Spacer()
                     }
-                    Spacer()
-                }
-
-                // Send Button at the bottom
-                VStack {
-                    Spacer()
-                    Button(action: {
-                        submitEntry()
-                    }) {
-                        Text("Send")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
+                    
+                    // Send Button at the bottom
+                    VStack {
+                        Spacer()
+                        Button(action: {
+                            submitEntry()
+                        }) {
+                            Text("Send")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#1199FF"))
+                                .foregroundColor(Color(hex: "#fff"))
+                                .cornerRadius(200)
+                        }
+                        .padding(.bottom, 65)
+                        .padding(.horizontal)
                     }
-                    .padding(.bottom, 65)
-                    .padding(.horizontal)
                 }
             }
-        }
-        .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
-        .fullScreenCover(isPresented: $entrySaved) {
-            if let entryDocId = newentryDocId {
-                PayView(viewModel: PbillViewModel(), competition: competition) // Replace this with the actual view you want to present
+            .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
+            .fullScreenCover(isPresented: $entrySaved) {
+                if let entryDocId = newentryDocId {
+                    PayView(viewModel: PbillViewModel(), competition: competition) // Replace this with the actual view you want to present
+                }
             }
         }
     }
     
     func submitEntry() {
+        isUploading = true
+        
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
             return
@@ -336,6 +236,8 @@ struct FinalPreview: View {
                             DispatchQueue.main.async {
                                 self.entrySaved = true // Trigger navigation
                             }
+                            
+                            isUploading = false
                         }
                     }
                 case .failure(let error):
