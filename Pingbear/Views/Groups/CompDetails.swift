@@ -98,11 +98,11 @@ struct CompDetails: View {
                 .padding(.horizontal, 20)
                 
                 HStack {
-                    Toggle(isOn: $showAggregate) {
-                        Text(showAggregate ? "Members" : "Videos")
-                            .font(.system(size: 17, weight: .bold, design: .default))
-                            .foregroundColor(.black)
-                    }
+                    Text("Starboard")
+                        .font(.system(size: 17, weight: .bold, design: .default))
+                        .foregroundColor(.black)
+                    
+                    Toggle("", isOn: $showAggregate)
                 }
                 .padding(.top, 35)
                 .padding(.bottom, 20)
