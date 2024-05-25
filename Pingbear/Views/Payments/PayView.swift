@@ -24,7 +24,7 @@ struct PayView: View {
                         Button("Skip") {
                             navigateToCompDetails = true
                         }
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .font(.system(size: 17, weight: .bold, design: .default))
                         .foregroundColor(Color(hex: "#767BFA"))
                     }
                     .padding(.top, 20)

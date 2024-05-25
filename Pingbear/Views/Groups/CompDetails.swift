@@ -15,6 +15,7 @@ struct CompDetails: View {
     @State private var isVotingPresented = false
     @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
+    @State private var showAggregate = false
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -96,77 +97,21 @@ struct CompDetails: View {
                 .padding(.top, 10)
                 .padding(.horizontal, 20)
                 
-                Text("Leaderboard")
-                    .font(.system(size: 17, weight: .bold, design: .default))
-                    .foregroundColor(.black)
-                    .padding(.top, 35)
-                    .padding(.bottom, 20)
-                    .padding(.horizontal, 20)
-
-                ScrollView {
-                    VStack(spacing: 15) { // Increased spacing between items
-                        ForEach(Array(entryViewModel.entries.sorted { $0.stars > $1.stars }.enumerated()), id: \.element.id) { (index, entry) in
-                            HStack {
-                                
-                                if entry.isCurrentUser {
-                                    // Position
-                                    Text("\(index + 1)")
-                                        .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
-                                        .frame(width: 40, alignment: .center) // Centered and wider frame for position
-                                        .foregroundColor(Color(hex: "#DAA520"))
-
-                                    Divider() // Adds a visual separator
-
-                                    // User's name
-                                    Text("Me")
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(1)
-                                        .foregroundColor(Color(hex: "#DAA520"))
-                                        .truncationMode(.tail)
-                                        .padding(.leading, 10) // Increased padding
-                                } else {
-                                    // Position
-                                    Text("\(index + 1)")
-                                        .font(.system(size: 18, weight: .bold)) // Slightly larger font for position
-                                        .frame(width: 40, alignment: .center) // Centered and wider frame for position
-                                        .foregroundColor(.black)
-
-                                    Divider() // Adds a visual separator
-
-                                    // User's name
-                                    Text(entry.userName)
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(1)
-                                        .foregroundColor(.black)
-                                        .truncationMode(.tail)
-                                        .padding(.leading, 10) // Increased padding
-                                }
-
-                                Spacer()
-
-                                // Stars and symbol
-                                HStack(spacing: 8) { // Increased spacing
-                                    Text("\(entry.stars)")
-                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
-                                        .foregroundColor(Color(hex: "#fff"))
-                                    
-                                    Image(systemName: "star.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18) // Slightly larger star icon
-                                        .foregroundColor(Color(hex: "#fff"))
-                                }
-                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                .background(Color(hex: "#DAA520"))
-                                .cornerRadius(200)
-                                .padding(.trailing, 10) // Increased padding
-                            }
-                            .padding(20)
-                            .background(Color(hex: "#F5F5F5"))
-                            .cornerRadius(5)
-                            .padding(.horizontal, 20) // Padding on the sides of each row
-                        }
+                HStack {
+                    Toggle(isOn: $showAggregate) {
+                        Text(showAggregate ? "Group Members" : "Videos")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .foregroundColor(.black)
                     }
+                }
+                .padding(.top, 35)
+                .padding(.bottom, 20)
+                .padding(.horizontal, 20)
+                
+                if showAggregate {
+                    aggregateLeaderboardView  // Display aggregate leaderboard
+                } else {
+                    individualLeaderboardView // Display individual entries
                 }
             }
         }
@@ -186,12 +131,67 @@ struct CompDetails: View {
             entryViewModel.deactivateListeners()
         }
     }
+    var aggregateLeaderboardView: some View {
+        ScrollView {
+            VStack(spacing: 15) {
+                // Ensure the ForEach uses the updated userLeaderboard property
+                ForEach(entryViewModel.userLeaderboard) { userEntry in
+                    leaderboardRowView(userEntry.userName, userEntry.totalStars)
+                }
+            }
+        }
+    }
+
+    var individualLeaderboardView: some View {
+        ScrollView {
+            VStack(spacing: 15) {
+                ForEach(entryViewModel.entries, id: \.id) { entry in
+                    leaderboardRowView(entry.userName, entry.stars)
+                }
+            }
+        }
+    }
+
+    func leaderboardRowView(_ userName: String, _ stars: Int) -> some View {
+        HStack {
+            Text(userName)
+                .font(.system(size: 16, weight: .bold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.leading, 10)
+                .foregroundColor(userName == "Me" ? Color(hex: "#DAA520") : Color.black)  // Change text color if it's the current user
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Text("\(stars)")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(Color.white)
+                
+                Image(systemName: "star.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(Color.white)
+            }
+            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+            .background(Color(hex: "#DAA520"))
+            .cornerRadius(200)
+            .padding(.trailing, 10)
+        }
+        .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
+    }
+    
     func joincomp() {
         self.isCameraPresented = true
     }
     func vote() {
         self.isVotingPresented = true
     }
+    // DO I NEED THIS ???
     func timeSince(date: Date) -> String {
         let currentTime = Date()
         let timeInterval = currentTime.timeIntervalSince(date)

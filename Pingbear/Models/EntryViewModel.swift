@@ -12,8 +12,15 @@ struct Entry: Identifiable {
     let creationDate: Date
 }
 
+struct UserEntry: Identifiable {
+    let id: String
+    let userName: String
+    var totalStars: Int
+}
+
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
+    @Published var userLeaderboard: [UserEntry] = []
     var competitionId: String
     @Published var currentIndex: Int = 0
     var listeners: [ListenerRegistration] = []
@@ -88,6 +95,7 @@ class EntryViewModel: ObservableObject {
         guard let documents = snapshot?.documents else { return }
         let group = DispatchGroup()
         var localEntries = [Entry]()
+        var userStarsDict = [String: UserEntry]()
 
         for document in documents {
             let userId = document.data()["userId"] as? String ?? ""
@@ -111,13 +119,21 @@ class EntryViewModel: ObservableObject {
                 }
                 let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
                 let isCurrentUser = userId == currentUserId
-                let entry = Entry(id: documentId, videoUrl: videoUrl, userName: userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+                let entry = Entry(id: documentId, videoUrl: videoUrl, userName: isCurrentUser ? "Me" : userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+                
                 localEntries.append(entry)
+                
+                if let userEntry = userStarsDict[userId] {
+                    userStarsDict[userId]?.totalStars += stars
+                } else {
+                    userStarsDict[userId] = UserEntry(id: userId, userName: isCurrentUser ? "Me" : userName, totalStars: stars)
+                }
             }
         }
 
         group.notify(queue: .main) {
             self.entries = localEntries.sorted { $0.stars > $1.stars }
+            self.userLeaderboard = userStarsDict.values.sorted { $0.totalStars > $1.totalStars }
         }
     }
 
