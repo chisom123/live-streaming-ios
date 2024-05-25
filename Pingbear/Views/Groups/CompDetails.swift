@@ -99,7 +99,7 @@ struct CompDetails: View {
                 
                 HStack {
                     Toggle(isOn: $showAggregate) {
-                        Text(showAggregate ? "Group Members" : "Videos")
+                        Text(showAggregate ? "Members" : "Videos")
                             .font(.system(size: 17, weight: .bold, design: .default))
                             .foregroundColor(.black)
                     }
