@@ -24,8 +24,8 @@ struct PayView: View {
                         Button("Skip") {
                             navigateToCompDetails = true
                         }
-                        .font(.system(size: 15.5, weight: .bold, design: .default))
-                        .foregroundColor(.gray)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .foregroundColor(Color(hex: "#767BFA"))
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 25)
@@ -37,7 +37,7 @@ struct PayView: View {
                         .font(.system(size: 22, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .foregroundColor(Color(hex: "#1199FF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
+                        .foregroundColor(Color(hex: "#FFF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
                         .padding(.bottom, 30)
                         .padding(.top, 30)
                         .padding()
@@ -52,20 +52,20 @@ struct PayView: View {
                                         VStack(alignment: .leading) {
                                             Text(subscriptionProduct1.localizedTitle)
                                                 .font(.system(size: 18, weight: .bold, design: .default))
-                                                .foregroundColor(.black)
+                                                .foregroundColor(.white)
                                             
                                             Text(formattedPrice(for: subscriptionProduct1))
                                                 .font(.system(size: 15, weight: .bold, design: .default))
-                                                .foregroundColor(.gray)
+                                                .foregroundColor(Color(hex: "#ABAFD1"))
                                                 .padding(.top, 5)
                                         }
                                         Spacer()
                                         Image(systemName: "arrow.right")
-                                            .foregroundColor(Color(hex: "#000"))
+                                            .foregroundColor(Color(hex: "#FFF"))
                                             .font(.system(size: 28))
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#F5F5F5"))
+                                    .background(Color(hex: "#292544"))
                                     .cornerRadius(10)
                                 }
                                 .padding(.vertical, 10)
@@ -79,12 +79,12 @@ struct PayView: View {
                                         VStack(alignment: .leading) {
                                             Text(subscriptionProduct2.localizedTitle)
                                                 .font(.system(size: 18, weight: .bold, design: .default))
-                                                .foregroundColor(.black)
+                                                .foregroundColor(.white)
                                             
                                             HStack(spacing: 10) {
                                                 Text(formattedPrice(for: subscriptionProduct2))
                                                     .font(.system(size: 15, weight: .bold, design: .default))
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(Color(hex: "#ABAFD1"))
                                                 
                                                 Text("Save 28%")
                                                     .font(.system(size: 13, weight: .bold))
@@ -97,11 +97,11 @@ struct PayView: View {
                                         }
                                         Spacer()
                                         Image(systemName: "arrow.right")
-                                            .foregroundColor(Color(hex: "#000"))
+                                            .foregroundColor(Color(hex: "#FFF"))
                                             .font(.system(size: 28))
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#F5F5F5"))
+                                    .background(Color(hex: "#292544"))
                                     .cornerRadius(10)
                                 }
                                 .padding(.vertical, 10)
@@ -115,12 +115,12 @@ struct PayView: View {
                                         VStack(alignment: .leading) {
                                             Text(subscriptionProduct3.localizedTitle)
                                                 .font(.system(size: 18, weight: .bold, design: .default))
-                                                .foregroundColor(.black)
+                                                .foregroundColor(.white)
                                             
                                             HStack(spacing: 10) {
                                                 Text(formattedPrice(for: subscriptionProduct3))
                                                     .font(.system(size: 15, weight: .bold, design: .default))
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(Color(hex: "#ABAFD1"))
                                                 
                                                 Text("Save 53%")
                                                     .font(.system(size: 13, weight: .bold))
@@ -133,11 +133,11 @@ struct PayView: View {
                                         }
                                         Spacer()
                                         Image(systemName: "arrow.right")
-                                            .foregroundColor(Color(hex: "#000"))
+                                            .foregroundColor(Color(hex: "#FFF"))
                                             .font(.system(size: 28))
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#F5F5F5"))
+                                    .background(Color(hex: "#292544"))
                                     .cornerRadius(10)
                                 }
                                 .padding(.vertical, 10)
@@ -163,7 +163,7 @@ struct PayView: View {
                             }
                     }
                     .font(.system(size: 14, weight: .bold, design: .default))
-                    .foregroundColor(.black)
+                    .foregroundColor(Color(hex: "#ABAFD1"))
                     .padding(.vertical, 20)
                 }
             }
@@ -179,6 +179,7 @@ struct PayView: View {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
             }
+            .background(Color(hex: "#1B1735")) // Set the background color to gray
         }
     }
     
