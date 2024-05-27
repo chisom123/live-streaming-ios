@@ -114,8 +114,13 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
                 self.session.addInput(audioInput)
             }
 
-            if self.session.canAddOutput(self.output) {
-                self.session.addOutput(self.output)
+            if session.canAddOutput(output) {
+                session.addOutput(output)
+                if let connection = output.connection(with: .video) {
+                    if connection.isVideoMirroringSupported {
+                        connection.isVideoMirrored = (currentCameraPosition == .front) ? false : true
+                    }
+                }
             }
             
             self.session.commitConfiguration()
@@ -127,6 +132,9 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     func startRecording(){
         guard !isRecording else { return }
         
+        if let connection = output.connection(with: .video), connection.isVideoMirroringSupported {
+            connection.isVideoMirrored = (currentCameraPosition == .front)
+        }
         let tempURL = NSTemporaryDirectory() + "\(Date()).mov"
         output.startRecording(to: URL(fileURLWithPath: tempURL), recordingDelegate: self)
         isRecording = true
@@ -135,6 +143,11 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     func stopRecording(){
         output.stopRecording()
         isRecording = false
+        DispatchQueue.main.async {
+            if self.recordedDuration > 0.01 {
+                self.showPreview = true
+            }
+        }
     }
     
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
@@ -143,92 +156,11 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
             return
         }
         
-        // CREATED SUCCESSFULLY
         print(outputFileURL)
         self.recordedURLs.append(outputFileURL)
         if self.recordedURLs.count == 1{
             self.previewURL = outputFileURL
             return
         }
-        
-        // CONVERTING URLs TO ASSETS
-        let assets = recordedURLs.compactMap { url -> AVURLAsset in
-            return AVURLAsset(url: url)
-        }
-        
-        self.previewURL = nil
-        // MERGING VIDEOS
-        mergeVideos(assets: assets) { exporter in
-            exporter.exportAsynchronously {
-                if exporter.status == .failed{
-                    // HANDLE ERROR
-                    print(exporter.error!)
-                }
-                else{
-                    if let finalURL = exporter.outputURL{
-                        print(finalURL)
-                        DispatchQueue.main.async {
-                            self.previewURL = finalURL
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    func mergeVideos(assets: [AVURLAsset],completion: @escaping (_ exporter: AVAssetExportSession)->()){
-        
-        let compostion = AVMutableComposition()
-        var lastTime: CMTime = .zero
-        
-        guard let videoTrack = compostion.addMutableTrack(withMediaType: .video, preferredTrackID: Int32(kCMPersistentTrackID_Invalid)) else{return}
-        guard let audioTrack = compostion.addMutableTrack(withMediaType: .audio, preferredTrackID: Int32(kCMPersistentTrackID_Invalid)) else{return}
-        
-        for asset in assets {
-            // Linking Audio and Video
-            do{
-                try videoTrack.insertTimeRange(CMTimeRange(start: .zero, duration: asset.duration), of: asset.tracks(withMediaType: .video)[0], at: lastTime)
-                // Safe Check if Video has Audio
-                if !asset.tracks(withMediaType: .audio).isEmpty{
-                    try audioTrack.insertTimeRange(CMTimeRange(start: .zero, duration: asset.duration), of: asset.tracks(withMediaType: .audio)[0], at: lastTime)
-                }
-            }
-            catch{
-                // HANDLE ERROR
-                print(error.localizedDescription)
-            }
-            
-            // Updating Last Time
-            lastTime = CMTimeAdd(lastTime, asset.duration)
-        }
-        
-        // MARK: Temp Output URL
-        let tempURL = URL(fileURLWithPath: NSTemporaryDirectory() + "Reel-\(Date()).mp4")
-        
-        // VIDEO IS ROTATED
-        // BRINGING BACK TO ORIGNINAL TRANSFORM
-        
-        let layerInstructions = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-        
-        // MARK: Transform
-        var transform = CGAffineTransform.identity
-        transform = transform.rotated(by: 90 * (.pi / 180))
-        transform = transform.translatedBy(x: 0, y: -videoTrack.naturalSize.height)
-        layerInstructions.setTransform(transform, at: .zero)
-        
-        let instructions = AVMutableVideoCompositionInstruction()
-        instructions.timeRange = CMTimeRange(start: .zero, duration: lastTime)
-        instructions.layerInstructions = [layerInstructions]
-        
-        let videoComposition = AVMutableVideoComposition()
-        videoComposition.renderSize = CGSize(width: videoTrack.naturalSize.height, height: videoTrack.naturalSize.width)
-        videoComposition.instructions = [instructions]
-        videoComposition.frameDuration = CMTimeMake(value: 1, timescale: 30)
-        
-        guard let exporter = AVAssetExportSession(asset: compostion, presetName: AVAssetExportPresetHighestQuality) else{return}
-        exporter.outputFileType = .mp4
-        exporter.outputURL = tempURL
-        exporter.videoComposition = videoComposition
-        completion(exporter)
     }
 }

@@ -16,12 +16,9 @@ struct CameraView: View {
             CameraInitView()
                 .environmentObject(cameraModel)
                 .ignoresSafeArea()
-                .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity, pressing: { isPressing in
-                    cameraModel.handlePress(isPressing: isPressing)
-                }, perform: {})
             
             // Other controls (Preview and Reset) remain the same
-            ZStack {
+            VStack {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         Rectangle()
@@ -34,15 +31,12 @@ struct CameraView: View {
                     .frame(height: 10)
                     .cornerRadius(200)
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
+                .frame(height: 10)
                 .padding()
                 
                 HStack {
                     Button {
                         presentationMode.wrappedValue.dismiss()
-                        cameraModel.recordedDuration = 0
-                        cameraModel.previewURL = nil
-                        cameraModel.recordedURLs.removeAll()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 30)) // Increase the font size as needed
@@ -63,60 +57,45 @@ struct CameraView: View {
                             .opacity(cameraModel.isRecording ? 0 : 1)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding()
-                .padding(.top, 30)
+                .padding(.horizontal)
                 
-                ZStack(alignment: .center) {
-                    Text("Hold to Record")
-                        .font(.system(size: 25, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                        .shadow(radius: 10)
-                        .opacity(cameraModel.isRecording || cameraModel.recordedDuration >= cameraModel.maxDuration ? 0 : 1)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                Spacer()
                 
-                // Preview Button
-                Button {
-                    if let _ = cameraModel.previewURL {
-                        cameraModel.showPreview.toggle()
-                    }
-                } label: {
-                    Group {
-                        if cameraModel.previewURL == nil && !cameraModel.recordedURLs.isEmpty {
-                            // Merging Videos
-                            ProgressView()
-                                .tint(.white)
-                        } else {
-                            Label {
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 20, weight: .bold, design: .default))
-                            } icon: {
-                                Text("Preview")
-                                    .font(.system(size: 20, weight: .bold, design: .default))
-                            }
-                            .foregroundColor(.white)
-                        }
-                    }
-                    .padding(.horizontal,20)
-                    .padding(.vertical, 12)
-                    .background {
-                        Capsule()
-                            .fill(Color(hex: "#1199FF"))
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding()
-                .padding(.bottom, 20)
-                .opacity((cameraModel.previewURL == nil && cameraModel.recordedURLs.isEmpty) || cameraModel.isRecording || cameraModel.recordedDuration < 0.3 ? 0 : 1)
+                Text("Hold to Record")
+                    .font(.system(size: 22, weight: .bold, design: .default))
+                    .foregroundColor(.white)
+                    .shadow(radius: 10)
+                    .padding(.bottom, 25)
+                    .opacity(cameraModel.isRecording || cameraModel.recordedDuration >= cameraModel.maxDuration ? 0 : 1)
+
+                // Record Button with Press and Hold Gesture
+                Circle()
+                    .fill(cameraModel.isRecording ? Color(hex: "#FF4500") : Color.clear)
+                    .frame(width: 100, height: 100)
+                    .contentShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white, lineWidth: 8) // White stroke for both states
+                    )
+                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity, pressing: { isPressing in
+                        cameraModel.handlePress(isPressing: isPressing)
+                    }, perform: {})
+                    .padding(.bottom, 50)
+                
             }
-            .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .fullScreenCover(isPresented: $cameraModel.showPreview, content: {
             if let url = cameraModel.previewURL {
-                FinalPreview(url: url, showPreview: $cameraModel.showPreview,  competition: competition, competitionId: competition.id)
+                FinalPreview(url: url, showPreview: $cameraModel.showPreview,  competition: competition, competitionId: competition.id, resetCameraAction: { self.resetCamera() })
             }
         })
+    }
+    
+    private func resetCamera() {
+        cameraModel.recordedDuration = 0
+        cameraModel.previewURL = nil
+        cameraModel.recordedURLs.removeAll()
+        cameraModel.session.startRunning()
     }
 }
 
@@ -125,6 +104,7 @@ struct FinalPreview: View {
     @Binding var showPreview: Bool
     var competition: Competition
     var competitionId: String
+    var resetCameraAction: () -> Void
     @State private var entrySaved = false
     @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
@@ -148,11 +128,13 @@ struct FinalPreview: View {
                     VStack {
                         HStack {
                             Button(action: {
-                                showPreview.toggle()
+                                self.showPreview = false
+                                self.resetCameraAction()
                             }) {
-                                Image(systemName: "arrow.left")
-                                    .font(.system(size: 35))
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 30)) // Increase the font size as needed
                                     .foregroundColor(.white)
+                                    .padding(5)
                                     .shadow(radius: 10)
                             }
                             .padding(.top, 50)  // Adds padding from the top of the screen
@@ -164,19 +146,29 @@ struct FinalPreview: View {
                     // Send Button at the bottom
                     VStack {
                         Spacer()
-                        Button(action: {
+                        Button {
                             submitEntry()
-                        }) {
-                            Text("Send")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .font(.system(size: 18, weight: .bold, design: .default))
-                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color(hex: "#1199FF"))
-                                .foregroundColor(Color(hex: "#fff"))
-                                .cornerRadius(200)
+                        } label: {
+                            Group {
+                                Label {
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 20, weight: .bold, design: .default))
+                                } icon: {
+                                    Text("Share")
+                                        .font(.system(size: 20, weight: .bold, design: .default))
+                                }
+                                .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background {
+                                Capsule()
+                                    .fill(Color(hex: "#1199FF"))
+                            }
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+                        .padding()
                         .padding(.bottom, 65)
-                        .padding(.horizontal)
                     }
                 }
             }
