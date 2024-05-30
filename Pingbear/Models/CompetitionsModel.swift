@@ -2,6 +2,7 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import Combine
+import UserNotifications
 
 class Competition: ObservableObject, Identifiable {
     let id: String
@@ -20,6 +21,15 @@ class Competition: ObservableObject, Identifiable {
 
 class CompetitionsModel: ObservableObject {
     @Published var competitions: [Competition] = []
+    
+    var badgeCount = 0 {
+        didSet {
+            // Set the application icon badge number on the main thread
+            DispatchQueue.main.async {
+                UIApplication.shared.applicationIconBadgeNumber = self.badgeCount
+            }
+        }
+    }
     
     func setupCompetitionListeners(userId: String) {
         let db = Firestore.firestore()
@@ -110,6 +120,11 @@ class CompetitionsModel: ObservableObject {
                 // Append new competition
                 self.competitions.append(competition)
             }
+            self.recalculateBadgeCount()
         }
+    }
+
+    func recalculateBadgeCount() {
+        badgeCount = competitions.reduce(0) { $0 + $1.entriesNotVotedCount }
     }
 }

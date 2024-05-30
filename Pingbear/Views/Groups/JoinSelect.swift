@@ -175,38 +175,41 @@ struct JoinSelectView: View {
     
     func updateCompetitionAllowJoin() {
         let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(currentUserId)
+        
+        currentUserRef.getDocument { (document, error) in
+            if let document = document, let username = document.data()?["username"] as? String {
+                self.updateCompetitionWithNotifications(username: username)
+            } else {
+                print("Failed to fetch username for current user.")
+            }
+        }
+    }
+    
+    func updateCompetitionWithNotifications(username: String) {
+        let db = Firestore.firestore()
         let batch = db.batch()
-
-        // Create a dispatch group to manage the asynchronous tasks
         let dispatchGroup = DispatchGroup()
 
         for userId in selectedFriends {
             dispatchGroup.enter()
             isUserAlreadyMember(userId: userId) { isMember in
                 if !isMember {
-                    // Adding to the "members" subcollection of the competition
-                    let memberRef = db.collection("competitions").document(self.competition.id)
-                                       .collection("members").document(userId)
-                    let memberData: [String: Any] = [
-                        "userId": userId
-                    ]
+                    let memberRef = db.collection("competitions").document(self.competition.id).collection("members").document(userId)
+                    let memberData: [String: Any] = ["userId": userId]
                     batch.setData(memberData, forDocument: memberRef)
-                    
-                    let membershipRef = db.collection("groupMemberships").document(userId)
-                        .collection("competitions").document(self.competition.id)
-                    
-                    let membershipData: [String: Any] = [
-                        "competitionId": self.competition.id
-                    ]
+
+                    let membershipRef = db.collection("groupMemberships").document(userId).collection("competitions").document(self.competition.id)
+                    let membershipData: [String: Any] = ["competitionId": self.competition.id]
                     batch.setData(membershipData, forDocument: membershipRef)
-                } else {
-                    print("User \(userId) is already a member of the competition \(self.competition.id).")
+
+                    // Send notification
+                    self.sendNotificationToUser(userId: userId, username: username, competitionDescription: self.competition.description)
                 }
                 dispatchGroup.leave()
             }
         }
 
-        // Commit the batch once all checks are complete
         dispatchGroup.notify(queue: .main) {
             batch.commit { err in
                 if let err = err {
@@ -214,13 +217,25 @@ struct JoinSelectView: View {
                 } else {
                     print("Batch write succeeded.")
                     DispatchQueue.main.async {
-                        self.isPresentingCompDetails = true  // Navigate away or update the UI as needed
+                        self.isPresentingCompDetails = true
                     }
                 }
             }
         }
-        
     }
+
+    func sendNotificationToUser(userId: String, username: String, competitionDescription: String) {
+        let db = Firestore.firestore()
+        db.collection("users").document(userId).getDocument { (document, error) in
+            if let document = document, let fcmToken = document.data()?["fcmToken"] as? String {
+                let title = competitionDescription
+                let message = "\(username) added you to the group"
+                // Assuming you have a mechanism to send push notifications
+                PushNotificationSender().sendPushNotification(to: fcmToken, title: title, body: message)
+            }
+        }
+    }
+
 }
 
 // SelectableFriendView component

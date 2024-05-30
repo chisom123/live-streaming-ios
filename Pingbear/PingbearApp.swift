@@ -20,6 +20,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         setupDefaultCameraPosition()
         
+        NotificationCenter.default.addObserver(self, selector: #selector(clearNotifications), name: UIApplication.willEnterForegroundNotification, object: nil)
+        
         return true
     }
     
@@ -32,6 +34,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         pushNotificationManager?.handleDeviceToken(deviceToken)
+    }
+    
+    @objc private func clearNotifications() {
+        UNUserNotificationCenter.current().removeAllDeliveredNotifications()
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

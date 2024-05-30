@@ -220,8 +220,10 @@ class EntryViewModel: ObservableObject {
                 let description = data["description"] as? String ?? ""
                 
                 let title = description
-                let body = "Your picture was rated \(starIncrement) stars"
-                self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
+                let body = "+\(starIncrement) stars ⭐"
+                if starIncrement >= 4 {
+                    self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
+                }
             }
         }
     }
