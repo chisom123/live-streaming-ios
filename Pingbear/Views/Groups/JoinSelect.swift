@@ -142,52 +142,79 @@ struct JoinSelectView: View {
                 print("Error getting documents: \(err)")
             } else {
                 for document in querySnapshot!.documents {
-                    self.selectedFriends.insert(document.documentID) // Assuming documentID is the user ID
-                    updateCompetitionAllowJoin()
-                    isPresentingCompDetails = true
+                    let userId = document.documentID
+                    isUserAlreadyMember(userId: userId) { isAlreadyMember in
+                        if !isAlreadyMember {
+                            selectedFriends.insert(userId)
+                            updateCompetitionAllowJoin()
+                        } else {
+                            let banner = NotificationBanner(title: "Friend already a member", style: .danger)
+                            banner.show()
+                        }
+                    }
                 }
             }
         }
     }
     
+    private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
+        let db = Firestore.firestore()
+        db.collection("groupMemberships").document(userId)
+            .collection("competitions").whereField("competitionId", isEqualTo: competition.id)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error checking membership: \(error)")
+                    completion(false)
+                } else if let snapshot = snapshot, !snapshot.documents.isEmpty {
+                    completion(true)
+                } else {
+                    completion(false)
+                }
+            }
+    }
+    
     func updateCompetitionAllowJoin() {
         let db = Firestore.firestore()
-        let competitionID = competition.id
-        let batch = db.batch() // Create a batch write object
+        let batch = db.batch()
 
-        var completionCounter = 0 // Counter to track the completion of getDocument calls
+        // Create a dispatch group to manage the asynchronous tasks
+        let dispatchGroup = DispatchGroup()
 
         for userId in selectedFriends {
-            let participantRef = db.collection("competitions")
-                                    .document(competitionID)
-                                    .collection("participants")
-                                    .document(userId)
-
-            // Perform a document check
-            participantRef.getDocument { (document, error) in
-                completionCounter += 1  // Increment the counter for each completion
-
-                if let document = document, document.exists {
-                    print("User already a participant")
+            dispatchGroup.enter()
+            isUserAlreadyMember(userId: userId) { isMember in
+                if !isMember {
+                    // Adding to the "members" subcollection of the competition
+                    let memberRef = db.collection("competitions").document(self.competition.id)
+                                       .collection("members").document(userId)
+                    let memberData: [String: Any] = [
+                        "userId": userId
+                    ]
+                    batch.setData(memberData, forDocument: memberRef)
+                    
+                    let membershipRef = db.collection("groupMemberships").document(userId)
+                        .collection("competitions").document(self.competition.id)
+                    
+                    let membershipData: [String: Any] = [
+                        "competitionId": self.competition.id
+                    ]
+                    batch.setData(membershipData, forDocument: membershipRef)
                 } else {
-                    // Add a new participant
-                    batch.setData([
-                        "userId": userId,
-                        "voted_entries": []
-                    ], forDocument: participantRef)
+                    print("User \(userId) is already a member of the competition \(self.competition.id).")
                 }
+                dispatchGroup.leave()
+            }
+        }
 
-                // Commit the batch if all document checks are completed
-                if completionCounter == selectedFriends.count {
-                    batch.commit { err in
-                        if let err = err {
-                            print("Error writing batch: \(err)")
-                        } else {
-                            print("Batch write succeeded.")
-                            DispatchQueue.main.async {
-                                isPresentingCompDetails = true
-                            }
-                        }
+        // Commit the batch once all checks are complete
+        dispatchGroup.notify(queue: .main) {
+            batch.commit { err in
+                if let err = err {
+                    print("Error writing batch: \(err)")
+                } else {
+                    print("Batch write succeeded.")
+                    DispatchQueue.main.async {
+                        self.isPresentingCompDetails = true  // Navigate away or update the UI as needed
                     }
                 }
             }

@@ -20,44 +20,34 @@ class Competition: ObservableObject, Identifiable {
 
 class CompetitionsModel: ObservableObject {
     @Published var competitions: [Competition] = []
-    var listeners: [ListenerRegistration] = []
     
     func setupCompetitionListeners(userId: String) {
         let db = Firestore.firestore()
-        let competitionListener = db.collection("competitions").addSnapshotListener { [weak self] (querySnapshot, error) in
-            guard let self = self, let snapshot = querySnapshot else {
-                print("Error fetching competitions: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-            
-            snapshot.documents.forEach { document in
-                let participantListener = self.checkIfUserIsParticipant(competitionId: document.documentID, userId: userId) { isParticipant in
-                    if isParticipant {
-                        self.fetchCompetitionDetailsAndCalculateVotes(competitionId: document.documentID, userId: userId)
+        db.collection("groupMemberships").document(userId).collection("competitions")
+            .getDocuments { [weak self] (snapshot, error) in
+                guard let self = self else {
+                    print("Self is nil")
+                    return
+                }
+                
+                if let error = error {
+                    print("Error fetching group memberships: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let snapshot = snapshot else {
+                    print("No snapshot data available")
+                    return
+                }
+                
+                // Process each document to fetch details
+                snapshot.documents.forEach { document in
+                    if let competitionId = document.data()["competitionId"] as? String {
+                        self.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId)
                     }
                 }
-                self.listeners.append(participantListener)
             }
-        }
-        listeners.append(competitionListener)
     }
-    
-    func checkIfUserIsParticipant(competitionId: String, userId: String, completion: @escaping (Bool) -> Void) -> ListenerRegistration {
-        let db = Firestore.firestore()
-        let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(userId)
-        
-        let listener = participantRef.addSnapshotListener { documentSnapshot, error in
-            guard let documentSnapshot = documentSnapshot, error == nil else {
-                print("Error listening to participant updates: \(error?.localizedDescription ?? "Unknown error")")
-                completion(false)
-                return
-            }
-            completion(documentSnapshot.exists)
-        }
-        
-        return listener
-    }
-
     
     func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String) {
         let db = Firestore.firestore()
@@ -77,41 +67,39 @@ class CompetitionsModel: ObservableObject {
     
     func setupEntriesListener(competition: Competition, userId: String) {
         let db = Firestore.firestore()
+        let entriesRef = db.collection("competitions").document(competition.id).collection("entries")
         let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo)
         
-        let entriesListener = db.collection("competitions").document(competition.id).collection("entries")
-            .whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
-            .addSnapshotListener { [weak self] (entriesSnapshot, error) in
-                if let err = error {
-                    print("Error getting entries: \(err)")
+        entriesRef.whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
+            .getDocuments { [weak self] (snapshot, error) in
+                guard let self = self, let snapshot = snapshot else {
+                    print("Error fetching entries: \(error?.localizedDescription ?? "no error provided")")
                     return
                 }
+                let allEntryIds = Set(snapshot.documents.map { $0.documentID })
 
-                guard let entries = entriesSnapshot?.documents else { return }
-                let entryIds = Set(entries.map { $0.documentID })
-                let totalEntriesCount = entries.count
+                // Fetch all votes by this user for this competition
+                let votesRef = db.collection("groupMemberships").document(userId)
+                    .collection("competitions").document(competition.id)
+                    .collection("votes")
 
-                let votesListener = db.collection("competitions").document(competition.id).collection("participants")
-                  .document(userId).addSnapshotListener { (participantSnapshot, err) in
-                    if let err = err {
-                        print("Error getting participant details: \(err)")
+                votesRef.getDocuments { (voteSnapshot, voteError) in
+                    guard let votedDocuments = voteSnapshot?.documents else {
+                        print("Error fetching votes: \(voteError?.localizedDescription ?? "no error provided")")
                         return
                     }
-
-                    let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
-                    let validVotedEntries = votedEntries.filter { entryIds.contains($0) }
-                    let notVotedCount = totalEntriesCount - validVotedEntries.count
+                    let votedEntryIds = Set(votedDocuments.map { $0.data()["entryId"] as? String ?? "" })
+                    let notVotedEntriesCount = allEntryIds.subtracting(votedEntryIds).count
 
                     DispatchQueue.main.async {
-                        competition.entriesNotVotedCount = notVotedCount
-                        self?.updateOrAppendCompetition(competition)
+                        competition.entriesNotVotedCount = notVotedEntriesCount
+                        self.updateOrAppendCompetition(competition)
                     }
                 }
-                self?.listeners.append(votesListener)
             }
-        listeners.append(entriesListener)
     }
+
     
     func updateOrAppendCompetition(_ competition: Competition) {
         DispatchQueue.main.async {
@@ -123,12 +111,5 @@ class CompetitionsModel: ObservableObject {
                 self.competitions.append(competition)
             }
         }
-    }
-
-    func deactivateListeners() {
-        for listener in listeners {
-            listener.remove()
-        }
-        listeners.removeAll()
     }
 }

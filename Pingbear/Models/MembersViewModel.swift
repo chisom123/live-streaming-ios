@@ -30,27 +30,50 @@ class MembersViewModel: ObservableObject {
     }
 
     func fetchMembersDetails(for competition: Competition) {
-        // Fetch user IDs from participants sub-collection
-        db.collection("competitions").document(competition.id).collection("participants")
-          .getDocuments { (snapshot, error) in
-            if let error = error {
-                print("Error fetching participants: \(error)")
-                return
-            }
+        db.collection("competitions").document(competition.id).collection("members")
+            .getDocuments { [weak self] (snapshot, error) in
+                if let error = error {
+                    print("Error fetching member details: \(error)")
+                    return
+                }
 
-            let userIds = snapshot?.documents.map { $0.documentID } ?? []
-              self.fetchUsernames(for: userIds) { [weak self] usernames in
-                self?.joinUsernames = usernames
+                let userIds = snapshot?.documents.map { $0.documentID } ?? []
+                self?.fetchUsernames(for: userIds) { usernames in
+                    DispatchQueue.main.async {
+                        self?.joinUsernames = usernames
+                    }
+                }
             }
-        }
     }
     
     func leaveCompetition(competitionId: String, userId: String) {
-        db.collection("competitions").document(competitionId).collection("participants").document(userId).delete() { error in
+        let db = Firestore.firestore()
+
+        let batch = db.batch()
+
+        let groupMembershipRef = db.collection("groupMemberships").document(userId)
+                                    .collection("competitions").whereField("competitionId", isEqualTo: competitionId)
+
+        groupMembershipRef.getDocuments { (snapshot, error) in
             if let error = error {
-                print("Error removing participant: \(error)")
-            } else {
-                print("Participant successfully removed!")
+                print("Error finding group membership to delete: \(error)")
+                return
+            }
+
+            snapshot?.documents.forEach { document in
+                batch.deleteDocument(document.reference)
+            }
+
+            let memberRef = db.collection("competitions").document(competitionId).collection("members").document(userId)
+
+            batch.deleteDocument(memberRef)
+
+            batch.commit { err in
+                if let err = err {
+                    print("Error removing user from group: \(err)")
+                } else {
+                    print("User successfully removed from group")
+                }
             }
         }
     }

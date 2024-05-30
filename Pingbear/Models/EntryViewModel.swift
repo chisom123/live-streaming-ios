@@ -23,7 +23,6 @@ class EntryViewModel: ObservableObject {
     @Published var userLeaderboard: [UserEntry] = []
     var competitionId: String
     @Published var currentIndex: Int = 0
-    var listeners: [ListenerRegistration] = []
     private var notificationSender = PushNotificationSender()
     
     enum FetchEntriesMode {
@@ -54,7 +53,10 @@ class EntryViewModel: ObservableObject {
     }
 
     private func fetchEntryViewEntries(query: Query) {
-        let currentUserId = Auth.auth().currentUser?.uid
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            print("Error: No current user ID found.")
+            return
+        }
         
         query.getDocuments { [weak self] (snapshot, error) in
             guard let self = self else { return }
@@ -64,12 +66,17 @@ class EntryViewModel: ObservableObject {
             }
 
             // Fetch the list of voted entries
-            Firestore.firestore().collection("competitions").document(self.competitionId).collection("participants").document(currentUserId ?? "").getDocument { (participantSnapshot, error) in
+            let votesCollection = Firestore.firestore().collection("groupMemberships").document(currentUserId)
+                                   .collection("competitions").document(self.competitionId)
+                                   .collection("votes")
+            
+            votesCollection.getDocuments { (votesSnapshot, error) in
                 if let error = error {
-                    print("Error getting participant info: \(error)")
+                    print("Error getting votes info: \(error)")
                     return
                 }
-                let votedEntries = participantSnapshot?.data()?["voted_entries"] as? [String] ?? []
+                // Collect all entry IDs the current user has voted on
+                let votedEntries = votesSnapshot?.documents.map { $0.documentID } ?? []
                 self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries)
             }
         }
@@ -78,7 +85,7 @@ class EntryViewModel: ObservableObject {
     private func fetchCompDetailsViewEntries(query: Query) {
         let currentUserId = Auth.auth().currentUser?.uid
         
-        let compViewListener = query.addSnapshotListener { [weak self] (snapshot, error) in
+        query.getDocuments { [weak self] (snapshot, error) in
             guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")
@@ -86,8 +93,6 @@ class EntryViewModel: ObservableObject {
             }
             self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
         }
-        
-        listeners.append(compViewListener)
     }
 
 
@@ -139,16 +144,20 @@ class EntryViewModel: ObservableObject {
 
     func updateStarRating(for entryId: String, with stars: Int) {
         let db = Firestore.firestore()
-        let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
 
         // Fetching the current Firebase user's ID
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No authenticated user found.")
             return
         }
-
-        let participantRef = db.collection("competitions").document(competitionId).collection("participants").document(currentUserId)
         
+        let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
+        let voteRef = db.collection("groupMemberships").document(currentUserId)
+                         .collection("competitions").document(competitionId)
+                         .collection("votes").document(entryId)
+        
+        let batch = db.batch()
+
         // Fetch the entry to determine if it is a superstar
         entryRef.getDocument { [weak self] (document, error) in
             if let error = error {
@@ -165,31 +174,19 @@ class EntryViewModel: ObservableObject {
             let isSuperstar = data["superstar"] as? Bool ?? false
             let starIncrement = isSuperstar ? stars + 1 : stars
             
-            // Increment the 'stars' field by the new rating, adjusted for superstar status
-            entryRef.updateData(["stars": FieldValue.increment(Int64(starIncrement))]) { error in
-                if let error = error {
-                    print("Error updating star rating: \(error)")
+            // Add operations to the batch
+            batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
+            batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
+
+            // Commit the batch
+            batch.commit { err in
+                if let err = err {
+                    print("Batch commit failed: \(err)")
                 } else {
-                    print("Star rating updated successfully.")
-                    
-                    // Check if the participant document exists
-                    participantRef.getDocument { (document, error) in
-                        if let document = document, document.exists {
-                            // Document exists, update the 'voted_entries' array
-                            participantRef.updateData(["voted_entries": FieldValue.arrayUnion([entryId])]) { error in
-                                if let error = error {
-                                    print("Error updating voted entries: \(error)")
-                                } else {
-                                    print("Voted entries updated successfully.")
-                                }
-                            }
-                        } else {
-                            print("User not a participant")
-                        }
-                    }
+                    print("Batch commit succeeded!")
+                    self?.fetchFCMTokenAndSendNotification(to: ownerId, forEntryId: entryId, withNewStars: starIncrement)
                 }
             }
-            self?.fetchFCMTokenAndSendNotification(to: ownerId, forEntryId: entryId, withNewStars: starIncrement)
         }
     }
     
@@ -227,13 +224,5 @@ class EntryViewModel: ObservableObject {
                 self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
             }
         }
-    }
-
-
-    func deactivateListeners() {
-        for listener in listeners {
-            listener.remove()
-        }
-        listeners.removeAll()
     }
 }

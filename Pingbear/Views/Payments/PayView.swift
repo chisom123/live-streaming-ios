@@ -3,7 +3,7 @@ import NotificationBannerSwift
 
 struct PayView: View {
     @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var viewModel: PbillViewModel
+    @ObservedObject var viewModel: PayViewModel
     
     @State private var navigateToCompDetails = false // State to control navigation
     

@@ -117,8 +117,5 @@ struct MyCompsView: View {
                 }
             }
         }
-        .onDisappear {
-            viewModel.deactivateListeners()
-        }
     }
 }

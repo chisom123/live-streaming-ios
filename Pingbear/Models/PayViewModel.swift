@@ -6,7 +6,7 @@ import FirebaseFirestore
 import Combine
 import PostHog
 
-class PbillViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
+class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
     @Published var products: [SKProduct] = []
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false

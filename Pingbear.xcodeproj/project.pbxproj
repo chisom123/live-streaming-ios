@@ -57,7 +57,7 @@
 		4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D5B2A86FC010068F901 /* NameEntry.swift */; };
 		4F3E0D652A8949260068F901 /* Global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D642A8949260068F901 /* Global.swift */; };
 		4F3E0D682A895AE40068F901 /* Colour.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D672A895AE40068F901 /* Colour.swift */; };
-		4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */; };
+		4F3E0D812A9B7BFB0068F901 /* PayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D802A9B7BFB0068F901 /* PayViewModel.swift */; };
 		4F3E0D882A9BCB330068F901 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D872A9BCB330068F901 /* SDWebImageSwiftUI */; };
 		4F3E0D962AA0DED80068F901 /* CountryPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 4F3E0D952AA0DED80068F901 /* CountryPicker */; };
 		4F3E0DA02AA777240068F901 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0D9F2AA777240068F901 /* Settings.swift */; };
@@ -125,7 +125,7 @@
 		4F3E0D632A8702FE0068F901 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4F3E0D642A8949260068F901 /* Global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Global.swift; sourceTree = "<group>"; };
 		4F3E0D672A895AE40068F901 /* Colour.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colour.swift; sourceTree = "<group>"; };
-		4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PbillViewModel.swift; sourceTree = "<group>"; };
+		4F3E0D802A9B7BFB0068F901 /* PayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayViewModel.swift; sourceTree = "<group>"; };
 		4F3E0D9F2AA777240068F901 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		4F3E0DA12AA782DE0068F901 /* ChangeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangeName.swift; sourceTree = "<group>"; };
 		4F3E0DA32AA89F0E0068F901 /* AddFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriends.swift; sourceTree = "<group>"; };
@@ -333,7 +333,7 @@
 		4F3E0D752A95129D0068F901 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				4F3E0D802A9B7BFB0068F901 /* PbillViewModel.swift */,
+				4F3E0D802A9B7BFB0068F901 /* PayViewModel.swift */,
 				4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */,
 				4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */,
 				4F375D112B02A1FC0011F541 /* EntryViewModel.swift */,
@@ -539,7 +539,7 @@
 				4F375D102B02A1320011F541 /* Entry.swift in Sources */,
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
-				4F3E0D812A9B7BFB0068F901 /* PbillViewModel.swift in Sources */,
+				4F3E0D812A9B7BFB0068F901 /* PayViewModel.swift in Sources */,
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,

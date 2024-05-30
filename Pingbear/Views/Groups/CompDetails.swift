@@ -63,6 +63,7 @@ struct CompDetails: View {
                 Text(competition.description)
                     .font(.system(size: 19, weight: .bold, design: .default))
                     .lineSpacing(10)
+                    .lineLimit(2)
                     .foregroundColor(.black)
                     .padding(.bottom, 20)
                     .padding(.top, 30)
@@ -126,9 +127,6 @@ struct CompDetails: View {
         })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
-        }
-        .onDisappear {
-            entryViewModel.deactivateListeners()
         }
     }
     var aggregateLeaderboardView: some View {
