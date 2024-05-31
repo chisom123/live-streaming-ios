@@ -68,129 +68,139 @@ struct EntryView: View {
         GeometryReader { proxy in
             let size = proxy.size
             
-            ZStack(alignment: .topLeading) {
-                Group {
-                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                        let entry = viewModel.entries[viewModel.currentIndex]
-                        VStack {
-                            if let videoURL = URL(string: entry.videoUrl) {
-                                CustomVideoPlayer(url: videoURL)
-                                    .id(viewModel.currentIndex)
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: size.width, height: size.height)
-                                    .ignoresSafeArea()
-                            } else {
-                                ProgressView()
-                            }
-                        }
-                    }
-                }
-                .onChange(of: viewModel.currentIndex) { _ in
-                    self.rating = 0 // Reset the rating when changing index
-                    self.isShowingLoadingOverlay = true // Show loading overlay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
-                        self.isRatingEnabled = true
-                        self.isShowingLoadingOverlay = false // Hide loading overlay
-                    }
-                }
-                
-                if isShowingLoadingOverlay {
-                    AppColors.white.opacity(1) // Semi-transparent background
-                        .edgesIgnoringSafeArea(.all) // Make it cover the full screen
-                        .overlay(
-                            CustomProgressView() // Use your custom progress view here
-                                .scaleEffect(1) // Adjust the size as needed
-                        )
-                }
-                
-                
-                if !isShowingLoadingOverlay {
-                    // Bottom - Heart button, horizontally centered
+            Group {
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let entry = viewModel.entries[viewModel.currentIndex]
                     VStack {
-                        Spacer() // Pushes the content to the bottom
-                        
-                        // Container view for stars with background
-                        ZStack {
-                            HStack(alignment: .center, spacing: 10) {
-                                if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                                    let maxStars = 5
-                                    
-                                    ForEach(1...maxStars, id: \.self) { star in
-                                        let currentEntry = viewModel.entries[viewModel.currentIndex]
-                                        Button(action: {
-                                            isRatingEnabled = false
-                                            PostHogSDK.shared.capture("Overall Star Rating Tap")
-                                            triggerHapticFeedback(style: .soft)
-                                            let ratingIncrement = star
-                                            self.rating = ratingIncrement
-                                            let currentEntryId = currentEntry.id
-                                            viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
-                                            
-                                            // Add check here to see if it's the last entry
-                                            if viewModel.currentIndex == viewModel.entries.count - 1 {
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                    presentationMode.wrappedValue.dismiss()
-                                                }
-                                            } else {
-                                                // Existing code to handle non-last entries
-                                                
-                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                    if viewModel.currentIndex < viewModel.entries.count - 1 {
-                                                        viewModel.currentIndex += 1
-                                                    }
-                                                }
-                                            }
-                                        }) {
-                                            Image(systemName: "star.fill")
-                                                .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                                .font(.system(size: 33))
-                                                .padding(5)
-                                        }
-                                        .disabled(!isRatingEnabled)
-                                    }
-                                    
-                                }
-                            }
-                            .padding(.horizontal) // Adds horizontal padding to the HStack
-                            .padding(.vertical, 10) // Increase vertical padding of the HStack
-                            .background(RoundedRectangle(cornerRadius: 200)
-                                .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
-                            // Removed the shadow from the background
-                        }
-                        .padding(.horizontal)
-                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
-                    }
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-                    
-                    HStack {
-                        Button(action: {
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: {
-                            let banner = NotificationBanner(title: "Video Successfully Reported", style: .success)
-                            banner.show()
-                            PostHogSDK.shared.capture("Image Reported")
-                        }) {
-                            Image(systemName: "flag")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
+                        if let videoURL = URL(string: entry.videoUrl) {
+                            CustomVideoPlayer(url: videoURL)
+                                .id(viewModel.currentIndex)
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: size.width, height: size.height)
+                                .ignoresSafeArea()
+                        } else {
+                            ProgressView()
                         }
                     }
-                    .padding(.top)  // Adds padding from the top of the screen
-                    .padding()
-                    
                 }
             }
+            .onChange(of: viewModel.currentIndex) { _ in
+                self.rating = 0 // Reset the rating when changing index
+                self.isShowingLoadingOverlay = true // Show loading overlay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
+                    self.isRatingEnabled = true
+                    self.isShowingLoadingOverlay = false // Hide loading overlay
+                }
+            }
+            
+            if isShowingLoadingOverlay {
+                AppColors.white.opacity(1) // Semi-transparent background
+                    .edgesIgnoringSafeArea(.all) // Make it cover the full screen
+                    .overlay(
+                        CustomProgressView() // Use your custom progress view here
+                            .scaleEffect(1) // Adjust the size as needed
+                    )
+            }
+            
+            if !isShowingLoadingOverlay {
+                // Bottom - Heart button, horizontally centered
+                VStack {
+                    Spacer() // Pushes the content to the bottom
+
+                    // Container view for stars with background
+                    ZStack {
+                        HStack(alignment: .center, spacing: 10) {
+                            if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                                let maxStars = 5
+
+                                ForEach(1...maxStars, id: \.self) { star in
+                                    let currentEntry = viewModel.entries[viewModel.currentIndex]
+                                    Button(action: {
+                                        isRatingEnabled = false
+                                        PostHogSDK.shared.capture("Overall Star Rating Tap")
+                                        triggerHapticFeedback(style: .soft)
+                                        let ratingIncrement = star
+                                        self.rating = ratingIncrement
+                                        let currentEntryId = currentEntry.id
+                                        viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
+
+                                        // Add check here to see if it's the last entry
+                                        if viewModel.currentIndex == viewModel.entries.count - 1 {
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                presentationMode.wrappedValue.dismiss()
+                                            }
+                                        } else {
+                                            // Existing code to handle non-last entries
+
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                if viewModel.currentIndex < viewModel.entries.count - 1 {
+                                                    viewModel.currentIndex += 1
+                                                }
+                                            }
+                                        }
+                                    }) {
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
+                                            .font(.system(size: 33))
+                                            .padding(5)
+                                    }
+                                    .disabled(!isRatingEnabled)
+                                }
+                            }
+                        }
+                        .padding(.horizontal) // Adds horizontal padding to the HStack
+                        .padding(.vertical, 10) // Increase vertical padding of the HStack
+                        .background(RoundedRectangle(cornerRadius: 200)
+                            .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
+                        // Removed the shadow from the background
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
+                }
+                .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+
+                HStack {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    }
+
+                    Spacer()
+                    
+                    // Display the username here
+                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                        Text(viewModel.entries[viewModel.currentIndex].userName)
+                            .foregroundColor(.white) // Set the text color to white
+                            .font(.system(size: 20, weight: .bold, design: .default))
+                            .shadow(radius: 10)
+                            .truncationMode(.tail) // Adds an ellipsis at the end of the text if it's too long
+                            .lineLimit(1) // Ensures the text is on a single line
+                            .frame(maxWidth: 175)
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        let banner = NotificationBanner(title: "Video Successfully Reported", style: .success)
+                        banner.show()
+                        PostHogSDK.shared.capture("Video Reported")
+                    }) {
+                        Image(systemName: "flag")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    }
+                }
+                .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
+                .padding()
+
+            }
         }
+        .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
     }
 }
 
