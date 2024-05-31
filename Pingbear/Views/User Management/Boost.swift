@@ -23,7 +23,11 @@ struct BoostView: View {
             Spacer() // This Spacer pushes the remaining content to center vertically
             Text(viewModel.boostStatus)
                 .font(.system(size: 30, weight: .bold, design: .default))
-                .foregroundColor(viewModel.isBoostActive ? .green : .red) // Conditionally setting the color
+                .foregroundColor(.white)
+                .padding() // Adds padding around the text.
+                .padding(.horizontal, 20)
+                .background(viewModel.isBoostActive ? Color.green : Color.red) // Adds background color with slight transparency.
+                .cornerRadius(200) // Sets the corner radius.
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             Spacer() // This Spacer ensures the text stays centered even if the view resizes
