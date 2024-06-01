@@ -68,6 +68,7 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
+		4F515AC22C0B0B21003FE588 /* StarboardVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
@@ -133,6 +134,7 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
+		4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarboardVideoPlayer.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
 				4F0416192BB5A97C00E3C7C0 /* Members.swift */,
 				4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */,
+				4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -555,6 +558,7 @@
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4FE6E5932C009A1C002E389C /* VideoPlayer.swift in Sources */,
 				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
+				4F515AC22C0B0B21003FE588 /* StarboardVideoPlayer.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F8FEE612BE516AC0087479A /* Landing.swift in Sources */,
 				4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */,

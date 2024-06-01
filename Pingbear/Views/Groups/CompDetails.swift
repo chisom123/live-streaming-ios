@@ -13,9 +13,9 @@ struct CompDetails: View {
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
     @State private var isVotingPresented = false
-    @State private var selectedEntryCreationDate: Date = Date() // Add this to hold the selected entry's creation date
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var showAggregate = false
+    @State private var selectedEntry: Entry?
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -144,9 +144,16 @@ struct CompDetails: View {
         ScrollView {
             VStack(spacing: 15) {
                 ForEach(entryViewModel.entries, id: \.id) { entry in
-                    leaderboardRowView(entry.userName, entry.stars)
+                    Button(action: {
+                        self.selectedEntry = entry
+                    }) {
+                        leaderboardRowView(entry.userName, entry.stars)
+                    }
                 }
             }
+        }
+        .fullScreenCover(item: $selectedEntry) { entry in
+            StarboardVideoPlayer(entry: entry)
         }
     }
 
@@ -188,26 +195,5 @@ struct CompDetails: View {
     }
     func vote() {
         self.isVotingPresented = true
-    }
-    // DO I NEED THIS ???
-    func timeSince(date: Date) -> String {
-        let currentTime = Date()
-        let timeInterval = currentTime.timeIntervalSince(date)
-
-        if timeInterval < 60 {
-            return "Just now"
-        } else if timeInterval < 3600 {
-            let minutes = Int(timeInterval / 60)
-            return minutes == 1 ? "1 min ago" : "\(minutes) mins ago"
-        } else if timeInterval < 86400 {
-            let hours = Int(timeInterval / 3600)
-            return hours == 1 ? "1 hour ago" : "\(hours) hours ago"
-        } else {
-            let days = Int(timeInterval / 86400)
-            return days == 1 ? "1 day ago" : "\(days) days ago"
-        }
-    }
-    var timeAgo: String {
-        timeSince(date: selectedEntryCreationDate)
     }
 }
