@@ -23,6 +23,7 @@ struct MyCompsView: View {
                 
                 Button(action: {
                     isPresentingNewCompetition = true
+                    viewModel.cleanupListeners()
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
@@ -96,6 +97,7 @@ struct MyCompsView: View {
                         .padding(.horizontal, 20)
                         .onTapGesture {
                             self.selectedCompetition = competition  // Set the selected competition
+                            viewModel.cleanupListeners()
                         }
                     }
                 }
@@ -116,6 +118,9 @@ struct MyCompsView: View {
                     pushNotificationManager.setupWithUserID(userId)
                 }
             }
+        }
+        .onDisappear {
+            viewModel.cleanupListeners()
         }
     }
 }

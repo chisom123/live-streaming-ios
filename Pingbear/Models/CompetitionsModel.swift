@@ -32,31 +32,23 @@ class CompetitionsModel: ObservableObject {
     }
     
     func setupCompetitionListeners(userId: String) {
-        let db = Firestore.firestore()
-        db.collection("groupMemberships").document(userId).collection("competitions")
-            .getDocuments { [weak self] (snapshot, error) in
-                guard let self = self else {
-                    print("Self is nil")
-                    return
-                }
-                
-                if let error = error {
-                    print("Error fetching group memberships: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let snapshot = snapshot else {
-                    print("No snapshot data available")
-                    return
-                }
-                
-                // Process each document to fetch details
-                snapshot.documents.forEach { document in
-                    if let competitionId = document.data()["competitionId"] as? String {
-                        self.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId)
+        let path = "groupMemberships/\(userId)/competitions"
+        FirestoreListenerManager.shared.addListener(for: path) { [weak self] changes in
+            for change in changes {
+                switch change.type {
+                case .added, .modified:
+                    if let competitionId = change.document.data()["competitionId"] as? String {
+                        self?.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId)
                     }
+                case .removed:
+                    self?.removeCompetition(change.document.documentID)
                 }
             }
+        }
+    }
+    
+    func removeCompetition(_ competitionId: String) {
+        setupCompetitionListeners(userId: Auth.auth().currentUser?.uid ?? "")
     }
     
     func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String) {
@@ -76,38 +68,37 @@ class CompetitionsModel: ObservableObject {
     }
     
     func setupEntriesListener(competition: Competition, userId: String) {
-        let db = Firestore.firestore()
-        let entriesRef = db.collection("competitions").document(competition.id).collection("entries")
+        let path = "competitions/\(competition.id)/entries"
         let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        let twentyFourHoursAgoTimestamp = Timestamp(date: twentyFourHoursAgo)
-        
-        entriesRef.whereField("timestamp", isGreaterThanOrEqualTo: twentyFourHoursAgoTimestamp)
-            .getDocuments { [weak self] (snapshot, error) in
-                guard let self = self, let snapshot = snapshot else {
-                    print("Error fetching entries: \(error?.localizedDescription ?? "no error provided")")
-                    return
-                }
-                let allEntryIds = Set(snapshot.documents.map { $0.documentID })
 
-                // Fetch all votes by this user for this competition
-                let votesRef = db.collection("groupMemberships").document(userId)
-                    .collection("competitions").document(competition.id)
-                    .collection("votes")
+        // Setup listener with FirestoreListenerManager for entries
+        FirestoreListenerManager.shared.addListener(for: path) { [weak self] changes in
+            guard let self = self else { return }
+            
+            // Filter and process entry document changes based on the timestamp
+            let entryIds = changes.filter {
+                guard let timestamp = $0.document.data()["timestamp"] as? Timestamp else { return false }
+                return timestamp.dateValue() >= twentyFourHoursAgo
+            }.map { $0.document.documentID }
 
-                votesRef.getDocuments { (voteSnapshot, voteError) in
-                    guard let votedDocuments = voteSnapshot?.documents else {
-                        print("Error fetching votes: \(voteError?.localizedDescription ?? "no error provided")")
-                        return
-                    }
-                    let votedEntryIds = Set(votedDocuments.map { $0.data()["entryId"] as? String ?? "" })
-                    let notVotedEntriesCount = allEntryIds.subtracting(votedEntryIds).count
+            let allEntryIds = Set(entryIds)
 
-                    DispatchQueue.main.async {
-                        competition.entriesNotVotedCount = notVotedEntriesCount
-                        self.updateOrAppendCompetition(competition)
-                    }
-                }
+            // Proceed to fetch votes
+            self.fetchVotesAndUpdateCompetition(userId: userId, competition: competition, entryIds: allEntryIds)
+        }
+    }
+
+    func fetchVotesAndUpdateCompetition(userId: String, competition: Competition, entryIds: Set<String>) {
+        let votesPath = "groupMemberships/\(userId)/competitions/\(competition.id)/votes"
+        FirestoreListenerManager.shared.addListener(for: votesPath) { [weak self] changes in
+            let votedEntryIds = Set(changes.compactMap { $0.document.data()["entryId"] as? String })
+            let notVotedEntriesCount = entryIds.subtracting(votedEntryIds).count
+
+            DispatchQueue.main.async {
+                competition.entriesNotVotedCount = notVotedEntriesCount
+                self?.updateOrAppendCompetition(competition)
             }
+        }
     }
 
     
@@ -126,5 +117,16 @@ class CompetitionsModel: ObservableObject {
 
     func recalculateBadgeCount() {
         badgeCount = competitions.reduce(0) { $0 + $1.entriesNotVotedCount }
+    }
+    
+    func cleanupListeners() {
+        for competition in competitions {
+            let path = "competitions/\(competition.id)/entries"
+            FirestoreListenerManager.shared.removeListener(for: path)
+            let votesPath = "groupMemberships/\(Auth.auth().currentUser?.uid ?? "")/competitions/\(competition.id)/votes"
+            FirestoreListenerManager.shared.removeListener(for: votesPath)
+        }
+        let membershipsPath = "groupMemberships/\(Auth.auth().currentUser?.uid ?? "")/competitions"
+        FirestoreListenerManager.shared.removeListener(for: membershipsPath)
     }
 }

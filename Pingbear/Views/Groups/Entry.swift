@@ -53,10 +53,14 @@ struct EntryView: View {
     @State private var rating: Int = 0
     @State private var isShowingLoadingOverlay = false
     @State private var isRatingEnabled: Bool = true
+    @State private var navigateToCompDetails = false
+    
+    var competition: Competition
 
 
-    init(competitionId: String) {
+    init(competitionId: String, competition: Competition) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
+        self.competition = competition // Initialize the competition property
     }
     
     private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
@@ -127,7 +131,7 @@ struct EntryView: View {
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                presentationMode.wrappedValue.dismiss()
+                                                navigateToCompDetails = true
                                             }
                                         } else {
                                             // Existing code to handle non-last entries
@@ -161,7 +165,7 @@ struct EntryView: View {
 
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        navigateToCompDetails = true
                     }) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 30))
@@ -199,6 +203,9 @@ struct EntryView: View {
                 .padding()
 
             }
+        }
+        .fullScreenCover(isPresented: $navigateToCompDetails) {
+            CompDetails(competition: competition) // Adjust according to your needs
         }
         .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
     }

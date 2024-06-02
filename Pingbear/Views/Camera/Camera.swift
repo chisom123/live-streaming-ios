@@ -6,9 +6,9 @@ import FirebaseStorage
 import FirebaseFirestore
 
 struct CameraView: View {
-    @Environment(\.presentationMode) var presentationMode
     @StateObject var cameraModel = CameraViewModel()
     var competition: Competition
+    @State private var navigateToCompDetails = false
     
     var body: some View {
         ZStack {
@@ -36,7 +36,7 @@ struct CameraView: View {
                 
                 HStack {
                     Button {
-                        presentationMode.wrappedValue.dismiss()
+                        navigateToCompDetails = true
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 30)) // Increase the font size as needed
@@ -89,6 +89,9 @@ struct CameraView: View {
                 FinalPreview(url: url, showPreview: $cameraModel.showPreview,  competition: competition, competitionId: competition.id, resetCameraAction: { self.resetCamera() })
             }
         })
+        .fullScreenCover(isPresented: $navigateToCompDetails) {
+            CompDetails(competition: competition) // Adjust according to your needs
+        }
     }
     
     private func resetCamera() {

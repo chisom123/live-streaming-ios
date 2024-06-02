@@ -21,9 +21,17 @@ struct UserEntry: Identifiable {
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
     @Published var userLeaderboard: [UserEntry] = []
+    @Published var hasEntriesToVoteOn: Bool = true
     var competitionId: String
     @Published var currentIndex: Int = 0
     private var notificationSender = PushNotificationSender()
+    
+    private var entriesListener: ListenerRegistration?
+    private var votesListener: ListenerRegistration?
+    private var leaderboardListener: ListenerRegistration?
+    
+    private var allEntryIds: Set<String> = Set()
+    private var votedEntryIds: Set<String> = Set()
     
     enum FetchEntriesMode {
         case entryView
@@ -33,6 +41,63 @@ class EntryViewModel: ObservableObject {
     init(competitionId: String, mode: FetchEntriesMode) {
         self.competitionId = competitionId
         fetchEntries(mode: mode)
+        setupListeners(mode: mode)
+    }
+    
+    deinit {
+        removeListeners()
+    }
+    
+    func setupListeners(mode: FetchEntriesMode) {
+        setupEntriesListener()
+        setupVotesListener()
+    }
+
+    private func setupEntriesListener() {
+        let db = Firestore.firestore()
+        let entriesPath = "competitions/\(competitionId)/entries"
+        entriesListener = db.collection(entriesPath).addSnapshotListener { [weak self] snapshot, error in
+            guard let self = self, let snapshot = snapshot, error == nil else {
+                print("Error listening for entry updates: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            let ids = snapshot.documents.map { $0.documentID }
+            self.allEntryIds = Set(ids)
+            self.updateVoteStatus()
+        }
+    }
+
+    private func setupVotesListener() {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            print("No current user ID found for votes listener setup.")
+            return
+        }
+
+        let db = Firestore.firestore()
+        let votesPath = "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
+        votesListener = db.collection(votesPath).addSnapshotListener { [weak self] snapshot, error in
+            guard let self = self, let snapshot = snapshot, error == nil else {
+                print("Error listening for votes updates: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            let ids = snapshot.documents.compactMap { $0.data()["entryId"] as? String }
+            self.votedEntryIds = Set(ids)
+            self.updateVoteStatus()
+        }
+    }
+
+    private func updateVoteStatus() {
+        DispatchQueue.main.async {
+            self.hasEntriesToVoteOn = !self.allEntryIds.subtracting(self.votedEntryIds).isEmpty
+        }
+    }
+
+    func removeListeners() {
+        entriesListener?.remove()
+        votesListener?.remove()
+        leaderboardListener?.remove()
     }
     
     func fetchEntries(mode: FetchEntriesMode) {
@@ -85,7 +150,7 @@ class EntryViewModel: ObservableObject {
     private func fetchCompDetailsViewEntries(query: Query) {
         let currentUserId = Auth.auth().currentUser?.uid
         
-        query.getDocuments { [weak self] (snapshot, error) in
+        leaderboardListener = query.addSnapshotListener { [weak self] (snapshot, error) in
             guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")

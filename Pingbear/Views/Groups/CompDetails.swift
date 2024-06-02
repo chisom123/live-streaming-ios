@@ -35,6 +35,7 @@ struct CompDetails: View {
                 HStack {
                     Button(action: {
                         goHome = true
+                        entryViewModel.removeListeners()
                     }) {
                         Image("Close")
                             .resizable()
@@ -48,6 +49,7 @@ struct CompDetails: View {
                     // Step 2: Share Button
                     Button(action: {
                         isMembersPresented = true
+                        entryViewModel.removeListeners()
                     }) {
                         HStack {
                             Text("Group Members") // Text to display next to the icon
@@ -72,6 +74,7 @@ struct CompDetails: View {
                 HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
                     Button(action: {
                         joincomp()
+                        entryViewModel.removeListeners()
                     }) {
                         Text("Add Video")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -84,16 +87,17 @@ struct CompDetails: View {
 
                     Button(action: {
                         vote()
+                        entryViewModel.removeListeners()
                     }) {
                         Text("Rate Videos")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 17.5, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(competition.entriesNotVotedCount > 0 ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(competition.entriesNotVotedCount == 0)
+                    .disabled(!entryViewModel.hasEntriesToVoteOn)
                 }
                 .padding(.top, 10)
                 .padding(.horizontal, 20)
@@ -120,13 +124,16 @@ struct CompDetails: View {
             CameraView(competition: competition)
         })
         .fullScreenCover(isPresented: $isVotingPresented, content: {
-            EntryView(competitionId: competition.id)
+            EntryView(competitionId: competition.id, competition: competition)
         })
         .fullScreenCover(isPresented: $goHome, content: {
             ContentView()
         })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
+        }
+        .onDisappear {
+            entryViewModel.removeListeners()
         }
     }
     var aggregateLeaderboardView: some View {
@@ -146,6 +153,7 @@ struct CompDetails: View {
                 ForEach(entryViewModel.entries, id: \.id) { entry in
                     Button(action: {
                         self.selectedEntry = entry
+                        entryViewModel.removeListeners()
                     }) {
                         leaderboardRowView(entry.userName, entry.stars)
                     }
@@ -153,7 +161,7 @@ struct CompDetails: View {
             }
         }
         .fullScreenCover(item: $selectedEntry) { entry in
-            StarboardVideoPlayer(entry: entry)
+            StarboardVideoPlayer(entry: entry, competition: competition)
         }
     }
 

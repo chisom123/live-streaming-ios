@@ -3,7 +3,9 @@ import AVKit
 
 struct StarboardVideoPlayer: View {
     let entry: Entry
-    @Environment(\.presentationMode) var presentationMode
+    var competition: Competition
+    
+    @State private var navigateToCompDetails = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -14,12 +16,12 @@ struct StarboardVideoPlayer: View {
                     .frame(width: size.width, height: size.height)
                     .ignoresSafeArea()
                     .onTapGesture {
-                        presentationMode.wrappedValue.dismiss()  // Dismiss the view when the video is tapped
+                        navigateToCompDetails = true
                     }
             } else {
                 ProgressView()
                     .onTapGesture {
-                        presentationMode.wrappedValue.dismiss()  // Dismiss the view when the video is tapped
+                        navigateToCompDetails = true
                     }
             }
             
@@ -47,6 +49,9 @@ struct StarboardVideoPlayer: View {
                 .padding(.top, safeAreaTopInset() + 20) // Adjust for safe area at the top
                 Spacer() // Pushes the text to the top
             }
+        }
+        .fullScreenCover(isPresented: $navigateToCompDetails) {
+            CompDetails(competition: competition) // Adjust according to your needs
         }
         .ignoresSafeArea(edges: .all)
     }

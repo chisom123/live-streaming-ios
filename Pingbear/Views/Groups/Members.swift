@@ -5,19 +5,19 @@ import FirebaseFirestore
 
 struct MembersView: View {
     
-    @Environment(\.presentationMode) var presentationMode
     var competition: Competition
     @ObservedObject private var viewModel = MembersViewModel()
     @State private var leaveGroupAlert = false
     @State private var goHome = false
     @State private var showingJoinSelectView = false
+    @State private var navigateToCompDetails = false
     
     var body: some View {
         ZStack {
             VStack {
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        navigateToCompDetails = true
                     }) {
                         Image("Close")
                             .resizable()
@@ -105,9 +105,6 @@ struct MembersView: View {
                 }
             }
         }
-        .refreshable {
-            viewModel.fetchMembersDetails(for: competition)
-        }
         .onAppear {
             viewModel.fetchMembersDetails(for: competition)
         }
@@ -116,6 +113,9 @@ struct MembersView: View {
         })
         .fullScreenCover(isPresented: $showingJoinSelectView) {
             JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+        }
+        .fullScreenCover(isPresented: $navigateToCompDetails) {
+            CompDetails(competition: competition) // Adjust according to your needs
         }
     }
 
