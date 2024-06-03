@@ -112,6 +112,7 @@ struct FinalPreview: View {
     @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
+    @State private var isPlaying = true
 
     var body: some View {
         if isUploading {
@@ -122,7 +123,7 @@ struct FinalPreview: View {
                 let size = proxy.size
                 
                 ZStack(alignment: .leading) {
-                    CustomVideoPlayer(url: url)
+                    CustomVideoPlayer(url: url, isPlaying: $isPlaying)
                         .aspectRatio(contentMode: .fill)
                         .frame(width: size.width, height: size.height)
                         .ignoresSafeArea()
@@ -133,6 +134,7 @@ struct FinalPreview: View {
                             Button(action: {
                                 self.showPreview = false
                                 self.resetCameraAction()
+                                isPlaying = false
                             }) {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 30)) // Increase the font size as needed
@@ -190,6 +192,7 @@ struct FinalPreview: View {
     }
     
     func submitEntry() {
+        isPlaying = false
         isUploading = true
         
         guard let userId = Auth.auth().currentUser?.uid else {

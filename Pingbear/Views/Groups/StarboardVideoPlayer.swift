@@ -6,21 +6,24 @@ struct StarboardVideoPlayer: View {
     var competition: Competition
     
     @State private var navigateToCompDetails = false
+    @State private var isPlaying = true
 
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
             if let videoURL = URL(string: entry.videoUrl) {
-                CustomVideoPlayer(url: videoURL)
+                CustomVideoPlayer(url: videoURL, isPlaying: $isPlaying)
                     .aspectRatio(contentMode: .fill)
                     .frame(width: size.width, height: size.height)
                     .ignoresSafeArea()
                     .onTapGesture {
+                        isPlaying = false
                         navigateToCompDetails = true
                     }
             } else {
                 ProgressView()
                     .onTapGesture {
+                        isPlaying = false
                         navigateToCompDetails = true
                     }
             }

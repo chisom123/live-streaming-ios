@@ -5,6 +5,7 @@ import Foundation
 
 struct CustomVideoPlayer: UIViewControllerRepresentable {
     var url: URL
+    @Binding var isPlaying: Bool
 
     // Create a Coordinator for managing observers and player updates
     func makeCoordinator() -> Coordinator {
@@ -20,7 +21,7 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
 
     // This function updates the AVPlayerViewController during its lifecycle
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
-        context.coordinator.updatePlayer(uiViewController)
+        context.coordinator.updatePlayer(uiViewController, isPlaying: isPlaying)
     }
 
     // Use this method to cleanup when the view is being deinitialized
@@ -52,13 +53,17 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
             setupLifecycleNotifications(playerViewController)
         }
 
-        func updatePlayer(_ uiViewController: AVPlayerViewController) {
+        func updatePlayer(_ uiViewController: AVPlayerViewController, isPlaying: Bool) {
             if uiViewController.player == nil {
                 uiViewController.player = player
+                uiViewController.player?.actionAtItemEnd = .none
             }
-
-            uiViewController.player?.play()
-            uiViewController.player?.actionAtItemEnd = .none
+            
+            if isPlaying {
+                player?.play()
+            } else {
+                player?.pause()
+            }
 
             // Debugging: Check for errors
             if let error = uiViewController.player?.currentItem?.error {
@@ -106,7 +111,9 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
         }
 
         @objc func appWillEnterForeground() {
-            player?.play()
+            if parent.isPlaying {
+                player?.play()
+            }
             print("App will enter foreground: Resuming video.")
         }
 

@@ -54,6 +54,7 @@ struct EntryView: View {
     @State private var isShowingLoadingOverlay = false
     @State private var isRatingEnabled: Bool = true
     @State private var navigateToCompDetails = false
+    @State private var isPlaying = true
     
     var competition: Competition
 
@@ -77,7 +78,7 @@ struct EntryView: View {
                     let entry = viewModel.entries[viewModel.currentIndex]
                     VStack {
                         if let videoURL = URL(string: entry.videoUrl) {
-                            CustomVideoPlayer(url: videoURL)
+                            CustomVideoPlayer(url: videoURL, isPlaying: $isPlaying)
                                 .id(viewModel.currentIndex)
                                 .aspectRatio(contentMode: .fill)
                                 .frame(width: size.width, height: size.height)
@@ -131,6 +132,7 @@ struct EntryView: View {
                                         // Add check here to see if it's the last entry
                                         if viewModel.currentIndex == viewModel.entries.count - 1 {
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                                isPlaying = false
                                                 navigateToCompDetails = true
                                             }
                                         } else {
@@ -165,6 +167,7 @@ struct EntryView: View {
 
                 HStack {
                     Button(action: {
+                        isPlaying = false
                         navigateToCompDetails = true
                     }) {
                         Image(systemName: "arrow.left")
