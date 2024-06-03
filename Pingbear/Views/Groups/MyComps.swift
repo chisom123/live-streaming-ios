@@ -22,8 +22,8 @@ struct MyCompsView: View {
                 Spacer() // Pushes the remaining content to the trailing edge
                 
                 Button(action: {
-                    isPresentingNewCompetition = true
                     viewModel.cleanupListeners()
+                    isPresentingNewCompetition = true
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
@@ -96,8 +96,8 @@ struct MyCompsView: View {
                         .cornerRadius(5)
                         .padding(.horizontal, 20)
                         .onTapGesture {
-                            self.selectedCompetition = competition  // Set the selected competition
                             viewModel.cleanupListeners()
+                            self.selectedCompetition = competition  // Set the selected competition
                         }
                     }
                 }

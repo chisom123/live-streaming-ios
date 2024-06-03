@@ -34,8 +34,8 @@ struct CompDetails: View {
             VStack(alignment: .leading) {
                 HStack {
                     Button(action: {
-                        goHome = true
                         entryViewModel.removeListeners()
+                        goHome = true
                     }) {
                         Image("Close")
                             .resizable()
@@ -48,8 +48,8 @@ struct CompDetails: View {
                     
                     // Step 2: Share Button
                     Button(action: {
-                        isMembersPresented = true
                         entryViewModel.removeListeners()
+                        isMembersPresented = true
                     }) {
                         HStack {
                             Text("Group Members") // Text to display next to the icon
@@ -73,8 +73,8 @@ struct CompDetails: View {
         
                 HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
                     Button(action: {
-                        joincomp()
                         entryViewModel.removeListeners()
+                        joincomp()
                     }) {
                         Text("Add Video")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -86,8 +86,8 @@ struct CompDetails: View {
                     }
 
                     Button(action: {
-                        vote()
                         entryViewModel.removeListeners()
+                        vote()
                     }) {
                         Text("Rate Videos")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -152,8 +152,8 @@ struct CompDetails: View {
             VStack(spacing: 15) {
                 ForEach(entryViewModel.entries, id: \.id) { entry in
                     Button(action: {
-                        self.selectedEntry = entry
                         entryViewModel.removeListeners()
+                        self.selectedEntry = entry
                     }) {
                         leaderboardRowView(entry.userName, entry.stars)
                     }
