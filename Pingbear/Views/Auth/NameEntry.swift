@@ -121,15 +121,27 @@ struct NameEntryView: View {
         let batch = db.batch()
         
         let competitionRef = db.collection("competitions").document()
-        let participantRef = competitionRef.collection("participants").document(userID)
-        
         let competitionData: [String: Any] = [
             "description": "\(processedUsername)'s group ✨",
             "timestamp": Timestamp()
         ]
         
         batch.setData(competitionData, forDocument: competitionRef)
-        batch.setData(["userId": userID, "voted_entries": []], forDocument: participantRef)
+        
+        // Set the user as a member in the "members" subcollection of the new competition
+        let memberRef = competitionRef.collection("members").document(userID)
+        let memberData: [String: Any] = [
+            "userId": userID
+        ]
+        batch.setData(memberData, forDocument: memberRef)
+        
+        // Correctly reference the 'groupMemberships' under the user's document
+        let groupMembershipRef = db.collection("groupMemberships").document(userID)
+                                      .collection("competitions").document(competitionRef.documentID)
+        let membershipData: [String: Any] = [
+            "competitionId": competitionRef.documentID
+        ]
+        batch.setData(membershipData, forDocument: groupMembershipRef)
         
         batch.commit { err in
             if let err = err {
