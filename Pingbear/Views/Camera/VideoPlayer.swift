@@ -40,6 +40,14 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
             self.player = AVPlayer(url: url)
             playerViewController.player = self.player
             playerViewController.showsPlaybackControls = false
+            
+            // Configure audio session
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback)
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("Failed to set audio session category. Error: \(error.localizedDescription)")
+            }
 
             setupLifecycleNotifications(playerViewController)
         }
