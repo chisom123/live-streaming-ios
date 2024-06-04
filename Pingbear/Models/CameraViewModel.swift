@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import Combine
+import PostHog
 
 // MARK: Camera View Model
 class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDelegate{
@@ -70,6 +71,7 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
             UserDefaults.standard.set(currentCameraPosition.rawValue, forKey: "CameraPosition")
             
             session.commitConfiguration()
+            PostHogSDK.shared.capture("Camera Toggled", properties: ["newPosition": newCameraPosition.rawValue])
         } catch {
             print("Failed to switch cameras: \(error)")
         }
@@ -131,6 +133,7 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     
     func startRecording(){
         guard !isRecording else { return }
+        PostHogSDK.shared.capture("Start Recording")
         
         if let connection = output.connection(with: .video), connection.isVideoMirroringSupported {
             connection.isVideoMirrored = (currentCameraPosition == .front)
@@ -143,6 +146,7 @@ class CameraViewModel: NSObject,ObservableObject,AVCaptureFileOutputRecordingDel
     func stopRecording(){
         output.stopRecording()
         isRecording = false
+        PostHogSDK.shared.capture("Stop Recording", properties: ["duration": recordedDuration])
         DispatchQueue.main.async {
             if self.recordedDuration > 0.01 {
                 self.showPreview = true

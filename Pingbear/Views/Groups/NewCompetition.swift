@@ -147,7 +147,7 @@ struct NewCompetition: View {
                         date: Date()
                     )
                 }
-                PostHogSDK.shared.capture("New Group")
+                PostHogSDK.shared.capture("New Group", properties: ["name": competitionDescription])
             }
         }
     }

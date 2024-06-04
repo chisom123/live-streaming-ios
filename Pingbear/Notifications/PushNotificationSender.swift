@@ -9,6 +9,7 @@ struct TokenResponse: Codable {
 
 class PushNotificationSender: ObservableObject {
     func sendPushNotification(to token: String, title: String, body: String) {
+        PostHogSDK.shared.capture("Notification Send Attempt", properties: ["token": token])
         fetchAccessToken { result in
             switch result {
             case .success(let accessToken):
@@ -45,7 +46,12 @@ class PushNotificationSender: ObservableObject {
                 print("Error sending push notification: \(error?.localizedDescription ?? "No data")")
                 return
             }
-            PostHogSDK.shared.capture("Push notification sent")
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                PostHogSDK.shared.capture("Notification Sent", properties: ["status": "success"])
+            } else {
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                PostHogSDK.shared.capture("Notification Send Error", properties: ["status": "failed", "statusCode": statusCode])
+            }
         }
         task.resume()
     }

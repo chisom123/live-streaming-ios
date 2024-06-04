@@ -23,6 +23,9 @@ struct VerificationView: View {
                 .foregroundColor(.black)
                 .padding(.bottom, 40)
                 .padding(.horizontal)
+                .onAppear {
+                    PostHogSDK.shared.capture("Verification Screen Viewed")
+                }
             
             // Phone Number TextField
             TextField("Enter verification code", text: $verificationCode)
@@ -42,6 +45,9 @@ struct VerificationView: View {
                     .padding(.bottom, 10)
                     .padding(.top, 20)
                     .padding(.horizontal)
+                    .onAppear {
+                        PostHogSDK.shared.capture("Verification Error", properties: ["error": error])
+                    }
             }
 
             Button(action: {
@@ -77,6 +83,7 @@ struct VerificationView: View {
         Auth.auth().signIn(with: credential) { (authResult, error) in
             if let error = error {
                 self.errorMessage = error.localizedDescription
+                PostHogSDK.shared.capture("Verification Failed", properties: ["error": error.localizedDescription])
                 return
             }
             
@@ -85,6 +92,8 @@ struct VerificationView: View {
                 self.errorMessage = "Error fetching user ID"
                 return
             }
+            
+            PostHogSDK.shared.identify(userID)
             
             let db = Firestore.firestore()
             db.collection("users").document(userID).getDocument { (document, error) in
@@ -95,14 +104,16 @@ struct VerificationView: View {
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
                         UserDefaults.standard.set(true, forKey: "isFriendActivated")
                         UserDefaults.standard.synchronize()
-                        PostHogSDK.shared.capture("Returning User")
+                        PostHogSDK.shared.capture("Returning User Signed In")
                     } else {
                         // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true
+                        PostHogSDK.shared.capture("New User Registration Started")
                     }
                 } else {
                     // Error or user document does not exist, navigate to NameEntryView
                     self.navigateToNameEntry = true
+                    PostHogSDK.shared.capture("User Document Not Found")
                 }
             }
         }

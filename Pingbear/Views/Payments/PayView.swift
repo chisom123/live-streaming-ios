@@ -1,5 +1,6 @@
 import SwiftUI
 import NotificationBannerSwift
+import PostHog
 
 struct PayView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -23,6 +24,7 @@ struct PayView: View {
                         Spacer()
                         Button("Skip") {
                             navigateToCompDetails = true
+                            PostHogSDK.shared.capture("Boost Skip")
                         }
                         .font(.system(size: 17, weight: .bold, design: .default))
                         .foregroundColor(Color(hex: "#767BFA"))

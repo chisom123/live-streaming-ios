@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import PostHog
 
 class AppUser: Identifiable {
     var id: String
@@ -86,6 +87,7 @@ class MyFriendsModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.friends.removeAll { $0.id == id }
                     print("Successfully removed the mutual friend relationship")
+                    PostHogSDK.shared.capture("Friend Removed")
                 }
             }
         }

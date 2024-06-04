@@ -19,6 +19,9 @@ struct NameEntryView: View {
                 .foregroundColor(.black)
                 .padding(.bottom, 40)
                 .padding(.horizontal)
+                .onAppear {
+                    PostHogSDK.shared.capture("Username Entry View Opened")
+                }
             
             TextField("Enter your username", text: $username)
                 .padding()
@@ -36,6 +39,9 @@ struct NameEntryView: View {
                     .padding(.bottom, 10)
                     .padding(.top, 20)
                     .padding(.horizontal)
+                    .onAppear {
+                        PostHogSDK.shared.capture("Username Entry Error", properties: ["error": error])
+                    }
             }
             
             Button(action: {
@@ -66,6 +72,7 @@ struct NameEntryView: View {
         let validation = isValidUsername(processedUsername)
         guard validation.isValid else {
             errorMessage = validation.error
+            PostHogSDK.shared.capture("Username Validation Failed", properties: ["username": processedUsername, "error": validation.error ?? "No error provided"])
             return
         }
 
@@ -75,12 +82,14 @@ struct NameEntryView: View {
         db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { (querySnapshot, err) in
             if let err = err {
                 errorMessage = "Error checking username: \(err.localizedDescription)"
+                PostHogSDK.shared.capture("Username Check Failed", properties: ["error": err.localizedDescription])
             } else if querySnapshot!.documents.isEmpty {
                 // Username is unique, proceed to save
                 saveUsernameToFirestore(processedUsername: processedUsername)
             } else {
                 // Username already exists
                 errorMessage = "This username is already taken"
+                PostHogSDK.shared.capture("Username Already Taken", properties: ["username": processedUsername])
             }
         }
     }
@@ -99,12 +108,13 @@ struct NameEntryView: View {
        ], merge: true) { error in
            if let error = error {
                self.errorMessage = "Error saving user: \(error.localizedDescription)"
+               PostHogSDK.shared.capture("Username Save Failed", properties: ["error": error.localizedDescription])
            } else {
                newgroup(processedUsername: processedUsername)
                self.navigateToHome = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
-               PostHogSDK.shared.capture("New User - \(userID)")
+               PostHogSDK.shared.capture("New User Created", properties: ["userID": userID, "username": processedUsername])
            }
        }
    }
@@ -146,8 +156,9 @@ struct NameEntryView: View {
         batch.commit { err in
             if let err = err {
                 errorMessage = "Failed to create group: \(err.localizedDescription)"
+                PostHogSDK.shared.capture("Group Creation Failed", properties: ["error": err.localizedDescription])
             } else {
-                PostHogSDK.shared.capture("Initial User Group Created")
+                PostHogSDK.shared.capture("Initial User Group Created", properties: ["userID": userID, "groupID": competitionRef.documentID])
             }
         }
     }

@@ -83,6 +83,12 @@ struct EntryView: View {
                                 .aspectRatio(contentMode: .fill)
                                 .frame(width: size.width, height: size.height)
                                 .ignoresSafeArea()
+                                .onAppear {
+                                    PostHogSDK.shared.capture("Video Playback Started", properties: ["videoURL": entry.videoUrl])
+                                }
+                                .onDisappear {
+                                    PostHogSDK.shared.capture("Video Playback Stopped", properties: ["videoURL": entry.videoUrl])
+                                }
                         } else {
                             ProgressView()
                         }
@@ -122,7 +128,7 @@ struct EntryView: View {
                                     let currentEntry = viewModel.entries[viewModel.currentIndex]
                                     Button(action: {
                                         isRatingEnabled = false
-                                        PostHogSDK.shared.capture("Overall Star Rating Tap")
+                                        PostHogSDK.shared.capture("Star Rating", properties: ["rating": star])
                                         triggerHapticFeedback(style: .soft)
                                         let ratingIncrement = star
                                         self.rating = ratingIncrement

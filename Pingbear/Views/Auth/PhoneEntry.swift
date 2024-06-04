@@ -3,6 +3,7 @@ import Firebase
 import FirebaseAuth
 import CountryPicker
 import PhoneNumberKit
+import PostHog
 
 struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
     
@@ -33,6 +34,7 @@ struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
 
         func countryPicker(didSelect country: Country) {
             parent.selectedCountry = country
+            PostHogSDK.shared.capture("Country Selected", properties: ["country": country.isoCode])
         }
     }
 }
@@ -87,6 +89,9 @@ struct PhoneEntryView: View {
                 .foregroundColor(.black)
                 .padding(.bottom, 40)
                 .padding(.horizontal)
+                .onAppear {
+                    PostHogSDK.shared.capture("Phone Entry View Opened")
+                }
             
             HStack {
                 // Country Picker Button
@@ -163,6 +168,7 @@ struct PhoneEntryView: View {
         guard let country = selectedCountry else {
             self.isLoading = false
             errorMessage = "Please select a country."
+            PostHogSDK.shared.capture("Country Not Selected", properties: ["error": errorMessage ?? "No error message"])
             return
         }
 
@@ -177,16 +183,19 @@ struct PhoneEntryView: View {
                 
                 if let error = error {
                     self.errorMessage = error.localizedDescription
+                    PostHogSDK.shared.capture("Verification Code Sending Failed", properties: ["error": error.localizedDescription])
                     return
                 }
 
                 self.verificationID = verificationID
                 self.showVerificationView = true
+                PostHogSDK.shared.capture("Verification Code Sent", properties: ["phoneNumber": formattedPhoneNumber])
             }
 
         } catch {
             self.isLoading = false
             errorMessage = "Invalid phone number"
+            PostHogSDK.shared.capture("Invalid Phone Number", properties: ["phoneNumber": fullPhoneNumber, "error": errorMessage ?? ""])
         }
     }
 }

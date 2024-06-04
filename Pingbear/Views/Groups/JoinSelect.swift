@@ -3,6 +3,7 @@ import Firebase
 import FirebaseFirestore
 import FirebaseAuth
 import NotificationBannerSwift
+import PostHog
 
 struct JoinSelectView: View {
     
@@ -205,6 +206,7 @@ struct JoinSelectView: View {
 
                     // Send notification
                     self.sendNotificationToUser(userId: userId, username: username, competitionDescription: self.competition.description)
+                    PostHogSDK.shared.capture("Friend Added to Group", properties: ["userId": userId])
                 }
                 dispatchGroup.leave()
             }

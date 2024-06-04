@@ -12,7 +12,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
 
-        let POSTHOG_API_KEY = "phc_CWa3tntbLhQKIPoZ8CFX5Ydg1l3Kt6GVyO7ztgANLX8"
+        let POSTHOG_API_KEY = "phc_TiMANSKNXenX3AKMp8mt9emsGH3W1hPJBM9Rc7AQCzZ"
         let POSTHOG_HOST = "https://eu.posthog.com"
 
         let config = PostHogConfig(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)

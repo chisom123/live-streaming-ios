@@ -24,6 +24,7 @@ struct SettingsView: View {
             UserDefaults.standard.set(false, forKey: "isLoggedIn")
             didLogOut.send(())
             PostHogSDK.shared.capture("Sign Out")
+            PostHogSDK.shared.reset()
             FirestoreListenerManager.shared.removeAllListeners()
         } catch let signOutError as NSError {
             print("Error signing out: %@", signOutError)

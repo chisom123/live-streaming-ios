@@ -36,6 +36,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         goHome = true
+                        PostHogSDK.shared.capture("Close Competition Details")
                     }) {
                         Image("Close")
                             .resizable()
@@ -50,6 +51,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         isMembersPresented = true
+                        PostHogSDK.shared.capture("View Group Members")
                     }) {
                         HStack {
                             Text("Group Members") // Text to display next to the icon
@@ -75,6 +77,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         joincomp()
+                        PostHogSDK.shared.capture("Add Video Initiated")
                     }) {
                         Text("Add Video")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -88,6 +91,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         vote()
+                        PostHogSDK.shared.capture("Voting Initiated")
                     }) {
                         Text("Rate Videos")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -108,6 +112,10 @@ struct CompDetails: View {
                         .foregroundColor(.black)
                     
                     Toggle("", isOn: $showAggregate)
+                        .onChange(of: showAggregate) { value in
+                            let viewType = value ? "Aggregate" : "Individual"
+                            PostHogSDK.shared.capture("Leaderboard View Toggled", properties: ["View Type": viewType])
+                        }
                 }
                 .padding(.top, 35)
                 .padding(.bottom, 20)
@@ -154,6 +162,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         self.selectedEntry = entry
+                        PostHogSDK.shared.capture("Starboard Video Tapped")
                     }) {
                         leaderboardRowView(entry.userName, entry.stars)
                     }

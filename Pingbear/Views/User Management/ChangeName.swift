@@ -1,6 +1,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import PostHog
 
 struct ChangeNameView: View {
     
@@ -144,6 +145,7 @@ struct ChangeNameView: View {
                         self.errorMessage = "Error updating username: \(err.localizedDescription)"
                     } else {
                         self.messageStatus = .success
+                        PostHogSDK.shared.capture("Username Updated")
                     }
                 }
             } else {
