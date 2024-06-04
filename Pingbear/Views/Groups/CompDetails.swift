@@ -76,8 +76,8 @@ struct CompDetails: View {
                 HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
                     Button(action: {
                         entryViewModel.removeListeners()
-                        joincomp()
                         PostHogSDK.shared.capture("Add Video Initiated")
+                        joincomp()
                     }) {
                         Text("Add Video")
                             .frame(maxWidth: .infinity, minHeight: 44)
