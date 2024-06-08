@@ -56,16 +56,26 @@ class EntryViewModel: ObservableObject {
     private func setupEntriesListener() {
         let db = Firestore.firestore()
         let entriesPath = "competitions/\(competitionId)/entries"
-        entriesListener = db.collection(entriesPath).addSnapshotListener { [weak self] snapshot, error in
-            guard let self = self, let snapshot = snapshot, error == nil else {
-                print("Error listening for entry updates: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
 
-            let ids = snapshot.documents.map { $0.documentID }
-            self.allEntryIds = Set(ids)
-            self.updateVoteStatus()
+        // Calculate the time 24 hours ago from now using Calendar
+        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else {
+            print("Could not compute the date 24 hours ago.")
+            return
         }
+
+        // Set up the listener with a timestamp filter
+        entriesListener = db.collection(entriesPath)
+                             .whereField("timestamp", isGreaterThan: twentyFourHoursAgo)
+                             .addSnapshotListener { [weak self] snapshot, error in
+                                 guard let self = self, let snapshot = snapshot, error == nil else {
+                                     print("Error listening for entry updates: \(error?.localizedDescription ?? "Unknown error")")
+                                     return
+                                 }
+
+                                 let ids = snapshot.documents.map { $0.documentID }
+                                 self.allEntryIds = Set(ids)
+                                 self.updateVoteStatus()
+                             }
     }
 
     private func setupVotesListener() {
