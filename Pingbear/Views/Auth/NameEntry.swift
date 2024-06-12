@@ -132,20 +132,24 @@ struct NameEntryView: View {
         
         let competitionRef = db.collection("competitions").document()
         let competitionData: [String: Any] = [
-            "description": "\(processedUsername)'s group ✨",
+            "description": "Welcome to Pingbear 👋",
             "timestamp": Timestamp()
         ]
         
         batch.setData(competitionData, forDocument: competitionRef)
         
-        // List of predefined video URLs
-        let predefinedVideos = ["https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F8fd9b7b5194272c57c19e4555bd281c6.mp4?alt=media&token=06994511-bf45-4676-9cdf-c47cedbf9a93", "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ff6a10a403a15f3e8ca7d880e46030197.mp4?alt=media&token=da387ff5-1290-4485-a2d3-6c9cefa7abba", "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ffc99102fd4b55e0298845c18fc210532.mp4?alt=media&token=37500be9-83c3-4ef4-b55a-20c505e41824"]
+        let predefinedVideos = [
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F9dd60ca036274b445c8dbb1b1eacfc4a.mp4?alt=media&token=7cea108e-87f4-4398-aa82-13d11e747e4e", "sChx4qnu3sgKXJpCl4NADXo5nhh1"),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ff6a10a403a15f3e8ca7d880e46030197.mp4?alt=media&token=da387ff5-1290-4485-a2d3-6c9cefa7abba", "RGTNB4JpPhQBzRoMloZz6Z2s9Nz2"),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F5e26c5c5712f6507d11ebf24ba777e09.mp4?alt=media&token=26150bbf-25d2-4be0-8a28-fa29a20c02a0", "1tZCGhXDSnf0z8Scpb8KN9TV2YI3"),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F4d77cc666c787df149af7a2051db9fcb.mp4?alt=media&token=125bc365-0e29-4cc6-a3ac-b756f354b968", "sK5iDY6jsya6fBcDQW4EBgromZ72")
+        ]
 
         // Add predefined video entries with dynamic user data
-        for videoURL in predefinedVideos {
+        for (videoURL, userID) in predefinedVideos {
             let entryRef = competitionRef.collection("entries").document()
             let entryData: [String: Any] = [
-                "userId": "sK5iDY6jsya6fBcDQW4EBgromZ72",  // Assigning current user's ID to each entry
+                "userId": userID,  // Assigning current user's ID to each entry
                 "videoUrl": videoURL,
                 "timestamp": FieldValue.serverTimestamp(),
                 "superstar": false  // Assuming default superstar status is false
