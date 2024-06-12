@@ -138,6 +138,21 @@ struct NameEntryView: View {
         
         batch.setData(competitionData, forDocument: competitionRef)
         
+        // List of predefined video URLs
+        let predefinedVideos = ["https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F8fd9b7b5194272c57c19e4555bd281c6.mp4?alt=media&token=06994511-bf45-4676-9cdf-c47cedbf9a93", "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ff6a10a403a15f3e8ca7d880e46030197.mp4?alt=media&token=da387ff5-1290-4485-a2d3-6c9cefa7abba", "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ffc99102fd4b55e0298845c18fc210532.mp4?alt=media&token=37500be9-83c3-4ef4-b55a-20c505e41824"]
+
+        // Add predefined video entries with dynamic user data
+        for videoURL in predefinedVideos {
+            let entryRef = competitionRef.collection("entries").document()
+            let entryData: [String: Any] = [
+                "userId": "sK5iDY6jsya6fBcDQW4EBgromZ72",  // Assigning current user's ID to each entry
+                "videoUrl": videoURL,
+                "timestamp": FieldValue.serverTimestamp(),
+                "superstar": false  // Assuming default superstar status is false
+            ]
+            batch.setData(entryData, forDocument: entryRef)
+        }
+        
         // Set the user as a member in the "members" subcollection of the new competition
         let memberRef = competitionRef.collection("members").document(userID)
         let memberData: [String: Any] = [

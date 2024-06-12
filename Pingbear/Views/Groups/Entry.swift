@@ -10,30 +10,10 @@ import NotificationBannerSwift
 import PostHog
 import AVKit
 
-struct CustomProgressView: View {
-    @State private var isAnimating = false
-
-    var body: some View {
-        VStack { // Adjust spacing as needed
-            Circle()
-                .trim(from: 0, to: 0.7) // Adjust this to change the circle's "filled" portion
-                .stroke(style: StrokeStyle(lineWidth: 7, lineCap: .round)) // Make edges round
-                .foregroundColor(Color.black) // Set the circle's color
-                .frame(width: 50, height: 50) // Set the size of the circle
-                .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
-                .onAppear() {
-                    self.isAnimating = true
-                }
-        }
-    }
-}
-
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
     @Environment(\.presentationMode) var presentationMode
     @State private var rating: Int = 0
-    @State private var isShowingLoadingOverlay = false
     @State private var isRatingEnabled: Bool = true
     @State private var navigateToCompDetails = false
     @State private var isPlaying = true
@@ -79,121 +59,106 @@ struct EntryView: View {
             }
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
-                self.isShowingLoadingOverlay = true // Show loading overlay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { // Wait for 2 seconds
-                    self.isRatingEnabled = true
-                    self.isShowingLoadingOverlay = false // Hide loading overlay
-                }
+                self.isRatingEnabled = true
             }
             
-            if isShowingLoadingOverlay {
-                AppColors.white.opacity(1) // Semi-transparent background
-                    .edgesIgnoringSafeArea(.all) // Make it cover the full screen
-                    .overlay(
-                        CustomProgressView() // Use your custom progress view here
-                            .scaleEffect(1) // Adjust the size as needed
-                    )
-            }
-            
-            if !isShowingLoadingOverlay {
-                // Bottom - Heart button, horizontally centered
-                VStack {
-                    Spacer() // Pushes the content to the bottom
+            // Bottom - Heart button, horizontally centered
+            VStack {
+                Spacer() // Pushes the content to the bottom
 
-                    // Container view for stars with background
-                    ZStack {
-                        HStack(alignment: .center, spacing: 10) {
-                            if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                                let maxStars = 5
+                // Container view for stars with background
+                ZStack {
+                    HStack(alignment: .center, spacing: 10) {
+                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                            let maxStars = 5
 
-                                ForEach(1...maxStars, id: \.self) { star in
-                                    let currentEntry = viewModel.entries[viewModel.currentIndex]
-                                    Button(action: {
-                                        isRatingEnabled = false
-                                        PostHogSDK.shared.capture("Star Rating", properties: ["rating": star])
-                                        triggerHapticFeedback(style: .soft)
-                                        let ratingIncrement = star
-                                        self.rating = ratingIncrement
-                                        let currentEntryId = currentEntry.id
-                                        viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
+                            ForEach(1...maxStars, id: \.self) { star in
+                                let currentEntry = viewModel.entries[viewModel.currentIndex]
+                                Button(action: {
+                                    isRatingEnabled = false
+                                    PostHogSDK.shared.capture("Star Rating", properties: ["rating": star])
+                                    triggerHapticFeedback(style: .soft)
+                                    let ratingIncrement = star
+                                    self.rating = ratingIncrement
+                                    let currentEntryId = currentEntry.id
+                                    viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
 
-                                        // Add check here to see if it's the last entry
-                                        if viewModel.currentIndex == viewModel.entries.count - 1 {
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                isPlaying = false
-                                                navigateToCompDetails = true
-                                            }
-                                        } else {
-                                            // Existing code to handle non-last entries
+                                    // Add check here to see if it's the last entry
+                                    if viewModel.currentIndex == viewModel.entries.count - 1 {
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                                            isPlaying = false
+                                            navigateToCompDetails = true
+                                        }
+                                    } else {
+                                        // Existing code to handle non-last entries
 
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                if viewModel.currentIndex < viewModel.entries.count - 1 {
-                                                    viewModel.currentIndex += 1
-                                                }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                                            if viewModel.currentIndex < viewModel.entries.count - 1 {
+                                                viewModel.currentIndex += 1
                                             }
                                         }
-                                    }) {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                            .font(.system(size: 33))
-                                            .padding(5)
                                     }
-                                    .disabled(!isRatingEnabled)
+                                }) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
+                                        .font(.system(size: 33))
+                                        .padding(5)
                                 }
+                                .disabled(!isRatingEnabled)
                             }
                         }
-                        .padding(.horizontal) // Adds horizontal padding to the HStack
-                        .padding(.vertical, 10) // Increase vertical padding of the HStack
-                        .background(RoundedRectangle(cornerRadius: 200)
-                            .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
-                        // Removed the shadow from the background
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
+                    .padding(.horizontal) // Adds horizontal padding to the HStack
+                    .padding(.vertical, 10) // Increase vertical padding of the HStack
+                    .background(RoundedRectangle(cornerRadius: 200)
+                        .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
+                    // Removed the shadow from the background
                 }
-                .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-
-                HStack {
-                    Button(action: {
-                        isPlaying = false
-                        navigateToCompDetails = true
-                    }) {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                    }
-
-                    Spacer()
-                    
-                    // Display the username here
-                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                        Text(viewModel.entries[viewModel.currentIndex].userName)
-                            .foregroundColor(.white) // Set the text color to white
-                            .font(.system(size: 20, weight: .bold, design: .default))
-                            .shadow(radius: 10)
-                            .truncationMode(.tail) // Adds an ellipsis at the end of the text if it's too long
-                            .lineLimit(1) // Ensures the text is on a single line
-                            .frame(maxWidth: 175)
-                    }
-
-                    Spacer()
-
-                    Button(action: {
-                        let banner = NotificationBanner(title: "Video Successfully Reported", style: .success)
-                        banner.show()
-                        PostHogSDK.shared.capture("Video Reported")
-                    }) {
-                        Image(systemName: "flag")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                    }
-                }
-                .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
-                .padding()
-
+                .padding(.horizontal)
+                .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
             }
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+
+            HStack {
+                Button(action: {
+                    isPlaying = false
+                    navigateToCompDetails = true
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                }
+
+                Spacer()
+                
+                // Display the username here
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    Text(viewModel.entries[viewModel.currentIndex].userName)
+                        .foregroundColor(.white) // Set the text color to white
+                        .font(.system(size: 20, weight: .bold, design: .default))
+                        .shadow(radius: 10)
+                        .truncationMode(.tail) // Adds an ellipsis at the end of the text if it's too long
+                        .lineLimit(1) // Ensures the text is on a single line
+                        .frame(maxWidth: 175)
+                }
+
+                Spacer()
+
+                Button(action: {
+                    let banner = NotificationBanner(title: "Video Successfully Reported", style: .success)
+                    banner.show()
+                    PostHogSDK.shared.capture("Video Reported")
+                }) {
+                    Image(systemName: "flag")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                }
+            }
+            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
+            .padding()
+
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
