@@ -14,29 +14,11 @@ struct CustomProgressView: View {
     @State private var isAnimating = false
 
     var body: some View {
-        VStack(spacing: 60) { // Adjust spacing as needed
-            HStack {
-                // Your logo and text views
-                Image("Logo") // Replace "YourLogo" with your logo image asset name
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 65, height: 65)
-                    .cornerRadius(200)
-
-                Text("Pingbear") // Replace with your app's name or desired text
-                    .font(.system(size: 35, weight: .bold, design: .default))
-                    .foregroundColor(.black)
-                    .padding(.leading, 15)
-            }
-            .padding() // Adjust padding around content inside the border
-            .background(RoundedRectangle(cornerRadius: 200) // Adjust corner radius as needed
-                .stroke(lineWidth: 4) // Adjust the line width here
-                .foregroundColor(AppColors.orange)) // Change the border color here
-
+        VStack { // Adjust spacing as needed
             Circle()
                 .trim(from: 0, to: 0.7) // Adjust this to change the circle's "filled" portion
                 .stroke(style: StrokeStyle(lineWidth: 7, lineCap: .round)) // Make edges round
-                .foregroundColor(AppColors.orange) // Set the circle's color
+                .foregroundColor(Color.black) // Set the circle's color
                 .frame(width: 50, height: 50) // Set the size of the circle
                 .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
                 .animation(Animation.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)

@@ -4,6 +4,7 @@ import Combine
 import Firebase
 import FirebaseStorage
 import FirebaseFirestore
+import PostHog
 
 struct CameraView: View {
     @StateObject var cameraModel = CameraViewModel()
@@ -127,6 +128,9 @@ struct FinalPreview: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: size.width, height: size.height)
                         .ignoresSafeArea()
+                        .onAppear {
+                            PostHogSDK.shared.capture("Camera Video Preview Opened")
+                        }
                     
                     // Back Button
                     VStack {
@@ -151,29 +155,19 @@ struct FinalPreview: View {
                     // Send Button at the bottom
                     VStack {
                         Spacer()
-                        Button {
+                        Button(action: {
                             submitEntry()
-                        } label: {
-                            Group {
-                                Label {
-                                    Image(systemName: "arrow.right")
-                                        .font(.system(size: 20, weight: .bold, design: .default))
-                                } icon: {
-                                    Text("Share")
-                                        .font(.system(size: 20, weight: .bold, design: .default))
-                                }
+                        }) {
+                            Text("Share")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#1199FF")) // Assuming Color(hex: "#1199FF") is equivalent to blue
                                 .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background {
-                                Capsule()
-                                    .fill(Color(hex: "#1199FF"))
-                            }
+                                .cornerRadius(200)
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                        .padding()
-                        .padding(.bottom, 65)
+                        .padding(.horizontal)
+                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20) // Added 20 points more padding to the top
                     }
                 }
             }
@@ -255,6 +249,7 @@ struct FinalPreview: View {
                                 }
                             }
                             self.isUploading = false
+                            PostHogSDK.shared.capture("New Video Shared")
                             self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
                         }
                     }

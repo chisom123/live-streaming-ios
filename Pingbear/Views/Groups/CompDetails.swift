@@ -38,14 +38,22 @@ struct CompDetails: View {
                         goHome = true
                         PostHogSDK.shared.capture("Close Competition Details")
                     }) {
-                        Image("Close")
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                            .padding(.leading, 20)
-                            .padding(.top, 20)
+                        Image(systemName: "arrow.left")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.black) // Your desired color
                     }
                     
                     Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    
+                    Text(competition.description)
+                        .font(.system(size: 17, weight: .bold, design: .default))
+                        .lineLimit(1)
+                        .foregroundColor(.black)
+                        .padding(.horizontal)
+                    
+                    Spacer()
                     
                     // Step 2: Share Button
                     Button(action: {
@@ -53,39 +61,30 @@ struct CompDetails: View {
                         isMembersPresented = true
                         PostHogSDK.shared.capture("View Group Members")
                     }) {
-                        HStack {
-                            Text("Group Members") // Text to display next to the icon
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#1199FF"))
-                        }
+                        Image(systemName: "ellipsis")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 30, height: 30) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.gray) // Your desired color
                     }
-                    .padding(.trailing, 20)
-                    .padding(.top, 20)
                 }
-    
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
                 
-                Text(competition.description)
-                    .font(.system(size: 19, weight: .bold, design: .default))
-                    .lineSpacing(10)
-                    .lineLimit(2)
-                    .foregroundColor(.black)
-                    .padding(.bottom, 20)
-                    .padding(.top, 30)
-                    .padding(.horizontal, 20)
-        
-                HStack(spacing: 20) { // Add an HStack with some spacing between the buttons
+                HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
+                    // Button positioned at the bottom right
                     Button(action: {
                         entryViewModel.removeListeners()
                         PostHogSDK.shared.capture("Add Video Initiated")
                         joincomp()
                     }) {
-                        Text("Add Video")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 17.5, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color.white)
-                            .cornerRadius(200)
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .frame(width: 45, height: 45)
+                            .padding(6)
+                            .background(Color(hex: "#F5F5F5"))
+                            .foregroundColor(Color(hex: "#000"))
+                            .clipShape(Circle())
                     }
 
                     Button(action: {
@@ -93,32 +92,35 @@ struct CompDetails: View {
                         vote()
                         PostHogSDK.shared.capture("Voting Initiated")
                     }) {
-                        Text("Rate Videos")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 17.5, weight: .bold, design: .default))
+                        Text("Start Rating")
+                            .frame(maxWidth: .infinity, minHeight: 45)
+                            .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#FF4500") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
-                }
-                .padding(.top, 10)
-                .padding(.horizontal, 20)
-                
-                HStack {
-                    Text("Starboard")
-                        .font(.system(size: 17, weight: .bold, design: .default))
-                        .foregroundColor(.black)
                     
-                    Toggle("", isOn: $showAggregate)
-                        .onChange(of: showAggregate) { value in
-                            let viewType = value ? "Aggregate" : "Individual"
-                            PostHogSDK.shared.capture("Leaderboard View Toggled", properties: ["View Type": viewType])
-                        }
+                    Button(action: {
+                        showAggregate.toggle()
+                        let viewType = showAggregate ? "Aggregate" : "Individual"
+                        PostHogSDK.shared.capture("Leaderboard View Toggled", properties: ["View Type": viewType])
+                    }) {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 25, height: 25)
+                            .foregroundColor(showAggregate ? Color.black : Color.gray)
+                    }
+                    .padding(.horizontal)
+                    
                 }
-                .padding(.top, 35)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
+                .padding(.horizontal, 10)
+                .background(Color(hex: "#F5F5F5"))
+                .cornerRadius(5)
+                .padding(.vertical, 20)
                 .padding(.horizontal, 20)
                 
                 if showAggregate {
