@@ -132,17 +132,14 @@ struct NameEntryView: View {
         
         let competitionRef = db.collection("competitions").document()
         let competitionData: [String: Any] = [
-            "description": "Welcome to Pingbear 👋",
+            "description": "\(processedUsername)'s group ✨",
             "timestamp": Timestamp()
         ]
         
         batch.setData(competitionData, forDocument: competitionRef)
         
         let predefinedVideos = [
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F9dd60ca036274b445c8dbb1b1eacfc4a.mp4?alt=media&token=7cea108e-87f4-4398-aa82-13d11e747e4e", "sChx4qnu3sgKXJpCl4NADXo5nhh1"),
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2Ff6a10a403a15f3e8ca7d880e46030197.mp4?alt=media&token=da387ff5-1290-4485-a2d3-6c9cefa7abba", "RGTNB4JpPhQBzRoMloZz6Z2s9Nz2"),
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F5e26c5c5712f6507d11ebf24ba777e09.mp4?alt=media&token=26150bbf-25d2-4be0-8a28-fa29a20c02a0", "1tZCGhXDSnf0z8Scpb8KN9TV2YI3"),
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F4d77cc666c787df149af7a2051db9fcb.mp4?alt=media&token=125bc365-0e29-4cc6-a3ac-b756f354b968", "sK5iDY6jsya6fBcDQW4EBgromZ72")
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F508c3d0f58ec4ea91e8ff936dd35756b.mp4?alt=media&token=e6cc8968-d561-45df-be9c-c7825fc3f724", "3lHhczXc4HdkGSgfxreybfwXWUz1")
         ]
 
         // Add predefined video entries with dynamic user data
