@@ -110,7 +110,6 @@ struct NameEntryView: View {
                self.errorMessage = "Error saving user: \(error.localizedDescription)"
                PostHogSDK.shared.capture("Username Save Failed", properties: ["error": error.localizedDescription])
            } else {
-               newgroup(processedUsername: processedUsername)
                self.navigateToHome = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
@@ -118,64 +117,4 @@ struct NameEntryView: View {
            }
        }
    }
-    
-    func newgroup(processedUsername: String) {
-
-        // Get the current user's ID
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("Error: User not logged in")
-            return
-        }
-        
-        let db = Firestore.firestore()
-        let batch = db.batch()
-        
-        let competitionRef = db.collection("competitions").document()
-        let competitionData: [String: Any] = [
-            "description": "\(processedUsername)'s group ✨",
-            "timestamp": Timestamp()
-        ]
-        
-        batch.setData(competitionData, forDocument: competitionRef)
-        
-        let predefinedVideos = [
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/welcome_videos%2F508c3d0f58ec4ea91e8ff936dd35756b.mp4?alt=media&token=e6cc8968-d561-45df-be9c-c7825fc3f724", "3lHhczXc4HdkGSgfxreybfwXWUz1")
-        ]
-
-        // Add predefined video entries with dynamic user data
-        for (videoURL, userID) in predefinedVideos {
-            let entryRef = competitionRef.collection("entries").document()
-            let entryData: [String: Any] = [
-                "userId": userID,  // Assigning current user's ID to each entry
-                "videoUrl": videoURL,
-                "timestamp": FieldValue.serverTimestamp(),
-                "superstar": false  // Assuming default superstar status is false
-            ]
-            batch.setData(entryData, forDocument: entryRef)
-        }
-        
-        // Set the user as a member in the "members" subcollection of the new competition
-        let memberRef = competitionRef.collection("members").document(userID)
-        let memberData: [String: Any] = [
-            "userId": userID
-        ]
-        batch.setData(memberData, forDocument: memberRef)
-        
-        // Correctly reference the 'groupMemberships' under the user's document
-        let groupMembershipRef = db.collection("groupMemberships").document(userID)
-                                      .collection("competitions").document(competitionRef.documentID)
-        let membershipData: [String: Any] = [
-            "competitionId": competitionRef.documentID
-        ]
-        batch.setData(membershipData, forDocument: groupMembershipRef)
-        
-        batch.commit { err in
-            if let err = err {
-                errorMessage = "Failed to create group: \(err.localizedDescription)"
-                PostHogSDK.shared.capture("Group Creation Failed", properties: ["error": err.localizedDescription])
-            } else {
-                PostHogSDK.shared.capture("Initial User Group Created", properties: ["userID": userID, "groupID": competitionRef.documentID])
-            }
-        }
-    }
 }

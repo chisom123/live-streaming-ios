@@ -50,6 +50,9 @@ struct NewCompetition: View {
                     .foregroundColor(.black)
                     .padding(.bottom, 40)
                     .padding(.horizontal)
+                    .onAppear {
+                        PostHogSDK.shared.capture("New Group View Opened")
+                    }
 
                 TextField("Group Name", text: $competitionDescription)
                     .keyboardType(.default)

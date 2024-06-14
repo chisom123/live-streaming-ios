@@ -22,7 +22,7 @@ struct BoostView: View {
             }
             Spacer() // This Spacer pushes the remaining content to center vertically
             Text(viewModel.boostStatus)
-                .font(.system(size: 30, weight: .bold, design: .default))
+                .font(.system(size: 25, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding() // Adds padding around the text.
                 .padding(.horizontal, 20)
