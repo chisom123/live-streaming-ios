@@ -21,18 +21,24 @@ struct MyCompsView: View {
 
                 Spacer() // Pushes the remaining content to the trailing edge
                 
-                Button(action: {
-                    viewModel.cleanupListeners()
-                    isPresentingNewCompetition = true
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 44, height: 44) // Adjust the size as needed
-                        .foregroundColor(Color(hex: "#1199FF")) // Your desired color
-                        .background(Color.white)
-                        .clipShape(Circle())
-                        .padding(.horizontal, 20)
+                if viewModel.isLoading {
+                    Text(" ")
+                } else if viewModel.competitions.isEmpty {
+                    Text(" ")
+                } else {
+                    Button(action: {
+                        viewModel.cleanupListeners()
+                        isPresentingNewCompetition = true
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 44, height: 44) // Adjust the size as needed
+                            .foregroundColor(Color(hex: "#1199FF")) // Your desired color
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .padding(.horizontal, 20)
+                    }
                 }
             }
             .padding(.vertical, 15)
