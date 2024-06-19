@@ -24,25 +24,6 @@ struct NewCompetition: View {
         return !trimmedName.isEmpty
     }
     
-    func fetchUsername() {
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("Error: User not logged in")
-            return
-        }
-        let userDoc = Firestore.firestore().collection("users").document(userID)
-        userDoc.getDocument { (document, error) in
-            if let document = document, document.exists {
-                if let username = document.data()?["username"] as? String {
-                    DispatchQueue.main.async {
-                        competitionDescription = "\(username)'s group ❤️" // Update the state variable
-                    }
-                }
-            } else {
-                print("Document does not exist or failed to fetch user data")
-            }
-        }
-    }
-    
     var body: some View {
         ZStack {
             VStack {
@@ -83,7 +64,6 @@ struct NewCompetition: View {
                     .cornerRadius(5)
                     .font(.system(size: 16, weight: .bold, design: .default))
                     .padding(.horizontal)
-                    .onAppear(perform: fetchUsername)
                 
                 if let error = errorMessage {
                     Text(error)
