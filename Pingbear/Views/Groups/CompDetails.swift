@@ -79,11 +79,11 @@ struct CompDetails: View {
                         joincomp()
                     }) {
                         Image(systemName: "camera.fill")
-                            .font(.system(size: 24, weight: .bold))
+                            .font(.system(size: 21, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .background(Color(hex: "#F5F5F5"))
-                            .foregroundColor(Color(hex: "#000"))
+                            .background(Color(hex: "#1199FF"))
+                            .foregroundColor(Color(hex: "#FFFFFF"))
                             .clipShape(Circle())
                     }
 
