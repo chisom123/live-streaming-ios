@@ -21,7 +21,6 @@ class Competition: ObservableObject, Identifiable {
 
 class CompetitionsModel: ObservableObject {
     @Published var competitions: [Competition] = []
-    @Published var isLoading = true
     
     var badgeCount = 0 {
         didSet {
@@ -32,41 +31,18 @@ class CompetitionsModel: ObservableObject {
         }
     }
     
-    private var loadingDebounceTimer: Timer?
-    
     func setupCompetitionListeners(userId: String) {
-        isLoading = true
-        
         let path = "groupMemberships/\(userId)/competitions"
         FirestoreListenerManager.shared.addListener(for: path) { [weak self] changes in
-            guard let self = self else { return }
-            
-            if changes.isEmpty {
-                self.debounceEndLoading()
-                return
-            }
-            
             for change in changes {
                 switch change.type {
                 case .added, .modified:
                     if let competitionId = change.document.data()["competitionId"] as? String {
-                        self.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId) {
-                            self.debounceEndLoading()
-                        }
+                        self?.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId)
                     }
                 case .removed:
-                    self.removeCompetition(change.document.documentID)
-                    self.debounceEndLoading()
+                    self?.removeCompetition(change.document.documentID)
                 }
-            }
-        }
-    }
-    
-    private func debounceEndLoading() {
-        loadingDebounceTimer?.invalidate()
-        loadingDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.0, repeats: false) { [weak self] _ in
-            DispatchQueue.main.async {
-                self?.isLoading = false
             }
         }
     }
@@ -75,7 +51,7 @@ class CompetitionsModel: ObservableObject {
         setupCompetitionListeners(userId: Auth.auth().currentUser?.uid ?? "")
     }
     
-    func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String, completion: @escaping () -> Void) {
+    func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String) {
         let db = Firestore.firestore()
         db.collection("competitions").document(competitionId).getDocument { [weak self] (documentSnapshot, err) in
             guard let self = self, let documentSnapshot = documentSnapshot, let data = documentSnapshot.data() else {
@@ -85,11 +61,9 @@ class CompetitionsModel: ObservableObject {
             let competition = Competition(
                 id: documentSnapshot.documentID,
                 description: data["description"] as? String ?? "No Description",
-                date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(),
-                entriesNotVotedCount: 0  // Default count
+                date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
             )
             self.setupEntriesListener(competition: competition, userId: userId)
-            completion()
         }
     }
     

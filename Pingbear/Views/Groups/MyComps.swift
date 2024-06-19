@@ -21,24 +21,18 @@ struct MyCompsView: View {
 
                 Spacer() // Pushes the remaining content to the trailing edge
                 
-                if viewModel.isLoading {
-                    Text(" ")
-                } else if viewModel.competitions.isEmpty {
-                    Text(" ")
-                } else {
-                    Button(action: {
-                        viewModel.cleanupListeners()
-                        isPresentingNewCompetition = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 44, height: 44) // Adjust the size as needed
-                            .foregroundColor(Color(hex: "#1199FF")) // Your desired color
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .padding(.horizontal, 20)
-                    }
+                Button(action: {
+                    viewModel.cleanupListeners()
+                    isPresentingNewCompetition = true
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 44, height: 44) // Adjust the size as needed
+                        .foregroundColor(Color(hex: "#1199FF")) // Your desired color
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .padding(.horizontal, 20)
                 }
             }
             .padding(.vertical, 15)
@@ -55,109 +49,66 @@ struct MyCompsView: View {
 //                .padding(.horizontal, 20)
 //                .padding(.bottom, 15)
             
-            if viewModel.isLoading {
-                Text(" ")
-            } else if viewModel.competitions.isEmpty {
-                // Empty state view
-                VStack {
-                    Spacer()
-                    
-                    Image("Empty")
-                        .resizable() // Allows the image to resize
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
-                        .frame(width: 250)
-                    
-                    Text("You have no groups yet")
-                        .font(.system(size: 23, weight: .bold, design: .default))
-                        .foregroundColor(.black) // Set the text color as needed
-                        .padding(.top, 25)
-                    
-                    Text("Create a new group to share and rate videos with your friends")
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .foregroundColor(.gray) // Set the text color as needed
-                        .multilineTextAlignment(.center) // Center align the text
-                        .lineSpacing(10) // Increase line spacing as needed
-                        .padding(.top, 15)
-                        .padding(.bottom, 25)
-                    
-                    Button(action: {
-                        isPresentingNewCompetition = true
-                    }) {
-                        Text("Create a Group")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#7B68EE"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
-                    }
-                    
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.horizontal)
-            } else {
-                ScrollView {
-                    VStack(spacing: 20) {  // Increased spacing between items
-                        ForEach(viewModel.competitions.filter { competition in
-                            searchText.isEmpty ||
-                            competition.description.localizedCaseInsensitiveContains(searchText)
-                        }, id: \.id) { competition in
-                            HStack {
-                                
-                                Text(competition.description)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .lineLimit(2)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.black)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10) // Increased padding
-                                
-                                Spacer()
-                                
-                                // Stars and symbol
-                                HStack(spacing: 8) { // Increased spacing
-                                    if competition.entriesNotVotedCount > 0 {
-                                        Text("\(competition.entriesNotVotedCount)")
-                                            .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
-                                            .foregroundColor(Color(hex: "#fff"))
-                                    } else {
-                                        Text("0")
-                                            .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
-                                            .foregroundColor(Color(hex: "#fff"))
-                                    }
-                                    
-                                    Image(systemName: "film.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18) // Slightly larger star icon
+            ScrollView {
+                VStack(spacing: 20) {  // Increased spacing between items
+                    ForEach(viewModel.competitions.filter { competition in
+                        searchText.isEmpty ||
+                        competition.description.localizedCaseInsensitiveContains(searchText)
+                    }, id: \.id) { competition in
+                        HStack {
+                            
+                            Text(competition.description)
+                                .font(.system(size: 16, weight: .bold))
+                                .lineLimit(2)
+                                .lineSpacing(9)
+                                .foregroundColor(.black)
+                                .truncationMode(.tail)
+                                .padding(.leading, 10) // Increased padding
+
+                            Spacer()
+                            
+                            // Stars and symbol
+                            HStack(spacing: 8) { // Increased spacing
+                                if competition.entriesNotVotedCount > 0 {
+                                    Text("\(competition.entriesNotVotedCount)")
+                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
+                                        .foregroundColor(Color(hex: "#fff"))
+                                } else {
+                                    Text("0")
+                                        .font(.system(size: 17, weight: .bold)) // Slightly larger font for stars
                                         .foregroundColor(Color(hex: "#fff"))
                                 }
-                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                .background(Color(hex: "#7B68EE"))
-                                .cornerRadius(200)
-                                .padding(.trailing, 10) // Increased padding
                                 
+                                Image(systemName: "film.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 18, height: 18) // Slightly larger star icon
+                                    .foregroundColor(Color(hex: "#fff"))
                             }
-                            .padding(20)
-                            .background(Color(hex: "#F5F5F5"))
-                            .cornerRadius(5)
-                            .padding(.horizontal, 20)
-                            .onTapGesture {
-                                viewModel.cleanupListeners()
-                                self.selectedCompetition = competition  // Set the selected competition
-                            }
+                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                            .background(Color(hex: "#7B68EE"))
+                            .cornerRadius(200)
+                            .padding(.trailing, 10) // Increased padding
+
+                        }
+                        .padding(20)
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
+                        .padding(.horizontal, 20)
+                        .onTapGesture {
+                            viewModel.cleanupListeners()
+                            self.selectedCompetition = competition  // Set the selected competition
                         }
                     }
                 }
             }
-        }
-        .navigationBarHidden(true)
-        .fullScreenCover(item: $selectedCompetition) { comp in
-            CompDetails(competition: comp)
-        }
-        .fullScreenCover(isPresented: $isPresentingNewCompetition) {
-            NewCompetition() // Replace this with the actual view you want to present
+            .navigationBarHidden(true)
+            .fullScreenCover(item: $selectedCompetition) { comp in
+                CompDetails(competition: comp)
+            }
+            .fullScreenCover(isPresented: $isPresentingNewCompetition) {
+                NewCompetition() // Replace this with the actual view you want to present
+            }
         }
         .onAppear {
             self.userId = Auth.auth().currentUser?.uid
