@@ -6,6 +6,7 @@ struct FriendWall: View {
     @State private var searchText = "" // State variable to hold search text
     @State private var username: String = ""
     @State private var goHome = false
+    @Environment(\.presentationMode) var presentationMode
     
     @ObservedObject var viewModel: MyFriendsModel // Add this line
     @ObservedObject var viewModel2: AddFriendsModel
@@ -17,17 +18,43 @@ struct FriendWall: View {
     
     var body: some View {
         VStack {
-            Text("Add Friends")
-                .font(.system(size: 20, weight: .bold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(.black)
-                .padding(.top, 40)
-                .padding(.bottom, 20)
-                .padding(.horizontal)
-                .onAppear {
-                    PostHogSDK.shared.capture("Friend Wall View Opened")
+            
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.black) // Your desired color
                 }
+                
+                Spacer()
+                
+                Text("Add Friends")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(10)
+                    .foregroundColor(.black)
+                    .padding(.top, 20)
+                    .padding(.bottom, 10)
+                    .padding(.horizontal)
+                    .onAppear {
+                        PostHogSDK.shared.capture("Friend Wall View Opened")
+                    }
+                
+                Spacer()
+                
+                Button("Skip") {
+                    goHome = true
+                    PostHogSDK.shared.capture("Skip button Pressed (Friend Wall)")
+                }
+                .font(.system(size: 15.5, weight: .bold, design: .default))
+                .foregroundColor(Color.gray)
+            }
+            .padding(.horizontal, 5)
+            .padding()
             
             HStack(alignment: .center, spacing: 10) {
                 TextField("Enter Friend's Username", text: $username)

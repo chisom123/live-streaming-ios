@@ -25,5 +25,7 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+    <key>NSContactsUsageDescription</key>
+    <string>This app uses your contacts to help you connect with friends already on the platform.</string>
 </dict>
 </plist>
