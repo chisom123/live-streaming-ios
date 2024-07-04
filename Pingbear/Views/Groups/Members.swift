@@ -97,6 +97,7 @@ struct MembersView: View {
                                 .padding(.leading, 10)
                         }
                         .padding(20)
+                        .padding(.vertical, 3)
                         .background(Color(hex: "#F5F5F5"))
                         .cornerRadius(5)
                     }
