@@ -41,7 +41,7 @@ struct AddFriendsView: View {
             
             VStack {
                 
-                Text("Add Friend")
+                Text("Add Friends")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
