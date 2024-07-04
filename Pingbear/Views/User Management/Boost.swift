@@ -12,15 +12,20 @@ struct BoostView: View {
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
                 }) {
-                    Image("Close")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .padding(.leading, 20)
-                        .padding(.top, 20)
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.black) // Your desired color
                 }
+                
                 Spacer()
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            
             Spacer() // This Spacer pushes the remaining content to center vertically
+            
             Text(viewModel.boostStatus)
                 .font(.system(size: 25, weight: .bold, design: .default))
                 .foregroundColor(.white)

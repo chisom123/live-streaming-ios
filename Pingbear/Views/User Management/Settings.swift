@@ -78,7 +78,7 @@ struct SettingsView: View {
                             .background(Color(hex: "#F5F5F5"))
                             .cornerRadius(5)
                             .fullScreenCover(isPresented: $showAddFriendsView) {  // Use the full screen cover modifier
-                                AddFriendsView(viewModel: AddFriendsModel())
+                                AddFriendsView(addFriendsModel: AddFriendsModel())
                             }
                             
                             // Change Name Button

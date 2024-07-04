@@ -104,21 +104,19 @@ struct ContactAccessView: View {
     @StateObject var addFriendModel = AddFriendsModel()
     
     @State private var goHome = false
-    @State private var addFriend = false
 
     var body: some View {
         VStack {
             
             HStack {
                 
-                Button(action: {
-                    addFriend = true
-                    PostHogSDK.shared.capture("Person Badge Plus button Pressed")
-                }) {
-                    Image(systemName: "person.badge.plus")
-                        .font(.system(size: 23, weight: .bold, design: .default))
-                        .foregroundColor(Color(hex: "#1199FF"))
+                Button("Skip") {
+                    goHome = true
+                    PostHogSDK.shared.capture("Skip button Pressed (Contact Access)")
                 }
+                .font(.system(size: 15.5, weight: .bold, design: .default))
+                .foregroundColor(Color.gray)
+                .opacity(0)
                 
                 Spacer()
                 
@@ -220,9 +218,6 @@ struct ContactAccessView: View {
         }
         .fullScreenCover(isPresented: $goHome, content: {
             ContentView()
-        })
-        .fullScreenCover(isPresented: $addFriend, content: {
-            FriendWall(viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
         })
     }
 

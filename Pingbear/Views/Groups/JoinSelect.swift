@@ -27,15 +27,17 @@ struct JoinSelectView: View {
                 Button(action: {
                     isPresentingCompDetails = true
                 }) {
-                    Image("Close")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .padding(.leading, 20)
-                        .padding(.top, 20)
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.black) // Your desired color
                 }
                 
                 Spacer()
             }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
             
             VStack {
                 
@@ -44,8 +46,8 @@ struct JoinSelectView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)
-                    .padding(.top, 40)
-                    .padding(.bottom, 40)
+                    .padding(.top, 10)
+                    .padding(.bottom, 35)
                     .padding(.horizontal)
                 
                 
@@ -54,9 +56,10 @@ struct JoinSelectView: View {
                 HStack(alignment: .center, spacing: 10) {
                     TextField("Enter Friend's Username", text: $username)
                         .padding()
+                        .padding(.vertical, 5)
                         .background(Color(hex: "#F5F5F5"))
                         .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(5)
+                        .cornerRadius(10)
                         .font(.system(size: 16, weight: .bold, design: .default))
                     
                     Button(action: {
@@ -73,9 +76,10 @@ struct JoinSelectView: View {
                         Image(systemName: "plus")
                             .font(.system(size: 22, weight: .bold, design: .default))
                             .padding()
+                            .padding(.vertical, 5)
                             .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(5)
+                            .cornerRadius(10)
                     }
                 }
                 
@@ -123,9 +127,6 @@ struct JoinSelectView: View {
                 
             }
             .padding(.horizontal)
-        }
-        .refreshable {
-            viewModel.fetchFriends()
         }
         .onAppear {
             viewModel.fetchFriends() // Fetch friends when the view appears
@@ -263,6 +264,7 @@ struct SelectableFriendView: View {
                 
             }
             .padding(20)
+            .padding(.vertical, 3)
             .background(isSelected ? Color(hex: "#1199FF").opacity(0.2) : Color(hex: "#F5F5F5"))
             .cornerRadius(5)
         }

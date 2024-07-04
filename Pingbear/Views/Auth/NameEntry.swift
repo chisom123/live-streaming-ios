@@ -62,6 +62,7 @@ struct NameEntryView: View {
             }.isDetailLink(false) // To avoid any potential navigation issues
         }
         .padding()
+        .navigationBarHidden(true)
     }
     
     func checkUsernameAndSaveToFirestore() {

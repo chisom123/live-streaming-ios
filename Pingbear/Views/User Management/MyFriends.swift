@@ -16,15 +16,16 @@ struct MyFriendsView: View {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
                     }) {
-                        Image("Close")
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                            .padding(.leading, 20)
-                            .padding(.top, 20)
+                        Image(systemName: "arrow.left")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.black) // Your desired color
                     }
                     Spacer()
                 }
-                .padding(.bottom, 10)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
 
                 ScrollView {
                     VStack(spacing: 25) {
@@ -57,9 +58,6 @@ struct MyFriendsView: View {
                     .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
-            }
-            .refreshable {
-                viewModel.fetchFriends()
             }
             .onAppear {
                 viewModel.fetchFriends()

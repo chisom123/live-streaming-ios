@@ -25,15 +25,17 @@ struct ChangeNameView: View {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
                     }) {
-                        Image("Close")
-                            .resizable()
-                            .frame(width: 40, height: 40)
-                            .padding(.leading, 20)
-                            .padding(.top, 20)
+                        Image(systemName: "arrow.left")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.black) // Your desired color
                     }
                     
-                    Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    Spacer()
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
                 
                 Spacer()
 
@@ -59,7 +61,7 @@ struct ChangeNameView: View {
                     case .error:
                         Text(errorMessage ?? "An error occurred")
                             .foregroundColor(Color(hex: "#CC2255"))
-                            .font(.system(size: 15, weight: .bold, design: .default))
+                            .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
                             .padding(.bottom, 5)
@@ -68,8 +70,8 @@ struct ChangeNameView: View {
                         
                     case .success:
                         Text("Successfully Saved")
-                            .foregroundColor(Color(hex: "#556B2F"))
-                            .font(.system(size: 15, weight: .bold, design: .default))
+                            .foregroundColor(Color(hex: "#008000"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
                             .padding(.bottom, 5)
