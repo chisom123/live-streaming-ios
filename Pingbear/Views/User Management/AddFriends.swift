@@ -155,8 +155,6 @@ struct AddFriendsView: View {
                 }
             }
             .padding(.horizontal)
-            
-            Spacer()
         }
         .onAppear {
             viewModel.requestContactAccess()
