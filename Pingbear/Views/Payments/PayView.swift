@@ -31,18 +31,34 @@ struct PayView: View {
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 25)
+                    .padding(.bottom, 20)
                     
-                    (Text("Get an ")
-                        + Text("extra star")
-                            .underline()
-                        + Text(" every time your videos are rated"))
-                        .font(.system(size: 22, weight: .bold, design: .default)) // Apply common styling here
+                    Image("boost")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit) // Maintain aspect ratio
+                        .frame(width: 70)
+                    
+                    Text("Get an extra star every time your videos are rated")
+                        .font(.system(size: 21.5, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
                         .foregroundColor(Color(hex: "#FFF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
-                        .padding(.bottom, 30)
-                        .padding(.top, 30)
-                        .padding()
+                        .padding(.bottom, 20)
+                        .padding(.top, 20)
+                        .padding(.horizontal, 25)
+                    
+                    HStack {
+                        Text("Boost your videos")
+                            .font(.system(size: 17, weight: .bold, design: .default)) // Apply common styling here
+                            .multilineTextAlignment(.leading)
+                            .lineSpacing(10)
+                            .foregroundColor(Color(hex: "#ABAFD1")) // This affects the entire Text view, might need adjustment if it overrides individual colors
+                            .padding(.bottom, 10)
+                            .padding(.top, 10)
+                            .padding(.horizontal, 20)
+                        
+                        Spacer()
+                    }
                     
                     ScrollView {
                         VStack {
