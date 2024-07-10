@@ -33,6 +33,8 @@ class EntryViewModel: ObservableObject {
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
     
+    private var debounceWorkItems: [String: DispatchWorkItem] = [:]
+    
     enum FetchEntriesMode {
         case entryView
         case compDetailsView
@@ -51,6 +53,19 @@ class EntryViewModel: ObservableObject {
     func setupListeners(mode: FetchEntriesMode) {
         setupEntriesListener()
         setupVotesListener()
+    }
+
+    private func setupDebouncedListener(path: String, process: @escaping () -> Void) {
+        removeDebouncedListener(path: path)
+        
+        let workItem = DispatchWorkItem(block: process)
+        debounceWorkItems[path] = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+    
+    private func removeDebouncedListener(path: String) {
+        debounceWorkItems[path]?.cancel()
+        debounceWorkItems.removeValue(forKey: path)
     }
 
     private func setupEntriesListener() {
@@ -72,9 +87,11 @@ class EntryViewModel: ObservableObject {
                                      return
                                  }
 
-                                 let ids = snapshot.documents.map { $0.documentID }
-                                 self.allEntryIds = Set(ids)
-                                 self.updateVoteStatus()
+                                 self.setupDebouncedListener(path: entriesPath) {
+                                     let ids = snapshot.documents.map { $0.documentID }
+                                     self.allEntryIds = Set(ids)
+                                     self.updateVoteStatus()
+                                 }
                              }
     }
 
@@ -92,9 +109,11 @@ class EntryViewModel: ObservableObject {
                 return
             }
 
-            let ids = snapshot.documents.compactMap { $0.data()["entryId"] as? String }
-            self.votedEntryIds = Set(ids)
-            self.updateVoteStatus()
+            self.setupDebouncedListener(path: votesPath) {
+                let ids = snapshot.documents.compactMap { $0.data()["entryId"] as? String }
+                self.votedEntryIds = Set(ids)
+                self.updateVoteStatus()
+            }
         }
     }
 
@@ -108,6 +127,12 @@ class EntryViewModel: ObservableObject {
         entriesListener?.remove()
         votesListener?.remove()
         leaderboardListener?.remove()
+        
+        // Remove all debouncing work items
+        debounceWorkItems.forEach { key, workItem in
+            workItem.cancel()  // Cancel each work item
+        }
+        debounceWorkItems.removeAll()  // Clear the dictionary
     }
     
     func fetchEntries(mode: FetchEntriesMode) {
@@ -159,6 +184,7 @@ class EntryViewModel: ObservableObject {
 
     private func fetchCompDetailsViewEntries(query: Query) {
         let currentUserId = Auth.auth().currentUser?.uid
+        let queryIdentifier = "LeaderboardQuery-\(competitionId)"
         
         leaderboardListener = query.addSnapshotListener { [weak self] (snapshot, error) in
             guard let self = self else { return }
@@ -166,7 +192,9 @@ class EntryViewModel: ObservableObject {
                 print("Error getting entries: \(error)")
                 return
             }
-            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
+            self.setupDebouncedListener(path: queryIdentifier) {
+                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
+            }
         }
     }
 

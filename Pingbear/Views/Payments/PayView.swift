@@ -31,20 +31,21 @@ struct PayView: View {
                     }
                     .padding(.top, 20)
                     .padding(.horizontal, 25)
-                    .padding(.bottom, 20)
+                    .padding(.bottom, 25)
                     
-                    Image("boost")
+                    Image(systemName: "star.fill")
                         .resizable()
-                        .aspectRatio(contentMode: .fit) // Maintain aspect ratio
-                        .frame(width: 70)
+                        .scaledToFit()
+                        .frame(width: 45, height: 45)
+                        .foregroundColor(Color(hex: "#FFD700"))
                     
                     Text("Get an extra star every time your videos are rated")
                         .font(.system(size: 21.5, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
                         .foregroundColor(Color(hex: "#FFF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
-                        .padding(.bottom, 20)
-                        .padding(.top, 20)
+                        .padding(.bottom, 25)
+                        .padding(.top, 25)
                         .padding(.horizontal, 25)
                     
                     HStack {
