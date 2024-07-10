@@ -132,6 +132,7 @@ struct CompDetails: View {
                 Spacer() // Pushes the button to the bottom
                 HStack {
                     Spacer() // Pushes the button to the right
+                    
                     Button(action: {
                         entryViewModel.removeListeners()
                         PostHogSDK.shared.capture("Add Video Initiated")
@@ -146,6 +147,8 @@ struct CompDetails: View {
                             .clipShape(Circle())
                     }
                     .padding() // Adds padding around the button
+                    
+                    Spacer()
                 }
             }
         }
