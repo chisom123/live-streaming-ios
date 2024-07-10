@@ -74,18 +74,16 @@ struct CompDetails: View {
                 HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
                     // Button positioned at the bottom right
                     Button(action: {
-                        entryViewModel.removeListeners()
-                        PostHogSDK.shared.capture("Add Video Initiated")
-                        joincomp()
+
                     }) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 24, weight: .bold))
-                            .frame(width: 45, height: 45)
-                            .padding(6)
-                            .background(Color(hex: "#F5F5F5"))
-                            .foregroundColor(Color(hex: "#000"))
-                            .clipShape(Circle())
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 25, height: 25)
+                            .foregroundColor(showAggregate ? Color.black : Color.gray)
                     }
+                    .padding(.horizontal)
+                    .opacity(0)
 
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -96,7 +94,7 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#FF4500") : Color(hex: "#D3D3D3"))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
@@ -127,6 +125,27 @@ struct CompDetails: View {
                     aggregateLeaderboardView  // Display aggregate leaderboard
                 } else {
                     individualLeaderboardView // Display individual entries
+                }
+            }
+            
+            VStack {
+                Spacer() // Pushes the button to the bottom
+                HStack {
+                    Spacer() // Pushes the button to the right
+                    Button(action: {
+                        entryViewModel.removeListeners()
+                        PostHogSDK.shared.capture("Add Video Initiated")
+                        joincomp()
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 60, height: 60) // Adjust the size as needed
+                            .foregroundColor(Color(hex: "#1199FF")) // Your desired color
+                            .background(Color.white)
+                            .clipShape(Circle())
+                    }
+                    .padding() // Adds padding around the button
                 }
             }
         }
