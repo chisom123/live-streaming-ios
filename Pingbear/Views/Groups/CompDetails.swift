@@ -52,6 +52,9 @@ struct CompDetails: View {
                         .lineLimit(1)
                         .foregroundColor(.black)
                         .padding(.horizontal)
+                        .onAppear {
+                            PostHogSDK.shared.capture("Comp Details View Opened")
+                        }
                     
                     Spacer()
                     
@@ -74,16 +77,16 @@ struct CompDetails: View {
                 HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
                     // Button positioned at the bottom right
                     Button(action: {
-
+                        initiateVideoCapture()
                     }) {
-                        Image(systemName: "arrow.up.arrow.down.circle")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(showAggregate ? Color.black : Color.gray)
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .frame(width: 45, height: 45)
+                            .padding(6)
+                            .background(Color(hex: "#F5F5F5"))
+                            .foregroundColor(Color(hex: "#000"))
+                            .clipShape(Circle())
                     }
-                    .padding(.horizontal)
-                    .opacity(0)
 
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -122,34 +125,20 @@ struct CompDetails: View {
                 .padding(.horizontal, 20)
                 
                 if showAggregate {
-                    aggregateLeaderboardView  // Display aggregate leaderboard
-                } else {
-                    individualLeaderboardView // Display individual entries
-                }
-            }
-            
-            VStack {
-                Spacer() // Pushes the button to the bottom
-                HStack {
-                    Spacer() // Pushes the button to the right
-                    
-                    Button(action: {
-                        entryViewModel.removeListeners()
-                        PostHogSDK.shared.capture("Add Video Initiated")
-                        joincomp()
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 60) // Adjust the size as needed
-                            .foregroundColor(Color(hex: "#1199FF")) // Your desired color
-                            .background(Color.white)
-                            .clipShape(Circle())
+                    if entryViewModel.userLeaderboard.isEmpty {
+                        EmptyLeaderboardView(action: initiateVideoCapture)
+                    } else {
+                        aggregateLeaderboardView
                     }
-                    .padding() // Adds padding around the button
-                    
-                    Spacer()
+                } else {
+                    if entryViewModel.entries.isEmpty {
+                        EmptyLeaderboardView(action: initiateVideoCapture)
+                    } else {
+                        individualLeaderboardView
+                    }
                 }
+                
+                Spacer()
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
@@ -231,10 +220,58 @@ struct CompDetails: View {
         .padding(.horizontal, 20)
     }
     
+    func initiateVideoCapture() {
+        entryViewModel.removeListeners()
+        PostHogSDK.shared.capture("Add Video Initiated")
+        joincomp()
+    }
+    
     func joincomp() {
         self.isCameraPresented = true
     }
     func vote() {
         self.isVotingPresented = true
+    }
+}
+
+struct EmptyLeaderboardView: View {
+    var action: () -> Void
+    
+    var body: some View {
+        VStack {
+            Image("Empty")
+                .resizable() // Allows the image to resize
+                .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
+                .frame(width: 150)
+            
+            Text("Share a video")
+                .font(.system(size: 23, weight: .bold, design: .default))
+                .foregroundColor(.black) // Set the text color as needed
+                .padding(.top, 25)
+            
+            Text("Only members of this group can rate videos you share. Have fun 😊")
+                .font(.system(size: 16, weight: .bold, design: .default))
+                .foregroundColor(.gray) // Set the text color as needed
+                .multilineTextAlignment(.center) // Center align the text
+                .lineSpacing(10) // Increase line spacing as needed
+                .padding(.top, 15)
+                .padding(.bottom, 25)
+            
+            Button(action: action) {  // This button now uses the passed function
+                Text("New Video")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
+            }
+            
+ 
+        }
+        .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
     }
 }
