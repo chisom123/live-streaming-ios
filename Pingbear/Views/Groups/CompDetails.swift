@@ -245,7 +245,7 @@ struct EmptyLeaderboardView: View {
                 .frame(width: 150)
             
             Text("Share a video")
-                .font(.system(size: 23, weight: .bold, design: .default))
+                .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
             
