@@ -133,7 +133,7 @@ struct NameEntryView: View {
         
         let competitionRef = db.collection("competitions").document()
         let competitionData: [String: Any] = [
-            "description": "My Group",
+            "description": "\(processedUsername)'s group",
             "timestamp": Timestamp()
         ]
         

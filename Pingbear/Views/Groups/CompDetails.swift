@@ -127,18 +127,19 @@ struct CompDetails: View {
                 if showAggregate {
                     if entryViewModel.userLeaderboard.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
+                        Spacer()
                     } else {
                         aggregateLeaderboardView
                     }
                 } else {
                     if entryViewModel.entries.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
+                        Spacer()
                     } else {
                         individualLeaderboardView
                     }
                 }
                 
-                Spacer()
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
@@ -184,6 +185,9 @@ struct CompDetails: View {
         }
         .fullScreenCover(item: $selectedEntry) { entry in
             StarboardVideoPlayer(entry: entry, competition: competition)
+        }
+        .refreshable {
+            entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
         }
     }
 
@@ -249,7 +253,7 @@ struct EmptyLeaderboardView: View {
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
             
-            Text("Only members of this group can rate videos you share. Have fun 😊")
+            Text("Only you and members of this group can rate the videos you share")
                 .font(.system(size: 16, weight: .bold, design: .default))
                 .foregroundColor(.gray) // Set the text color as needed
                 .multilineTextAlignment(.center) // Center align the text

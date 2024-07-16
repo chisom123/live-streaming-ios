@@ -35,6 +35,8 @@ class EntryViewModel: ObservableObject {
     
     private var debounceWorkItems: [String: DispatchWorkItem] = [:]
     
+    private let db = Firestore.firestore()
+    
     enum FetchEntriesMode {
         case entryView
         case compDetailsView
@@ -60,7 +62,7 @@ class EntryViewModel: ObservableObject {
         
         let workItem = DispatchWorkItem(block: process)
         debounceWorkItems[path] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0, execute: workItem)
     }
     
     private func removeDebouncedListener(path: String) {
@@ -69,7 +71,6 @@ class EntryViewModel: ObservableObject {
     }
 
     private func setupEntriesListener() {
-        let db = Firestore.firestore()
         let entriesPath = "competitions/\(competitionId)/entries"
 
         // Calculate the time 24 hours ago from now using Calendar
@@ -101,7 +102,6 @@ class EntryViewModel: ObservableObject {
             return
         }
 
-        let db = Firestore.firestore()
         let votesPath = "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
         votesListener = db.collection(votesPath).addSnapshotListener { [weak self] snapshot, error in
             guard let self = self, let snapshot = snapshot, error == nil else {
@@ -136,7 +136,6 @@ class EntryViewModel: ObservableObject {
     }
     
     func fetchEntries(mode: FetchEntriesMode) {
-        let db = Firestore.firestore()
         guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
             print("Error calculating date 24 hours ago")
             return
@@ -166,7 +165,7 @@ class EntryViewModel: ObservableObject {
             }
 
             // Fetch the list of voted entries
-            let votesCollection = Firestore.firestore().collection("groupMemberships").document(currentUserId)
+            let votesCollection = db.collection("groupMemberships").document(currentUserId)
                                    .collection("competitions").document(self.competitionId)
                                    .collection("votes")
             
@@ -184,17 +183,14 @@ class EntryViewModel: ObservableObject {
 
     private func fetchCompDetailsViewEntries(query: Query) {
         let currentUserId = Auth.auth().currentUser?.uid
-        let queryIdentifier = "LeaderboardQuery-\(competitionId)"
         
-        leaderboardListener = query.addSnapshotListener { [weak self] (snapshot, error) in
+        query.getDocuments { [weak self] (snapshot, error) in
             guard let self = self else { return }
             if let error = error {
                 print("Error getting entries: \(error)")
                 return
             }
-            self.setupDebouncedListener(path: queryIdentifier) {
-                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
-            }
+            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
         }
     }
 
@@ -219,7 +215,7 @@ class EntryViewModel: ObservableObject {
             let timestamp = document.data()["timestamp"] as? Timestamp
             let creationDate = timestamp?.dateValue() ?? Date()
 
-            Firestore.firestore().collection("users").document(userId).getDocument { (userSnapshot, error) in
+            db.collection("users").document(userId).getDocument { (userSnapshot, error) in
                 defer { group.leave() }
                 if let error = error {
                     print("Error getting user: \(error)")
@@ -246,7 +242,6 @@ class EntryViewModel: ObservableObject {
     }
 
     func updateStarRating(for entryId: String, with stars: Int) {
-        let db = Firestore.firestore()
 
         // Fetching the current Firebase user's ID
         guard let currentUserId = Auth.auth().currentUser?.uid else {
@@ -294,10 +289,9 @@ class EntryViewModel: ObservableObject {
     }
     
     func fetchFCMTokenAndSendNotification(to userId: String, forEntryId entryId: String, withNewStars starIncrement: Int) {
-        let db = Firestore.firestore()
         
-        let usersRef = Firestore.firestore().collection("users").document(userId)
-        usersRef.getDocument { (document, error) in
+        let usersRef = db.collection("users").document(userId)
+        usersRef.getDocument { [self] (document, error) in
             if let error = error {
                 print("Error fetching user: \(error)")
                 return
