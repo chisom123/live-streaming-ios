@@ -248,17 +248,10 @@ struct EmptyLeaderboardView: View {
                 .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
                 .frame(width: 150)
             
-            Text("Share a video")
+            Text("Share a Video")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
-            
-            Text("Only you and members of this group can rate the videos you share")
-                .font(.system(size: 16, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center) // Center align the text
-                .lineSpacing(10) // Increase line spacing as needed
-                .padding(.top, 15)
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function

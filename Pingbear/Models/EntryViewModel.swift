@@ -26,14 +26,8 @@ class EntryViewModel: ObservableObject {
     @Published var currentIndex: Int = 0
     private var notificationSender = PushNotificationSender()
     
-    private var entriesListener: ListenerRegistration?
-    private var votesListener: ListenerRegistration?
-    private var leaderboardListener: ListenerRegistration?
-    
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
-    
-    private var debounceWorkItems: [String: DispatchWorkItem] = [:]
     
     private let db = Firestore.firestore()
     
@@ -57,19 +51,6 @@ class EntryViewModel: ObservableObject {
         setupVotesListener()
     }
 
-    private func setupDebouncedListener(path: String, process: @escaping () -> Void) {
-        removeDebouncedListener(path: path)
-        
-        let workItem = DispatchWorkItem(block: process)
-        debounceWorkItems[path] = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0, execute: workItem)
-    }
-    
-    private func removeDebouncedListener(path: String) {
-        debounceWorkItems[path]?.cancel()
-        debounceWorkItems.removeValue(forKey: path)
-    }
-
     private func setupEntriesListener() {
         let entriesPath = "competitions/\(competitionId)/entries"
 
@@ -78,22 +59,17 @@ class EntryViewModel: ObservableObject {
             print("Could not compute the date 24 hours ago.")
             return
         }
-
-        // Set up the listener with a timestamp filter
-        entriesListener = db.collection(entriesPath)
-                             .whereField("timestamp", isGreaterThan: twentyFourHoursAgo)
-                             .addSnapshotListener { [weak self] snapshot, error in
-                                 guard let self = self, let snapshot = snapshot, error == nil else {
-                                     print("Error listening for entry updates: \(error?.localizedDescription ?? "Unknown error")")
-                                     return
-                                 }
-
-                                 self.setupDebouncedListener(path: entriesPath) {
-                                     let ids = snapshot.documents.map { $0.documentID }
-                                     self.allEntryIds = Set(ids)
-                                     self.updateVoteStatus()
-                                 }
-                             }
+        
+        FirestoreListenerManager.shared.addListener(for: entriesPath) { [weak self] changes in
+            let filteredChanges = changes.filter { change in
+                guard let timestamp = change.document.data()["timestamp"] as? Timestamp else { return false }
+                return timestamp.dateValue() > twentyFourHoursAgo
+            }
+            
+            let ids = filteredChanges.map { $0.document.documentID }
+            self?.allEntryIds = Set(ids)
+            self?.updateVoteStatus()
+        }
     }
 
     private func setupVotesListener() {
@@ -103,17 +79,10 @@ class EntryViewModel: ObservableObject {
         }
 
         let votesPath = "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
-        votesListener = db.collection(votesPath).addSnapshotListener { [weak self] snapshot, error in
-            guard let self = self, let snapshot = snapshot, error == nil else {
-                print("Error listening for votes updates: \(error?.localizedDescription ?? "Unknown error")")
-                return
-            }
-
-            self.setupDebouncedListener(path: votesPath) {
-                let ids = snapshot.documents.compactMap { $0.data()["entryId"] as? String }
-                self.votedEntryIds = Set(ids)
-                self.updateVoteStatus()
-            }
+        FirestoreListenerManager.shared.addListener(for: votesPath) { [weak self] changes in
+            let ids = changes.compactMap { $0.document.data()["entryId"] as? String }
+            self?.votedEntryIds = Set(ids)
+            self?.updateVoteStatus()
         }
     }
 
@@ -124,15 +93,23 @@ class EntryViewModel: ObservableObject {
     }
 
     func removeListeners() {
-        entriesListener?.remove()
-        votesListener?.remove()
-        leaderboardListener?.remove()
-        
-        // Remove all debouncing work items
-        debounceWorkItems.forEach { key, workItem in
-            workItem.cancel()  // Cancel each work item
+        // Create an array of paths for which listeners need to be removed
+        let paths = [
+            "competitions/\(competitionId)/entries",
+            getVotesPath()
+        ]
+
+        // Remove each listener
+        paths.forEach { path in
+            FirestoreListenerManager.shared.removeListener(for: path)
         }
-        debounceWorkItems.removeAll()  // Clear the dictionary
+    }
+
+    private func getVotesPath() -> String {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            fatalError("No current user ID found.")
+        }
+        return "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
     }
     
     func fetchEntries(mode: FetchEntriesMode) {
