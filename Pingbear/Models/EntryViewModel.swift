@@ -21,7 +21,7 @@ struct UserEntry: Identifiable {
 class EntryViewModel: ObservableObject {
     @Published var entries: [Entry] = []
     @Published var userLeaderboard: [UserEntry] = []
-    @Published var hasEntriesToVoteOn: Bool = true
+    @Published var hasEntriesToVoteOn: Bool = false
     var competitionId: String
     @Published var currentIndex: Int = 0
     private var notificationSender = PushNotificationSender()
@@ -61,13 +61,13 @@ class EntryViewModel: ObservableObject {
         }
         
         FirestoreListenerManager.shared.addListener(for: entriesPath) { [weak self] changes in
-            let filteredChanges = changes.filter { change in
+            let addedEntries = changes.filter { change in
                 guard let timestamp = change.document.data()["timestamp"] as? Timestamp else { return false }
-                return timestamp.dateValue() > twentyFourHoursAgo
+                return change.type == .added && timestamp.dateValue() > twentyFourHoursAgo
             }
             
-            let ids = filteredChanges.map { $0.document.documentID }
-            self?.allEntryIds = Set(ids)
+            let newEntryIds = Set(addedEntries.map { $0.document.documentID })
+            self?.allEntryIds.formUnion(newEntryIds)
             self?.updateVoteStatus()
         }
     }
@@ -88,7 +88,9 @@ class EntryViewModel: ObservableObject {
 
     private func updateVoteStatus() {
         DispatchQueue.main.async {
-            self.hasEntriesToVoteOn = !self.allEntryIds.subtracting(self.votedEntryIds).isEmpty
+            let hasEntries = !self.allEntryIds.isEmpty
+            let hasUnvotedEntries = !self.allEntryIds.subtracting(self.votedEntryIds).isEmpty
+            self.hasEntriesToVoteOn = hasEntries && hasUnvotedEntries
         }
     }
 
