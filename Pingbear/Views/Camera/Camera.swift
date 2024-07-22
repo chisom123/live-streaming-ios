@@ -194,69 +194,116 @@ struct FinalPreview: View {
             return
         }
 
-        let videoURL = self.url // Direct use without unwrapping
-
-        let db = Firestore.firestore()
-        let storage = Storage.storage()
-        let storageRef = storage.reference()
-        let videoRef = storageRef.child("videos/\(UUID().uuidString).mov")
-
-        // Upload video from the file URL
-        videoRef.putFile(from: videoURL, metadata: nil) { metadata, error in
-            guard let _ = metadata, error == nil else {
-                print("Error uploading video: \(error?.localizedDescription ?? "unknown error")")
-                return
-            }
-
-            videoRef.downloadURL { result in
-                switch result {
-                case .success(let downloadURL):
-                    // Check for boost expiration in user document
-                    let userDocRef = Firestore.firestore().collection("users").document(userId)
-                    userDocRef.getDocument { (document, error) in
-                        var superstar = false // Default value if boost doesn't exist
-                        
-                        if let document = document, document.exists {
-                            if let boostDate = document.data()?["boost"] as? Timestamp {
-                                let now = Timestamp(date: Date())
-                                superstar = boostDate.compare(now) == .orderedDescending // Check if boost is in the future
-                            }
-                        } else {
-                            print("User document not found or boost data unavailable, setting superstar to false")
-                        }
-
-                        let entryData = [
-                            "userId": userId,
-                            "videoUrl": downloadURL.absoluteString,
-                            "timestamp": FieldValue.serverTimestamp(),
-                            "superstar": superstar // Add superstar status based on boost check
-                        ]
-                        
-                        var newEntryRef: DocumentReference? = nil
-                        newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
-                            if let error = error {
-                                print("Error saving entry: \(error)")
-                            } else {
-                                self.newentryDocId = newEntryRef?.documentID
-                                print("Entry saved successfully")
-                                
-                                DispatchQueue.main.async {
-                                    if superstar {
-                                        self.navigateToCompDetails = true // Navigate to competition details if superstar
-                                    } else {
-                                        self.entrySaved = true // Trigger entry saved flow if not superstar
-                                    }
-                                }
-                            }
-                            self.isUploading = false
-                            PostHogSDK.shared.capture("New Video Shared")
-                            self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
-                        }
-                    }
-                case .failure(let error):
-                    print("Error getting download URL: \(error)")
+        let videoURL = self.url
+        
+        // 1. Compress video before uploading
+        compressVideo(inputURL: videoURL) { compressedURL in
+            guard let compressedURL = compressedURL else {
+                print("Failed to compress video")
+                DispatchQueue.main.async {
                     self.isUploading = false
                 }
+                return
+            }
+            
+            // 2. Upload the compressed video
+            let storageRef = Storage.storage().reference().child("videos/\(UUID().uuidString).mov")
+            let metadata = StorageMetadata()
+            metadata.contentType = "video/quicktime"
+            
+            let uploadTask = storageRef.putFile(from: compressedURL, metadata: metadata)
+            
+            uploadTask.observe(.success) { _ in
+                storageRef.downloadURL { result in
+                    switch result {
+                    case .success(let downloadURL):
+                        self.saveEntryToFirestore(userId: userId, videoURL: downloadURL.absoluteString)
+                    case .failure(let error):
+                        print("Error getting download URL: \(error)")
+                        DispatchQueue.main.async {
+                            self.isUploading = false
+                        }
+                    }
+                }
+            }
+            
+            uploadTask.observe(.failure) { snapshot in
+                if let error = snapshot.error {
+                    print("Upload failed: \(error.localizedDescription)")
+                }
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                }
+            }
+        }
+    }
+    
+    func compressVideo(inputURL: URL, completion: @escaping (URL?) -> Void) {
+        let uniqueFilename = "compressed_\(UUID().uuidString).mov"
+        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(uniqueFilename)
+        
+        guard let exportSession = AVAssetExportSession(asset: AVAsset(url: inputURL), presetName: AVAssetExportPresetMediumQuality) else {
+            completion(nil)
+            return
+        }
+        
+        exportSession.outputURL = outputURL
+        exportSession.outputFileType = .mov
+        exportSession.shouldOptimizeForNetworkUse = true
+        
+        exportSession.exportAsynchronously {
+            switch exportSession.status {
+            case .completed:
+                completion(outputURL)
+            default:
+                print("Failed to compress video: \(exportSession.error?.localizedDescription ?? "Unknown error")")
+                completion(nil)
+            }
+        }
+    }
+    
+    func saveEntryToFirestore(userId: String, videoURL: String) {
+        let db = Firestore.firestore()
+        
+        let userDocRef = Firestore.firestore().collection("users").document(userId)
+        userDocRef.getDocument { (document, error) in
+            var superstar = false // Default value if boost doesn't exist
+            
+            if let document = document, document.exists {
+                if let boostDate = document.data()?["boost"] as? Timestamp {
+                    let now = Timestamp(date: Date())
+                    superstar = boostDate.compare(now) == .orderedDescending // Check if boost is in the future
+                }
+            } else {
+                print("User document not found or boost data unavailable, setting superstar to false")
+            }
+
+            let entryData = [
+                "userId": userId,
+                "videoUrl": videoURL,
+                "timestamp": FieldValue.serverTimestamp(),
+                "superstar": superstar // Add superstar status based on boost check
+            ]
+            
+            var newEntryRef: DocumentReference? = nil
+            newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
+                if let error = error {
+                    print("Error saving entry: \(error)")
+                } else {
+                    self.newentryDocId = newEntryRef?.documentID
+                    print("Entry saved successfully")
+                    
+                    DispatchQueue.main.async {
+                        if superstar {
+                            self.navigateToCompDetails = true // Navigate to competition details if superstar
+                        } else {
+                            self.entrySaved = true // Trigger entry saved flow if not superstar
+                        }
+                    }
+                }
+                self.isUploading = false
+                PostHogSDK.shared.capture("New Video Shared")
+                self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
             }
         }
     }
