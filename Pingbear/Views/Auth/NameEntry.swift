@@ -57,7 +57,7 @@ struct NameEntryView: View {
             }
             .padding(.top, 20)
 
-            NavigationLink(destination: WelcomeView(), isActive: $navigateToHome) {
+            NavigationLink(destination: ContactInfoView(), isActive: $navigateToHome) {
                 EmptyView()
             }.isDetailLink(false) // To avoid any potential navigation issues
         }

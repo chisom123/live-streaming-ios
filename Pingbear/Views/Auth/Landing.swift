@@ -55,35 +55,6 @@ struct AppLogo: View {
     }
 }
 
-struct DisclaimerText: View {
-    var body: some View {
-        VStack {
-            
-            HStack(spacing: 5) {
-                Text("Read our")
-                
-                Text("Privacy Policy")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io/privacy-policy")
-                    }
-                
-                Text("and")
-                    .font(.system(size: 15, weight: .semibold, design: .default))
-                
-                Text("Terms of Use")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io")
-                    }
-            }
-            .font(.system(size: 15, weight: .semibold, design: .default))
-            .foregroundColor(.black)
-            .padding(.bottom, 35)
-        }
-    }
-}
-
 
 struct ContinueButton: View {
     let action: () -> Void

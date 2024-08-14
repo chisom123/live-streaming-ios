@@ -82,6 +82,8 @@ struct PhoneEntryView: View {
     var body: some View {
         VStack {
             
+            Spacer()
+            
             Text("Enter your phone number")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
@@ -155,6 +157,10 @@ struct PhoneEntryView: View {
             NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
                 EmptyView()
             }.isDetailLink(false)
+            
+            Spacer()
+            
+            DisclaimerText()
         }
         .padding()
         .navigationBarBackButtonHidden(true)
@@ -196,6 +202,35 @@ struct PhoneEntryView: View {
             self.isLoading = false
             errorMessage = "Invalid phone number"
             PostHogSDK.shared.capture("Invalid Phone Number", properties: ["phoneNumber": fullPhoneNumber, "error": errorMessage ?? ""])
+        }
+    }
+}
+
+struct DisclaimerText: View {
+    var body: some View {
+        VStack {
+            
+            HStack(spacing: 5) {
+                Text("Read our")
+                
+                Text("Privacy Policy")
+                    .underline()
+                    .onTapGesture {
+                        openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                    }
+                
+                Text("and")
+                    .font(.system(size: 14, weight: .semibold, design: .default))
+                
+                Text("Terms of Use")
+                    .underline()
+                    .onTapGesture {
+                        openURL("https://chay-b6172c.webflow.io")
+                    }
+            }
+            .font(.system(size: 14, weight: .semibold, design: .default))
+            .foregroundColor(.black)
+            .padding(.bottom, 10)
         }
     }
 }
