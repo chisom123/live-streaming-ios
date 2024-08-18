@@ -93,7 +93,7 @@ struct CompDetails: View {
                         vote()
                         PostHogSDK.shared.capture("Voting Initiated")
                     }) {
-                        Text("Start Rating")
+                        Text("Play!")
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))

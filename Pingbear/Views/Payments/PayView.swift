@@ -39,26 +39,23 @@ struct PayView: View {
                         .frame(width: 45, height: 45)
                         .foregroundColor(Color(hex: "#FFD700"))
                     
-                    Text("Get an extra star every time your videos are rated")
-                        .font(.system(size: 21.5, weight: .bold, design: .default)) // Apply common styling here
+                    Text("Get More Stars")
+                        .font(.system(size: 25, weight: .bold, design: .default)) // Apply common styling here
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
                         .foregroundColor(Color(hex: "#FFF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
-                        .padding(.bottom, 25)
+                        .padding(.bottom, 20)
                         .padding(.top, 25)
-                        .padding(.horizontal, 25)
+                        .padding(.horizontal, 20)
                     
                     HStack {
-                        Text("Boost your videos")
+                        Text("Get an extra star every time your videos are starred by friends")
                             .font(.system(size: 17, weight: .bold, design: .default)) // Apply common styling here
-                            .multilineTextAlignment(.leading)
+                            .multilineTextAlignment(.center)
                             .lineSpacing(10)
                             .foregroundColor(Color(hex: "#ABAFD1")) // This affects the entire Text view, might need adjustment if it overrides individual colors
-                            .padding(.bottom, 10)
-                            .padding(.top, 10)
+                            .padding(.bottom, 20)
                             .padding(.horizontal, 20)
-                        
-                        Spacer()
                     }
                     
                     ScrollView {
