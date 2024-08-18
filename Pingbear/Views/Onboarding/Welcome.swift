@@ -22,9 +22,9 @@ struct WelcomeView: View {
     @State private var currentStep = 0
     
     let steps = [
-        ("Screenshot1", "Share Videos with Your Friends"),
-        ("Screenshot", "Your Friends Rate Your Videos"),
-        ("Screenshot2", "See Where Your Videos Rank")
+        ("Screenshot1", "Share Videos with Friends"),
+        ("Screenshot2", "Fun Groups with Friends"),
+        ("Screenshot", "Give Stars to Videos")
     ]
     
     var body: some View {
