@@ -210,6 +210,10 @@ struct FinalPreview: View {
             let storageRef = Storage.storage().reference().child("videos/\(UUID().uuidString).mov")
             let metadata = StorageMetadata()
             metadata.contentType = "video/quicktime"
+            metadata.customMetadata = [
+                "competitionId": self.competitionId,
+                "userId": userId
+            ]
             
             let uploadTask = storageRef.putFile(from: compressedURL, metadata: metadata)
             
