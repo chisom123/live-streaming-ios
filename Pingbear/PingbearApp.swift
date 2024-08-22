@@ -81,17 +81,20 @@ struct PingbearApp: App {
                         isLoggedIn = false
                     }
             } else {
-                WelcomeView()
-                    .onAppear {
-                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = scene.windows.first {
-                            window.overrideUserInterfaceStyle = .light
+                NavigationView {
+                    PhoneEntryView()
+                        .onAppear {
+                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = scene.windows.first {
+                                window.overrideUserInterfaceStyle = .light
+                            }
                         }
-                    }
-                    .environment(\.didLogOut, didLogOut)
-                    .onReceive(didLogOut) { _ in
-                        isLoggedIn = false
-                    }
+                        .environment(\.didLogOut, didLogOut)
+                        .onReceive(didLogOut) { _ in
+                            isLoggedIn = false
+                        }
+                }
+                .accentColor(.black)
             }
         }
     }
