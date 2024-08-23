@@ -243,12 +243,12 @@ struct EmptyLeaderboardView: View {
     
     var body: some View {
         VStack {
-            Image("Empty")
+            Image("EmptyState")
                 .resizable() // Allows the image to resize
                 .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
                 .frame(width: 150)
             
-            Text("Share a Video")
+            Text("Share a Video to Start")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
