@@ -16,6 +16,8 @@ struct CompDetails: View {
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var showAggregate = false
     @State private var selectedEntry: Entry?
+    @State private var isLoading = true
+    @State private var hasInitiallyLoaded = false  // New state variable
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -124,7 +126,9 @@ struct CompDetails: View {
                 .padding(.vertical, 20)
                 .padding(.horizontal, 20)
                 
-                if showAggregate {
+                if !hasInitiallyLoaded {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if showAggregate {
                     if entryViewModel.userLeaderboard.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
@@ -142,6 +146,9 @@ struct CompDetails: View {
                 
             }
         }
+        .onAppear {
+            fetchData()
+        }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competition: competition)
         })
@@ -158,6 +165,18 @@ struct CompDetails: View {
             entryViewModel.removeListeners()
         }
     }
+    
+    private func fetchData() {
+        isLoading = true
+        hasInitiallyLoaded = false
+        entryViewModel.fetchEntries(mode: .compDetailsView) {
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.hasInitiallyLoaded = true
+            }
+        }
+    }
+    
     var aggregateLeaderboardView: some View {
         ScrollView {
             VStack(spacing: 15) {

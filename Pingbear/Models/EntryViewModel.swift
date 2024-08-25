@@ -114,9 +114,10 @@ class EntryViewModel: ObservableObject {
         return "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
     }
     
-    func fetchEntries(mode: FetchEntriesMode) {
+    func fetchEntries(mode: FetchEntriesMode, completion: (() -> Void)? = nil) {
         guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
             print("Error calculating date 24 hours ago")
+            completion?()
             return
         }
         
@@ -124,22 +125,27 @@ class EntryViewModel: ObservableObject {
         let query = collection.whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
         
         if mode == .entryView {
-            fetchEntryViewEntries(query: query)
+            fetchEntryViewEntries(query: query, completion: completion)
         } else {
-            fetchCompDetailsViewEntries(query: query)
+            fetchCompDetailsViewEntries(query: query, completion: completion)
         }
     }
 
-    private func fetchEntryViewEntries(query: Query) {
+    private func fetchEntryViewEntries(query: Query, completion: (() -> Void)? = nil) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No current user ID found.")
+            completion?()
             return
         }
         
         query.getDocuments { [weak self] (snapshot, error) in
-            guard let self = self else { return }
+            guard let self = self else {
+                completion?()
+                return
+            }
             if let error = error {
                 print("Error getting entries: \(error)")
+                completion?()
                 return
             }
 
@@ -151,31 +157,43 @@ class EntryViewModel: ObservableObject {
             votesCollection.getDocuments { (votesSnapshot, error) in
                 if let error = error {
                     print("Error getting votes info: \(error)")
+                    completion?()
                     return
                 }
                 // Collect all entry IDs the current user has voted on
                 let votedEntries = votesSnapshot?.documents.map { $0.documentID } ?? []
-                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries)
+                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries, completion: completion)
             }
         }
     }
 
-    private func fetchCompDetailsViewEntries(query: Query) {
+    private func fetchCompDetailsViewEntries(query: Query, completion: (() -> Void)? = nil) {
         let currentUserId = Auth.auth().currentUser?.uid
         
         query.getDocuments { [weak self] (snapshot, error) in
-            guard let self = self else { return }
-            if let error = error {
-                print("Error getting entries: \(error)")
+            guard let self = self else {
+                completion?()
                 return
             }
-            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId)
+            if let error = error {
+                print("Error getting entries: \(error)")
+                completion?()
+                return
+            }
+            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId, completion: completion)
         }
     }
 
-
-    private func processEntries(snapshot: QuerySnapshot?, excludeCurrentAndVoted: Bool, currentUserId: String?, votedEntries: [String] = []) {
-        guard let documents = snapshot?.documents else { return }
+    private func processEntries(snapshot: QuerySnapshot?, excludeCurrentAndVoted: Bool, currentUserId: String?, votedEntries: [String] = [], completion: (() -> Void)? = nil) {
+        guard let documents = snapshot?.documents else {
+            DispatchQueue.main.async {
+                self.entries = []
+                self.userLeaderboard = []
+                completion?()
+            }
+            return
+        }
+        
         let group = DispatchGroup()
         var localEntries = [Entry]()
         var userStarsDict = [String: UserEntry]()
@@ -217,6 +235,7 @@ class EntryViewModel: ObservableObject {
         group.notify(queue: .main) {
             self.entries = localEntries.sorted { $0.stars > $1.stars }
             self.userLeaderboard = userStarsDict.values.sorted { $0.totalStars > $1.totalStars }
+            completion?()
         }
     }
 
@@ -270,7 +289,7 @@ class EntryViewModel: ObservableObject {
     func fetchFCMTokenAndSendNotification(to userId: String, forEntryId entryId: String, withNewStars starIncrement: Int) {
         
         let usersRef = db.collection("users").document(userId)
-        usersRef.getDocument { [self] (document, error) in
+        usersRef.getDocument { [weak self] (document, error) in
             if let error = error {
                 print("Error fetching user: \(error)")
                 return
@@ -280,9 +299,9 @@ class EntryViewModel: ObservableObject {
                 return
             }
             
-            let compRef = db.collection("competitions").document(self.competitionId)
+            let compRef = self?.db.collection("competitions").document(self?.competitionId ?? "")
             
-            compRef.getDocument { [weak self] (document, error) in
+            compRef?.getDocument { [weak self] (document, error) in
                 if let error = error {
                     print("Error fetching competition: \(error)")
                     return
