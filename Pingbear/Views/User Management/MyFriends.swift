@@ -22,7 +22,28 @@ struct MyFriendsView: View {
                             .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
                             .foregroundColor(Color.black) // Your desired color
                     }
+                    
                     Spacer()
+                    
+                    Text("My Friends")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.black)
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                 
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.black) // Your desired color
+                            .opacity(0)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -54,8 +75,6 @@ struct MyFriendsView: View {
                             .buttonStyle(PlainButtonStyle())  // This will ensure the default blue color overlay on tap is not applied.
                         }
                     }
-                    .padding(.top, 30)
-                    .padding(.bottom, 30)
                     .padding(.horizontal, 20)
                 }
             }
