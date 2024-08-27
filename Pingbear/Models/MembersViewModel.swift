@@ -1,35 +1,31 @@
 import SwiftUI
 import FirebaseFirestore
+import PostHog
+import FirebaseAuth
+
+struct MemberUser: Identifiable {
+    let id: String
+    let username: String
+    var isAdded: Bool = false
+    var justAdded: Bool = false
+}
 
 class MembersViewModel: ObservableObject {
-    @Published var joinUsernames: [String] = []
-
+    @Published var members: [MemberUser] = []
+    @Published var currentUserId: String = ""
     private var db = Firestore.firestore()
+    private var myFriendsModel = MyFriendsModel()
 
-    func fetchUsernames(for userIds: [String], completion: @escaping ([String]) -> Void) {
-        var usernames: [String] = []
-        let group = DispatchGroup()
+    func fetchMembersDetails(for competition: Competition) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        self.currentUserId = currentUserId
 
-        userIds.forEach { userId in
-            group.enter()
-            db.collection("users").document(userId).getDocument { (document, error) in
-                if let document = document, document.exists {
-                    let username = document.data()?["username"] as? String ?? "Unknown"
-                    usernames.append(username)
-                } else {
-                    print("Document does not exist")
-                }
-                group.leave()
-            }
-        }
-
-        group.notify(queue: .main) {
-            let sortedUsernames = usernames.sorted(by: <)
-            completion(sortedUsernames)
+        myFriendsModel.fetchFriends { [weak self] in
+            self?.fetchCompetitionMembers(for: competition)
         }
     }
 
-    func fetchMembersDetails(for competition: Competition) {
+    private func fetchCompetitionMembers(for competition: Competition) {
         db.collection("competitions").document(competition.id).collection("members")
             .getDocuments { [weak self] (snapshot, error) in
                 if let error = error {
@@ -38,17 +34,50 @@ class MembersViewModel: ObservableObject {
                 }
 
                 let userIds = snapshot?.documents.map { $0.documentID } ?? []
-                self?.fetchUsernames(for: userIds) { usernames in
-                    DispatchQueue.main.async {
-                        self?.joinUsernames = usernames
-                    }
-                }
+                self?.fetchUserDetails(for: userIds)
             }
     }
-    
-    func leaveCompetition(competitionId: String, userId: String) {
-        let db = Firestore.firestore()
 
+    private func fetchUserDetails(for userIds: [String]) {
+        let group = DispatchGroup()
+        var tempMembers: [MemberUser] = []
+
+        for userId in userIds {
+            group.enter()
+            db.collection("users").document(userId).getDocument { [weak self] (document, error) in
+                defer { group.leave() }
+                if let document = document, document.exists,
+                   let username = document.data()?["username"] as? String {
+                    let isAdded = self?.myFriendsModel.friends.contains(where: { $0.id == userId }) ?? false
+                    let member = MemberUser(id: userId, username: username, isAdded: isAdded, justAdded: false)
+                    tempMembers.append(member)
+                }
+            }
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            self?.members = tempMembers.sorted(by: { $0.username < $1.username })
+        }
+    }
+
+    func addFriend(member: MemberUser, completion: @escaping (Bool, Error?) -> Void) {
+        let addFriendsModel = AddFriendsModel()
+        addFriendsModel.addFriend(byUsername: member.username) { [weak self] success, error in
+            if success {
+                if let index = self?.members.firstIndex(where: { $0.id == member.id }) {
+                    self?.members[index].isAdded = true
+                    self?.members[index].justAdded = true  // Set justAdded to true
+                }
+                self?.myFriendsModel.fetchFriends()
+                completion(true, nil)
+                PostHogSDK.shared.capture("Friend Added from Members View")
+            } else {
+                completion(false, error)
+            }
+        }
+    }
+
+    func leaveCompetition(competitionId: String, userId: String) {
         let batch = db.batch()
 
         let groupMembershipRef = db.collection("groupMemberships").document(userId)
@@ -64,7 +93,7 @@ class MembersViewModel: ObservableObject {
                 batch.deleteDocument(document.reference)
             }
 
-            let memberRef = db.collection("competitions").document(competitionId).collection("members").document(userId)
+            let memberRef = self.db.collection("competitions").document(competitionId).collection("members").document(userId)
 
             batch.deleteDocument(memberRef)
 

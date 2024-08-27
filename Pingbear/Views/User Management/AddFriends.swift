@@ -114,7 +114,7 @@ struct AddFriendsView: View {
                                     if success {
                                         DispatchQueue.main.async {
                                             viewModel.matchedUsers[index].isAdded = true
-                                            PostHogSDK.shared.capture("Friend successfully added")
+                                            PostHogSDK.shared.capture("Friend successfully added from standalone view")
                                         }
                                     } else if let error = error {
                                         print("Error adding friend: \(error.localizedDescription)")

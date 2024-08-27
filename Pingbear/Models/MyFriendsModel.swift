@@ -18,27 +18,34 @@ class AppUser: Identifiable {
 class MyFriendsModel: ObservableObject {
     @Published var friends: [AppUser] = []
 
-    func fetchFriends() {
+    func fetchFriends(completion: (() -> Void)? = nil) {
         guard let currentUserID = Auth.auth().currentUser?.uid else {
             print("Authentication failed - unable to fetch current user ID")
+            completion?()
             return
         }
         
         let db = Firestore.firestore()
         let friendsRef = db.collection("users").document(currentUserID).collection("friends")
         
-        friendsRef.getDocuments { (snapshot, error) in
+        friendsRef.getDocuments { [weak self] (snapshot, error) in
             if let error = error {
                 print("Error fetching friends: \(error)")
+                completion?()
                 return
             }
             let friendIDs = snapshot?.documents.compactMap { $0.documentID } ?? []
-            self.fetchUserDetails(friendIDs: friendIDs)
+            self?.fetchUserDetails(friendIDs: friendIDs) {
+                completion?()
+            }
         }
     }
 
-    private func fetchUserDetails(friendIDs: [String]) {
-        guard !friendIDs.isEmpty else { return }
+    private func fetchUserDetails(friendIDs: [String], completion: @escaping () -> Void) {
+        guard !friendIDs.isEmpty else {
+            completion()
+            return
+        }
         
         let db = Firestore.firestore()
         let usersRef = db.collection("users")
@@ -61,8 +68,9 @@ class MyFriendsModel: ObservableObject {
             }
         }
         
-        group.notify(queue: .main) {
-            self.friends = users.sorted(by: { $0.name < $1.name })
+        group.notify(queue: .main) { [weak self] in
+            self?.friends = users.sorted(by: { $0.name < $1.name })
+            completion()
         }
     }
 

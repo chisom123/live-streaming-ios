@@ -6,12 +6,17 @@ import FirebaseFirestore
 struct MembersView: View {
     
     var competition: Competition
-    @ObservedObject private var viewModel = MembersViewModel()
+    @ObservedObject private var viewModel: MembersViewModel
     @State private var leaveGroupAlert = false
     @State private var goHome = false
     @State private var showingJoinSelectView = false
     @State private var navigateToCompDetails = false
     
+    init(competition: Competition) {
+        self.competition = competition
+        self.viewModel = MembersViewModel()
+    }
+
     var body: some View {
         ZStack {
             VStack {
@@ -85,21 +90,27 @@ struct MembersView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        
-                        ForEach(viewModel.joinUsernames, id: \.self) { username in
-                            Text(username)
-                                .font(.system(size: 16, weight: .bold))
-                                .lineLimit(2)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .lineSpacing(9)
-                                .foregroundColor(.black)
-                                .truncationMode(.tail)
-                                .padding(.leading, 10)
+                        ForEach(viewModel.members) { member in
+                            Group {
+                                if member.id != viewModel.currentUserId && !member.isAdded {
+                                    Button(action: {
+                                        viewModel.addFriend(member: member) { success, error in
+                                            if success {
+                                                // Handle success if needed
+                                            } else {
+                                                // Handle error if needed
+                                            }
+                                        }
+                                    }) {
+                                        memberCellContent(member: member, showAddButton: true)
+                                    }
+                                } else {
+                                    memberCellContent(member: member, showAddButton: false)
+                                }
+                            }
+                            .background(Color(hex: "#F5F5F5"))
+                            .cornerRadius(5)
                         }
-                        .padding(20)
-                        .padding(.vertical, 3)
-                        .background(Color(hex: "#F5F5F5"))
-                        .cornerRadius(5)
                     }
                     .padding(.horizontal, 20)
                 }
@@ -117,6 +128,45 @@ struct MembersView: View {
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
         }
+    }
+    
+    func memberCellContent(member: MemberUser, showAddButton: Bool) -> some View {
+        HStack {
+            Text(member.username)
+                .font(.system(size: 16, weight: .bold))
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .lineSpacing(9)
+                .foregroundColor(.black)
+                .truncationMode(.tail)
+                .padding(.leading, 10)
+
+            if showAddButton {
+                HStack(spacing: 6) {
+                    Text("Add")
+                        .fontWeight(.bold)
+                        .foregroundColor(Color(hex: "#1199FF"))
+                        .font(.system(size: 16, weight: .bold, design: .default))
+
+                    Image(systemName: "plus.circle")
+                        .foregroundColor(Color(hex: "#1199FF"))
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                }
+            } else if member.justAdded {
+                HStack(spacing: 6) {
+                    Text("Added")
+                        .fontWeight(.bold)
+                        .foregroundColor(Color.green)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color.green)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                }
+            }
+        }
+        .padding(20)
+        .padding(.vertical, 3)
     }
 
 }
