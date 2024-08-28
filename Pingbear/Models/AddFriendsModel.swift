@@ -54,7 +54,60 @@ class AddFriendsModel: ObservableObject {
                 }
                 completion(true, nil)
                 PostHogSDK.shared.capture("Friend Added")
+                
+                self.sendFriendAddedNotification(currentUserID: currentUserID, to: friendID)
             }
+        }
+    }
+    
+    private func sendFriendAddedNotification(currentUserID: String, to friendID: String) {
+        let db = Firestore.firestore()
+        let userRef = db.collection("users")
+        
+        // Fetch both the friend's and current user's data
+        let group = DispatchGroup()
+        var friendToken: String?
+        var currentUsername: String?
+        
+        group.enter()
+        userRef.document(friendID).getDocument { (document, error) in
+            defer { group.leave() }
+            if let error = error {
+                print("Error fetching friend user: \(error)")
+                return
+            }
+            friendToken = document?.data()?["fcmToken"] as? String
+        }
+        
+        group.enter()
+        userRef.document(currentUserID).getDocument { (document, error) in
+            defer { group.leave() }
+            if let error = error {
+                print("Error fetching current user: \(error)")
+                return
+            }
+            currentUsername = document?.data()?["username"] as? String
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            let notificationSender = PushNotificationSender()
+            
+            guard let self = self else { return }
+            
+            guard let token = friendToken else {
+                print("FCM token not found for user \(friendID)")
+                return
+            }
+            
+            guard let username = currentUsername else {
+                print("Current user's username not found")
+                return
+            }
+            
+            let title = "New Friend Added"
+            let body = "\(username) added you as a friend"
+            
+            notificationSender.sendPushNotification(to: token, title: title, body: body)
         }
     }
 }
