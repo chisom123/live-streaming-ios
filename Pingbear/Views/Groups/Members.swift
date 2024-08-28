@@ -58,7 +58,7 @@ struct MembersView: View {
                     showingJoinSelectView = true
                 }) {
                     HStack {
-                        Text("Add Friends to this Group")
+                        Text("Add Friends to Group")
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .foregroundColor(Color.white)
                             .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left

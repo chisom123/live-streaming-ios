@@ -2,7 +2,6 @@ import SwiftUI
 import Firebase
 import FirebaseFirestore
 import FirebaseAuth
-import NotificationBannerSwift
 import PostHog
 
 struct JoinSelectView: View {
@@ -11,11 +10,16 @@ struct JoinSelectView: View {
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
     @State private var username: String = ""
+    @State private var messageStatus: MessageStatus? = nil
     
     var competition: Competition // this holds the selected competition details
     
     @ObservedObject var viewModel: MyFriendsModel // Add this line
     @ObservedObject var viewModel2: AddFriendsModel
+    
+    enum MessageStatus {
+        case error(String), success(String), none
+    }
 
     func processUsername(_ username: String) -> String {
         return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
@@ -35,22 +39,32 @@ struct JoinSelectView: View {
                 }
                 
                 Spacer()
+                
+                Text("Add Friends to Group")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(10)
+                    .foregroundColor(.black)
+                    .padding(.horizontal)
+                
+                Spacer()
+                
+                Button(action: {
+            
+                }) {
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.black) // Your desired color
+                }
+                .opacity(0)
+                
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
             
             VStack {
-                
-                Text("Add Friends to this Group")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.black)
-                    .padding(.top, 10)
-                    .padding(.bottom, 35)
-                    .padding(.horizontal)
-                
-                
                 
                 // Radio buttons for selection
                 HStack(alignment: .center, spacing: 10) {
@@ -68,8 +82,7 @@ struct JoinSelectView: View {
                             if success {
                                 findAndAddFriendByUsername(processedUsername)
                             } else {
-                                let banner = NotificationBanner(title: "Failed to Add Friend", style: .danger)
-                                banner.show()
+                                messageStatus = .error("Failed to Add Friend")
                             }
                         }
                     }) {
@@ -80,6 +93,30 @@ struct JoinSelectView: View {
                             .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color(hex: "#fff"))
                             .cornerRadius(10)
+                    }
+                }
+                .padding(.top, 15)
+                
+                if let status = messageStatus {
+                    switch status {
+                    case .error(let message):
+                        Text(message)
+                            .foregroundColor(Color(hex: "#CC2255"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .padding(.top, 30)
+                            .padding(.horizontal)
+                    case .success(let message):
+                        Text(message)
+                            .foregroundColor(Color(hex: "#008000"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .padding(.top, 30)
+                            .padding(.horizontal)
+                    case .none:
+                        EmptyView()
                     }
                 }
                 
@@ -150,8 +187,7 @@ struct JoinSelectView: View {
                             selectedFriends.insert(userId)
                             updateCompetitionAllowJoin()
                         } else {
-                            let banner = NotificationBanner(title: "Friend already a member", style: .danger)
-                            banner.show()
+                            messageStatus = .error("Friend Already a Member")
                         }
                     }
                 }

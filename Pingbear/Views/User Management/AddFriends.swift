@@ -35,11 +35,6 @@ struct AddFriendsView: View {
                 }
                 
                 Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
-            
-            VStack {
                 
                 Text("Add Friends")
                     .font(.system(size: 18, weight: .bold, design: .default))
@@ -48,6 +43,23 @@ struct AddFriendsView: View {
                     .foregroundColor(.black)
                     .padding(.horizontal)
                 
+                Spacer()
+                
+                Button(action: {
+                 
+                }) {
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.black) // Your desired color
+                }
+                .opacity(0)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
+            
+            VStack {
                 HStack(alignment: .center, spacing: 10) {
                     TextField("Enter Friend's Username", text: $username)
                         .padding()
@@ -78,7 +90,8 @@ struct AddFriendsView: View {
                     }
                 }
                 .padding(.horizontal)
-                .padding(.vertical, 30)
+                .padding(.bottom, 30)
+                .padding(.top, 15)
                 
                 if let status = messageStatus {
                     switch status {
