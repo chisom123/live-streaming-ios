@@ -9,25 +9,25 @@ struct ContactInfoView: View {
             
             Spacer()
             
-            Image("Friends")
+            Image("Notifications")
                 .resizable()
                 .aspectRatio(contentMode: .fit) // Maintain aspect ratio
-                .frame(maxWidth: 250)
+                .frame(maxWidth: 200)
                 .onAppear {
                     PostHogSDK.shared.capture("Welcome View Opened")
                 }
             
-            Text("Find your friends")
+            Text("Turn on notifications")
                 .font(.system(size: 25, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
                 .foregroundColor(.black)
-                .padding(.top, 40)
+                .padding(.top, 50)
                 .padding(.bottom, 25)
                 .padding(.horizontal)
             
             
-            Text("See which of your friends are already on Pingbear. Your contacts won't be stored or shared with anyone.")
+            Text("Get notified when your friends share videos and give you stars.")
                 .font(.system(size: 16, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -53,7 +53,7 @@ struct ContactInfoView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $navigateToFriend) {
-            ContactAccessView()
+            ContentView()
         }
     }
 }
