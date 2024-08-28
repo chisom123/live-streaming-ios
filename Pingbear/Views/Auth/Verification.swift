@@ -13,10 +13,11 @@ struct VerificationView: View {
     // Updated to include navigation to the home view
     @State private var navigateToHome = false
     @State private var navigateToNameEntry = false
+    @State private var isLoading: Bool = false
 
     var body: some View {
         VStack {
-            Text("Enter verification code")
+            Text("Enter the verification code sent to \(phoneNumber)")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
@@ -49,19 +50,23 @@ struct VerificationView: View {
                         PostHogSDK.shared.capture("Verification Error", properties: ["error": error])
                     }
             }
-
-            Button(action: {
-                self.verifyCode()
-            }) {
-                Text("Continue")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
+            if isLoading {
+                ProgressView()
+                    .padding(.top, 30)
+            } else {
+                Button(action: {
+                    self.verifyCode()
+                }) {
+                    Text("Continue")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                        .background(Color(hex: "#1199FF"))
+                        .foregroundColor(Color(hex: "#fff"))
+                        .cornerRadius(200)
+                }
+                .padding(.top, 20)
             }
-            .padding(.top, 20)
             
             // Conditional navigation based on user state
             NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
@@ -76,12 +81,15 @@ struct VerificationView: View {
     }
 
     func verifyCode() {
+        isLoading = true
+        
         let credential = PhoneAuthProvider.provider().credential(
             withVerificationID: verificationID,
             verificationCode: verificationCode)
         
         Auth.auth().signIn(with: credential) { (authResult, error) in
             if let error = error {
+                self.isLoading = false
                 self.errorMessage = error.localizedDescription
                 PostHogSDK.shared.capture("Verification Failed", properties: ["error": error.localizedDescription])
                 return
@@ -89,6 +97,7 @@ struct VerificationView: View {
             
             // After successful authentication, check for an existing username
             guard let userID = Auth.auth().currentUser?.uid else {
+                self.isLoading = false
                 self.errorMessage = "Error fetching user ID"
                 return
             }
@@ -99,6 +108,7 @@ struct VerificationView: View {
             db.collection("users").document(userID).getDocument { (document, error) in
                 if let document = document, document.exists {
                     if document.data()?["username"] != nil {
+                        self.isLoading = false
                         // User already has a username, navigate directly to home view
                         self.navigateToHome = true
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
@@ -106,11 +116,13 @@ struct VerificationView: View {
                         UserDefaults.standard.synchronize()
                         PostHogSDK.shared.capture("Returning User Signed In")
                     } else {
+                        self.isLoading = false
                         // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true
                         PostHogSDK.shared.capture("New User Registration Started")
                     }
                 } else {
+                    self.isLoading = false
                     // Error or user document does not exist, navigate to NameEntryView
                     self.navigateToNameEntry = true
                     PostHogSDK.shared.capture("User Document Not Found")
