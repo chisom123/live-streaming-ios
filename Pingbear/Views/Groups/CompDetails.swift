@@ -5,6 +5,7 @@ import UIKit
 import FirebaseAuth
 import PostHog
 import NotificationBannerSwift
+import AVFoundation
 
 struct CompDetails: View {
     
@@ -18,6 +19,7 @@ struct CompDetails: View {
     @State private var selectedEntry: Entry?
     @State private var isLoading = true
     @State private var hasInitiallyLoaded = false  // New state variable
+    @State private var showPermissionAlert = false
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -164,6 +166,14 @@ struct CompDetails: View {
         .onDisappear {
             entryViewModel.removeListeners()
         }
+        .alert(isPresented: $showPermissionAlert) {
+            Alert(
+                title: Text("Access Needed"),
+                message: Text("Camera and microphone access is required to capture video. Please enable them in Settings."),
+                primaryButton: .default(Text("Open Settings"), action: openSettings),
+                secondaryButton: .cancel()
+            )
+        }
     }
     
     private func fetchData() {
@@ -244,9 +254,41 @@ struct CompDetails: View {
     }
     
     func initiateVideoCapture() {
-        entryViewModel.removeListeners()
-        PostHogSDK.shared.capture("Add Video Initiated")
-        joincomp()
+        checkCameraAndMicrophonePermissions { granted in
+            if granted {
+                entryViewModel.removeListeners()
+                PostHogSDK.shared.capture("Add Video Initiated")
+                joincomp()
+            } else {
+                showPermissionAlert = true
+            }
+        }
+    }
+    
+    func checkCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
+        let cameraAuthStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        let audioAuthStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        
+        switch (cameraAuthStatus, audioAuthStatus) {
+        case (.authorized, .authorized):
+            completion(true)
+        case (.notDetermined, _), (_, .notDetermined):
+            AVCaptureDevice.requestAccess(for: .video) { cameraGranted in
+                if cameraGranted {
+                    AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
+                        DispatchQueue.main.async {
+                            completion(audioGranted)
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
+                }
+            }
+        default:
+            completion(false)
+        }
     }
     
     func joincomp() {
@@ -254,6 +296,11 @@ struct CompDetails: View {
     }
     func vote() {
         self.isVotingPresented = true
+    }
+    func openSettings() {
+        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsUrl)
+        }
     }
 }
 
