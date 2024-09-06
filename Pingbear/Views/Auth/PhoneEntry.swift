@@ -84,7 +84,7 @@ struct PhoneEntryView: View {
             
             Spacer()
             
-            Text("Enter your phone number")
+            Text("Enter your phone number to continue")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)

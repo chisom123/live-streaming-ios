@@ -136,10 +136,16 @@ struct AddFriendsView: View {
                             }
                         }) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 18) {
-                                    Text(viewModel.matchedUsers[index].name)
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text(viewModel.matchedUsers[index].fullName)
                                         .font(.system(size: 16, weight: .bold, design: .default))
                                         .foregroundColor(.black)
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                    
+                                    Text(viewModel.matchedUsers[index].username)
+                                        .font(.system(size: 14, weight: .bold, design: .default))
+                                        .foregroundColor(.gray)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
