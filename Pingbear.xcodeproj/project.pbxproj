@@ -355,6 +355,7 @@
 				4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */,
 				4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */,
 				4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */,
+				4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -373,7 +374,6 @@
 			children = (
 				4FACC9DD2C304685003BF013 /* Welcome.swift */,
 				4F66771B2C3420AE0001C5F1 /* ContactInfo.swift */,
-				4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
