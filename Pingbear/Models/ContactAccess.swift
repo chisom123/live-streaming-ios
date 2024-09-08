@@ -21,9 +21,15 @@ class ContactViewModel: ObservableObject {
     @Published var matchedUsers = [Contact]()
     private let db = Firestore.firestore()
     private let phoneNumberKit = PhoneNumberKit()
+    private var currentUserFriends: Set<String> = []
+    private var processedPhoneNumbers: Set<String> = []
     
     var hasAddedAnyFriends: Bool {
         matchedUsers.contains(where: { $0.isAdded })
+    }
+
+    init() {
+        fetchCurrentUserFriends()
     }
 
     func requestContactAccess() {
@@ -43,6 +49,26 @@ class ContactViewModel: ObservableObject {
         }
     }
 
+    private func fetchCurrentUserFriends() {
+        guard let currentUserID = Auth.auth().currentUser?.uid else {
+            print("No current user found")
+            return
+        }
+
+        db.collection("users").document(currentUserID).collection("friends").getDocuments { [weak self] snapshot, error in
+            if let error = error {
+                print("Error fetching friends: \(error)")
+                return
+            }
+            
+            let friendIDs = snapshot?.documents.compactMap { $0.documentID } ?? []
+            self?.currentUserFriends = Set(friendIDs)
+            
+            // After fetching friends, update the matched users list
+            self?.updateMatchedUsers()
+        }
+    }
+    
     private func fetchContacts() {
         DispatchQueue.global(qos: .userInitiated).async { // Run this on a background thread
             let store = CNContactStore()
@@ -83,7 +109,15 @@ class ContactViewModel: ObservableObject {
     }
     
     private func compareContacts(phoneNumber: String, firstName: String, lastName: String) {
-        db.collection("users").whereField("phoneNumber", isEqualTo: phoneNumber).getDocuments { snapshot, error in
+        if processedPhoneNumbers.contains(phoneNumber) {
+            return
+        }
+        
+        processedPhoneNumbers.insert(phoneNumber)
+        
+        db.collection("users").whereField("phoneNumber", isEqualTo: phoneNumber).getDocuments { [weak self] snapshot, error in
+            guard let self = self else { return }
+            
             DispatchQueue.main.async {
                 if let error = error {
                     print("Error fetching documents: \(error.localizedDescription)")
@@ -92,9 +126,13 @@ class ContactViewModel: ObservableObject {
                 if let snapshot = snapshot, !snapshot.documents.isEmpty {
                     for doc in snapshot.documents {
                         let data = doc.data()
-                        if let username = data["username"] as? String, let phoneNumber = data["phoneNumber"] as? String {
+                        if let username = data["username"] as? String,
+                           let phoneNumber = data["phoneNumber"] as? String,
+                           !self.currentUserFriends.contains(doc.documentID) {
                             let newContact = Contact(firstName: firstName, lastName: lastName, username: username, phoneNumber: phoneNumber)
-                            self.matchedUsers.append(newContact)
+                            if !self.matchedUsers.contains(where: { $0.phoneNumber == phoneNumber }) {
+                                self.matchedUsers.append(newContact)
+                            }
                         }
                     }
                 }
@@ -102,4 +140,24 @@ class ContactViewModel: ObservableObject {
         }
     }
 
+    private func updateMatchedUsers() {
+        self.matchedUsers = self.matchedUsers.filter { contact in
+            !self.currentUserFriends.contains { friendID in
+                self.db.collection("users").document(friendID).getDocument { snapshot, error in
+                    if let error = error {
+                        print("Error fetching user document: \(error)")
+                        return
+                    }
+                    if let data = snapshot?.data(),
+                       let username = data["username"] as? String,
+                       username == contact.username {
+                        DispatchQueue.main.async {
+                            self.matchedUsers.removeAll { $0.username == username }
+                        }
+                    }
+                }
+                return false
+            }
+        }
+    }
 }
