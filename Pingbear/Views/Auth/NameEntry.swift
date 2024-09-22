@@ -129,36 +129,83 @@ struct NameEntryView: View {
         }
         
         let db = Firestore.firestore()
+        
+        // Step 1: Create the competition and add the user as a member
+        createCompetitionAndAddMember(db: db, userID: userID) { result in
+            switch result {
+            case .success(let competitionID):
+                // Step 2: Add predefined entries
+                self.addPredefinedEntries(db: db, competitionID: competitionID)
+            case .failure(let error):
+                self.errorMessage = "Failed to create group: \(error.localizedDescription)"
+                PostHogSDK.shared.capture("Group Creation Failed", properties: ["error": error.localizedDescription])
+            }
+        }
+    }
+
+    func createCompetitionAndAddMember(db: Firestore, userID: String, completion: @escaping (Result<String, Error>) -> Void) {
+        let competitionRef = db.collection("competitions").document()
+        let competitionID = competitionRef.documentID
+        
+        let competitionData: [String: Any] = [
+            "description": "Example Friend Group ✨",
+            "timestamp": FieldValue.serverTimestamp()
+        ]
+        
         let batch = db.batch()
         
-        let competitionRef = db.collection("competitions").document()
-        let competitionData: [String: Any] = [
-            "description": "How to use Pingbear 📝",
-            "timestamp": Timestamp()
-        ]
-        
+        // Set competition data
         batch.setData(competitionData, forDocument: competitionRef)
         
-        // Set the user as a member in the "members" subcollection of the new competition
+        // Add user as a member
         let memberRef = competitionRef.collection("members").document(userID)
-        let memberData: [String: Any] = [
-            "userId": userID
-        ]
+        let memberData: [String: Any] = ["userId": userID]
         batch.setData(memberData, forDocument: memberRef)
         
-        // Correctly reference the 'groupMemberships' under the user's document
+        // Add to user's group memberships
         let groupMembershipRef = db.collection("groupMemberships").document(userID)
-                                      .collection("competitions").document(competitionRef.documentID)
-        let membershipData: [String: Any] = [
-            "competitionId": competitionRef.documentID
-        ]
+                                    .collection("competitions").document(competitionID)
+        let membershipData: [String: Any] = ["competitionId": competitionID]
         batch.setData(membershipData, forDocument: groupMembershipRef)
         
-        batch.commit { err in
-            if let err = err {
-                errorMessage = "Failed to create group: \(err.localizedDescription)"
+        batch.commit { error in
+            if let error = error {
+                completion(.failure(error))
             } else {
-                PostHogSDK.shared.capture("Initial User Group Created")
+                completion(.success(competitionID))
+            }
+        }
+    }
+
+    func addPredefinedEntries(db: Firestore, competitionID: String) {
+        let predefinedVideos = [
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1726994967908.mp4?alt=media&token=ece1cafc-484a-4684-af8b-e6c65eecfc4c", "sChx4qnu3sgKXJpCl4NADXo5nhh1", 74),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1727005798691.mp4?alt=media&token=867303b9-d752-4e2d-86aa-10b5caf90ba2", "RGTNB4JpPhQBzRoMloZz6Z2s9Nz2", 66),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave_app_downloader_1726993736238.mp4?alt=media&token=1a872a3c-8ab4-4bd3-8ccc-56465355a6a4", "1tZCGhXDSnf0z8Scpb8KN9TV2YI3", 93)
+        ]
+        
+        let batch = db.batch()
+        let competitionRef = db.collection("competitions").document(competitionID)
+        
+        for (videoURL, userID, stars) in predefinedVideos {
+            let entryRef = competitionRef.collection("entries").document()
+            let entryData: [String: Any] = [
+                "userId": userID,
+                "videoUrl": videoURL,
+                "timestamp": FieldValue.serverTimestamp(),
+                "superstar": false,
+                "stars": stars,
+                "isInitialSetup": true
+            ]
+            batch.setData(entryData, forDocument: entryRef)
+        }
+        
+        batch.commit { error in
+            if let error = error {
+                self.errorMessage = "Failed to add predefined entries: \(error.localizedDescription)"
+                PostHogSDK.shared.capture("Predefined Entries Addition Failed", properties: ["error": error.localizedDescription])
+            } else {
+                PostHogSDK.shared.capture("Initial User Group Created with Predefined Entries")
             }
         }
     }
