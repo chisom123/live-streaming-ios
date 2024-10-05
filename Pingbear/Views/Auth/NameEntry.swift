@@ -148,7 +148,7 @@ struct NameEntryView: View {
         let competitionID = competitionRef.documentID
         
         let competitionData: [String: Any] = [
-            "description": "Example Friend Group ✨",
+            "description": "Example Friend Group",
             "timestamp": FieldValue.serverTimestamp()
         ]
         
@@ -179,15 +179,15 @@ struct NameEntryView: View {
 
     func addPredefinedEntries(db: Firestore, competitionID: String) {
         let predefinedVideos = [
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1726994967908.mp4?alt=media&token=ece1cafc-484a-4684-af8b-e6c65eecfc4c", "sChx4qnu3sgKXJpCl4NADXo5nhh1", 74),
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1727005798691.mp4?alt=media&token=867303b9-d752-4e2d-86aa-10b5caf90ba2", "RGTNB4JpPhQBzRoMloZz6Z2s9Nz2", 66),
-            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave_app_downloader_1726993736238.mp4?alt=media&token=1a872a3c-8ab4-4bd3-8ccc-56465355a6a4", "1tZCGhXDSnf0z8Scpb8KN9TV2YI3", 93)
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1726994967908.mp4?alt=media&token=ece1cafc-484a-4684-af8b-e6c65eecfc4c", "sChx4qnu3sgKXJpCl4NADXo5nhh1", 93, "quick ice cream before the party lol"),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave.app_pinterest_video_downloader_1727005798691.mp4?alt=media&token=867303b9-d752-4e2d-86aa-10b5caf90ba2", "RGTNB4JpPhQBzRoMloZz6Z2s9Nz2", 74, "HOW DID THEY ALL MISS!!"),
+            ("https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/example_videos%2Fdotsave_app_downloader_1726993736238.mp4?alt=media&token=1a872a3c-8ab4-4bd3-8ccc-56465355a6a4", "1tZCGhXDSnf0z8Scpb8KN9TV2YI3", 66, "what is she even saying haha")
         ]
         
         let batch = db.batch()
         let competitionRef = db.collection("competitions").document(competitionID)
         
-        for (videoURL, userID, stars) in predefinedVideos {
+        for (videoURL, userID, stars, overlayText) in predefinedVideos {
             let entryRef = competitionRef.collection("entries").document()
             let entryData: [String: Any] = [
                 "userId": userID,
@@ -195,7 +195,9 @@ struct NameEntryView: View {
                 "timestamp": FieldValue.serverTimestamp(),
                 "superstar": false,
                 "stars": stars,
-                "isInitialSetup": true
+                "isInitialSetup": true,
+                "overlayText": overlayText,
+                "overlayVerticalPosition": UIScreen.main.bounds.height / 2
             ]
             batch.setData(entryData, forDocument: entryRef)
         }

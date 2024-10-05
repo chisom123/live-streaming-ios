@@ -6,6 +6,9 @@ import Foundation
 struct CustomVideoPlayer: UIViewControllerRepresentable {
     var url: URL
     @Binding var isPlaying: Bool
+    var overlayText: String
+    var overlayVerticalPosition: CGFloat
+    @Binding var isViewClosing: Bool
 
     // Create a Coordinator for managing observers and player updates
     func makeCoordinator() -> Coordinator {
@@ -22,6 +25,7 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
     // This function updates the AVPlayerViewController during its lifecycle
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
         context.coordinator.updatePlayer(uiViewController, isPlaying: isPlaying)
+        context.coordinator.updateOverlay(uiViewController, text: overlayText, verticalPosition: overlayVerticalPosition, isViewClosing: isViewClosing)
     }
 
     // Use this method to cleanup when the view is being deinitialized
@@ -32,6 +36,8 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
     class Coordinator {
         var parent: CustomVideoPlayer
         var player: AVPlayer?
+        var overlayLabel: UILabel?
+        var constraints: [NSLayoutConstraint] = []
 
         init(_ parent: CustomVideoPlayer) {
             self.parent = parent
@@ -42,6 +48,10 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
             playerViewController.player = self.player
             playerViewController.showsPlaybackControls = false
             
+            // Ensure contentOverlayView is properly sized
+            playerViewController.contentOverlayView?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            playerViewController.contentOverlayView?.frame = playerViewController.view.bounds
+            
             // Configure audio session
             do {
                 try AVAudioSession.sharedInstance().setCategory(.playback)
@@ -49,6 +59,26 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
             } catch {
                 print("Failed to set audio session category. Error: \(error.localizedDescription)")
             }
+            
+            // Add overlay label
+            let label = UILabel()
+            label.textColor = .white
+            label.font = UIFont.customBoldFont(ofSize: 24)
+            label.textAlignment = .center
+            label.numberOfLines = 0
+            label.lineBreakMode = .byWordWrapping
+
+            label.layer.shadowColor = UIColor.black.cgColor
+            label.layer.shadowOffset = CGSize(width: 1, height: 1)
+            label.layer.shadowRadius = 2
+            label.layer.shadowOpacity = 1
+
+            playerViewController.contentOverlayView?.addSubview(label)
+            self.overlayLabel = label
+            
+            label.translatesAutoresizingMaskIntoConstraints = false
+
+            playerViewController.contentOverlayView?.bringSubviewToFront(label)
 
             setupLifecycleNotifications(playerViewController)
         }
@@ -70,9 +100,47 @@ struct CustomVideoPlayer: UIViewControllerRepresentable {
                 print("AVPlayer Error: \(error.localizedDescription)")
             }
         }
+        
+        func updateOverlay(_ uiViewController: AVPlayerViewController, text: String, verticalPosition: CGFloat, isViewClosing: Bool) {
+            guard let label = overlayLabel else { return }
+            
+            // If the view is closing, hide the label
+            label.isHidden = isViewClosing
+            
+            // If the label is hidden, we don't need to update its text or position
+            if isViewClosing {
+                return
+            }
+            
+            label.text = text
+
+            // Use player view bounds if contentOverlayView frame is zero
+            let referenceView: UIView
+            if let contentOverlay = uiViewController.contentOverlayView, contentOverlay.frame.size != .zero {
+                referenceView = contentOverlay
+            } else {
+                referenceView = uiViewController.view
+            }
+            
+            NSLayoutConstraint.deactivate(constraints)
+            constraints.removeAll()
+            
+            let desiredWidth = referenceView.bounds.width * 0.8
+            
+            let centerX = label.centerXAnchor.constraint(equalTo: referenceView.centerXAnchor)
+            let width = label.widthAnchor.constraint(equalToConstant: desiredWidth)
+            let centerY = label.centerYAnchor.constraint(equalTo: referenceView.topAnchor, constant: verticalPosition)
+            
+            constraints = [centerX, width, centerY]
+            NSLayoutConstraint.activate(constraints)
+            
+            label.setNeedsLayout()
+            label.layoutIfNeeded()
+        }
 
         func cleanup(_ uiViewController: AVPlayerViewController) {
             uiViewController.player?.pause()
+            overlayLabel?.removeFromSuperview()
             removeLifecycleNotifications()
         }
 

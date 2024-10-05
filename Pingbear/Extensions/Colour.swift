@@ -47,3 +47,8 @@ extension UIColor {
     }
 }
 
+extension UIFont {
+    static func customBoldFont(ofSize size: CGFloat) -> UIFont {
+        return UIFont.systemFont(ofSize: size, weight: .bold)
+    }
+}

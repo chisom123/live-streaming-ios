@@ -17,6 +17,7 @@ struct EntryView: View {
     @State private var isRatingEnabled: Bool = true
     @State private var navigateToCompDetails = false
     @State private var isPlaying = true
+    @State private var isViewClosing = false
     
     var competition: Competition
 
@@ -40,17 +41,23 @@ struct EntryView: View {
                     let entry = viewModel.entries[viewModel.currentIndex]
                     VStack {
                         if let videoURL = URL(string: entry.videoUrl) {
-                            CustomVideoPlayer(url: videoURL, isPlaying: $isPlaying)
-                                .id(viewModel.currentIndex)
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: size.width, height: size.height)
-                                .ignoresSafeArea()
-                                .onAppear {
-                                    PostHogSDK.shared.capture("Video Playback Started", properties: ["videoURL": entry.videoUrl])
-                                }
-                                .onDisappear {
-                                    PostHogSDK.shared.capture("Video Playback Stopped", properties: ["videoURL": entry.videoUrl])
-                                }
+                            CustomVideoPlayer(
+                                url: videoURL,
+                                isPlaying: $isPlaying,
+                                overlayText: entry.overlayText ?? "",
+                                overlayVerticalPosition: entry.overlayVerticalPosition,
+                                isViewClosing: $isViewClosing
+                            )
+                            .id(viewModel.currentIndex)
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: size.width, height: size.height)
+                            .ignoresSafeArea()
+                            .onAppear {
+                                PostHogSDK.shared.capture("Video Playback Started", properties: ["videoURL": entry.videoUrl])
+                            }
+                            .onDisappear {
+                                PostHogSDK.shared.capture("Video Playback Stopped", properties: ["videoURL": entry.videoUrl])
+                            }
                         } else {
                             ProgressView()
                         }
@@ -60,6 +67,7 @@ struct EntryView: View {
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
                 self.isRatingEnabled = true
+                self.isViewClosing = false
             }
             
             // Bottom - Heart button, horizontally centered
@@ -162,6 +170,14 @@ struct EntryView: View {
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
+        }
+        .onChange(of: navigateToCompDetails) { newValue in
+            if newValue {
+                isViewClosing = true // Set isViewClosing to true when navigating away
+            } else {
+                isViewClosing = false // Reset when returning to this view
+                isPlaying = true // Resume playing if needed
+            }
         }
         .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
     }

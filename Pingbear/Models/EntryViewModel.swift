@@ -10,6 +10,8 @@ struct Entry: Identifiable {
     let isCurrentUser: Bool
     let isSuperstar: Bool
     let creationDate: Date
+    let overlayText: String?
+    let overlayVerticalPosition: CGFloat
 }
 
 struct UserEntry: Identifiable {
@@ -211,6 +213,8 @@ class EntryViewModel: ObservableObject {
             let isSuperstar = document.data()["superstar"] as? Bool ?? false
             let timestamp = document.data()["timestamp"] as? Timestamp
             let creationDate = timestamp?.dateValue() ?? Date()
+            let overlayText = document.data()["overlayText"] as? String
+            let overlayVerticalPosition = document.data()["overlayVerticalPosition"] as? CGFloat ?? 0.5 // Default to center if not found
 
             db.collection("users").document(userId).getDocument { (userSnapshot, error) in
                 defer { group.leave() }
@@ -220,7 +224,15 @@ class EntryViewModel: ObservableObject {
                 }
                 let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
                 let isCurrentUser = userId == currentUserId
-                let entry = Entry(id: documentId, videoUrl: videoUrl, userName: isCurrentUser ? "Me" : userName, stars: stars, isCurrentUser: isCurrentUser, isSuperstar: isSuperstar, creationDate: creationDate)
+                let entry = Entry(id: documentId,
+                                  videoUrl: videoUrl,
+                                  userName: isCurrentUser ? "Me" : userName,
+                                  stars: stars,
+                                  isCurrentUser: isCurrentUser,
+                                  isSuperstar: isSuperstar,
+                                  creationDate: creationDate,
+                                  overlayText: overlayText,
+                                  overlayVerticalPosition: overlayVerticalPosition)
                 
                 localEntries.append(entry)
                 
@@ -315,7 +327,7 @@ class EntryViewModel: ObservableObject {
                 let description = data["description"] as? String ?? ""
                 
                 let title = description
-                let body = "+\(starIncrement) stars ⭐"
+                let body = "+\(starIncrement) stars ✨"
                 if starIncrement >= 4 {
                     self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
                 }

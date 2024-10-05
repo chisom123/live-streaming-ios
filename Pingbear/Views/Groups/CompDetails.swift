@@ -76,7 +76,7 @@ struct CompDetails: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 20)
+                .padding(.top, 20)
                 
                 HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
                     // Button positioned at the bottom right

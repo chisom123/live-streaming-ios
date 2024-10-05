@@ -7,23 +7,32 @@ struct StarboardVideoPlayer: View {
     
     @State private var navigateToCompDetails = false
     @State private var isPlaying = true
+    @State private var isViewClosing = false
 
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
             if let videoURL = URL(string: entry.videoUrl) {
-                CustomVideoPlayer(url: videoURL, isPlaying: $isPlaying)
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: size.width, height: size.height)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        isPlaying = false
-                        navigateToCompDetails = true
-                    }
+                CustomVideoPlayer(
+                    url: videoURL,
+                    isPlaying: $isPlaying,
+                    overlayText: entry.overlayText ?? "",
+                    overlayVerticalPosition: entry.overlayVerticalPosition,
+                    isViewClosing: $isViewClosing
+                )
+                .aspectRatio(contentMode: .fill)
+                .frame(width: size.width, height: size.height)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    isPlaying = false
+                    isViewClosing = true
+                    navigateToCompDetails = true
+                }
             } else {
                 ProgressView()
                     .onTapGesture {
                         isPlaying = false
+                        isViewClosing = true
                         navigateToCompDetails = true
                     }
             }
@@ -55,6 +64,12 @@ struct StarboardVideoPlayer: View {
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
+        }
+        .onChange(of: navigateToCompDetails) { newValue in
+            if !newValue {
+                isViewClosing = false  // Reset when the view reappears
+                isPlaying = true  // Resume playing if needed
+            }
         }
         .ignoresSafeArea(edges: .all)
     }
