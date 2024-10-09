@@ -81,6 +81,7 @@ struct CompDetails: View {
                 HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
                     // Button positioned at the bottom right
                     Button(action: {
+                        entryViewModel.removeListeners()
                         initiateVideoCapture()
                     }) {
                         Image(systemName: "camera.fill")
@@ -254,9 +255,9 @@ struct CompDetails: View {
     }
     
     func initiateVideoCapture() {
+        entryViewModel.removeListeners()
         checkCameraAndMicrophonePermissions { granted in
             if granted {
-                entryViewModel.removeListeners()
                 PostHogSDK.shared.capture("Add Video Initiated")
                 joincomp()
             } else {
@@ -292,12 +293,15 @@ struct CompDetails: View {
     }
     
     func joincomp() {
+        entryViewModel.removeListeners()
         self.isCameraPresented = true
     }
     func vote() {
+        entryViewModel.removeListeners()
         self.isVotingPresented = true
     }
     func openSettings() {
+        entryViewModel.removeListeners()
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(settingsUrl)
         }
