@@ -316,16 +316,16 @@ struct EmptyLeaderboardView: View {
             Image("EmptyState")
                 .resizable() // Allows the image to resize
                 .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
-                .frame(width: 150)
+                .frame(width: 190)
             
-            Text("Share a Video to Start")
+            Text("Get the Party Started")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function
-                Text("New Video")
+                Text("Open Camera")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
