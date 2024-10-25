@@ -96,9 +96,9 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         vote()
-                        PostHogSDK.shared.capture("Voting Initiated")
+                        PostHogSDK.shared.capture("Rating Initiated")
                     }) {
-                        Text("Play!")
+                        Text("Start")
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
@@ -170,7 +170,7 @@ struct CompDetails: View {
         .alert(isPresented: $showPermissionAlert) {
             Alert(
                 title: Text("Access Needed"),
-                message: Text("Camera and microphone access is required to capture video. Please enable them in Settings."),
+                message: Text("Camera access is required to take photos. Please enable it in Settings."),
                 primaryButton: .default(Text("Open Settings"), action: openSettings),
                 secondaryButton: .cancel()
             )
@@ -214,7 +214,7 @@ struct CompDetails: View {
             }
         }
         .fullScreenCover(item: $selectedEntry) { entry in
-            StarboardVideoPlayer(entry: entry, competition: competition)
+            StarboardPhotoPlayer(entry: entry, competition: competition)
         }
         .refreshable {
             entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
@@ -258,7 +258,7 @@ struct CompDetails: View {
         entryViewModel.removeListeners()
         checkCameraAndMicrophonePermissions { granted in
             if granted {
-                PostHogSDK.shared.capture("Add Video Initiated")
+                PostHogSDK.shared.capture("Add Photo Initiated")
                 joincomp()
             } else {
                 showPermissionAlert = true
@@ -268,23 +268,14 @@ struct CompDetails: View {
     
     func checkCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
         let cameraAuthStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        let audioAuthStatus = AVCaptureDevice.authorizationStatus(for: .audio)
         
-        switch (cameraAuthStatus, audioAuthStatus) {
-        case (.authorized, .authorized):
+        switch cameraAuthStatus {
+        case .authorized:
             completion(true)
-        case (.notDetermined, _), (_, .notDetermined):
-            AVCaptureDevice.requestAccess(for: .video) { cameraGranted in
-                if cameraGranted {
-                    AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
-                        DispatchQueue.main.async {
-                            completion(audioGranted)
-                        }
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        completion(false)
-                    }
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    completion(granted)
                 }
             }
         default:
@@ -316,16 +307,16 @@ struct EmptyLeaderboardView: View {
             Image("EmptyState")
                 .resizable() // Allows the image to resize
                 .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
-                .frame(width: 190)
+                .frame(width: 150)
             
-            Text("Get the Party Started")
+            Text("Share a Photo to Start")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function
-                Text("Open Camera")
+                Text("New Photo")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))

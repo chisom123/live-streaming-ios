@@ -143,7 +143,7 @@ struct NameEntryView: View {
         let competitionID = competitionRef.documentID
         
         let competitionData: [String: Any] = [
-            "description": "\(processedUsername)'s group 🤩",
+            "description": "How to use Pingbear",
             "timestamp": FieldValue.serverTimestamp()
         ]
         

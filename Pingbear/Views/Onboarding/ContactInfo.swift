@@ -27,7 +27,7 @@ struct ContactInfoView: View {
                 .padding(.horizontal)
             
             
-            Text("Get notified when your friends share videos and give you stars.")
+            Text("Get notified when your friends share photos and give you stars.")
                 .font(.system(size: 16, weight: .bold, design: .default))
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)

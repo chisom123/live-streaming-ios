@@ -49,7 +49,7 @@ struct PayView: View {
                         .padding(.horizontal, 20)
                     
                     HStack {
-                        Text("Get an extra star every time your videos are starred by friends")
+                        Text("Get an extra star every time your photos are starred by friends")
                             .font(.system(size: 17, weight: .bold, design: .default)) // Apply common styling here
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)

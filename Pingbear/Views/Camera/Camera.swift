@@ -5,11 +5,20 @@ import Firebase
 import FirebaseStorage
 import FirebaseFirestore
 import PostHog
+import PhotosUI
 
 struct CameraView: View {
     @StateObject var cameraModel = CameraViewModel()
     var competition: Competition
     @State private var navigateToCompDetails = false
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedImage: UIImage?
+    @State private var imageSource: ImageSource = .camera
+    
+    enum ImageSource {
+        case camera
+        case gallery
+    }
     
     var body: some View {
         ZStack {
@@ -20,21 +29,6 @@ struct CameraView: View {
             
             // Other controls (Preview and Reset) remain the same
             VStack {
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Rectangle()
-                            .fill(.black.opacity(0.25))
-                        
-                        Rectangle()
-                            .fill(Color(hex: "#FF4500"))
-                            .frame(width: geometry.size.width * (cameraModel.recordedDuration / cameraModel.maxDuration))
-                    }
-                    .frame(height: 10)
-                    .cornerRadius(200)
-                }
-                .frame(height: 10)
-                .padding()
-                
                 HStack {
                     Button {
                         navigateToCompDetails = true
@@ -44,7 +38,6 @@ struct CameraView: View {
                             .foregroundColor(.white)
                             .padding(5) // Adjust the padding to balance the increased size
                             .shadow(radius: 10)
-                            .opacity(cameraModel.isRecording ? 0 : 1)
                     }
                     Spacer()
                     Button(action: {
@@ -55,50 +48,87 @@ struct CameraView: View {
                             .foregroundColor(.white)
                             .padding(5) // Adjust the padding to balance the increased size
                             .shadow(radius: 10)
-                            .opacity(cameraModel.isRecording ? 0 : 1)
                     }
                 }
-                .padding(.horizontal)
+                .padding(.top, 5)
+                .padding(20)
                 
                 Spacer()
-                
-                Text("Hold to Record")
-                    .font(.system(size: 22, weight: .bold, design: .default))
-                    .foregroundColor(.white)
-                    .shadow(radius: 10)
-                    .padding(.bottom, 25)
-                    .opacity(cameraModel.isRecording || cameraModel.recordedDuration >= cameraModel.maxDuration ? 0 : 1)
 
-                // Record Button with Press and Hold Gesture
-                Circle()
-                    .fill(cameraModel.isRecording ? Color(hex: "#FF4500") : Color.clear)
-                    .frame(width: 100, height: 100)
-                    .contentShape(Circle())
-                    .overlay(
+                // Bottom Controls
+                HStack(spacing: 60) {
+                    
+                    PhotosPicker(
+                        selection: $selectedItem,
+                        matching: .images,
+                        photoLibrary: .shared()
+                    ) {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                            .frame(width: 60, height: 60)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
+                    }
+                    
+                    // Camera Button
+                    Button(action: {
+                        imageSource = .camera
+                        cameraModel.capturePhoto()
+                    }) {
                         Circle()
-                            .stroke(Color.white, lineWidth: 8) // White stroke for both states
-                    )
-                    .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity, pressing: { isPressing in
-                        cameraModel.handlePress(isPressing: isPressing)
-                    }, perform: {})
-                    .padding(.bottom, 50)
+                            .fill(Color.clear)
+                            .frame(width: 100, height: 100)
+                            .contentShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 8)
+                            )
+                    }
+                    .disabled(cameraModel.isTakingPhoto)
+                    
+                    // Spacer to maintain symmetry
+                    Circle()
+                        .fill(Color.clear)
+                        .frame(width: 60, height: 60)
+                }
+                .padding(.bottom, 50)
                 
             }
         }
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                   let image = UIImage(data: data) {
+                    imageSource = .gallery
+                    cameraModel.showPreview = true
+                    cameraModel.capturedImage = image
+                    selectedImage = image
+                }
+            }
+        }
         .fullScreenCover(isPresented: $cameraModel.showPreview, content: {
-            if let url = cameraModel.previewURL {
-                FinalPreview(url: url, showPreview: $cameraModel.showPreview,  competition: competition, competitionId: competition.id, resetCameraAction: { self.resetCamera() })
+            if let image = cameraModel.capturedImage {
+                FinalPreview(
+                    image: image,
+                    showPreview: $cameraModel.showPreview,
+                    competition: competition,
+                    competitionId: competition.id,
+                    resetCameraAction: { self.resetCamera() },
+                    isFromCamera: imageSource == .camera
+                )
             }
         })
         .fullScreenCover(isPresented: $navigateToCompDetails) {
-            CompDetails(competition: competition) // Adjust according to your needs
+            CompDetails(competition: competition)
         }
     }
     
     private func resetCamera() {
-        cameraModel.recordedDuration = 0
-        cameraModel.previewURL = nil
-        cameraModel.recordedURLs.removeAll()
+        cameraModel.capturedImage = nil
         cameraModel.session.startRunning()
+        imageSource = .camera 
+        selectedItem = nil
+        selectedImage = nil
     }
 }

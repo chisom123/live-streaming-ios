@@ -69,7 +69,7 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
-		4F515AC22C0B0B21003FE588 /* StarboardVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */; };
+		4F515AC22C0B0B21003FE588 /* StarboardPhotoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */; };
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
@@ -80,7 +80,6 @@
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 		4FACC9DE2C304685003BF013 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DD2C304685003BF013 /* Welcome.swift */; };
 		4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */; };
-		4FE6E5932C009A1C002E389C /* VideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE6E5922C009A1C002E389C /* VideoPlayer.swift */; };
 		4FE6E5952C00D515002E389C /* Boost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE6E5942C00D515002E389C /* Boost.swift */; };
 		4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */; };
 		4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */; };
@@ -140,7 +139,7 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
-		4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarboardVideoPlayer.swift; sourceTree = "<group>"; };
+		4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarboardPhotoPlayer.swift; sourceTree = "<group>"; };
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
@@ -150,7 +149,6 @@
 		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
 		4FACC9DD2C304685003BF013 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
-		4FE6E5922C009A1C002E389C /* VideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayer.swift; sourceTree = "<group>"; };
 		4FE6E5942C00D515002E389C /* Boost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boost.swift; sourceTree = "<group>"; };
 		4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
 		4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraInit.swift; sourceTree = "<group>"; };
@@ -245,7 +243,7 @@
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
 				4F0416192BB5A97C00E3C7C0 /* Members.swift */,
 				4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */,
-				4F515AC12C0B0B21003FE588 /* StarboardVideoPlayer.swift */,
+				4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -384,7 +382,6 @@
 				4F375D0A2AF444B70011F541 /* Camera.swift */,
 				4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */,
 				4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */,
-				4FE6E5922C009A1C002E389C /* VideoPlayer.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -583,9 +580,8 @@
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4FACC9DE2C304685003BF013 /* Welcome.swift in Sources */,
-				4FE6E5932C009A1C002E389C /* VideoPlayer.swift in Sources */,
 				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
-				4F515AC22C0B0B21003FE588 /* StarboardVideoPlayer.swift in Sources */,
+				4F515AC22C0B0B21003FE588 /* StarboardPhotoPlayer.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F8FEE612BE516AC0087479A /* Landing.swift in Sources */,
 				4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */,
@@ -753,7 +749,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 80;
+				CURRENT_PROJECT_VERSION = 81;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -763,7 +759,7 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to record videos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take photos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -779,7 +775,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -799,7 +795,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 80;
+				CURRENT_PROJECT_VERSION = 81;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -809,7 +805,7 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to record videos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take photos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -825,7 +821,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 7.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

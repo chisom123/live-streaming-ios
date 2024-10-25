@@ -8,7 +8,6 @@
 import SwiftUI
 import NotificationBannerSwift
 import PostHog
-import AVKit
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
@@ -16,8 +15,6 @@ struct EntryView: View {
     @State private var rating: Int = 0
     @State private var isRatingEnabled: Bool = true
     @State private var navigateToCompDetails = false
-    @State private var isPlaying = true
-    @State private var isViewClosing = false
     
     var competition: Competition
 
@@ -36,30 +33,54 @@ struct EntryView: View {
         GeometryReader { proxy in
             let size = proxy.size
             
-            Group {
-                if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                    let entry = viewModel.entries[viewModel.currentIndex]
-                    VStack {
-                        if let videoURL = URL(string: entry.videoUrl) {
-                            CustomVideoPlayer(
-                                url: videoURL,
-                                isPlaying: $isPlaying,
-                                overlayText: entry.overlayText ?? "",
-                                overlayVerticalPosition: entry.overlayVerticalPosition,
-                                isViewClosing: $isViewClosing
-                            )
-                            .id(viewModel.currentIndex)
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: size.width, height: size.height)
-                            .ignoresSafeArea()
-                            .onAppear {
-                                PostHogSDK.shared.capture("Video Playback Started", properties: ["videoURL": entry.videoUrl])
+            ZStack {
+                
+                Color.black
+                    .edgesIgnoringSafeArea(.all)
+                
+                Group {
+                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                        let entry = viewModel.entries[viewModel.currentIndex]
+                        VStack {
+                            if let imageURL = URL(string: entry.photoUrl) {
+                                AsyncImage(url: imageURL) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: entry.isFromCamera ? .fill : .fit)
+                                            .frame(width: size.width, height: size.height)
+                                            .clipped()
+                                            .overlay {
+                                                if let overlayText = entry.overlayText {
+                                                    Text(overlayText)
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 24, weight: .bold))
+                                                        .shadow(color: .black, radius: 2, x: 1, y: 1)
+                                                        .multilineTextAlignment(.center)
+                                                        .frame(width: size.width * 0.8)
+                                                        .position(x: size.width / 2, y: entry.overlayVerticalPosition)
+                                                }
+                                            }
+                                    case .failure(_):
+                                        Image(systemName: "photo.fill")
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .foregroundColor(.gray)
+                                            .frame(width: 80, height: 80)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            .background(Color.black.opacity(0.1))
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                                .id(viewModel.currentIndex)
+                                .ignoresSafeArea()
+                            } else {
+                                ProgressView()
                             }
-                            .onDisappear {
-                                PostHogSDK.shared.capture("Video Playback Stopped", properties: ["videoURL": entry.videoUrl])
-                            }
-                        } else {
-                            ProgressView()
                         }
                     }
                 }
@@ -67,7 +88,6 @@ struct EntryView: View {
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
                 self.isRatingEnabled = true
-                self.isViewClosing = false
             }
             
             // Bottom - Heart button, horizontally centered
@@ -94,7 +114,6 @@ struct EntryView: View {
                                     // Add check here to see if it's the last entry
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-                                            isPlaying = false
                                             navigateToCompDetails = true
                                         }
                                     } else {
@@ -129,7 +148,6 @@ struct EntryView: View {
 
             HStack {
                 Button(action: {
-                    isPlaying = false
                     navigateToCompDetails = true
                 }) {
                     Image(systemName: "arrow.left")
@@ -154,9 +172,9 @@ struct EntryView: View {
                 Spacer()
 
                 Button(action: {
-                    let banner = NotificationBanner(title: "Video Successfully Reported", style: .success)
+                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
                     banner.show()
-                    PostHogSDK.shared.capture("Video Reported")
+                    PostHogSDK.shared.capture("Photo Reported")
                 }) {
                     Image(systemName: "flag")
                         .font(.system(size: 30))
@@ -171,15 +189,7 @@ struct EntryView: View {
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
         }
-        .onChange(of: navigateToCompDetails) { newValue in
-            if newValue {
-                isViewClosing = true // Set isViewClosing to true when navigating away
-            } else {
-                isViewClosing = false // Reset when returning to this view
-                isPlaying = true // Resume playing if needed
-            }
-        }
-        .ignoresSafeArea(edges: .all) // Now applying ignore to only video player
+        .ignoresSafeArea(edges: .all)
     }
 }
 

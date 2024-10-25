@@ -79,7 +79,7 @@ struct MyCompsView: View {
                                         .foregroundColor(Color(hex: "#fff"))
                                 }
                                 
-                                Image(systemName: "film.fill")
+                                Image(systemName: "photo.fill")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 18, height: 18) // Slightly larger star icon

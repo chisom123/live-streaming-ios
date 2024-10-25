@@ -4,7 +4,7 @@ import FirebaseFirestore
 
 struct Entry: Identifiable {
     let id: String
-    let videoUrl: String
+    let photoUrl: String
     let userName: String
     let stars: Int
     let isCurrentUser: Bool
@@ -12,6 +12,7 @@ struct Entry: Identifiable {
     let creationDate: Date
     let overlayText: String?
     let overlayVerticalPosition: CGFloat
+    let isFromCamera: Bool
 }
 
 struct UserEntry: Identifiable {
@@ -208,13 +209,14 @@ class EntryViewModel: ObservableObject {
             }
 
             group.enter()
-            let videoUrl = document.data()["videoUrl"] as? String ?? ""
+            let imageUrl = document.data()["imageUrl"] as? String ?? ""
             let stars = document.data()["stars"] as? Int ?? 0
             let isSuperstar = document.data()["superstar"] as? Bool ?? false
             let timestamp = document.data()["timestamp"] as? Timestamp
             let creationDate = timestamp?.dateValue() ?? Date()
             let overlayText = document.data()["overlayText"] as? String
             let overlayVerticalPosition = document.data()["overlayVerticalPosition"] as? CGFloat ?? 0.5 // Default to center if not found
+            let isFromCamera = document.data()["isFromCamera"] as? Bool ?? true
 
             db.collection("users").document(userId).getDocument { (userSnapshot, error) in
                 defer { group.leave() }
@@ -225,14 +227,15 @@ class EntryViewModel: ObservableObject {
                 let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
                 let isCurrentUser = userId == currentUserId
                 let entry = Entry(id: documentId,
-                                  videoUrl: videoUrl,
+                                  photoUrl: imageUrl,
                                   userName: isCurrentUser ? "Me" : userName,
                                   stars: stars,
                                   isCurrentUser: isCurrentUser,
                                   isSuperstar: isSuperstar,
                                   creationDate: creationDate,
                                   overlayText: overlayText,
-                                  overlayVerticalPosition: overlayVerticalPosition)
+                                  overlayVerticalPosition: overlayVerticalPosition,
+                                  isFromCamera: isFromCamera)
                 
                 localEntries.append(entry)
                 

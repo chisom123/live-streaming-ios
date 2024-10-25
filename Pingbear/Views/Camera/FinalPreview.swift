@@ -75,7 +75,7 @@ struct CustomTextView: UIViewRepresentable {
 }
 
 struct FinalPreview: View {
-    var url: URL
+    var image: UIImage
     @Binding var showPreview: Bool
     var competition: Competition
     var competitionId: String
@@ -84,12 +84,12 @@ struct FinalPreview: View {
     @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
-    @State private var isPlaying = true
     @State private var overlayText: String = ""
     @State private var overlayVerticalPosition: CGFloat = UIScreen.main.bounds.height / 2
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
     let characterLimit = 150
+    var isFromCamera: Bool
 
     var body: some View {
          GeometryReader { proxy in
@@ -101,19 +101,13 @@ struct FinalPreview: View {
                              .padding()
                      }
                  } else {
-                     CustomVideoPlayer(
-                         url: url,
-                         isPlaying: $isPlaying,
-                         overlayText: "",
-                         overlayVerticalPosition: .zero, 
-                         isViewClosing: .constant(false)
-                     )
-                     .aspectRatio(contentMode: .fill)
-                     .frame(width: proxy.size.width, height: proxy.size.height)
-                     .ignoresSafeArea()
-                     .onAppear {
-                         PostHogSDK.shared.capture("Camera Video Preview Opened")
-                     }
+                     Color.black.edgesIgnoringSafeArea(.all)
+                     
+                     Image(uiImage: image)
+                         .resizable()
+                         .aspectRatio(contentMode: isFromCamera ? .fill : .fit)
+                         .frame(width: proxy.size.width, height: proxy.size.height)
+                         .clipped()
                      
                      // Text Overlay (visible when not editing)
                      if !isEditingText {
@@ -161,7 +155,6 @@ struct FinalPreview: View {
                              Button(action: {
                                  self.showPreview = false
                                  self.resetCameraAction()
-                                 isPlaying = false
                              }) {
                                  Image(systemName: "xmark")
                                      .font(.system(size: 30))
@@ -234,7 +227,6 @@ struct FinalPreview: View {
      }
     
     func submitEntry() {
-        isPlaying = false
         isUploading = true
         
         guard let userId = Auth.auth().currentUser?.uid else {
@@ -242,79 +234,51 @@ struct FinalPreview: View {
             return
         }
 
-        let videoURL = self.url
-        
-        // 1. Compress video before uploading
-        compressVideo(inputURL: videoURL) { compressedURL in
-            guard let compressedURL = compressedURL else {
-                print("Failed to compress video")
-                DispatchQueue.main.async {
-                    self.isUploading = false
-                }
-                return
+        // Convert image to data
+        guard let imageData = image.jpegData(compressionQuality: 0.6) else {
+            print("Failed to convert image to data")
+            DispatchQueue.main.async {
+                self.isUploading = false
             }
-            
-            // 2. Upload the compressed video
-            let storageRef = Storage.storage().reference().child("videos/\(UUID().uuidString).mov")
-            let metadata = StorageMetadata()
-            metadata.contentType = "video/quicktime"
-            metadata.customMetadata = [
-                "competitionId": self.competitionId,
-                "userId": userId
-            ]
-            
-            let uploadTask = storageRef.putFile(from: compressedURL, metadata: metadata)
-            
-            uploadTask.observe(.success) { _ in
-                storageRef.downloadURL { result in
-                    switch result {
-                    case .success(let downloadURL):
-                        self.saveEntryToFirestore(userId: userId, videoURL: downloadURL.absoluteString)
-                    case .failure(let error):
-                        print("Error getting download URL: \(error)")
-                        DispatchQueue.main.async {
-                            self.isUploading = false
-                        }
-                    }
-                }
-            }
-            
-            uploadTask.observe(.failure) { snapshot in
-                if let error = snapshot.error {
-                    print("Upload failed: \(error.localizedDescription)")
-                }
-                DispatchQueue.main.async {
-                    self.isUploading = false
-                }
-            }
-        }
-    }
-    
-    func compressVideo(inputURL: URL, completion: @escaping (URL?) -> Void) {
-        let uniqueFilename = "compressed_\(UUID().uuidString).mov"
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(uniqueFilename)
-        
-        guard let exportSession = AVAssetExportSession(asset: AVAsset(url: inputURL), presetName: AVAssetExportPresetMediumQuality) else {
-            completion(nil)
             return
         }
         
-        exportSession.outputURL = outputURL
-        exportSession.outputFileType = .mov
-        exportSession.shouldOptimizeForNetworkUse = true
+        // Upload the image
+        let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        metadata.customMetadata = [
+            "competitionId": self.competitionId,
+            "userId": userId
+        ]
         
-        exportSession.exportAsynchronously {
-            switch exportSession.status {
-            case .completed:
-                completion(outputURL)
-            default:
-                print("Failed to compress video: \(exportSession.error?.localizedDescription ?? "Unknown error")")
-                completion(nil)
+        let uploadTask = storageRef.putData(imageData, metadata: metadata)
+        
+        uploadTask.observe(.success) { _ in
+            storageRef.downloadURL { result in
+                switch result {
+                case .success(let downloadURL):
+                    self.saveEntryToFirestore(userId: userId, imageURL: downloadURL.absoluteString)
+                case .failure(let error):
+                    print("Error getting download URL: \(error)")
+                    DispatchQueue.main.async {
+                        self.isUploading = false
+                    }
+                }
+            }
+        }
+        
+        uploadTask.observe(.failure) { snapshot in
+            if let error = snapshot.error {
+                print("Upload failed: \(error.localizedDescription)")
+            }
+            DispatchQueue.main.async {
+                self.isUploading = false
             }
         }
     }
     
-    func saveEntryToFirestore(userId: String, videoURL: String) {
+    func saveEntryToFirestore(userId: String, imageURL: String) {
         let db = Firestore.firestore()
         
         let userDocRef = Firestore.firestore().collection("users").document(userId)
@@ -332,11 +296,12 @@ struct FinalPreview: View {
 
             let entryData = [
                 "userId": userId,
-                "videoUrl": videoURL,
+                "imageUrl": imageURL,
                 "timestamp": FieldValue.serverTimestamp(),
                 "superstar": superstar,
                 "overlayText": self.overlayText,
-                "overlayVerticalPosition": self.overlayVerticalPosition
+                "overlayVerticalPosition": self.overlayVerticalPosition,
+                "isFromCamera": self.isFromCamera  // Add this field
             ]
             
             var newEntryRef: DocumentReference? = nil
@@ -356,7 +321,7 @@ struct FinalPreview: View {
                     }
                 }
                 self.isUploading = false
-                PostHogSDK.shared.capture("New Video Shared")
+                PostHogSDK.shared.capture("New Photo Shared")
                 self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
             }
         }
@@ -401,7 +366,7 @@ struct FinalPreview: View {
                     return
                 }
                 if let document = document, let fcmToken = document.data()?["fcmToken"] as? String {
-                    let message = "\(username) shared a video"
+                    let message = "\(username) shared a photo"
                     self.sendPushNotification(to: fcmToken, message: message)
                 }
             }
