@@ -759,7 +759,8 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with members of your private groups.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -805,7 +806,8 @@
 				INFOPLIST_FILE = Pingbear/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app requires camera access to take photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with members of your private groups.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

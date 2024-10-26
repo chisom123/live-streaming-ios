@@ -25,7 +25,5 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
-	<key>NSContactsUsageDescription</key>
-	<string>Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won&apos;t be stored or shared with anyone.</string>
 </dict>
 </plist>
