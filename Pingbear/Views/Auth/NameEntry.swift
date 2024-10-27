@@ -57,7 +57,7 @@ struct NameEntryView: View {
             }
             .padding(.top, 20)
 
-            NavigationLink(destination: ContactInfoView(), isActive: $navigateToHome) {
+            NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
                 EmptyView()
             }.isDetailLink(false) // To avoid any potential navigation issues
         }
@@ -111,7 +111,6 @@ struct NameEntryView: View {
                self.errorMessage = "Error saving user: \(error.localizedDescription)"
                PostHogSDK.shared.capture("Username Save Failed", properties: ["error": error.localizedDescription])
            } else {
-               newgroup(processedUsername: processedUsername)
                self.navigateToHome = true
                UserDefaults.standard.set(true, forKey: "isLoggedIn")
                UserDefaults.standard.synchronize()
@@ -119,57 +118,4 @@ struct NameEntryView: View {
            }
        }
    }
-    
-    func newgroup(processedUsername: String) {
-
-        // Get the current user's ID
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("Error: User not logged in")
-            return
-        }
-        
-        let db = Firestore.firestore()
-        
-        createCompetitionAndAddMember(db: db, userID: userID, processedUsername: processedUsername) { result in
-            if case .failure(let error) = result {
-                self.errorMessage = "Failed to create group: \(error.localizedDescription)"
-                PostHogSDK.shared.capture("Group Creation Failed", properties: ["error": error.localizedDescription])
-            }
-        }
-    }
-
-    func createCompetitionAndAddMember(db: Firestore, userID: String, processedUsername: String, completion: @escaping (Result<String, Error>) -> Void) {
-        let competitionRef = db.collection("competitions").document()
-        let competitionID = competitionRef.documentID
-        
-        let competitionData: [String: Any] = [
-            "description": "How to use Pingbear",
-            "timestamp": FieldValue.serverTimestamp()
-        ]
-        
-        let batch = db.batch()
-        
-        // Set competition data
-        batch.setData(competitionData, forDocument: competitionRef)
-        
-        // Add user as a member
-        let memberRef = competitionRef.collection("members").document(userID)
-        let memberData: [String: Any] = ["userId": userID]
-        batch.setData(memberData, forDocument: memberRef)
-        
-        // Add to user's group memberships
-        let groupMembershipRef = db.collection("groupMemberships").document(userID)
-                                    .collection("competitions").document(competitionID)
-        let membershipData: [String: Any] = ["competitionId": competitionID]
-        batch.setData(membershipData, forDocument: groupMembershipRef)
-        
-        batch.commit { error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                completion(.success(competitionID))
-                PostHogSDK.shared.capture("Initial Empty User Group Created")
-            }
-        }
-    }
 }

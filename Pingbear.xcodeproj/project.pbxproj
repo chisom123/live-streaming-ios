@@ -73,12 +73,9 @@
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
-		4F66771C2C3420AE0001C5F1 /* ContactInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F66771B2C3420AE0001C5F1 /* ContactInfo.swift */; };
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
-		4F8FEE612BE516AC0087479A /* Landing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE602BE516AC0087479A /* Landing.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
-		4FACC9DE2C304685003BF013 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DD2C304685003BF013 /* Welcome.swift */; };
 		4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */; };
 		4FE6E5952C00D515002E389C /* Boost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE6E5942C00D515002E389C /* Boost.swift */; };
 		4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */; };
@@ -143,11 +140,8 @@
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
-		4F66771B2C3420AE0001C5F1 /* ContactInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactInfo.swift; sourceTree = "<group>"; };
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
-		4F8FEE602BE516AC0087479A /* Landing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Landing.swift; sourceTree = "<group>"; };
-		4FACC9DD2C304685003BF013 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
 		4FE6E5942C00D515002E389C /* Boost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boost.swift; sourceTree = "<group>"; };
 		4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
@@ -217,7 +211,6 @@
 				4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */,
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
-				4F8FEE602BE516AC0087479A /* Landing.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -321,7 +314,6 @@
 		4F3E0D522A86F87C0068F901 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				4FACC9DA2C3018A4003BF013 /* Onboarding */,
 				4FED5C5A2BF61F6D00CC5BFE /* Camera */,
 				4F31B8952BDBAB7D007892BC /* Groups */,
 				4F31B8932BDBAA85007892BC /* Auth */,
@@ -365,15 +357,6 @@
 				4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */,
 			);
 			path = Notifications;
-			sourceTree = "<group>";
-		};
-		4FACC9DA2C3018A4003BF013 /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				4FACC9DD2C304685003BF013 /* Welcome.swift */,
-				4F66771B2C3420AE0001C5F1 /* ContactInfo.swift */,
-			);
-			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		4FED5C5A2BF61F6D00CC5BFE /* Camera */ = {
@@ -568,7 +551,6 @@
 				4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
 				4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */,
-				4F66771C2C3420AE0001C5F1 /* ContactInfo.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F375D072AE81F760011F541 /* NewCompetition.swift in Sources */,
 				4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */,
@@ -579,11 +561,9 @@
 				4FE6E5952C00D515002E389C /* Boost.swift in Sources */,
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
-				4FACC9DE2C304685003BF013 /* Welcome.swift in Sources */,
 				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
 				4F515AC22C0B0B21003FE588 /* StarboardPhotoPlayer.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
-				4F8FEE612BE516AC0087479A /* Landing.swift in Sources */,
 				4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */,
 				4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
@@ -749,7 +729,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -776,7 +756,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 7.0;
+				MARKETING_VERSION = 7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -796,7 +776,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 82;
+				CURRENT_PROJECT_VERSION = 83;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -823,7 +803,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 7.0;
+				MARKETING_VERSION = 7.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

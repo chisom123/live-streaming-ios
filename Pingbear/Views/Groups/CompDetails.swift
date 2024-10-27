@@ -309,7 +309,7 @@ struct EmptyLeaderboardView: View {
                 .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
                 .frame(width: 150)
             
-            Text("Share a Photo to Start")
+            Text("Share a Photo")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 25)

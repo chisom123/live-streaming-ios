@@ -24,108 +24,152 @@ class CompetitionsModel: ObservableObject {
     
     var badgeCount = 0 {
         didSet {
-            // Set the application icon badge number on the main thread
             DispatchQueue.main.async {
                 UIApplication.shared.applicationIconBadgeNumber = self.badgeCount
             }
         }
     }
     
-    func setupCompetitionListeners(userId: String) {
+    func setupCompetitionListeners(userId: String, completion: (() -> Void)? = nil) {
         let path = "groupMemberships/\(userId)/competitions"
+        
         FirestoreListenerManager.shared.addListener(for: path) { [weak self] changes in
+            var competitionIds: [String] = []
+            
+            // Collect all competition IDs first
             for change in changes {
-                switch change.type {
-                case .added, .modified:
-                    if let competitionId = change.document.data()["competitionId"] as? String {
-                        self?.fetchCompetitionDetailsAndCalculateVotes(competitionId: competitionId, userId: userId)
+                if case .added = change.type,
+                   let competitionId = change.document.data()["competitionId"] as? String {
+                    competitionIds.append(competitionId)
+                } else if case .removed = change.type,
+                          let competitionId = change.document.data()["competitionId"] as? String {
+                    DispatchQueue.main.async {
+                        self?.competitions.removeAll { $0.id == competitionId }
+                        self?.recalculateBadgeCount()
                     }
-                case .removed:
-                    self?.removeCompetition(change.document.documentID)
                 }
             }
+            
+            if !competitionIds.isEmpty {
+                self?.batchFetchCompetitions(ids: competitionIds, userId: userId) {
+                    completion?()
+                }
+            } else {
+                completion?()
+            }
         }
     }
     
-    func removeCompetition(_ competitionId: String) {
-        setupCompetitionListeners(userId: Auth.auth().currentUser?.uid ?? "")
-    }
-    
-    func fetchCompetitionDetailsAndCalculateVotes(competitionId: String, userId: String) {
+    private func batchFetchCompetitions(ids: [String], userId: String, completion: @escaping () -> Void) {
         let db = Firestore.firestore()
-        db.collection("competitions").document(competitionId).getDocument { [weak self] (documentSnapshot, err) in
-            guard let self = self, let documentSnapshot = documentSnapshot, let data = documentSnapshot.data() else {
-                print("Error or missing data in competition document: \(err?.localizedDescription ?? "Unknown error")")
+        let group = DispatchGroup()
+        
+        let competitionsRef = db.collection("competitions")
+        competitionsRef.whereField(FieldPath.documentID(), in: ids).getDocuments { [weak self] (snapshot, error) in
+            if let error = error {
+                print("Error batch fetching competitions: \(error)")
+                completion()
                 return
             }
-            let competition = Competition(
-                id: documentSnapshot.documentID,
-                description: data["description"] as? String ?? "No Description",
-                date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
-            )
-            self.setupEntriesListener(competition: competition, userId: userId)
-        }
-    }
-    
-    func setupEntriesListener(competition: Competition, userId: String) {
-        let path = "competitions/\(competition.id)/entries"
-        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-
-        // Setup listener with FirestoreListenerManager for entries
-        FirestoreListenerManager.shared.addListener(for: path) { [weak self] changes in
-            guard let self = self else { return }
             
-            // Filter and process entry document changes based on the timestamp
-            let entryIds = changes.filter {
-                guard let timestamp = $0.document.data()["timestamp"] as? Timestamp else { return false }
-                return timestamp.dateValue() >= twentyFourHoursAgo
-            }.map { $0.document.documentID }
-
-            let allEntryIds = Set(entryIds)
-
-            // Proceed to fetch votes
-            self.fetchVotesAndUpdateCompetition(userId: userId, competition: competition, entryIds: allEntryIds)
-        }
-    }
-
-    func fetchVotesAndUpdateCompetition(userId: String, competition: Competition, entryIds: Set<String>) {
-        let votesPath = "groupMemberships/\(userId)/competitions/\(competition.id)/votes"
-        FirestoreListenerManager.shared.addListener(for: votesPath) { [weak self] changes in
-            let votedEntryIds = Set(changes.compactMap { $0.document.data()["entryId"] as? String })
-            let notVotedEntriesCount = entryIds.subtracting(votedEntryIds).count
-
-            DispatchQueue.main.async {
-                competition.entriesNotVotedCount = notVotedEntriesCount
-                self?.updateOrAppendCompetition(competition)
+            guard let documents = snapshot?.documents else {
+                completion()
+                return
+            }
+            
+            let competitions = documents.compactMap { doc -> Competition? in
+                let data = doc.data()
+                return Competition(
+                    id: doc.documentID,
+                    description: data["description"] as? String ?? "No Description",
+                    date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                )
+            }
+            
+            // Update competitions and fetch entry counts in parallel
+            for competition in competitions {
+                group.enter()
+                DispatchQueue.main.async {
+                    self?.updateOrAppendCompetition(competition)
+                    self?.refreshEntriesAndVotes(for: competition.id, userId: userId) {
+                        group.leave()
+                    }
+                }
+            }
+            
+            group.notify(queue: .main) {
+                completion()
             }
         }
     }
-
+    
+    func refreshEntriesAndVotes(for competitionId: String, userId: String, completion: (() -> Void)? = nil) {
+        guard let competition = competitions.first(where: { $0.id == competitionId }) else {
+            completion?()
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        
+        let group = DispatchGroup()
+        var entryIds: Set<String> = []
+        var votedEntryIds: Set<String> = []
+        
+        // Fetch both entries and votes in parallel
+        group.enter()
+        let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
+            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
+        
+        entriesRef.getDocuments { snapshot, error in
+            defer { group.leave() }
+            
+            if let error = error {
+                print("Error fetching entries: \(error)")
+                return
+            }
+            
+            entryIds = Set(snapshot?.documents.map { $0.documentID } ?? [])
+        }
+        
+        group.enter()
+        let votesRef = db.collection("groupMemberships").document(userId)
+            .collection("competitions").document(competitionId)
+            .collection("votes")
+        
+        votesRef.getDocuments { snapshot, error in
+            defer { group.leave() }
+            
+            if let error = error {
+                print("Error fetching votes: \(error)")
+                return
+            }
+            
+            votedEntryIds = Set(snapshot?.documents.compactMap { $0.data()["entryId"] as? String } ?? [])
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            let notVotedEntriesCount = entryIds.subtracting(votedEntryIds).count
+            competition.entriesNotVotedCount = notVotedEntriesCount
+            self?.recalculateBadgeCount()
+            completion?()
+        }
+    }
     
     func updateOrAppendCompetition(_ competition: Competition) {
-        DispatchQueue.main.async {
-            if let index = self.competitions.firstIndex(where: { $0.id == competition.id }) {
-                // Update existing competition
-                self.competitions[index] = competition
-            } else {
-                // Append new competition
-                self.competitions.append(competition)
-            }
-            self.recalculateBadgeCount()
+        if let index = competitions.firstIndex(where: { $0.id == competition.id }) {
+            competitions[index] = competition
+        } else {
+            competitions.append(competition)
         }
+        recalculateBadgeCount()
     }
-
+    
     func recalculateBadgeCount() {
         badgeCount = competitions.reduce(0) { $0 + $1.entriesNotVotedCount }
     }
     
     func cleanupListeners() {
-        for competition in competitions {
-            let path = "competitions/\(competition.id)/entries"
-            FirestoreListenerManager.shared.removeListener(for: path)
-            let votesPath = "groupMemberships/\(Auth.auth().currentUser?.uid ?? "")/competitions/\(competition.id)/votes"
-            FirestoreListenerManager.shared.removeListener(for: votesPath)
-        }
         let membershipsPath = "groupMemberships/\(Auth.auth().currentUser?.uid ?? "")/competitions"
         FirestoreListenerManager.shared.removeListener(for: membershipsPath)
     }
