@@ -98,11 +98,11 @@ struct CompDetails: View {
                         vote()
                         PostHogSDK.shared.capture("Rating Initiated")
                     }) {
-                        Text("Start")
+                        Text("Start Rating")
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#7B68EE") : Color(hex: "#D3D3D3"))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }

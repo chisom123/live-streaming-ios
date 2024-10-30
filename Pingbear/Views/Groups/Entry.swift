@@ -24,9 +24,15 @@ struct EntryView: View {
         self.competition = competition // Initialize the competition property
     }
     
-    private func triggerHapticFeedback(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.impactOccurred()
+    private func triggerHapticFeedback(for star: Int) {
+        let generator = UIImpactFeedbackGenerator(style: .rigid)
+        generator.prepare()
+        
+        // Stronger progression
+        let intensity = 0.4 + (Double(star) * 0.15) // 0.4 to 1.0
+        
+        // Single, more impactful pulse
+        generator.impactOccurred(intensity: intensity)
     }
     
     var body: some View {
@@ -105,7 +111,7 @@ struct EntryView: View {
                                 Button(action: {
                                     isRatingEnabled = false
                                     PostHogSDK.shared.capture("Star Rating", properties: ["rating": star])
-                                    triggerHapticFeedback(style: .soft)
+                                    triggerHapticFeedback(for: star)
                                     let ratingIncrement = star
                                     self.rating = ratingIncrement
                                     let currentEntryId = currentEntry.id
