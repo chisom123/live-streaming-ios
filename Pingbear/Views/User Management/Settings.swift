@@ -42,16 +42,17 @@ struct SettingsView: View {
                 Spacer() // Pushes the remaining content to the trailing edge
                 
                 Button(action: {
-                    isPresentingNewCompetition = true
+                    
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 44, height: 44) // Adjust the size as needed
+                        .frame(width: 40, height: 40) // Adjust the size as needed
                         .foregroundColor(Color(hex: "#1199FF")) // Your desired color
                         .background(Color.white)
                         .clipShape(Circle())
                         .padding(.horizontal, 20)
+                        .opacity(0)
                 }
             }
             .padding(.vertical, 15)
