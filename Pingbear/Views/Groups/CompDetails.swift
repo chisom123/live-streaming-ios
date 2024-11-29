@@ -304,15 +304,11 @@ struct EmptyLeaderboardView: View {
     
     var body: some View {
         VStack {
-            Image("EmptyState")
-                .resizable() // Allows the image to resize
-                .aspectRatio(contentMode: .fit) // Keeps the aspect ratio and fits within the given space
-                .frame(width: 150)
             
             Text("Share a Photo")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
-                .padding(.top, 25)
+                .padding(.top, 20)
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function
@@ -324,6 +320,7 @@ struct EmptyLeaderboardView: View {
                     .foregroundColor(Color(hex: "#fff"))
                     .cornerRadius(200)
             }
+            .padding(.bottom, 20)
             
  
         }
