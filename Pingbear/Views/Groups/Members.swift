@@ -31,25 +31,16 @@ struct MembersView: View {
                             .foregroundColor(Color.black) // Your desired color
                     }
                     
-                    Spacer()
-                    
                     Button(action: {
-                        self.leaveGroupAlert = true
+                        navigateToCompDetails = true
                     }) {
-                        HStack {
-                            Text("Leave Group") // Text to display next to the icon
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#ababab"))
-                        }
+                        Text(competition.description)
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .foregroundColor(.black)
+                            .padding(.leading, 10)
                     }
-                    .alert(isPresented: $leaveGroupAlert) {
-                        Alert(title: Text("Are you sure?"),
-                              primaryButton: .destructive(Text("Yes")) {
-                            viewModel.leaveCompetition(competitionId: competition.id, userId: Auth.auth().currentUser?.uid ?? "")
-                            goHome = true
-                        },
-                              secondaryButton: .cancel())
-                    }
+                    
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -60,17 +51,11 @@ struct MembersView: View {
                     HStack {
                         Text("Add Friends to Group")
                             .font(.system(size: 16, weight: .bold, design: .default))
-                            .foregroundColor(Color.white)
+                            .foregroundColor(Color(hex: "#1199FF"))
                             .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
-
-                        Image(systemName: "plus") // System name for '+' icon
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color.white)
-                            .frame(alignment: .trailing) // Align icon to the right
                     }
                     .padding(20)
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
+                    .background(Color(hex: "#F5F5F5"))
                     .cornerRadius(5)
                 }
                 .padding(.horizontal, 20)
@@ -113,6 +98,27 @@ struct MembersView: View {
                         }
                     }
                     .padding(.horizontal, 20)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    self.leaveGroupAlert = true
+                }) {
+                    HStack {
+                        Text("Leave Group") // Text to display next to the icon
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .foregroundColor(Color(hex: "#ababab"))
+                    }
+                    .padding(10)
+                }
+                .alert(isPresented: $leaveGroupAlert) {
+                    Alert(title: Text("Are you sure?"),
+                          primaryButton: .destructive(Text("Yes")) {
+                        viewModel.leaveCompetition(competitionId: competition.id, userId: Auth.auth().currentUser?.uid ?? "")
+                        goHome = true
+                    },
+                          secondaryButton: .cancel())
                 }
             }
         }
