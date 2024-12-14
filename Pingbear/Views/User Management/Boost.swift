@@ -47,9 +47,9 @@ class BoostViewModel: ObservableObject {
     @Published var expirationDate: Date?
     var boostStatus: String {
         guard let expirationDate = expirationDate else {
-            return "Boost Expired"
+            return "Boost Inactive"
         }
-        return expirationDate.timeIntervalSinceNow > 0 ? "Boost Active" : "Boost Expired"
+        return expirationDate.timeIntervalSinceNow > 0 ? "Boost Active" : "Boost Inactive"
     }
     
     var isBoostActive: Bool {
