@@ -61,7 +61,7 @@ struct AddFriendsView: View {
             
             VStack {
                 HStack(alignment: .center, spacing: 10) {
-                    TextField("Enter Friend's Username", text: $username)
+                    TextField("Enter friend's username", text: $username)
                         .padding()
                         .padding(.vertical, 5)
                         .background(Color(hex: "#F5F5F5"))

@@ -38,14 +38,34 @@ struct NewCompetition: View {
                             .foregroundColor(Color.black) // Your desired color
                     }
                     
-                    Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    Spacer()
+                    
+                    Text("New Group")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.black)
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                     
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .resizable() // Allows resizing of the image
+                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.black) // Your desired color
+                    }
+                    .opacity(0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
                 
                 Spacer()
                 
-                Text("New Group")
+                Text("Name your group")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -56,7 +76,7 @@ struct NewCompetition: View {
                         PostHogSDK.shared.capture("New Group View Opened")
                     }
 
-                TextField("Group Name", text: $competitionDescription)
+                TextField("Group name", text: $competitionDescription)
                     .keyboardType(.default)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))

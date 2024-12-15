@@ -68,7 +68,7 @@ struct JoinSelectView: View {
                 
                 // Radio buttons for selection
                 HStack(alignment: .center, spacing: 10) {
-                    TextField("Enter Friend's Username", text: $username)
+                    TextField("Enter friend's username", text: $username)
                         .padding()
                         .padding(.vertical, 5)
                         .background(Color(hex: "#F5F5F5"))
@@ -82,7 +82,7 @@ struct JoinSelectView: View {
                             if success {
                                 findAndAddFriendByUsername(processedUsername)
                             } else {
-                                messageStatus = .error("Failed to Add Friend")
+                                messageStatus = .error("Failed to add friend")
                             }
                         }
                     }) {
