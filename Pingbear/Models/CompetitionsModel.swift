@@ -129,7 +129,14 @@ class CompetitionsModel: ObservableObject {
                 return
             }
             
-            entryIds = Set(snapshot?.documents.map { $0.documentID } ?? [])
+            entryIds = Set(
+                snapshot?.documents
+                    .filter { doc in
+                        let entryUserId = doc.data()["userId"] as? String ?? ""
+                        return entryUserId != userId  // Exclude entries where userId matches current user
+                    }
+                    .map { $0.documentID } ?? []
+            )
         }
         
         group.enter()

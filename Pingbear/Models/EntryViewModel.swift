@@ -58,15 +58,18 @@ class EntryViewModel: ObservableObject {
         let entriesPath = "competitions/\(competitionId)/entries"
 
         // Calculate the time 24 hours ago from now using Calendar
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else {
-            print("Could not compute the date 24 hours ago.")
+        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date()),
+              let currentUserId = Auth.auth().currentUser?.uid else {
+            print("Could not compute the date 24 hours ago or get current user ID.")
             return
         }
         
         FirestoreListenerManager.shared.addListener(for: entriesPath) { [weak self] changes in
             let addedEntries = changes.filter { change in
-                guard let timestamp = change.document.data()["timestamp"] as? Timestamp else { return false }
-                return change.type == .added && timestamp.dateValue() > twentyFourHoursAgo
+                guard let timestamp = change.document.data()["timestamp"] as? Timestamp,
+                      let userId = change.document.data()["userId"] as? String else { return false }
+
+                return change.type == .added && timestamp.dateValue() > twentyFourHoursAgo && userId != currentUserId
             }
             
             let newEntryIds = Set(addedEntries.map { $0.document.documentID })
@@ -204,8 +207,9 @@ class EntryViewModel: ObservableObject {
         for document in documents {
             let userId = document.data()["userId"] as? String ?? ""
             let documentId = document.documentID
-            if excludeCurrentAndVoted && (votedEntries.contains(documentId)) {
-                continue // Skip current user's entries and already voted entries
+            
+            if (userId == currentUserId && excludeCurrentAndVoted) || (excludeCurrentAndVoted && votedEntries.contains(documentId)) {
+                continue
             }
 
             group.enter()
