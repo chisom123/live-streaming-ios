@@ -28,11 +28,7 @@ struct EntryView: View {
         let generator = UIImpactFeedbackGenerator(style: .rigid)
         generator.prepare()
         
-        // Stronger progression
-        let intensity = 0.4 + (Double(star) * 0.15) // 0.4 to 1.0
-        
-        // Single, more impactful pulse
-        generator.impactOccurred(intensity: intensity)
+        generator.impactOccurred(intensity: 1.0)
     }
     
     var body: some View {

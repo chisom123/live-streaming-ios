@@ -8,28 +8,14 @@ import NotificationBannerSwift
 struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var authStateManager = AuthStateManager()
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
     @State private var showBoostView = false  // State to control the full screen cover for ChangeNameView
     @State private var showMyFriendsView = false  // State to control the full screen cover for ChangeNameView
     @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
     @State private var showSignOutAlert = false
-    @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var showDeleteAccountAlert = false
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
-    
-    
-    func signOut() {
-        do {
-            try Auth.auth().signOut()
-            UserDefaults.standard.set(false, forKey: "isLoggedIn")
-            didLogOut.send(())
-            PostHogSDK.shared.capture("Sign Out")
-            PostHogSDK.shared.reset()
-            FirestoreListenerManager.shared.removeAllListeners()
-        } catch let signOutError as NSError {
-            print("Error signing out: %@", signOutError)
-        }
-    }
     
     var body: some View {
         VStack {
@@ -179,7 +165,8 @@ struct SettingsView: View {
                             .alert(isPresented: $showSignOutAlert) {
                                 Alert(title: Text("Are you sure?"),
                                       primaryButton: .destructive(Text("Yes")) {
-                                    self.signOut()
+                                    authStateManager.signOut() // Use AuthStateManager instead
+                                    didLogOut.send(()) // Keep this to maintain compatibility
                                 },
                                       secondaryButton: .cancel())
                             }
@@ -201,7 +188,8 @@ struct SettingsView: View {
                             .alert(isPresented: $showDeleteAccountAlert) {
                                 Alert(title: Text("Are you sure?"),
                                       primaryButton: .destructive(Text("Yes")) {
-                                    self.signOut()
+                                    authStateManager.signOut()
+                                    didLogOut.send(())
                                 },
                                       secondaryButton: .cancel())
                             }
@@ -210,9 +198,6 @@ struct SettingsView: View {
                     }
                     .padding([.leading, .trailing], 20)
                 }
-            }
-            .fullScreenCover(isPresented: $isPresentingNewCompetition) {
-                NewCompetition() // Replace this with the actual view you want to present
             }
         }
     }
