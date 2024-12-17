@@ -8,7 +8,6 @@ import NotificationBannerSwift
 struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @StateObject private var authStateManager = AuthStateManager()
     @State private var showChangeNameView = false  // State to control the full screen cover for ChangeNameView
     @State private var showBoostView = false  // State to control the full screen cover for ChangeNameView
     @State private var showMyFriendsView = false  // State to control the full screen cover for ChangeNameView
@@ -16,6 +15,19 @@ struct SettingsView: View {
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
+    
+    func signOut() {
+        do {
+            try Auth.auth().signOut()
+            FirestoreListenerManager.shared.removeAllListeners()
+            PostHogSDK.shared.capture("Sign Out")
+            PostHogSDK.shared.reset()
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+            didLogOut.send(())
+        } catch {
+            print("Error signing out: \(error)")
+        }
+    }
     
     var body: some View {
         VStack {
@@ -165,8 +177,7 @@ struct SettingsView: View {
                             .alert(isPresented: $showSignOutAlert) {
                                 Alert(title: Text("Are you sure?"),
                                       primaryButton: .destructive(Text("Yes")) {
-                                    authStateManager.signOut() // Use AuthStateManager instead
-                                    didLogOut.send(()) // Keep this to maintain compatibility
+                                    self.signOut()
                                 },
                                       secondaryButton: .cancel())
                             }
@@ -188,8 +199,7 @@ struct SettingsView: View {
                             .alert(isPresented: $showDeleteAccountAlert) {
                                 Alert(title: Text("Are you sure?"),
                                       primaryButton: .destructive(Text("Yes")) {
-                                    authStateManager.signOut()
-                                    didLogOut.send(())
+                                    self.signOut()
                                 },
                                       secondaryButton: .cancel())
                             }
