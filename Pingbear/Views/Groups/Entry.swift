@@ -48,7 +48,7 @@ struct EntryView: View {
                                 AsyncImage(url: imageURL) { phase in
                                     switch phase {
                                     case .empty:
-                                        ProgressView()
+                                        ProgressView().tint(.white)
                                     case .success(let image):
                                         image
                                             .resizable()
@@ -60,7 +60,6 @@ struct EntryView: View {
                                                     Text(overlayText)
                                                         .foregroundColor(.white)
                                                         .font(.system(size: 24, weight: .bold))
-                                                        .shadow(color: .black, radius: 2, x: 1, y: 1)
                                                         .multilineTextAlignment(.center)
                                                         .frame(width: size.width * 0.8)
                                                         .position(x: size.width / 2, y: entry.overlayVerticalPosition)

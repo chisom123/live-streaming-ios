@@ -114,7 +114,6 @@ struct FinalPreview: View {
                          Text(overlayText)
                              .foregroundColor(.white)
                              .font(Font(UIFont.customBoldFont(ofSize: 24)))
-                             .shadow(color: .black, radius: 2, x: 1, y: 1)
                              .multilineTextAlignment(.center)
                              .frame(width: proxy.size.width * 0.8)
                              .position(x: proxy.size.width / 2, y: overlayVerticalPosition)
@@ -145,7 +144,6 @@ struct FinalPreview: View {
                          CustomTextView(text: $overlayText, isEditingText: $isEditingText, characterLimit: characterLimit)
                              .frame(width: proxy.size.width * 0.8, height: proxy.size.height * 0.5)
                              .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                             .shadow(color: .black, radius: 2, x: 1, y: 1)
                      }
                      
                      // Top buttons
@@ -320,7 +318,7 @@ struct FinalPreview: View {
                         }
                     }
                 }
-                self.isUploading = false
+
                 PostHogSDK.shared.capture("New Photo Shared")
                 self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
             }

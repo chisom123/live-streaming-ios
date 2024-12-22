@@ -13,10 +13,9 @@ struct CompDetails: View {
     @State private var goHome = false
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
+    @State private var isMyPostsPresented = false
     @State private var isVotingPresented = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    @State private var showAggregate = false
-    @State private var selectedEntry: Entry?
     @State private var isLoading = true
     @State private var hasInitiallyLoaded = false  // New state variable
     @State private var showPermissionAlert = false
@@ -72,7 +71,7 @@ struct CompDetails: View {
                             .resizable() // Allows resizing of the image
                             .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
                             .frame(width: 30, height: 30) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.gray) // Your desired color
+                            .foregroundColor(Color.black) // Your desired color
                     }
                 }
                 .padding(.horizontal, 20)
@@ -88,7 +87,6 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .background(Color(hex: "#F5F5F5"))
                             .foregroundColor(Color(hex: "#000"))
                             .clipShape(Circle())
                     }
@@ -109,18 +107,16 @@ struct CompDetails: View {
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
                     
                     Button(action: {
-                        showAggregate.toggle()
-                        let viewType = showAggregate ? "Aggregate" : "Individual"
-                        PostHogSDK.shared.capture("Leaderboard View Toggled", properties: ["View Type": viewType])
+                        entryViewModel.removeListeners()
+                        isMyPostsPresented = true
                     }) {
-                        Image(systemName: "arrow.up.arrow.down.circle")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(showAggregate ? Color.black : Color.gray)
+                        Image(systemName: "photo.stack.fill")
+                            .font(.system(size: 24, weight: .bold))
+                            .frame(width: 45, height: 45)
+                            .padding(6)
+                            .foregroundColor(Color(hex: "#000"))
+                            .clipShape(Circle())
                     }
-                    .padding(.horizontal)
-                    
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
@@ -131,19 +127,21 @@ struct CompDetails: View {
                 
                 if !hasInitiallyLoaded {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if showAggregate {
+                } else {
                     if entryViewModel.userLeaderboard.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
                     } else {
-                        aggregateLeaderboardView
-                    }
-                } else {
-                    if entryViewModel.entries.isEmpty {
-                        EmptyLeaderboardView(action: initiateVideoCapture)
-                        Spacer()
-                    } else {
-                        individualLeaderboardView
+                        ScrollView {
+                            VStack(spacing: 15) {
+                                ForEach(entryViewModel.userLeaderboard) { userEntry in
+                                    leaderboardRowView(userEntry.userName, userEntry.totalStars)
+                                }
+                            }
+                        }
+                        .refreshable {
+                            entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
+                        }
                     }
                 }
                 
@@ -163,6 +161,9 @@ struct CompDetails: View {
         })
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
+        }
+        .fullScreenCover(isPresented: $isMyPostsPresented) {
+            MyPostsView(competition: competition)
         }
         .onDisappear {
             entryViewModel.removeListeners()
@@ -185,39 +186,6 @@ struct CompDetails: View {
                 self.isLoading = false
                 self.hasInitiallyLoaded = true
             }
-        }
-    }
-    
-    var aggregateLeaderboardView: some View {
-        ScrollView {
-            VStack(spacing: 15) {
-                // Ensure the ForEach uses the updated userLeaderboard property
-                ForEach(entryViewModel.userLeaderboard) { userEntry in
-                    leaderboardRowView(userEntry.userName, userEntry.totalStars)
-                }
-            }
-        }
-    }
-
-    var individualLeaderboardView: some View {
-        ScrollView {
-            VStack(spacing: 15) {
-                ForEach(entryViewModel.entries, id: \.id) { entry in
-                    Button(action: {
-                        entryViewModel.removeListeners()
-                        self.selectedEntry = entry
-                        PostHogSDK.shared.capture("Starboard Video Tapped")
-                    }) {
-                        leaderboardRowView(entry.userName, entry.stars)
-                    }
-                }
-            }
-        }
-        .fullScreenCover(item: $selectedEntry) { entry in
-            StarboardPhotoPlayer(entry: entry, competition: competition)
-        }
-        .refreshable {
-            entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
         }
     }
 

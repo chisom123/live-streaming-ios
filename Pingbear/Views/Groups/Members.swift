@@ -37,7 +37,8 @@ struct MembersView: View {
                         Text(competition.description)
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .foregroundColor(.black)
-                            .padding(.leading, 10)
+                            .padding(.horizontal, 10)
+                            .lineLimit(1)
                     }
                     
                     Spacer()

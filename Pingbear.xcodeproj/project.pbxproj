@@ -69,10 +69,11 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
-		4F515AC22C0B0B21003FE588 /* StarboardPhotoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */; };
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
+		4F830F422D143A9E007992D2 /* MyPosts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F830F412D143A9E007992D2 /* MyPosts.swift */; };
+		4F830F442D15C676007992D2 /* MyPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F830F432D15C676007992D2 /* MyPostsViewModel.swift */; };
 		4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */; };
 		4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
@@ -136,10 +137,11 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
-		4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarboardPhotoPlayer.swift; sourceTree = "<group>"; };
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
+		4F830F412D143A9E007992D2 /* MyPosts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyPosts.swift; sourceTree = "<group>"; };
+		4F830F432D15C676007992D2 /* MyPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyPostsViewModel.swift; sourceTree = "<group>"; };
 		4F8FEE582BE22ABD0087479A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		4F8FEE5A2BE22AF50087479A /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
@@ -236,7 +238,7 @@
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
 				4F0416192BB5A97C00E3C7C0 /* Members.swift */,
 				4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */,
-				4F515AC12C0B0B21003FE588 /* StarboardPhotoPlayer.swift */,
+				4F830F412D143A9E007992D2 /* MyPosts.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -346,6 +348,7 @@
 				4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */,
 				4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */,
 				4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */,
+				4F830F432D15C676007992D2 /* MyPostsViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -557,12 +560,13 @@
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4F8FEE592BE22ABD0087479A /* PushNotificationManager.swift in Sources */,
+				4F830F422D143A9E007992D2 /* MyPosts.swift in Sources */,
 				4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */,
 				4FE6E5952C00D515002E389C /* Boost.swift in Sources */,
+				4F830F442D15C676007992D2 /* MyPostsViewModel.swift in Sources */,
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */,
-				4F515AC22C0B0B21003FE588 /* StarboardPhotoPlayer.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */,
 				4F8FEE5B2BE22AF50087479A /* PushNotificationSender.swift in Sources */,
@@ -729,7 +733,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 95;
+				CURRENT_PROJECT_VERSION = 96;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -756,7 +760,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 8.2;
+				MARKETING_VERSION = 8.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -776,7 +780,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 95;
+				CURRENT_PROJECT_VERSION = 96;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -803,7 +807,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 8.2;
+				MARKETING_VERSION = 8.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
