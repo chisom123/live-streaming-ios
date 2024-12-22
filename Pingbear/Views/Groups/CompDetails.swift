@@ -107,7 +107,6 @@ struct CompDetails: View {
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
                     
                     Button(action: {
-                        entryViewModel.removeListeners()
                         isMyPostsPresented = true
                     }) {
                         Image(systemName: "photo.stack.fill")

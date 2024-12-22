@@ -37,6 +37,29 @@ class FirestoreListenerManager {
 
         listenerRegistrations[path] = registration
     }
+    
+    // New method for query-based listeners
+    func addQueryListener(for query: Query, path: String, debounceInterval: TimeInterval = 0, processChanges: @escaping ([DocumentChange]) -> Void) {
+        removeListener(for: path)
+        
+        let registration = query.addSnapshotListener { [weak self] snapshot, error in
+            guard let snapshot = snapshot, error == nil else {
+                print("Listener error: \(error?.localizedDescription ?? "Unknown error")")
+                return
+            }
+
+            self?.debounceWorkItems[path]?.cancel()
+            
+            let workItem = DispatchWorkItem {
+                processChanges(snapshot.documentChanges)
+            }
+            
+            self?.debounceWorkItems[path] = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + debounceInterval, execute: workItem)
+        }
+
+        listenerRegistrations[path] = registration
+    }
 
     func removeListener(for path: String) {
         listenerRegistrations[path]?.remove()

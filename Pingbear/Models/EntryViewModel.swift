@@ -64,15 +64,18 @@ class EntryViewModel: ObservableObject {
             return
         }
         
-        FirestoreListenerManager.shared.addListener(for: entriesPath) { [weak self] changes in
-            let addedEntries = changes.filter { change in
-                guard let timestamp = change.document.data()["timestamp"] as? Timestamp,
-                      let userId = change.document.data()["userId"] as? String else { return false }
-
-                return change.type == .added && timestamp.dateValue() > twentyFourHoursAgo && userId != currentUserId
-            }
+        // Create query with server-side filters
+        let query = db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
+            .whereField("userId", isNotEqualTo: currentUserId)
+        
+        FirestoreListenerManager.shared.addQueryListener(for: query, path: entriesPath) { [weak self] changes in
+            let newEntryIds = Set(changes
+                .filter { $0.type == .added }
+                .map { $0.document.documentID })
             
-            let newEntryIds = Set(addedEntries.map { $0.document.documentID })
             self?.allEntryIds.formUnion(newEntryIds)
             self?.updateVoteStatus()
         }
@@ -200,39 +203,58 @@ class EntryViewModel: ObservableObject {
             return
         }
         
+        // Get unique userIds from all entries
+        let uniqueUserIds = Set(documents.compactMap { $0.data()["userId"] as? String })
+        
         let group = DispatchGroup()
+        var userNames: [String: String] = [:]
         var localEntries = [Entry]()
         var userStarsDict = [String: UserEntry]()
 
-        for document in documents {
-            let userId = document.data()["userId"] as? String ?? ""
-            let documentId = document.documentID
-            
-            if (userId == currentUserId && excludeCurrentAndVoted) || (excludeCurrentAndVoted && votedEntries.contains(documentId)) {
-                continue
-            }
-
+        // Fetch usernames for all unique users in one batch
+        if !uniqueUserIds.isEmpty {
             group.enter()
-            let imageUrl = document.data()["imageUrl"] as? String ?? ""
-            let stars = document.data()["stars"] as? Int ?? 0
-            let isSuperstar = document.data()["superstar"] as? Bool ?? false
-            let timestamp = document.data()["timestamp"] as? Timestamp
-            let creationDate = timestamp?.dateValue() ?? Date()
-            let overlayText = document.data()["overlayText"] as? String
-            let overlayVerticalPosition = document.data()["overlayVerticalPosition"] as? CGFloat ?? 0.5 // Default to center if not found
-            let isFromCamera = document.data()["isFromCamera"] as? Bool ?? true
-
-            db.collection("users").document(userId).getDocument { (userSnapshot, error) in
+            let userQuery = db.collection("users").whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
+            userQuery.getDocuments { (snapshot, error) in
                 defer { group.leave() }
+                
                 if let error = error {
-                    print("Error getting user: \(error)")
+                    print("Error fetching user documents: \(error)")
                     return
                 }
-                let userName = userSnapshot?.data()?["username"] as? String ?? "Unknown"
+                
+                snapshot?.documents.forEach { document in
+                    if let username = document.data()["username"] as? String {
+                        userNames[document.documentID] = username
+                    }
+                }
+            }
+        }
+
+        group.notify(queue: .global()) {
+            // Process entries after we have all usernames
+            for document in documents {
+                let userId = document.data()["userId"] as? String ?? ""
+                let documentId = document.documentID
+                
+                if (userId == currentUserId && excludeCurrentAndVoted) || (excludeCurrentAndVoted && votedEntries.contains(documentId)) {
+                    continue
+                }
+                
+                let imageUrl = document.data()["imageUrl"] as? String ?? ""
+                let stars = document.data()["stars"] as? Int ?? 0
+                let isSuperstar = document.data()["superstar"] as? Bool ?? false
+                let timestamp = document.data()["timestamp"] as? Timestamp
+                let creationDate = timestamp?.dateValue() ?? Date()
+                let overlayText = document.data()["overlayText"] as? String
+                let overlayVerticalPosition = document.data()["overlayVerticalPosition"] as? CGFloat ?? 0.5
+                let isFromCamera = document.data()["isFromCamera"] as? Bool ?? true
                 let isCurrentUser = userId == currentUserId
+                let userName = isCurrentUser ? "Me" : (userNames[userId] ?? "Unknown")
+                
                 let entry = Entry(id: documentId,
                                   photoUrl: imageUrl,
-                                  userName: isCurrentUser ? "Me" : userName,
+                                  userName: userName,
                                   stars: stars,
                                   isCurrentUser: isCurrentUser,
                                   isSuperstar: isSuperstar,
@@ -246,15 +268,15 @@ class EntryViewModel: ObservableObject {
                 if let userEntry = userStarsDict[userId] {
                     userStarsDict[userId]?.totalStars += stars
                 } else {
-                    userStarsDict[userId] = UserEntry(id: userId, userName: isCurrentUser ? "Me" : userName, totalStars: stars)
+                    userStarsDict[userId] = UserEntry(id: userId, userName: userName, totalStars: stars)
                 }
             }
-        }
-
-        group.notify(queue: .main) {
-            self.entries = localEntries.sorted { $0.stars > $1.stars }
-            self.userLeaderboard = userStarsDict.values.sorted { $0.totalStars > $1.totalStars }
-            completion?()
+            
+            group.notify(queue: .main) {
+                self.entries = localEntries.sorted { $0.stars > $1.stars }
+                self.userLeaderboard = userStarsDict.values.sorted { $0.totalStars > $1.totalStars }
+                completion?()
+            }
         }
     }
 
@@ -334,7 +356,7 @@ class EntryViewModel: ObservableObject {
                 let description = data["description"] as? String ?? ""
                 
                 let title = description
-                let body = "+\(starIncrement) stars ✨"
+                let body = "+\(starIncrement) ⭐"
                 if starIncrement >= 4 {
                     self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
                 }
