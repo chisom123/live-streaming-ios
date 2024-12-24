@@ -1,6 +1,4 @@
-import SwiftUI
 import FirebaseMessaging
-import Foundation
 import PostHog
 
 struct TokenResponse: Codable {

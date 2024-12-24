@@ -1,5 +1,4 @@
 import SwiftUI
-import Firebase
 import FirebaseAuth
 import CountryPicker
 import PhoneNumberKit

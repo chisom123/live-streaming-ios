@@ -1,6 +1,5 @@
 import SwiftUI
 import FirebaseAuth
-import FirebaseMessaging
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()

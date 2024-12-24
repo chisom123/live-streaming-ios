@@ -1,9 +1,7 @@
 import SwiftUI
-import Firebase
+import FirebaseAuth
 import Combine
 import PostHog
-import FirebaseFirestore
-import NotificationBannerSwift
 
 struct SettingsView: View {
     

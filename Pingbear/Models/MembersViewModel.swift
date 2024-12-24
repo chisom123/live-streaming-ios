@@ -1,4 +1,3 @@
-import SwiftUI
 import FirebaseFirestore
 import PostHog
 import FirebaseAuth

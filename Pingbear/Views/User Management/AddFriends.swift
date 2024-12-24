@@ -1,8 +1,4 @@
 import SwiftUI
-import Contacts
-import Firebase
-import FirebaseFirestore
-import PhoneNumberKit
 import PostHog
 
 struct AddFriendsView: View {

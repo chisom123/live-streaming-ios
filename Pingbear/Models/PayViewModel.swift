@@ -1,9 +1,6 @@
-import SwiftUI
 import StoreKit
-import Firebase
 import FirebaseAuth
 import FirebaseFirestore
-import Combine
 import PostHog
 
 class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {

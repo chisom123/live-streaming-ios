@@ -1,10 +1,7 @@
 import SwiftUI
-import Firebase
 import FirebaseFirestore
-import UIKit
 import FirebaseAuth
 import PostHog
-import NotificationBannerSwift
 import AVFoundation
 
 struct CompDetails: View {

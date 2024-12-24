@@ -1,8 +1,5 @@
-import SwiftUI
-import Firebase
+import FirebaseAuth
 import FirebaseFirestore
-import Combine
-import UserNotifications
 
 class Competition: ObservableObject, Identifiable {
     let id: String

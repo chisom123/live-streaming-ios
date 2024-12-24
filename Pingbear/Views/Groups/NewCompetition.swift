@@ -6,9 +6,8 @@
 //
 
 import SwiftUI
-import Firebase
+import FirebaseAuth
 import FirebaseFirestore
-import UIKit
 import PostHog
 
 struct NewCompetition: View {

@@ -1,7 +1,5 @@
 import SwiftUI
-import AVKit
-import Combine
-import Firebase
+import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
 import PostHog

@@ -1,6 +1,5 @@
-import SwiftUI
 import Contacts
-import Firebase
+import FirebaseAuth
 import FirebaseFirestore
 import PhoneNumberKit
 import PostHog

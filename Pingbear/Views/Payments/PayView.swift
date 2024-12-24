@@ -1,5 +1,4 @@
 import SwiftUI
-import NotificationBannerSwift
 import PostHog
 
 struct PayView: View {

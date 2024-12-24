@@ -1,10 +1,4 @@
 import SwiftUI
-import AVKit
-import Combine
-import Firebase
-import FirebaseStorage
-import FirebaseFirestore
-import PostHog
 import PhotosUI
 
 struct CameraView: View {
