@@ -123,7 +123,7 @@ struct SettingsView: View {
                                 self.showBoostView = true // Toggle the state to show the ChangeNameView
                             }) {
                                 HStack {
-                                    Text("Boost")
+                                    Text("Boost Status")
                                         .font(.system(size: 16, weight: .bold, design: .default))
                                         .foregroundColor(Color(hex: "#1199FF"))
                                     Spacer()

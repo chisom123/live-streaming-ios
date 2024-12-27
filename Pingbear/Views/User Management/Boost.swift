@@ -29,10 +29,10 @@ struct BoostView: View {
             Text(viewModel.boostStatus)
                 .font(.system(size: 25, weight: .bold, design: .default))
                 .foregroundColor(.white)
-                .padding() // Adds padding around the text.
-                .padding(.horizontal, 20)
+                .padding(.horizontal, 30)
+                .padding(.vertical, 15)
                 .background(viewModel.isBoostActive ? Color.green : Color.red) // Adds background color with slight transparency.
-                .cornerRadius(200) // Sets the corner radius.
+                .cornerRadius(5) // Sets the corner radius.
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             Spacer() // This Spacer ensures the text stays centered even if the view resizes
