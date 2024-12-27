@@ -741,7 +741,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Ping Bear";
+				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with members of your private groups.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
@@ -788,7 +788,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Ping Bear";
+				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with members of your private groups.";
 				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
