@@ -62,7 +62,7 @@ struct AddFriendsView: View {
                         .padding(.vertical, 5)
                         .background(Color(hex: "#F5F5F5"))
                         .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(10)
+                        .cornerRadius(5)
                         .font(.system(size: 16, weight: .bold, design: .default))
                     
                     Button(action: {
@@ -82,7 +82,7 @@ struct AddFriendsView: View {
                             .padding(.vertical, 5)
                             .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(10)
+                            .cornerRadius(5)
                     }
                 }
                 .padding(.horizontal)

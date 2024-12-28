@@ -62,7 +62,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         isMembersPresented = true
-                        PostHogSDK.shared.capture("View Group Members")
+                        PostHogSDK.shared.capture("View Competition Competitors")
                     }) {
                         Image(systemName: "ellipsis")
                             .resizable() // Allows resizing of the image
@@ -269,7 +269,7 @@ struct EmptyLeaderboardView: View {
     var body: some View {
         VStack {
             
-            Text("Share a Photo")
+            Text("No Photos Yet")
                 .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)

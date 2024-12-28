@@ -13,7 +13,7 @@ struct MyCompsView: View {
         VStack {
             // Top Bar with Title
             HStack {
-                Text("Groups")
+                Text("Competitions")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)
@@ -136,12 +136,12 @@ struct EmptyCompsView: View {
     
     var body: some View {
         VStack {
-            Text("No Groups Yet")
-                .font(.system(size: 23, weight: .bold, design: .default))
+            Text("No Competitions Yet")
+                .font(.system(size: 22, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.bottom, 20)
             
-            Text("Create a group or wait to be added")
+            Text("Start a competition or wait to be added")
                 .font(.system(size: 18, weight: .bold, design: .default))
                 .foregroundColor(.gray) // Set the text color as needed
                 .multilineTextAlignment(.center)
@@ -149,7 +149,7 @@ struct EmptyCompsView: View {
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function
-                Text("New Group")
+                Text("New Competition")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 12, leading: 25, bottom: 12, trailing: 25))
                     .background(Color(hex: "#1199FF"))

@@ -39,7 +39,7 @@ struct NewCompetition: View {
                     
                     Spacer()
                     
-                    Text("New Group")
+                    Text("New Competition")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
@@ -64,7 +64,7 @@ struct NewCompetition: View {
                 
                 Spacer()
                 
-                Text("Name your group")
+                Text("Name your competition")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -72,10 +72,10 @@ struct NewCompetition: View {
                     .padding(.bottom, 40)
                     .padding(.horizontal)
                     .onAppear {
-                        PostHogSDK.shared.capture("New Group View Opened")
+                        PostHogSDK.shared.capture("New Competition View Opened")
                     }
 
-                TextField("Group name", text: $competitionDescription)
+                TextField("Competition name", text: $competitionDescription)
                     .keyboardType(.default)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))
@@ -171,7 +171,7 @@ struct NewCompetition: View {
                         date: Date()
                     )
                 }
-                PostHogSDK.shared.capture("New Group", properties: ["name": competitionDescription])
+                PostHogSDK.shared.capture("New Competition", properties: ["name": competitionDescription])
             }
         }
     }

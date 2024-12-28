@@ -45,7 +45,7 @@ struct CustomTabView: View {
             TabView(selection: $selection) {
                 MyCompsView()
                     .tabItem {
-                        Image(systemName: "person.3.fill")
+                        Image(systemName: "house")
                     }
                     .tag(0)
                     .padding([.top, .bottom], 12)

@@ -39,7 +39,7 @@ struct JoinSelectView: View {
                 
                 Spacer()
                 
-                Text("Add Friends to Group")
+                Text("Add Friends to Competition")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -72,7 +72,7 @@ struct JoinSelectView: View {
                         .padding(.vertical, 5)
                         .background(Color(hex: "#F5F5F5"))
                         .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(10)
+                        .cornerRadius(5)
                         .font(.system(size: 16, weight: .bold, design: .default))
                     
                     Button(action: {
@@ -91,7 +91,7 @@ struct JoinSelectView: View {
                             .padding(.vertical, 5)
                             .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(10)
+                            .cornerRadius(5)
                     }
                 }
                 .padding(.top, 15)
@@ -242,7 +242,7 @@ struct JoinSelectView: View {
 
                     // Send notification
                     self.sendNotificationToUser(userId: userId, username: username, competitionDescription: self.competition.description)
-                    PostHogSDK.shared.capture("Friend Added to Group", properties: ["userId": userId])
+                    PostHogSDK.shared.capture("Friend Added to Competition", properties: ["userId": userId])
                 }
                 dispatchGroup.leave()
             }
@@ -267,7 +267,7 @@ struct JoinSelectView: View {
         db.collection("users").document(userId).getDocument { (document, error) in
             if let document = document, let fcmToken = document.data()?["fcmToken"] as? String {
                 let title = competitionDescription
-                let message = "\(username) added you to the group"
+                let message = "\(username) added you to the competition"
                 // Assuming you have a mechanism to send push notifications
                 PushNotificationSender().sendPushNotification(to: fcmToken, title: title, body: message)
             }

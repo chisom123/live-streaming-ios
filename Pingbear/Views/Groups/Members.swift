@@ -48,7 +48,7 @@ struct MembersView: View {
                     showingJoinSelectView = true
                 }) {
                     HStack {
-                        Text("Add Friends to Group")
+                        Text("Add Friends to Competition")
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .foregroundColor(Color(hex: "#1199FF"))
                             .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
@@ -61,7 +61,7 @@ struct MembersView: View {
                 .padding(.vertical, 15)
                 
                 HStack {
-                    Text("Group Members")
+                    Text("Competitors")
                         .font(.system(size: 16, weight: .bold, design: .default))
                     
                     Spacer()
@@ -105,7 +105,7 @@ struct MembersView: View {
                     self.leaveGroupAlert = true
                 }) {
                     HStack {
-                        Text("Leave Group") // Text to display next to the icon
+                        Text("Leave Competition") // Text to display next to the icon
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .foregroundColor(Color(hex: "#ababab"))
                     }
