@@ -27,7 +27,6 @@ class EntryViewModel: ObservableObject {
     @Published var hasEntriesToVoteOn: Bool = false
     var competitionId: String
     @Published var currentIndex: Int = 0
-    private var notificationSender = PushNotificationSender()
     
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
@@ -321,44 +320,6 @@ class EntryViewModel: ObservableObject {
                     print("Batch commit failed: \(err)")
                 } else {
                     print("Batch commit succeeded!")
-                    self?.fetchFCMTokenAndSendNotification(to: ownerId, forEntryId: entryId, withNewStars: starIncrement)
-                }
-            }
-        }
-    }
-    
-    func fetchFCMTokenAndSendNotification(to userId: String, forEntryId entryId: String, withNewStars starIncrement: Int) {
-        
-        let usersRef = db.collection("users").document(userId)
-        usersRef.getDocument { [weak self] (document, error) in
-            if let error = error {
-                print("Error fetching user: \(error)")
-                return
-            }
-            guard let token = document?.data()?["fcmToken"] as? String else {
-                print("FCM token not found for user \(userId)")
-                return
-            }
-            
-            let compRef = self?.db.collection("competitions").document(self?.competitionId ?? "")
-            
-            compRef?.getDocument { [weak self] (document, error) in
-                if let error = error {
-                    print("Error fetching competition: \(error)")
-                    return
-                }
-                
-                guard let document = document, let data = document.data() else {
-                    print("Competition data not found")
-                    return
-                }
-                
-                let description = data["description"] as? String ?? ""
-                
-                let title = description
-                let body = "+\(starIncrement) ⭐"
-                if starIncrement >= 4 {
-                    self?.notificationSender.sendPushNotification(to: token, title: title, body: body)
                 }
             }
         }

@@ -7,14 +7,15 @@ import AVFoundation
 struct CompDetails: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @State private var goHome = false
+    @State private var goToEvents = false
+    @State private var goToMyComps = false
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
     @State private var isMyPostsPresented = false
     @State private var isVotingPresented = false
+    @State private var isTicketScannerPresented = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
-    @State private var hasInitiallyLoaded = false  // New state variable
     @State private var showPermissionAlert = false
     
     @ObservedObject var entryViewModel: EntryViewModel
@@ -35,7 +36,11 @@ struct CompDetails: View {
                 HStack {
                     Button(action: {
                         entryViewModel.removeListeners()
-                        goHome = true
+                        if competition.isEvent {
+                            goToEvents = true
+                        } else {
+                            goToMyComps = true
+                        }
                         PostHogSDK.shared.capture("Close Competition Details")
                     }) {
                         Image(systemName: "arrow.left")
@@ -70,6 +75,7 @@ struct CompDetails: View {
                             .frame(width: 30, height: 30) // Adjust the width and height to decrease the size
                             .foregroundColor(Color.black) // Your desired color
                     }
+                    .opacity(competition.isEvent ? 0 : 1)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -84,10 +90,11 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(Color(hex: "#000"))
+                            .foregroundColor(isEventEnabled() ? Color(hex: "#000") : Color(hex: "#A9A9A9"))
                             .clipShape(Circle())
                     }
-
+                    .disabled(!isEventEnabled())
+                    
                     Button(action: {
                         entryViewModel.removeListeners()
                         vote()
@@ -97,22 +104,24 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
+                            .background((entryViewModel.hasEntriesToVoteOn && isEventEnabled()) ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(!entryViewModel.hasEntriesToVoteOn)
+                    .disabled(!(entryViewModel.hasEntriesToVoteOn && isEventEnabled()))
                     
                     Button(action: {
+                        entryViewModel.removeListeners()
                         isMyPostsPresented = true
                     }) {
                         Image(systemName: "photo.stack.fill")
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(Color(hex: "#000"))
+                            .foregroundColor(isEventEnabled() ? Color(hex: "#000") : Color(hex: "#A9A9A9"))
                             .clipShape(Circle())
                     }
+                    .disabled(!isEventEnabled())
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
@@ -121,10 +130,16 @@ struct CompDetails: View {
                 .padding(.vertical, 20)
                 .padding(.horizontal, 20)
                 
-                if !hasInitiallyLoaded {
+                if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if entryViewModel.userLeaderboard.isEmpty {
+                    if competition.isEvent && !competition.isUserVerified {
+                        EventVerificationRequiredView(event: competition as! Event, isTicketScannerPresented: $isTicketScannerPresented)
+                        Spacer()
+                    } else if competition.isEvent && !competition.hasStarted {
+                        EventNotStartedView(event: competition as! Event)
+                        Spacer()
+                    } else if entryViewModel.userLeaderboard.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
                     } else {
@@ -152,21 +167,29 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id, competition: competition)
         })
-        .fullScreenCover(isPresented: $goHome, content: {
-            ContentView()
-        })
+        .fullScreenCover(isPresented: $goToEvents) {
+            ContentView(initialTab: 1)
+        }
+        .fullScreenCover(isPresented: $goToMyComps) {
+            ContentView(initialTab: 0)
+        }
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $isMyPostsPresented) {
             MyPostsView(competition: competition)
         }
+        .fullScreenCover(isPresented: $isTicketScannerPresented) {
+            if let event = competition as? Event {
+                TicketScannerView(event: event)
+            }
+        }
         .onDisappear {
             entryViewModel.removeListeners()
         }
         .alert(isPresented: $showPermissionAlert) {
             Alert(
-                title: Text("Access Needed"),
+                title: Text("Camera Required"),
                 message: Text("Camera access is required to take photos. Please enable it in Settings."),
                 primaryButton: .default(Text("Open Settings"), action: openSettings),
                 secondaryButton: .cancel()
@@ -176,13 +199,20 @@ struct CompDetails: View {
     
     private func fetchData() {
         isLoading = true
-        hasInitiallyLoaded = false
+        
+        if competition.isEvent {
+            competition.checkVerificationStatus()
+        }
+        
         entryViewModel.fetchEntries(mode: .compDetailsView) {
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.hasInitiallyLoaded = true
             }
         }
+    }
+    
+    private func isEventEnabled() -> Bool {
+        return !competition.isEvent || (competition.hasStarted && competition.isUserVerified)
     }
 
     func leaderboardRowView(_ userName: String, _ stars: Int) -> some View {
@@ -270,9 +300,16 @@ struct EmptyLeaderboardView: View {
         VStack {
             
             Text("No Photos Yet")
-                .font(.system(size: 22, weight: .bold, design: .default))
+                .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)
+                .padding(.bottom, 20)
+            
+            Text("Get the competition started")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundColor(.gray) // Set the text color as needed
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
                 .padding(.bottom, 25)
             
             Button(action: action) {  // This button now uses the passed function
@@ -289,6 +326,164 @@ struct EmptyLeaderboardView: View {
  
         }
         .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
+    }
+}
+
+struct EventNotStartedView: View {
+    let event: Event
+    @State private var isSubscribed = false
+    @State private var isLoading = false
+    
+    private func formatDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+        
+        if calendar.isDateInToday(date) {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "h:mm a"
+            return "Today at \(timeFormatter.string(from: date))"
+        } else if calendar.isDateInTomorrow(date) {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "h:mm a"
+            return "Tomorrow at \(timeFormatter.string(from: date))"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d'\(dayOrdinal(from: date))' MMM 'at' h:mm a"
+            return formatter.string(from: date)
+        }
+    }
+
+    private func dayOrdinal(from date: Date) -> String {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        
+        switch day {
+        case 1, 21, 31: return "st"
+        case 2, 22: return "nd"
+        case 3, 23: return "rd"
+        default: return "th"
+        }
+    }
+    
+    private func subscribeToNotifications() {
+        isLoading = true
+        
+        Task {
+            let scheduled = await NotificationService.shared.scheduleEventNotifications(event: event)
+            
+            DispatchQueue.main.async {
+                isSubscribed = scheduled
+                isLoading = false
+                
+                if scheduled {
+                    PostHogSDK.shared.capture("Public Competition Notification Subscribed",
+                        properties: ["eventId": event.id])
+                }
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack {
+            Text("Competition Starting Soon")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.black)
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+            
+            Text("\(formatDate(event.startDateTime))")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundColor(.gray) // Set the text color as needed
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
+                .padding(.bottom, 20)
+            
+            Button(action: subscribeToNotifications) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else if isSubscribed {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 20, weight: .bold))
+                    } else {
+                        Text("Remind Me")
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .font(.system(size: 18, weight: .bold, design: .default))
+                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .background(isSubscribed ? Color(hex: "#4CAF50") : Color(hex: "#1199FF"))
+                .foregroundColor(Color(hex: "#fff"))
+                .cornerRadius(200)
+            }
+            .disabled(isSubscribed || isLoading)
+            .padding(.bottom, 20)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
+    }
+}
+
+struct EventVerificationRequiredView: View {
+    let event: Event
+    @Binding var isTicketScannerPresented: Bool
+    
+    var body: some View {
+        VStack {
+            Text("Verify Ticket")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.black)
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+            
+            Text("Please verify your ticket to access this competition")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundColor(.gray) // Set the text color as needed
+                .multilineTextAlignment(.center)
+                .lineSpacing(8)
+                .padding(.bottom, 20)
+            
+            Button(action: {
+                isTicketScannerPresented = true
+            }) {
+                Text("Verify Ticket")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
+            }
+            .padding(.bottom, 25)
+            
+            if let ticketUrl = event.ticketUrl {
+                Button(action: {
+                    if let url = URL(string: ticketUrl),
+                       UIApplication.shared.canOpenURL(url) {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    HStack(spacing: 5) {
+                        Text("Get Tickets")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(Color(hex: "#1199FF"))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(Color(hex: "#1199FF"))
+                    }
+                }
+                .padding(.bottom, 20)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
         .background(Color(hex: "#F5F5F5"))
         .cornerRadius(5)
         .padding(.horizontal, 20)

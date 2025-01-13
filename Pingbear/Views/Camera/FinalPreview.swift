@@ -318,60 +318,7 @@ struct FinalPreview: View {
                 }
 
                 PostHogSDK.shared.capture("New Photo Shared")
-                self.fetchMembersAndNotify(userId: userId, competitionId: self.competitionId)
             }
         }
-    }
-    
-    func fetchMembersAndNotify(userId: String, competitionId: String) {
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userId)
-        
-        // First fetch the username of the user sharing the video
-        userRef.getDocument { (document, error) in
-            if let error = error {
-                print("Error fetching user document: \(error)")
-                return
-            }
-            
-            if let document = document, let username = document.data()?["username"] as? String {
-                // Then fetch members and send notifications
-                db.collection("competitions").document(competitionId).collection("members")
-                    .getDocuments { snapshot, error in
-                        if let error = error {
-                            print("Error fetching member details: \(error)")
-                            return
-                        }
-                        let memberIds = snapshot?.documents.map { $0.documentID } ?? []
-                        self.sendNotificationToMembers(memberIds: memberIds, username: username)
-                    }
-            } else {
-                print("Username not found for user \(userId)")
-            }
-        }
-    }
-
-    func sendNotificationToMembers(memberIds: [String], username: String) {
-        let db = Firestore.firestore()
-        let usersRef = db.collection("users")
-        
-        memberIds.forEach { memberId in
-            usersRef.document(memberId).getDocument { (document, error) in
-                if let error = error {
-                    print("Error fetching user document: \(error)")
-                    return
-                }
-                if let document = document, let fcmToken = document.data()?["fcmToken"] as? String {
-                    let message = "\(username) shared a photo"
-                    self.sendPushNotification(to: fcmToken, message: message)
-                }
-            }
-        }
-    }
-
-    func sendPushNotification(to token: String, message: String) {
-        // Use Firebase Messaging SDK to send a push notification
-        let sender = PushNotificationSender()
-        sender.sendPushNotification(to: token, title: competition.description, body: message)
     }
 }

@@ -3,29 +3,55 @@ import FirebaseFirestore
 
 class Competition: ObservableObject, Identifiable {
     let id: String
+    private let db = Firestore.firestore()
     
     @Published var description: String
     @Published var date: Date
     @Published var entriesNotVotedCount: Int = 0
+    @Published var isEvent: Bool = false
+    @Published var isUserVerified: Bool = false
     
-    init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0) {
+    init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0, isEvent: Bool = false) {
         self.id = id
         self.description = description
         self.date = date
         self.entriesNotVotedCount = entriesNotVotedCount
+        self.isEvent = isEvent
     }
 }
 
+extension Competition {
+    var hasStarted: Bool {
+        guard let event = self as? Event else { return true }
+        return Date() >= event.startDateTime
+    }
+    
+    func checkVerificationStatus() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("competitions")
+            .document(id)
+            .collection("members")
+            .document(userId)
+            .getDocument { [weak self] snapshot, error in
+                DispatchQueue.main.async {
+                    self?.isUserVerified = snapshot?.exists ?? false
+                }
+            }
+    }
+    
+    func markUserAsVerified(userId: String) {
+        db.collection("competitions")
+            .document(id)
+            .collection("members")
+            .document(userId)
+            .setData(["userId": userId])
+    }
+}
+
+
 class CompetitionsModel: ObservableObject {
     @Published var competitions: [Competition] = []
-    
-    var badgeCount = 0 {
-        didSet {
-            DispatchQueue.main.async {
-                UIApplication.shared.applicationIconBadgeNumber = self.badgeCount
-            }
-        }
-    }
     
     func setupCompetitionListeners(userId: String, completion: (() -> Void)? = nil) {
         let path = "groupMemberships/\(userId)/competitions"
@@ -42,7 +68,6 @@ class CompetitionsModel: ObservableObject {
                           let competitionId = change.document.data()["competitionId"] as? String {
                     DispatchQueue.main.async {
                         self?.competitions.removeAll { $0.id == competitionId }
-                        self?.recalculateBadgeCount()
                     }
                 }
             }
@@ -61,15 +86,39 @@ class CompetitionsModel: ObservableObject {
         let db = Firestore.firestore()
         let group = DispatchGroup()
         
-        let competitionsRef = db.collection("competitions")
-        competitionsRef.whereField(FieldPath.documentID(), in: ids).getDocuments { [weak self] (snapshot, error) in
-            if let error = error {
-                print("Error batch fetching competitions: \(error)")
-                completion()
-                return
+        // Variables to store results from parallel queries
+        var eventIds = Set<String>()
+        var competitionDocs: [QueryDocumentSnapshot]?
+        
+        // Fetch events in parallel
+        group.enter()
+        db.collection("events")
+            .whereField(FieldPath.documentID(), in: ids)
+            .getDocuments { (eventSnapshot, error) in
+                defer { group.leave() }
+                if let error = error {
+                    print("Error fetching events: \(error)")
+                    return
+                }
+                eventIds = Set(eventSnapshot?.documents.map { $0.documentID } ?? [])
             }
-            
-            guard let documents = snapshot?.documents else {
+        
+        // Fetch competitions in parallel
+        group.enter()
+        db.collection("competitions")
+            .whereField(FieldPath.documentID(), in: ids)
+            .getDocuments { [weak self] (snapshot, error) in
+                defer { group.leave() }
+                if let error = error {
+                    print("Error batch fetching competitions: \(error)")
+                    return
+                }
+                competitionDocs = snapshot?.documents
+            }
+        
+        // Process results after both queries complete
+        group.notify(queue: .global()) { [weak self] in
+            guard let documents = competitionDocs else {
                 completion()
                 return
             }
@@ -79,22 +128,24 @@ class CompetitionsModel: ObservableObject {
                 return Competition(
                     id: doc.documentID,
                     description: data["description"] as? String ?? "No Description",
-                    date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
+                    date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(),
+                    isEvent: eventIds.contains(doc.documentID)
                 )
             }
             
             // Update competitions and fetch entry counts in parallel
+            let updateGroup = DispatchGroup()
             for competition in competitions {
-                group.enter()
+                updateGroup.enter()
                 DispatchQueue.main.async {
                     self?.updateOrAppendCompetition(competition)
                     self?.refreshEntriesAndVotes(for: competition.id, userId: userId) {
-                        group.leave()
+                        updateGroup.leave()
                     }
                 }
             }
             
-            group.notify(queue: .main) {
+            updateGroup.notify(queue: .main) {
                 completion()
             }
         }
@@ -155,7 +206,6 @@ class CompetitionsModel: ObservableObject {
         group.notify(queue: .main) { [weak self] in
             let notVotedEntriesCount = entryIds.subtracting(votedEntryIds).count
             competition.entriesNotVotedCount = notVotedEntriesCount
-            self?.recalculateBadgeCount()
             completion?()
         }
     }
@@ -166,11 +216,6 @@ class CompetitionsModel: ObservableObject {
         } else {
             competitions.append(competition)
         }
-        recalculateBadgeCount()
-    }
-    
-    func recalculateBadgeCount() {
-        badgeCount = competitions.reduce(0) { $0 + $1.entriesNotVotedCount }
     }
     
     func cleanupListeners() {

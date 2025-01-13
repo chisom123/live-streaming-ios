@@ -239,9 +239,7 @@ struct JoinSelectView: View {
                     let membershipRef = db.collection("groupMemberships").document(userId).collection("competitions").document(self.competition.id)
                     let membershipData: [String: Any] = ["competitionId": self.competition.id]
                     batch.setData(membershipData, forDocument: membershipRef)
-
-                    // Send notification
-                    self.sendNotificationToUser(userId: userId, username: username, competitionDescription: self.competition.description)
+                    
                     PostHogSDK.shared.capture("Friend Added to Competition", properties: ["userId": userId])
                 }
                 dispatchGroup.leave()
@@ -258,18 +256,6 @@ struct JoinSelectView: View {
                         self.isPresentingCompDetails = true
                     }
                 }
-            }
-        }
-    }
-
-    func sendNotificationToUser(userId: String, username: String, competitionDescription: String) {
-        let db = Firestore.firestore()
-        db.collection("users").document(userId).getDocument { (document, error) in
-            if let document = document, let fcmToken = document.data()?["fcmToken"] as? String {
-                let title = competitionDescription
-                let message = "\(username) added you to the competition"
-                // Assuming you have a mechanism to send push notifications
-                PushNotificationSender().sendPushNotification(to: fcmToken, title: title, body: message)
             }
         }
     }

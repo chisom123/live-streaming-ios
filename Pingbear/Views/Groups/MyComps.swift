@@ -5,15 +5,13 @@ struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
-    @StateObject private var pushNotificationManager = PushNotificationManager()  // StateObject for lifecycle management
     @State private var isLoading = true
-    @State private var hasInitiallyLoaded = false
     
     var body: some View {
         VStack {
             // Top Bar with Title
             HStack {
-                Text("Competitions")
+                Text("Private Competitions")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .foregroundColor(.black) // Set the text color as needed
                     .padding(.horizontal, 20)
@@ -38,7 +36,7 @@ struct MyCompsView: View {
 
             Spacer()
             
-            if !hasInitiallyLoaded {
+            if isLoading {
                 Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.competitions.isEmpty {
                 EmptyCompsView(
@@ -104,9 +102,7 @@ struct MyCompsView: View {
             NewCompetition()
         }
         .onAppear {
-            if !hasInitiallyLoaded {
-                fetchData()
-            }
+            fetchData()
         }
         .onDisappear {
             viewModel.cleanupListeners()
@@ -117,15 +113,9 @@ struct MyCompsView: View {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
         isLoading = true
-        hasInitiallyLoaded = false
         
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
-            self.hasInitiallyLoaded = true
-            
-            if self.pushNotificationManager.userID == nil {
-                self.pushNotificationManager.setupWithUserID(userId)
-            }
         }
     }
 }
@@ -136,13 +126,13 @@ struct EmptyCompsView: View {
     
     var body: some View {
         VStack {
-            Text("No Competitions Yet")
-                .font(.system(size: 22, weight: .bold, design: .default))
+            Text("No Private Competitions Yet")
+                .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.bottom, 20)
             
             Text("Start a competition or wait to be added")
-                .font(.system(size: 18, weight: .bold, design: .default))
+                .font(.system(size: 17, weight: .bold, design: .default))
                 .foregroundColor(.gray) // Set the text color as needed
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)

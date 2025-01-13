@@ -1,20 +1,24 @@
 import SwiftUI
 
 struct ContentView: View {
+    var initialTab: Int?
+    
     var body: some View {
-        CustomTabView()
+        CustomTabView(initialSelection: initialTab ?? 0)
     }
 }
 
 struct CustomTabView: View {
+    @StateObject private var eventsModel = EventsModel()
     @State private var selection = 0
-    @State private var isPresentingNewCompetition = false
     
     // Define the colors for the selected and unselected tab items
     let selectedColor = Color(hex: "#1199FF")
     let unselectedColor = Color(hex: "#808080")
     
-    init() {
+    init(initialSelection: Int = 0) {
+        _selection = State(initialValue: initialSelection)
+        
         // Use UITabBarAppearance for customizing the tab bar's appearance
         let appearance = UITabBarAppearance()
         
@@ -25,13 +29,35 @@ struct CustomTabView: View {
         appearance.shadowImage = UIImage()
         appearance.backgroundImage = UIImage()
         
+        let fontSize: CGFloat = 11
+        
         // Apply the appearance for the selected state
         appearance.stackedLayoutAppearance.selected.iconColor = UIColor(selectedColor)
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(selectedColor)]
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor(selectedColor),
+            .font: UIFont.systemFont(ofSize: fontSize, weight: .bold)
+        ]
+        
+        appearance.stackedLayoutAppearance.selected.titlePositionAdjustment = UIOffset(horizontal: 0, vertical: 2)
 
         // Apply the appearance for the normal (unselected) state
         appearance.stackedLayoutAppearance.normal.iconColor = UIColor(unselectedColor)
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(unselectedColor)]
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(unselectedColor),
+            .font: UIFont.systemFont(ofSize: fontSize, weight: .bold )
+        ]
+        
+        appearance.stackedLayoutAppearance.normal.titlePositionAdjustment = UIOffset(horizontal: 0, vertical: 2)
+        
+        // Make badge smaller
+        appearance.stackedLayoutAppearance.normal.badgeBackgroundColor = UIColor(Color(hex: "#FF0000"))
+        
+        // Reduce badge text size (this affects the overall badge size)
+        appearance.stackedLayoutAppearance.normal.badgeTextAttributes = [
+            .font: UIFont.systemFont(ofSize: 13, weight: .bold)
+        ]
+        
+        appearance.stackedLayoutAppearance.normal.badgePositionAdjustment = UIOffset(horizontal: 3, vertical: 0)
 
         // Set the standard appearance to our customized appearance
         UITabBar.appearance().standardAppearance = appearance
@@ -45,19 +71,33 @@ struct CustomTabView: View {
             TabView(selection: $selection) {
                 MyCompsView()
                     .tabItem {
-                        Image(systemName: "house")
+                        Image(systemName: "lock.fill")
+                        Text("Private")
                     }
                     .tag(0)
-                    .padding([.top, .bottom], 12)
+                    .padding([.top, .bottom], 10)
+                
+                EventsView(viewModel: eventsModel)
+                    .tabItem {
+                        Image(systemName: "calendar")
+                        Text("Event")
+                    }
+                    .tag(1)
+                    .padding([.top, .bottom], 10)
+                    .badge(eventsModel.filteredEvents.isEmpty ? nil : "\(eventsModel.filteredEvents.count)")
 
                 SettingsView()
                     .tabItem {
                         Image(systemName: "gearshape.fill")
+                        Text("Settings")
                     }
-                    .tag(1)
-                    .padding([.top, .bottom], 12)
+                    .tag(2)
+                    .padding([.top, .bottom], 10)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items
+        }
+        .onAppear {
+            eventsModel.fetchPublicEvents()  // Fetch events when CustomTabView appears
         }
     }
 }

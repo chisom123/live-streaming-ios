@@ -64,7 +64,7 @@ struct NewCompetition: View {
                 
                 Spacer()
                 
-                Text("Name your competition")
+                Text("Give your competition a name")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -75,7 +75,7 @@ struct NewCompetition: View {
                         PostHogSDK.shared.capture("New Competition View Opened")
                     }
 
-                TextField("Competition name", text: $competitionDescription)
+                TextField("Enter competition name", text: $competitionDescription)
                     .keyboardType(.default)
                     .padding()
                     .background(Color(hex: "#F5F5F5"))

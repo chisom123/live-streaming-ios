@@ -2,10 +2,10 @@ import SwiftUI
 import PostHog
 
 struct MyPostsView: View {
-    @Environment(\.presentationMode) var presentationMode
     @StateObject private var viewModel: MyPostsViewModel
     @State private var isLoading = true
     @ObservedObject var competition: Competition
+    @State private var navigateToCompDetails = false
     
     init(competition: Competition) {
         self.competition = competition
@@ -16,7 +16,7 @@ struct MyPostsView: View {
         VStack {
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    navigateToCompDetails = true
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable() // Allows resizing of the image
@@ -82,6 +82,9 @@ struct MyPostsView: View {
                 isLoading = false
             }
         }
+        .fullScreenCover(isPresented: $navigateToCompDetails) {
+            CompDetails(competition: competition) // Adjust according to your needs
+        }
     }
 }
 
@@ -113,6 +116,7 @@ struct PostCard: View {
                             Text(overlayText)
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
+                                .lineSpacing(2)
                                 .padding(.horizontal, 16)
                                 .padding(.bottom, 16)
                                 .multilineTextAlignment(.leading) // Changed to .leading

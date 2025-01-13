@@ -4,7 +4,7 @@ import Combine
 import PostHog
 import AVFoundation
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
     var pushNotificationManager: PushNotificationManager?
   
@@ -22,7 +22,31 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         NotificationCenter.default.addObserver(self, selector: #selector(clearNotifications), name: UIApplication.willEnterForegroundNotification, object: nil)
         
+        UNUserNotificationCenter.current().delegate = self
+        
         return true
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // Navigate to Events tab when notification is tapped
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.overrideUserInterfaceStyle = .light
+            window.rootViewController = UIHostingController(rootView: ContentView(initialTab: 1))
+        }
+        completionHandler()
     }
     
     private func setupDefaultCameraPosition() {
