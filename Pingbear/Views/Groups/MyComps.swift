@@ -43,10 +43,6 @@ struct MyCompsView: View {
                     action: {
                         viewModel.cleanupListeners()
                         isPresentingNewCompetition = true
-                    },
-                    refreshAction: {
-                        viewModel.cleanupListeners()
-                        fetchData()
                     }
                 )
                 Spacer()
@@ -122,7 +118,6 @@ struct MyCompsView: View {
 
 struct EmptyCompsView: View {
     var action: () -> Void
-    var refreshAction: () -> Void
     
     var body: some View {
         VStack {
@@ -147,18 +142,6 @@ struct EmptyCompsView: View {
                     .cornerRadius(200)
             }
             .padding(.bottom, 25)
-            
-            Button(action: refreshAction) {
-                HStack(spacing: 8) {
-                    Text("Refresh")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                    
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                }
-                .padding(EdgeInsets(top: 12, leading: 25, bottom: 12, trailing: 25))
-                .foregroundColor(Color(hex: "#1199FF"))
-            }
         }
         .padding(.horizontal, 20)
     }
