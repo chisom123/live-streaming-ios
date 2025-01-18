@@ -44,21 +44,23 @@ struct MembersView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
                 
-                Button(action: {
-                    showingJoinSelectView = true
-                }) {
-                    HStack {
-                        Text("Add Friends to Competition")
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .foregroundColor(Color(hex: "#1199FF"))
-                            .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
+                if !competition.isEvent {
+                    Button(action: {
+                        showingJoinSelectView = true
+                    }) {
+                        HStack {
+                            Text("Add Friends to Competition")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#1199FF"))
+                                .frame(maxWidth: .infinity, alignment: .leading) // Align text to the left
+                        }
+                        .padding(20)
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
                     }
-                    .padding(20)
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 15)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
                 
                 HStack {
                     Text("Competitors")

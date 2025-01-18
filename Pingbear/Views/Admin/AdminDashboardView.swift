@@ -7,11 +7,6 @@ struct AdminDashboardView: View {
     @State private var showingEditEventSheet = false
     @State private var selectedEvent: Event?
     
-    let columns = [
-        GridItem(.flexible(), spacing: 15),
-        GridItem(.flexible(), spacing: 15)
-    ]
-    
     var body: some View {
         VStack {
             HStack {
@@ -19,10 +14,10 @@ struct AdminDashboardView: View {
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 27, height: 27)
+                        .foregroundColor(Color.black)
                 }
                 
                 Spacer()
@@ -51,18 +46,35 @@ struct AdminDashboardView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
             
-            Spacer()
-            
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 15) {
+                VStack(spacing: 20) {
                     ForEach(viewModel.events) { event in
-                        EventGridCardView(event: event)
-                            .onTapGesture {
-                                self.selectedEvent = event
+                        HStack {
+                            Text(event.description)
+                                .font(.system(size: 16, weight: .bold))
+                                .lineLimit(2)
+                                .lineSpacing(9)
+                                .foregroundColor(.black)
+                                .truncationMode(.tail)
+                                .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            if event.hasEnded {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 15, height: 15)
                             }
+                        }
+                        .padding(20)
+                        .background(Color(hex: "#F5F5F5"))
+                        .cornerRadius(5)
+                        .padding(.horizontal, 20)
+                        .onTapGesture {
+                            self.selectedEvent = event
+                        }
                     }
                 }
-                .padding(.horizontal, 20)
             }
         }
         .fullScreenCover(isPresented: $showingCreateEventSheet) {
@@ -71,12 +83,8 @@ struct AdminDashboardView: View {
         .fullScreenCover(item: $selectedEvent) { event in
             CreateEditEventView(viewModel: viewModel, event: event)
         }
-        .onAppear {
-            fetchData()
+        .task {
+            await viewModel.fetchPublicEvents()
         }
-    }
-    
-    private func fetchData() {
-        viewModel.fetchPublicEvents()
     }
 }

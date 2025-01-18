@@ -7,13 +7,11 @@ import AVFoundation
 struct CompDetails: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @State private var goToEvents = false
     @State private var goToMyComps = false
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
     @State private var isMyPostsPresented = false
     @State private var isVotingPresented = false
-    @State private var isTicketScannerPresented = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
     @State private var showPermissionAlert = false
@@ -36,11 +34,7 @@ struct CompDetails: View {
                 HStack {
                     Button(action: {
                         entryViewModel.removeListeners()
-                        if competition.isEvent {
-                            goToEvents = true
-                        } else {
-                            goToMyComps = true
-                        }
+                        goToMyComps = true
                         PostHogSDK.shared.capture("Close Competition Details")
                     }) {
                         Image(systemName: "arrow.left")
@@ -75,7 +69,6 @@ struct CompDetails: View {
                             .frame(width: 30, height: 30) // Adjust the width and height to decrease the size
                             .foregroundColor(Color.black) // Your desired color
                     }
-                    .opacity(competition.isEvent ? 0 : 1)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -133,13 +126,16 @@ struct CompDetails: View {
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if competition.isEvent && !competition.isUserVerified {
-                        EventVerificationRequiredView(event: competition as! Event, isTicketScannerPresented: $isTicketScannerPresented)
-                        Spacer()
-                    } else if competition.isEvent && !competition.hasStarted {
-                        EventNotStartedView(event: competition as! Event)
-                        Spacer()
-                    } else if entryViewModel.userLeaderboard.isEmpty {
+                    if competition.hasEnded {
+                        EventEndedNoticeView()
+                    }
+                    
+                    if competition.isEvent && !competition.hasStarted {
+                        if let event = competition as? Event {
+                            EventNotStartedView(event: event)
+                            Spacer()
+                        }
+                    } else if entryViewModel.userLeaderboard.isEmpty && !competition.hasEnded {
                         EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
                     } else {
@@ -167,22 +163,14 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isVotingPresented, content: {
             EntryView(competitionId: competition.id, competition: competition)
         })
-        .fullScreenCover(isPresented: $goToEvents) {
-            ContentView(initialTab: 1)
-        }
         .fullScreenCover(isPresented: $goToMyComps) {
-            ContentView(initialTab: 0)
+            ContentView()
         }
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
         }
         .fullScreenCover(isPresented: $isMyPostsPresented) {
             MyPostsView(competition: competition)
-        }
-        .fullScreenCover(isPresented: $isTicketScannerPresented) {
-            if let event = competition as? Event {
-                TicketScannerView(event: event)
-            }
         }
         .onDisappear {
             entryViewModel.removeListeners()
@@ -200,10 +188,6 @@ struct CompDetails: View {
     private func fetchData() {
         isLoading = true
         
-        if competition.isEvent {
-            competition.checkVerificationStatus()
-        }
-        
         entryViewModel.fetchEntries(mode: .compDetailsView) {
             DispatchQueue.main.async {
                 self.isLoading = false
@@ -212,7 +196,7 @@ struct CompDetails: View {
     }
     
     private func isEventEnabled() -> Bool {
-        return !competition.isEvent || (competition.hasStarted && competition.isUserVerified)
+        return !competition.isEvent || (competition.hasStarted && !competition.hasEnded)
     }
 
     func leaderboardRowView(_ userName: String, _ stars: Int) -> some View {
@@ -431,61 +415,23 @@ struct EventNotStartedView: View {
     }
 }
 
-struct EventVerificationRequiredView: View {
-    let event: Event
-    @Binding var isTicketScannerPresented: Bool
-    
+struct EventEndedNoticeView: View {
     var body: some View {
-        VStack {
-            Text("Verify Ticket")
-                .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.black)
-                .padding(.top, 20)
-                .padding(.bottom, 20)
+        HStack {
+            Text("Competition Ended")
+                .font(.system(size: 16, weight: .bold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .padding(.leading, 10)
+                .foregroundColor(Color.black)
             
-            Text("Please verify your ticket to access this competition")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center)
-                .lineSpacing(8)
-                .padding(.bottom, 20)
-            
-            Button(action: {
-                isTicketScannerPresented = true
-            }) {
-                Text("Verify Ticket")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
-            }
-            .padding(.bottom, 25)
-            
-            if let ticketUrl = event.ticketUrl {
-                Button(action: {
-                    if let url = URL(string: ticketUrl),
-                       UIApplication.shared.canOpenURL(url) {
-                        UIApplication.shared.open(url)
-                    }
-                }) {
-                    HStack(spacing: 5) {
-                        Text("Get Tickets")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(Color(hex: "#1199FF"))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(Color(hex: "#1199FF"))
-                    }
-                }
-                .padding(.bottom, 20)
-            }
+            Spacer()
         }
         .padding(20)
         .frame(maxWidth: .infinity)
         .background(Color(hex: "#F5F5F5"))
         .cornerRadius(5)
         .padding(.horizontal, 20)
+        .padding(.bottom, 15)
     }
 }

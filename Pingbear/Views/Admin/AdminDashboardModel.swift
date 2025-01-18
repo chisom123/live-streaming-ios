@@ -4,7 +4,7 @@ class AdminDashboardModel: EventsModel {
     private let db = Firestore.firestore()
     
     // Just add the admin-specific functions
-    func createEvent(description: String, location: String, image: String, startDate: Date, endDate: Date?, ticketUrl: String?) {
+    func createEvent(description: String, location: String, startDate: Date, endDate: Date?) {
         let eventRef = db.collection("events").document()
         let competitionRef = db.collection("competitions").document(eventRef.documentID)
         
@@ -12,16 +12,11 @@ class AdminDashboardModel: EventsModel {
         
         var eventData: [String: Any] = [
             "location": location,
-            "image": image,
             "startDateTime": Timestamp(date: startDate)
         ]
         
         if let endDate = endDate {
             eventData["endDateTime"] = Timestamp(date: endDate)
-        }
-        
-        if let ticketUrl = ticketUrl {
-            eventData["ticketUrl"] = ticketUrl
         }
         
         let competitionData: [String: Any] = [
@@ -36,7 +31,9 @@ class AdminDashboardModel: EventsModel {
             if let error = error {
                 print("Error creating event: \(error)")
             } else {
-                self?.fetchPublicEvents()
+                Task { [weak self] in
+                    await self?.fetchPublicEvents()
+                }
             }
         }
     }
@@ -51,26 +48,23 @@ class AdminDashboardModel: EventsModel {
             if let error = error {
                 print("Error deleting event: \(error)")
             } else {
-                self?.fetchPublicEvents()  // Use the inherited method
+                Task { [weak self] in
+                    await self?.fetchPublicEvents()
+                }
             }
         }
     }
     
-    func updateEvent(eventId: String, description: String, location: String, image: String, startDate: Date, endDate: Date?, ticketUrl: String?) {
+    func updateEvent(eventId: String, description: String, location: String, startDate: Date, endDate: Date?) {
         let batch = db.batch()
         
         var eventData: [String: Any] = [
             "location": location,
-            "image": image,
             "startDateTime": Timestamp(date: startDate)
         ]
         
         if let endDate = endDate {
             eventData["endDateTime"] = Timestamp(date: endDate)
-        }
-        
-        if let ticketUrl = ticketUrl {
-            eventData["ticketUrl"] = ticketUrl
         }
         
         let competitionData: [String: Any] = [
@@ -84,7 +78,9 @@ class AdminDashboardModel: EventsModel {
             if let error = error {
                 print("Error updating event: \(error)")
             } else {
-                self?.fetchPublicEvents()
+                Task { [weak self] in
+                    await self?.fetchPublicEvents()
+                }
             }
         }
     }

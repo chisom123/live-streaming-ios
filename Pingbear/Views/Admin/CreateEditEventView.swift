@@ -9,10 +9,8 @@ struct CreateEditEventView: View {
     
     @State private var description = ""
     @State private var location = ""
-    @State private var image = ""
     @State private var startDate = Date()
     @State private var endDate = Date()
-    @State private var ticketUrl: String = ""
     
     init(viewModel: AdminDashboardModel, event: Event? = nil) {
         self.viewModel = viewModel
@@ -21,10 +19,8 @@ struct CreateEditEventView: View {
         if let event = event {
             _description = State(initialValue: event.description)
             _location = State(initialValue: event.location)
-            _image = State(initialValue: event.image)
             _startDate = State(initialValue: event.startDateTime)
             _endDate = State(initialValue: event.endDateTime ?? Date())
-            _ticketUrl = State(initialValue: event.ticketUrl ?? "")
         }
     }
     
@@ -34,8 +30,6 @@ struct CreateEditEventView: View {
                 Section(header: Text("Event Details")) {
                     TextField("Description", text: $description)
                     TextField("Location", text: $location)
-                    TextField("Image URL", text: $image)
-                    TextField("Ticket URL (Optional)", text: $ticketUrl)
                 }
                 
                 Section(header: Text("Date and Time")) {
@@ -70,19 +64,15 @@ struct CreateEditEventView: View {
                             eventId: event.id,
                             description: description,
                             location: location,
-                            image: image,
                             startDate: startDate,
-                            endDate: endDate,
-                            ticketUrl: ticketUrl.isEmpty ? nil : ticketUrl
+                            endDate: endDate
                         )
                     } else {
                         viewModel.createEvent(
                             description: description,
                             location: location,
-                            image: image,
                             startDate: startDate,
-                            endDate: endDate,
-                            ticketUrl: ticketUrl.isEmpty ? nil : ticketUrl
+                            endDate: endDate
                         )
                     }
                     presentationMode.wrappedValue.dismiss()
@@ -90,7 +80,6 @@ struct CreateEditEventView: View {
                 .disabled(
                     description.isEmpty ||
                     location.isEmpty ||
-                    image.isEmpty ||
                     endDate <= startDate
                 )
                 

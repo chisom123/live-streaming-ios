@@ -4,20 +4,18 @@ struct ContentView: View {
     var initialTab: Int?
     
     var body: some View {
-        CustomTabView(initialSelection: initialTab ?? 0)
+        CustomTabView()
     }
 }
 
 struct CustomTabView: View {
-    @StateObject private var eventsModel = EventsModel()
     @State private var selection = 0
     
     // Define the colors for the selected and unselected tab items
     let selectedColor = Color(hex: "#1199FF")
     let unselectedColor = Color(hex: "#808080")
     
-    init(initialSelection: Int = 0) {
-        _selection = State(initialValue: initialSelection)
+    init() {
         
         // Use UITabBarAppearance for customizing the tab bar's appearance
         let appearance = UITabBarAppearance()
@@ -71,33 +69,22 @@ struct CustomTabView: View {
             TabView(selection: $selection) {
                 MyCompsView()
                     .tabItem {
-                        Image(systemName: "lock.fill")
-                        Text("Private")
+                        Image(systemName: "house.fill")
+                        Text("Home")
                     }
                     .tag(0)
                     .padding([.top, .bottom], 10)
                 
-                EventsView(viewModel: eventsModel)
-                    .tabItem {
-                        Image(systemName: "calendar")
-                        Text("Event")
-                    }
-                    .tag(1)
-                    .padding([.top, .bottom], 10)
-                    .badge(eventsModel.filteredEvents.isEmpty ? nil : "\(eventsModel.filteredEvents.count)")
 
                 SettingsView()
                     .tabItem {
                         Image(systemName: "gearshape.fill")
                         Text("Settings")
                     }
-                    .tag(2)
+                    .tag(1)
                     .padding([.top, .bottom], 10)
             }
             .accentColor(selectedColor) // Apply the selected color to the tab items
-        }
-        .onAppear {
-            eventsModel.fetchPublicEvents()  // Fetch events when CustomTabView appears
         }
     }
 }

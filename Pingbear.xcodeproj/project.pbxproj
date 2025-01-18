@@ -13,7 +13,6 @@
 		4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */; };
 		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F3407FC2D2C4C3200F21247 /* EventsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3407FB2D2C4C3200F21247 /* EventsModel.swift */; };
-		4F3407FF2D2C4EA700F21247 /* Events.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3407FE2D2C4EA700F21247 /* Events.swift */; };
 		4F3408062D2EE3B400F21247 /* AdminDashboardModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3408052D2EE3B400F21247 /* AdminDashboardModel.swift */; };
 		4F3408082D2EE43B00F21247 /* AdminDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3408072D2EE43B00F21247 /* AdminDashboardView.swift */; };
 		4F34080A2D2EE47900F21247 /* CreateEditEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3408092D2EE47900F21247 /* CreateEditEventView.swift */; };
@@ -114,7 +113,6 @@
 		4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPreview.swift; sourceTree = "<group>"; };
 		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F3407FB2D2C4C3200F21247 /* EventsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventsModel.swift; sourceTree = "<group>"; };
-		4F3407FE2D2C4EA700F21247 /* Events.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Events.swift; sourceTree = "<group>"; };
 		4F3408052D2EE3B400F21247 /* AdminDashboardModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDashboardModel.swift; sourceTree = "<group>"; };
 		4F3408072D2EE43B00F21247 /* AdminDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminDashboardView.swift; sourceTree = "<group>"; };
 		4F3408092D2EE47900F21247 /* CreateEditEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateEditEventView.swift; sourceTree = "<group>"; };
@@ -264,14 +262,13 @@
 			path = Payments;
 			sourceTree = "<group>";
 		};
-		4F3407FD2D2C4E9900F21247 /* Events */ = {
+		4F3407FD2D2C4E9900F21247 /* Tickets */ = {
 			isa = PBXGroup;
 			children = (
-				4F3407FE2D2C4EA700F21247 /* Events.swift */,
 				4F34080F2D3158E200F21247 /* TicketVerificationService.swift */,
 				4F3408112D31593C00F21247 /* TicketScannerView.swift */,
 			);
-			path = Events;
+			path = Tickets;
 			sourceTree = "<group>";
 		};
 		4F3408022D2EE2EC00F21247 /* Admin */ = {
@@ -351,7 +348,7 @@
 			isa = PBXGroup;
 			children = (
 				4F3408022D2EE2EC00F21247 /* Admin */,
-				4F3407FD2D2C4E9900F21247 /* Events */,
+				4F3407FD2D2C4E9900F21247 /* Tickets */,
 				4FED5C5A2BF61F6D00CC5BFE /* Camera */,
 				4F31B8952BDBAB7D007892BC /* Groups */,
 				4F31B8932BDBAA85007892BC /* Auth */,
@@ -582,7 +579,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F3407FF2D2C4EA700F21247 /* Events.swift in Sources */,
 				4F375D102B02A1320011F541 /* Entry.swift in Sources */,
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
@@ -777,7 +773,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 108;
+				CURRENT_PROJECT_VERSION = 109;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -804,7 +800,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 9.3;
+				MARKETING_VERSION = 9.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -824,7 +820,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 108;
+				CURRENT_PROJECT_VERSION = 109;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -851,7 +847,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 9.3;
+				MARKETING_VERSION = 9.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

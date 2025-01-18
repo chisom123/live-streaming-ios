@@ -9,7 +9,6 @@ class Competition: ObservableObject, Identifiable {
     @Published var date: Date
     @Published var entriesNotVotedCount: Int = 0
     @Published var isEvent: Bool = false
-    @Published var isUserVerified: Bool = false
     
     init(id: String, description: String, date: Date, entriesNotVotedCount: Int = 0, isEvent: Bool = false) {
         self.id = id
@@ -26,26 +25,39 @@ extension Competition {
         return Date() >= event.startDateTime
     }
     
-    func checkVerificationStatus() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        db.collection("competitions")
-            .document(id)
-            .collection("members")
-            .document(userId)
-            .getDocument { [weak self] snapshot, error in
-                DispatchQueue.main.async {
-                    self?.isUserVerified = snapshot?.exists ?? false
-                }
-            }
+    var hasEnded: Bool {
+        guard let event = self as? Event,
+              let endDateTime = event.endDateTime else { return false }
+        return Date() >= endDateTime
     }
     
     func markUserAsVerified(userId: String) {
-        db.collection("competitions")
-            .document(id)
-            .collection("members")
+        let db = Firestore.firestore()
+        
+        // First, add competition to user's group memberships
+        let groupMembershipRef = db.collection("groupMemberships")
             .document(userId)
-            .setData(["userId": userId])
+            .collection("competitions")
+            .document(id)
+        
+        groupMembershipRef.setData(["competitionId": id]) { error in
+            if let error = error {
+                print("Error adding competition to group memberships: \(error)")
+                return
+            }
+            
+            // After successfully adding to group memberships, add to members
+            let memberRef = db.collection("competitions")
+                .document(self.id)
+                .collection("members")
+                .document(userId)
+            
+            memberRef.setData(["userId": userId]) { error in
+                if let error = error {
+                    print("Error adding user to competition members: \(error)")
+                }
+            }
+        }
     }
 }
 
@@ -89,6 +101,7 @@ class CompetitionsModel: ObservableObject {
         // Variables to store results from parallel queries
         var eventIds = Set<String>()
         var competitionDocs: [QueryDocumentSnapshot]?
+        var eventMetadata: [String: (location: String, startDateTime: Timestamp?, endDateTime: Timestamp?)] = [:]
         
         // Fetch events in parallel
         group.enter()
@@ -101,6 +114,16 @@ class CompetitionsModel: ObservableObject {
                     return
                 }
                 eventIds = Set(eventSnapshot?.documents.map { $0.documentID } ?? [])
+                eventMetadata = Dictionary(
+                    uniqueKeysWithValues: eventSnapshot?.documents.map { doc in
+                        let data = doc.data()
+                        return (doc.documentID, (
+                            location: data["location"] as? String ?? "",
+                            startDateTime: data["startDateTime"] as? Timestamp,
+                            endDateTime: data["endDateTime"] as? Timestamp
+                        ))
+                    } ?? []
+                )
             }
         
         // Fetch competitions in parallel
@@ -125,12 +148,24 @@ class CompetitionsModel: ObservableObject {
             
             let competitions = documents.compactMap { doc -> Competition? in
                 let data = doc.data()
-                return Competition(
-                    id: doc.documentID,
-                    description: data["description"] as? String ?? "No Description",
-                    date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(),
-                    isEvent: eventIds.contains(doc.documentID)
-                )
+                let isEvent = eventIds.contains(doc.documentID)
+                
+                if isEvent, let metadata = eventMetadata[doc.documentID] {
+                    return Event(
+                        id: doc.documentID,
+                        description: data["description"] as? String ?? "No Description",
+                        startDateTime: metadata.startDateTime?.dateValue() ?? Date(),
+                        endDateTime: metadata.endDateTime?.dateValue(),
+                        location: metadata.location
+                    )
+                } else {
+                    return Competition(
+                        id: doc.documentID,
+                        description: data["description"] as? String ?? "No Description",
+                        date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(),
+                        isEvent: isEvent
+                    )
+                }
             }
             
             // Update competitions and fetch entry counts in parallel

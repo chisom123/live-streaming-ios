@@ -10,8 +10,7 @@ struct TicketScannerView: View {
     @State private var verificationResult: TicketVerificationService.TicketVerificationResult?
     @State private var isVerifying = false
     @State private var verificationSuccess = false
-    
-    let event: Event
+    @State private var showingCompDetails = false
     
     var body: some View {
         VStack {
@@ -109,7 +108,7 @@ struct TicketScannerView: View {
                     
                     if verificationSuccess {
                         Button(action: {
-                            presentationMode.wrappedValue.dismiss()
+                            showingCompDetails = true
                         }) {
                             Text("Continue")
                                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -147,6 +146,12 @@ struct TicketScannerView: View {
                 Spacer()
             }
         }
+        // NEW: Add navigation to CompDetails when matching event is found
+        .fullScreenCover(isPresented: $showingCompDetails) {
+            if let matchedEvent = verificationResult?.matchedEvent {
+                CompDetails(competition: matchedEvent)
+            }
+        }
     }
     
     private func loadTransferable() {
@@ -165,6 +170,7 @@ struct TicketScannerView: View {
                 await MainActor.run {
                     verificationResult = TicketVerificationService.TicketVerificationResult(
                         isValid: false,
+                        matchedEvent: nil,  // UPDATED: Added matchedEvent parameter
                         barcode: nil,
                         date: nil,
                         location: nil,
@@ -179,16 +185,15 @@ struct TicketScannerView: View {
         isVerifying = true
         
         Task {
-            let result = await TicketVerificationService.shared.verifyTicket(image: cgImage, event: event)
+            let result = await TicketVerificationService.shared.verifyTicketAndFindEvent(image: cgImage)
             
             await MainActor.run {
                 verificationResult = result
                 isVerifying = false
                 
-                if result.isValid {
+                if result.isValid, let matchedEvent = result.matchedEvent {
                     guard let userId = Auth.auth().currentUser?.uid else { return }
-                    event.markUserAsVerified(userId: userId)
-                    event.checkVerificationStatus()
+                    matchedEvent.markUserAsVerified(userId: userId)
                     PostHogSDK.shared.capture("Ticket Verified")
                     verificationSuccess = true
                 }
