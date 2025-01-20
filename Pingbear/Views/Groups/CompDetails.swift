@@ -83,11 +83,10 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(isEventEnabled() ? Color(hex: "#000") : Color(hex: "#A9A9A9"))
+                            .foregroundColor(Color(hex: "#000"))
                             .clipShape(Circle())
                     }
-                    .disabled(!isEventEnabled())
-                    
+
                     Button(action: {
                         entryViewModel.removeListeners()
                         vote()
@@ -97,11 +96,11 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background((entryViewModel.hasEntriesToVoteOn && isEventEnabled()) ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
                             .foregroundColor(Color.white)
                             .cornerRadius(200)
                     }
-                    .disabled(!(entryViewModel.hasEntriesToVoteOn && isEventEnabled()))
+                    .disabled(!entryViewModel.hasEntriesToVoteOn)
                     
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -111,10 +110,9 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(isEventEnabled() ? Color(hex: "#000") : Color(hex: "#A9A9A9"))
+                            .foregroundColor(Color(hex: "#000"))
                             .clipShape(Circle())
                     }
-                    .disabled(!isEventEnabled())
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
@@ -126,16 +124,7 @@ struct CompDetails: View {
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if competition.hasEnded {
-                        EventEndedNoticeView()
-                    }
-                    
-                    if competition.isEvent && !competition.hasStarted {
-                        if let event = competition as? Event {
-                            EventNotStartedView(event: event)
-                            Spacer()
-                        }
-                    } else if entryViewModel.userLeaderboard.isEmpty && !competition.hasEnded {
+                    if entryViewModel.userLeaderboard.isEmpty {
                         EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
                     } else {
@@ -193,10 +182,6 @@ struct CompDetails: View {
                 self.isLoading = false
             }
         }
-    }
-    
-    private func isEventEnabled() -> Bool {
-        return !competition.isEvent || (competition.hasStarted && !competition.hasEnded)
     }
 
     func leaderboardRowView(_ userName: String, _ stars: Int) -> some View {
@@ -313,125 +298,5 @@ struct EmptyLeaderboardView: View {
         .background(Color(hex: "#F5F5F5"))
         .cornerRadius(5)
         .padding(.horizontal, 20)
-    }
-}
-
-struct EventNotStartedView: View {
-    let event: Event
-    @State private var isSubscribed = false
-    @State private var isLoading = false
-    
-    private func formatDate(_ date: Date) -> String {
-        let calendar = Calendar.current
-        
-        if calendar.isDateInToday(date) {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "h:mm a"
-            return "Today at \(timeFormatter.string(from: date))"
-        } else if calendar.isDateInTomorrow(date) {
-            let timeFormatter = DateFormatter()
-            timeFormatter.dateFormat = "h:mm a"
-            return "Tomorrow at \(timeFormatter.string(from: date))"
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d'\(dayOrdinal(from: date))' MMM 'at' h:mm a"
-            return formatter.string(from: date)
-        }
-    }
-
-    private func dayOrdinal(from date: Date) -> String {
-        let calendar = Calendar.current
-        let day = calendar.component(.day, from: date)
-        
-        switch day {
-        case 1, 21, 31: return "st"
-        case 2, 22: return "nd"
-        case 3, 23: return "rd"
-        default: return "th"
-        }
-    }
-    
-    private func subscribeToNotifications() {
-        isLoading = true
-        
-        Task {
-            let scheduled = await NotificationService.shared.scheduleEventNotifications(event: event)
-            
-            DispatchQueue.main.async {
-                isSubscribed = scheduled
-                isLoading = false
-                
-                if scheduled {
-                    PostHogSDK.shared.capture("Public Competition Notification Subscribed",
-                        properties: ["eventId": event.id])
-                }
-            }
-        }
-    }
-    
-    var body: some View {
-        VStack {
-            Text("Competition Starting Soon")
-                .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.black)
-                .padding(.top, 20)
-                .padding(.bottom, 20)
-            
-            Text("\(formatDate(event.startDateTime))")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .padding(.bottom, 20)
-            
-            Button(action: subscribeToNotifications) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    } else if isSubscribed {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 20, weight: .bold))
-                    } else {
-                        Text("Remind Me")
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                    }
-                }
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .font(.system(size: 18, weight: .bold, design: .default))
-                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                .background(isSubscribed ? Color(hex: "#4CAF50") : Color(hex: "#1199FF"))
-                .foregroundColor(Color(hex: "#fff"))
-                .cornerRadius(200)
-            }
-            .disabled(isSubscribed || isLoading)
-            .padding(.bottom, 20)
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
-        .padding(.horizontal, 20)
-    }
-}
-
-struct EventEndedNoticeView: View {
-    var body: some View {
-        HStack {
-            Text("Competition Ended")
-                .font(.system(size: 16, weight: .bold))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .padding(.leading, 10)
-                .foregroundColor(Color.black)
-            
-            Spacer()
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 15)
     }
 }

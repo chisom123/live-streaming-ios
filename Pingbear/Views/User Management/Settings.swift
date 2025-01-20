@@ -11,8 +11,6 @@ struct SettingsView: View {
     @State private var showAddFriendsView = false  // State to control the full screen cover for ChangeNameView
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
-    @StateObject private var adminAuthManager = AdminAuthManager.shared
-    @State private var showAdminDashboard = false
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
     
     func signOut() {
@@ -115,26 +113,6 @@ struct SettingsView: View {
                             .fullScreenCover(isPresented: $showChangeNameView) {  // Use the full screen cover modifier
                                 ChangeNameView()
                             }
-                            
-                            if AdminAuthManager.shared.isAdmin {
-                                Button(action: {
-                                    self.showAdminDashboard = true
-                                }) {
-                                    HStack {
-                                        Text("Events Dashboard")
-                                            .font(.system(size: 16, weight: .bold, design: .default))
-                                            .foregroundColor(Color(hex: "#1199FF"))
-                                        Spacer()
-                                    }
-                                    .padding([.top, .bottom], 20)
-                                    .padding([.leading, .trailing], 20)
-                                }
-                                .background(Color(hex: "#F5F5F5"))
-                                .cornerRadius(5)
-                                .fullScreenCover(isPresented: $showAdminDashboard) {
-                                    AdminDashboardView()
-                                }
-                            }
                         }
                         
                         VStack(spacing: 25) {
@@ -205,9 +183,6 @@ struct SettingsView: View {
                     .padding([.leading, .trailing], 20)
                 }
             }
-        }
-        .onAppear {
-            adminAuthManager.checkAdminStatus()
         }
     }
 }

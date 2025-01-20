@@ -6,7 +6,6 @@ struct MyCompsView: View {
     @State private var selectedCompetition: Competition?
     @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var isLoading = true
-    @State private var showingTicketScanner = false
     
     var body: some View {
         VStack {
@@ -19,35 +18,17 @@ struct MyCompsView: View {
 
                 Spacer() // Pushes the remaining content to the trailing edge
                 
-                HStack(spacing: 25) {
-                    Button(action: {
-                        viewModel.cleanupListeners()
-                        showingTicketScanner = true
-                    }) {
-                        Image(systemName: "doc.viewfinder")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 22, height: 22)
-                            .foregroundColor(Color(hex: "#1199FF"))
-                            .background(
-                                Circle()
-                                    .fill(Color(hex: "#F5F5F5"))
-                                    .frame(width: 40, height: 40)
-                            )
-                    }
-                    
-                    Button(action: {
-                        viewModel.cleanupListeners()
-                        isPresentingNewCompetition = true
-                    }) {
-                        Image(systemName: "plus.circle.fill")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 40, height: 40) // Adjust the size as needed
-                            .foregroundColor(Color(hex: "#1199FF")) // Your desired color
-                            .background(Color.white)
-                            .clipShape(Circle())
-                    }
+                Button(action: {
+                    viewModel.cleanupListeners()
+                    isPresentingNewCompetition = true
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 40, height: 40) // Adjust the size as needed
+                        .foregroundColor(Color(hex: "#1199FF")) // Your desired color
+                        .background(Color.white)
+                        .clipShape(Circle())
                 }
                 .padding(.trailing, 20)
             }
@@ -62,10 +43,6 @@ struct MyCompsView: View {
                     newCompAction: {
                         viewModel.cleanupListeners()
                         isPresentingNewCompetition = true
-                    },
-                    verifyTicketAction: {
-                        viewModel.cleanupListeners()
-                        showingTicketScanner = true
                     }
                 )
                 Spacer()
@@ -120,9 +97,6 @@ struct MyCompsView: View {
         .fullScreenCover(isPresented: $isPresentingNewCompetition) {
             NewCompetition()
         }
-        .fullScreenCover(isPresented: $showingTicketScanner) {
-            TicketScannerView()
-        }
         .onAppear {
             fetchData()
         }
@@ -144,7 +118,6 @@ struct MyCompsView: View {
 
 struct EmptyCompsView: View {
     var newCompAction: () -> Void
-    var verifyTicketAction: () -> Void
     
     var body: some View {
         VStack {
@@ -153,33 +126,20 @@ struct EmptyCompsView: View {
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.bottom, 20)
             
-            Text("Verify your ticket or start a competition")
+            Text("Start a competition or wait to be added")
                 .font(.system(size: 17, weight: .bold, design: .default))
                 .foregroundColor(.gray) // Set the text color as needed
                 .multilineTextAlignment(.center)
                 .lineSpacing(10)
                 .padding(.bottom, 25)
             
-            HStack(spacing: 10) {
-                Button(action: verifyTicketAction) {  // This button now uses the passed function
-                    Text("Verify Ticket")
-                        .font(.system(size: 17, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 12, leading: 15, bottom: 12, trailing: 15))
-                        .background(Color(hex: "#F5F5F5"))
-                        .foregroundColor(Color(hex: "#1199FF"))
-                        .cornerRadius(200)
-                }
-                
-                Button(action: newCompAction) {  // This button now uses the passed function
-                    Text("New Competition")
-                        .font(.system(size: 17, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 12, leading: 15, bottom: 12, trailing: 15))
-                        .background(Color(hex: "#1199FF"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
-                }
-                
-
+            Button(action: newCompAction) {  // This button now uses the passed function
+                Text("New Competition")
+                    .font(.system(size: 17, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
             }
         }
         .padding(.horizontal, 20)
