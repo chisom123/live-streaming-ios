@@ -98,6 +98,8 @@ struct NewCompetition: View {
                 Button(action: {
                     if isValidName(competitionDescription) {
                         showingAddFriendsView = true
+                        errorMessage = nil
+                        hideKeyboard()
                     } else {
                         errorMessage = "Please enter a name"
                     }
@@ -122,8 +124,7 @@ struct NewCompetition: View {
         .fullScreenCover(isPresented: $showingAddFriendsView) {
             AddFriendsToCompetition(
                 competitionName: competitionDescription,
-                viewModel: MyFriendsModel(),
-                addFriendsModel: AddFriendsModel()
+                viewModel: MyFriendsModel()
             )
         }
     }

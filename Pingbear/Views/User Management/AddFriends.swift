@@ -71,6 +71,7 @@ struct AddFriendsView: View {
                             if success {
                                 messageStatus = .success
                                 username = ""
+                                hideKeyboard()
                             } else {
                                 messageStatus = .error
                             }

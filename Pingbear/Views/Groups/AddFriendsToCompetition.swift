@@ -6,11 +6,10 @@ import PostHog
 struct AddFriendsToCompetition: View {
     let competitionName: String
     @ObservedObject var viewModel: MyFriendsModel
-    @ObservedObject var addFriendsModel: AddFriendsModel
+    @State private var showAddFriendsView = false
     @Environment(\.presentationMode) var presentationMode
     
     @State private var selectedFriends: Set<String> = []
-    @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var competition: Competition? = nil
     @State private var isProcessing = false
@@ -42,87 +41,62 @@ struct AddFriendsToCompetition: View {
                 
                 Spacer()
                 
-                Text("Add 2 Friends to Start")
+                Text("Add Friends to Competition")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
                     .foregroundColor(.black)
                     .padding(.horizontal)
+                    .truncationMode(.tail) // Adds an ellipsis at the end of the text if it's too long
+                    .lineLimit(1) // Ensures the text is on a single line
                     .onAppear {
                         PostHogSDK.shared.capture("Add 2+ Friends View Opened")
                     }
                 
                 Spacer()
                 
-                Button(action: {}) {
-                    Image(systemName: "arrow.left")
+                Button(action: {
+                    self.showAddFriendsView = true
+                }) {
+                    Image(systemName: "person.fill.badge.plus")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 27, height: 27)
                         .foregroundColor(.black)
                 }
-                .opacity(0)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
             
             VStack {
-                // Add friend by username
-                HStack(alignment: .center, spacing: 10) {
-                    TextField("Enter friend's username", text: $username)
-                        .padding()
-                        .padding(.vertical, 5)
-                        .background(Color(hex: "#F5F5F5"))
-                        .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(5)
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                    
-                    Button(action: {
-                        addFriendByUsername()
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 22, weight: .bold, design: .default))
-                            .padding()
-                            .padding(.vertical, 5)
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(5)
-                    }
-                }
-                .padding(.top, 15)
-                
                 if let error = errorMessage {
                     Text(error)
                         .foregroundColor(Color(hex: "#CC2255"))
                         .font(.system(size: 16, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .padding(.top, 30)
+                        .padding(.top, 20)
                         .padding(.horizontal)
                 }
-                
-                // Friends list header
-                HStack {
-                    Text("My Friends")
-                        .font(.system(size: 16, weight: .bold, design: .default))
+
+                if viewModel.friends.isEmpty {
                     Spacer()
-                }
-                .padding(.top, 25)
-                .padding(.bottom, 25)
-                .frame(maxWidth: .infinity)
-                
-                // Friends list
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(viewModel.friends) { friend in
-                            SelectableFriendView(
-                                friend: friend.name,
-                                isSelected: selectedFriends.contains(friend.id)
-                            ) {
-                                if selectedFriends.contains(friend.id) {
-                                    selectedFriends.remove(friend.id)
-                                } else {
-                                    selectedFriends.insert(friend.id)
+                    EmptyFriendsView(openSnapchatAction: shareToSnapchat)
+                    Spacer()
+                } else {
+                    // Friends list
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(viewModel.friends) { friend in
+                                SelectableFriendView(
+                                    friend: friend.name,
+                                    isSelected: selectedFriends.contains(friend.id)
+                                ) {
+                                    if selectedFriends.contains(friend.id) {
+                                        selectedFriends.remove(friend.id)
+                                    } else {
+                                        selectedFriends.insert(friend.id)
+                                    }
                                 }
                             }
                         }
@@ -156,40 +130,22 @@ struct AddFriendsToCompetition: View {
         .fullScreenCover(item: $competition) { comp in
             CompDetails(competition: comp)
         }
+        .fullScreenCover(isPresented: $showAddFriendsView, onDismiss: {
+            viewModel.fetchFriends()
+        }) {
+            AddFriendsView(addFriendsModel: AddFriendsModel())
+        }
     }
     
-    private func addFriendByUsername() {
-        let processedUsername = username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+    private func shareToSnapchat() {
+        PostHogSDK.shared.capture("Share to Snapchat Tapped")
         
-        // First find the user ID for the username
-        let db = Firestore.firestore()
-        db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { [self] (querySnapshot, err) in
-            if let err = err {
-                errorMessage = "Error finding user: \(err.localizedDescription)"
-                return
-            }
-            
-            guard let document = querySnapshot?.documents.first else {
-                errorMessage = "Failed to add friend"
-                return
-            }
-            
-            let friendId = document.documentID
-            
-            // Then add the friend using the existing model
-            addFriendsModel.addFriend(byUsername: processedUsername) { [self] success, error in
-                if success {
-                    // After successful addition, fetch updated friends list and select the new friend
-                    viewModel.fetchFriends { [self] in
-                        selectedFriends.insert(friendId)
-                        username = ""
-                        errorMessage = nil
-                        hideKeyboard()
-                    }
-                } else {
-                    errorMessage = error?.localizedDescription ?? "Failed to add friend"
-                }
-            }
+        do {
+            try SnapchatShare.openSnapchat()
+        } catch SnapError.snapchatNotInstalled {
+            errorMessage = "Snapchat not installed"
+        } catch {
+            errorMessage = "Failed to share to Snapchat"
         }
     }
     
@@ -294,5 +250,54 @@ struct AddFriendsToCompetition: View {
                 }
             }
         }
+    }
+}
+
+struct EmptyFriendsView: View {
+    var openSnapchatAction: () -> Void
+    
+    var body: some View {
+        VStack {
+            Text("Invite Friends")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.black) // Set the text color as needed
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+            
+            Text("Please invite 2+ friends to start this competition")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
+                .padding(.bottom, 25)
+            
+            Button(action: openSnapchatAction) {
+                ZStack {
+                    HStack {
+                        Image("Snapchat")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 60, height: 60)
+                            .padding(.leading, 8)
+                        Spacer()
+                    }
+                    
+                    Text("Open Snapchat")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+                .frame(height: 44)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .font(.system(size: 18, weight: .bold, design: .default))
+                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .background(Color(hex: "#fffc00"))
+                .foregroundColor(Color(hex: "#000"))
+                .cornerRadius(200)
+            }
+            .padding(.bottom, 20)
+        }
+        .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
     }
 }
