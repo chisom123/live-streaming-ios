@@ -15,7 +15,7 @@ struct NewCompetition: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionDescription: String = ""
     @State private var errorMessage: String? = nil
-    @State private var selectedCompetition: Competition?
+    @State private var showingAddFriendsView = false
 
     
     func isValidName(_ name: String) -> Bool {
@@ -96,7 +96,11 @@ struct NewCompetition: View {
                 }
         
                 Button(action: {
-                    newgroup()
+                    if isValidName(competitionDescription) {
+                        showingAddFriendsView = true
+                    } else {
+                        errorMessage = "Please enter a name"
+                    }
                 }) {
                     Text("Continue")
                         .frame(maxWidth: .infinity, minHeight: 44)
@@ -115,64 +119,12 @@ struct NewCompetition: View {
             }
 
         }
-        .fullScreenCover(item: $selectedCompetition) { competition in
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
-        }
-    }
-
-    func newgroup() {
-
-        // Get the current user's ID
-        guard let userID = Auth.auth().currentUser?.uid else {
-            print("Error: User not logged in")
-            return
-        }
-        
-        // Validate the name
-        guard isValidName(competitionDescription) else {
-            errorMessage = "Please enter a name"
-            return
-        }
-        
-        let db = Firestore.firestore()
-        let batch = db.batch()
-        
-        let competitionRef = db.collection("competitions").document()
-        let competitionData: [String: Any] = [
-            "description": competitionDescription,
-            "timestamp": Timestamp()
-        ]
-        
-        batch.setData(competitionData, forDocument: competitionRef)
-        
-        // Set the user as a member in the "members" subcollection of the new competition
-        let memberRef = competitionRef.collection("members").document(userID)
-        let memberData: [String: Any] = [
-            "userId": userID
-        ]
-        batch.setData(memberData, forDocument: memberRef)
-        
-        // Correctly reference the 'groupMemberships' under the user's document
-        let groupMembershipRef = db.collection("groupMemberships").document(userID)
-                                      .collection("competitions").document(competitionRef.documentID)
-        let membershipData: [String: Any] = [
-            "competitionId": competitionRef.documentID
-        ]
-        batch.setData(membershipData, forDocument: groupMembershipRef)
-        
-        batch.commit { err in
-            if let err = err {
-                errorMessage = "Failed to create competition: \(err.localizedDescription)"
-            } else {
-                DispatchQueue.main.async {
-                    selectedCompetition = Competition(
-                        id: competitionRef.documentID,
-                        description: competitionDescription,
-                        date: Date()
-                    )
-                }
-                PostHogSDK.shared.capture("New Competition", properties: ["name": competitionDescription])
-            }
+        .fullScreenCover(isPresented: $showingAddFriendsView) {
+            AddFriendsToCompetition(
+                competitionName: competitionDescription,
+                viewModel: MyFriendsModel(),
+                addFriendsModel: AddFriendsModel()
+            )
         }
     }
 }

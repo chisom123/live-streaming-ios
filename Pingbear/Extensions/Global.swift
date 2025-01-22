@@ -51,3 +51,9 @@ func formattedPrice(for product: SKProduct) -> String {
     formatter.locale = product.priceLocale
     return formatter.string(from: product.price) ?? "\(product.price)"
 }
+
+extension View {
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
