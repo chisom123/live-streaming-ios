@@ -15,10 +15,6 @@
 		<dict/>
 		<dict/>
 	</array>
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>snapchat</string>
-    </array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

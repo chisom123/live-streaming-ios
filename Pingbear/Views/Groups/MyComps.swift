@@ -1,10 +1,11 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
+import PostHog
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
-    @State private var isPresentingNewCompetition = false // State to control the presentation of the New Competition View
     @State private var isLoading = true
     
     var body: some View {
@@ -20,7 +21,7 @@ struct MyCompsView: View {
                 
                 Button(action: {
                     viewModel.cleanupListeners()
-                    isPresentingNewCompetition = true
+                    createNewCompetition()
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .resizable()
@@ -42,7 +43,7 @@ struct MyCompsView: View {
                 EmptyCompsView(
                     newCompAction: {
                         viewModel.cleanupListeners()
-                        isPresentingNewCompetition = true
+                        createNewCompetition()
                     }
                 )
                 Spacer()
@@ -94,9 +95,6 @@ struct MyCompsView: View {
         .fullScreenCover(item: $selectedCompetition) { comp in
             CompDetails(competition: comp)
         }
-        .fullScreenCover(isPresented: $isPresentingNewCompetition) {
-            NewCompetition()
-        }
         .onAppear {
             fetchData()
         }
@@ -112,6 +110,51 @@ struct MyCompsView: View {
         
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
+        }
+    }
+    
+    private func createNewCompetition() {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("Error: User not logged in")
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let batch = db.batch()
+        
+        let competitionRef = db.collection("competitions").document()
+        let timestamp = Timestamp()
+        let defaultName = "Untitled Competition"
+        
+        let competitionData: [String: Any] = [
+            "description": defaultName,
+            "timestamp": timestamp
+        ]
+        
+        batch.setData(competitionData, forDocument: competitionRef)
+        
+        // Set user as member
+        let memberRef = competitionRef.collection("members").document(userID)
+        batch.setData(["userId": userID], forDocument: memberRef)
+        
+        // Add to user's groupMemberships
+        let groupMembershipRef = db.collection("groupMemberships").document(userID)
+                                  .collection("competitions").document(competitionRef.documentID)
+        batch.setData(["competitionId": competitionRef.documentID], forDocument: groupMembershipRef)
+        
+        batch.commit { err in
+            if let err = err {
+                print("Failed to create competition: \(err.localizedDescription)")
+            } else {
+                DispatchQueue.main.async {
+                    self.selectedCompetition = Competition( // Changed to use existing selectedCompetition
+                        id: competitionRef.documentID,
+                        description: defaultName,
+                        date: timestamp.dateValue()
+                    )
+                }
+                PostHogSDK.shared.capture("New Competition", properties: ["name": defaultName])
+            }
         }
     }
 }

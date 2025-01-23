@@ -12,6 +12,7 @@ struct CompDetails: View {
     @State private var isMembersPresented = false
     @State private var isMyPostsPresented = false
     @State private var isVotingPresented = false
+    @State private var isEditingCompetition = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
     @State private var showPermissionAlert = false
@@ -46,14 +47,19 @@ struct CompDetails: View {
                     
                     Spacer() // This spacer will ensure the two buttons are at opposite ends.
                     
-                    Text(competition.description)
-                        .font(.system(size: 17, weight: .bold, design: .default))
-                        .lineLimit(1)
-                        .foregroundColor(.black)
-                        .padding(.horizontal)
-                        .onAppear {
-                            PostHogSDK.shared.capture("Comp Details View Opened")
-                        }
+                    // Just make the Text view into a Button
+                    Button(action: {
+                        isEditingCompetition = true
+                    }) {
+                        Text(competition.description)
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .lineLimit(1)
+                            .foregroundColor(.black)
+                            .padding(.horizontal)
+                            .onAppear {
+                                PostHogSDK.shared.capture("Comp Details View Opened")
+                            }
+                    }
                     
                     Spacer()
                     
@@ -160,6 +166,9 @@ struct CompDetails: View {
         }
         .fullScreenCover(isPresented: $isMyPostsPresented) {
             MyPostsView(competition: competition)
+        }
+        .sheet(isPresented: $isEditingCompetition) {
+            EditCompetitionView(competition: competition)
         }
         .onDisappear {
             entryViewModel.removeListeners()
