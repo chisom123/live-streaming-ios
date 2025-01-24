@@ -16,6 +16,7 @@ struct CompDetails: View {
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
     @State private var showPermissionAlert = false
+    @State private var showingJoinSelectView = false
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -139,10 +140,18 @@ struct CompDetails: View {
                                 ForEach(entryViewModel.userLeaderboard) { userEntry in
                                     leaderboardRowView(userEntry.userName, userEntry.totalStars)
                                 }
+                                
+                                if entryViewModel.totalMemberCount == 1 {
+                                    dummyFriendRow()
+                                    dummyFriendRow()
+                                } else if entryViewModel.totalMemberCount == 2 {
+                                    dummyFriendRow()
+                                }
                             }
                         }
                         .refreshable {
                             entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
+                            entryViewModel.fetchMemberCount()
                         }
                     }
                 }
@@ -167,6 +176,9 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isMyPostsPresented) {
             MyPostsView(competition: competition)
         }
+        .fullScreenCover(isPresented: $showingJoinSelectView) {
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+        }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
         }
@@ -187,6 +199,7 @@ struct CompDetails: View {
         isLoading = true
         
         entryViewModel.fetchEntries(mode: .compDetailsView) {
+            entryViewModel.fetchMemberCount()
             DispatchQueue.main.async {
                 self.isLoading = false
             }
@@ -225,6 +238,53 @@ struct CompDetails: View {
         .cornerRadius(5)
         .padding(.horizontal, 20)
     }
+    
+    private func dummyFriendRow() -> some View {
+        HStack {
+            HStack(spacing: 8) {
+                Text("Add Friend")
+                    .font(.system(size: 16, weight: .bold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .foregroundColor(Color.black.opacity(0.25))  // Black with 50% opacity
+                    .padding(.leading, 10)
+                
+                Image(systemName: "plus.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 17, height: 17)
+                    .foregroundColor(Color.black.opacity(0.25))
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Text("0")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(Color.white)
+                
+                Image(systemName: "star.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                    .foregroundColor(Color.white)
+            }
+            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+            .background(Color(hex: "#D3D3D3"))
+            .cornerRadius(200)
+            .padding(.trailing, 10)
+        }
+        .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
+        .onTapGesture {
+            entryViewModel.removeListeners()
+            showingJoinSelectView = true
+            PostHogSDK.shared.capture("Tapped Add Friend From Leaderboard Prompt")
+        }
+    }
+    
     
     func initiateVideoCapture() {
         entryViewModel.removeListeners()
@@ -277,7 +337,7 @@ struct EmptyLeaderboardView: View {
     var body: some View {
         VStack {
             
-            Text("No Photos Yet")
+            Text("No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)

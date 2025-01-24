@@ -60,18 +60,6 @@ struct MembersView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 15)
                 
-                HStack {
-                    Text("Competitors")
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                    
-                    Spacer()
-                    
-                }
-                .padding(.top, 25)
-                .padding(.bottom, 25)
-                .padding(.horizontal, 20)
-                .frame(maxWidth: .infinity)
-                
                 ScrollView {
                     VStack(spacing: 20) {
                         ForEach(viewModel.members) { member in

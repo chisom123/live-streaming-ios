@@ -27,6 +27,7 @@ class EntryViewModel: ObservableObject {
     @Published var hasEntriesToVoteOn: Bool = false
     var competitionId: String
     @Published var currentIndex: Int = 0
+    @Published var totalMemberCount: Int = 0
     
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
@@ -42,6 +43,9 @@ class EntryViewModel: ObservableObject {
         self.competitionId = competitionId
         fetchEntries(mode: mode)
         setupListeners(mode: mode)
+        if mode == .compDetailsView {
+            fetchMemberCount()
+        }
     }
     
     deinit {
@@ -323,5 +327,21 @@ class EntryViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    func fetchMemberCount() {
+        db.collection("competitions")
+            .document(competitionId)
+            .collection("members")
+            .getDocuments { [weak self] snapshot, error in
+                if let error = error {
+                    print("Error fetching member count: \(error)")
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self?.totalMemberCount = snapshot?.documents.count ?? 0
+                }
+            }
     }
 }
