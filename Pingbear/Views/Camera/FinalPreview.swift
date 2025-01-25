@@ -309,11 +309,13 @@ struct FinalPreview: View {
                     print("Entry saved successfully")
                     
                     DispatchQueue.main.async {
-                        if superstar {
-                            self.navigateToCompDetails = true // Navigate to competition details if superstar
-                        } else {
-                            self.entrySaved = true // Trigger entry saved flow if not superstar
-                        }
+                        self.navigateToCompDetails = true
+                        
+//                        if superstar {
+//                            self.navigateToCompDetails = true
+//                        } else {
+//                            self.entrySaved = true
+//                        }
                     }
                 }
 
