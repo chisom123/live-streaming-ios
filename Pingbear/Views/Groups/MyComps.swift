@@ -124,7 +124,7 @@ struct MyCompsView: View {
         
         let competitionRef = db.collection("competitions").document()
         let timestamp = Timestamp()
-        let defaultName = "Untitled Competition"
+        let defaultName = "Unnamed Competition"
         
         let competitionData: [String: Any] = [
             "description": defaultName,

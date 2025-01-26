@@ -39,7 +39,7 @@ struct JoinSelectView: View {
                 
                 Spacer()
                 
-                Text("Add Friends to Competition")
+                Text("Add Players to Competition")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -94,7 +94,7 @@ struct JoinSelectView: View {
                             .cornerRadius(5)
                     }
                 }
-                .padding(.top, 15)
+                .padding(.vertical, 15)
                 
                 if let status = messageStatus {
                     switch status {
@@ -104,7 +104,7 @@ struct JoinSelectView: View {
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
-                            .padding(.top, 30)
+                            .padding(.bottom, 15)
                             .padding(.horizontal)
                     case .success(let message):
                         Text(message)
@@ -112,25 +112,12 @@ struct JoinSelectView: View {
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
-                            .padding(.top, 30)
+                            .padding(.bottom, 15)
                             .padding(.horizontal)
                     case .none:
                         EmptyView()
                     }
                 }
-                
-                // List of friends and Add Friends Button
-                HStack {
-                    Text("My Friends")
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                    
-                    Spacer()
-                    
-                }
-                .padding(.top, 25)
-                .padding(.bottom, 25)
-                .frame(maxWidth: .infinity)
-                
                 
                 ScrollView {
                     VStack(spacing: 20) {

@@ -132,7 +132,7 @@ struct CompDetails: View {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     if entryViewModel.userLeaderboard.isEmpty {
-                        EmptyLeaderboardView(action: initiateVideoCapture)
+                        EmptyLeaderboardView(action: initiateVideoCapture, action_player: addPlayer, totalMemberCount: entryViewModel.totalMemberCount)
                         Spacer()
                     } else {
                         ScrollView {
@@ -241,20 +241,12 @@ struct CompDetails: View {
     
     private func dummyFriendRow() -> some View {
         HStack {
-            HStack(spacing: 8) {
-                Text("Add Friend")
-                    .font(.system(size: 16, weight: .bold))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .foregroundColor(Color.black.opacity(0.25))  // Black with 50% opacity
-                    .padding(.leading, 10)
-                
-                Image(systemName: "plus.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 17, height: 17)
-                    .foregroundColor(Color.black.opacity(0.25))
-            }
+            Text("Missing Player")
+                .font(.system(size: 16, weight: .bold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundColor(Color.gray)  // Black with 50% opacity
+                .padding(.leading, 10)
 
             Spacer()
 
@@ -279,9 +271,7 @@ struct CompDetails: View {
         .cornerRadius(5)
         .padding(.horizontal, 20)
         .onTapGesture {
-            entryViewModel.removeListeners()
-            showingJoinSelectView = true
-            PostHogSDK.shared.capture("Tapped Add Friend From Leaderboard Prompt")
+            addPlayer()
         }
     }
     
@@ -329,15 +319,21 @@ struct CompDetails: View {
             UIApplication.shared.open(settingsUrl)
         }
     }
+    func addPlayer() {
+        entryViewModel.removeListeners()
+        showingJoinSelectView = true
+        PostHogSDK.shared.capture("Tapped Add Player From Prompt")
+    }
 }
 
 struct EmptyLeaderboardView: View {
     var action: () -> Void
+    var action_player: () -> Void
+    var totalMemberCount: Int
     
     var body: some View {
         VStack {
-            
-            Text("No Activity Yet")
+            Text(totalMemberCount < 2 ? "Not Enough Players" : "No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)
@@ -350,8 +346,14 @@ struct EmptyLeaderboardView: View {
                 .lineSpacing(10)
                 .padding(.bottom, 25)
             
-            Button(action: action) {  // This button now uses the passed function
-                Text("New Photo")
+            Button(action: {
+                if totalMemberCount < 2 {
+                    action_player()
+                } else {
+                    action()
+                }
+            }) {
+                Text(totalMemberCount < 2 ? "Add Players" : "New Photo")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
