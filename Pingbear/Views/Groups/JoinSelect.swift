@@ -66,13 +66,18 @@ struct JoinSelectView: View {
             VStack {
                 
                 // Radio buttons for selection
-                HStack(alignment: .center, spacing: 10) {
-                    TextField("Enter friend's username", text: $username)
+                HStack(spacing: 0) {
+                    Text("Add Friend")
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .foregroundColor(.gray)
+                        .padding(.trailing, 15)
+                    
+                    TextField("Enter Username", text: $username)
                         .padding()
-                        .padding(.vertical, 5)
-                        .background(Color(hex: "#F5F5F5"))
+                        .frame(height: 60)
+                        .background(Color(hex: "#fff"))
                         .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(5)
+                        .clipShape(RoundedCorner(radius: 5, corners: [.topLeft, .bottomLeft]))
                         .font(.system(size: 16, weight: .bold, design: .default))
                     
                     Button(action: {
@@ -88,12 +93,15 @@ struct JoinSelectView: View {
                         Image(systemName: "plus")
                             .font(.system(size: 22, weight: .bold, design: .default))
                             .padding()
-                            .padding(.vertical, 5)
+                            .frame(height: 60)
                             .background(Color(hex: "#1199FF"))
                             .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(5)
+                            .clipShape(RoundedCorner(radius: 5, corners: [.topRight, .bottomRight]))
                     }
                 }
+                .padding(15)
+                .background(Color(hex: "#F5F5F5"))
+                .cornerRadius(5) 
                 .padding(.vertical, 15)
                 
                 if let status = messageStatus {
@@ -141,12 +149,13 @@ struct JoinSelectView: View {
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color.gray) // Change button
+                        .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3")) // Change button
                         .foregroundColor(Color(hex: "#fff"))
                         .cornerRadius(200)
                 }
                 .padding(.top, 10)
                 .padding(.bottom, 10)
+                .disabled(self.selectedFriends.isEmpty)
                 
             }
             .padding(.horizontal)

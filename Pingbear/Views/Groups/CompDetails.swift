@@ -333,7 +333,7 @@ struct EmptyLeaderboardView: View {
     
     var body: some View {
         VStack {
-            Text(totalMemberCount < 2 ? "Not Enough Players" : "No Activity Yet")
+            Text(totalMemberCount < 2 ? "No Players Yet" : "No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)
