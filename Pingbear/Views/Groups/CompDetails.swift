@@ -132,7 +132,7 @@ struct CompDetails: View {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     if entryViewModel.userLeaderboard.isEmpty {
-                        EmptyLeaderboardView(action: initiateVideoCapture, action_player: addPlayer, totalMemberCount: entryViewModel.totalMemberCount)
+                        EmptyLeaderboardView(action: initiateVideoCapture)
                         Spacer()
                     } else {
                         ScrollView {
@@ -142,8 +142,7 @@ struct CompDetails: View {
                                 }
                                 
                                 if entryViewModel.totalMemberCount == 1 {
-                                    dummyFriendRow()
-                                    dummyFriendRow()
+                                    NoPlayersView(action_player: addPlayer)
                                 } else if entryViewModel.totalMemberCount == 2 {
                                     dummyFriendRow()
                                 }
@@ -328,12 +327,10 @@ struct CompDetails: View {
 
 struct EmptyLeaderboardView: View {
     var action: () -> Void
-    var action_player: () -> Void
-    var totalMemberCount: Int
     
     var body: some View {
         VStack {
-            Text(totalMemberCount < 2 ? "No Players Yet" : "No Activity Yet")
+            Text("No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.black) // Set the text color as needed
                 .padding(.top, 20)
@@ -347,13 +344,49 @@ struct EmptyLeaderboardView: View {
                 .padding(.bottom, 25)
             
             Button(action: {
-                if totalMemberCount < 2 {
-                    action_player()
-                } else {
-                    action()
-                }
+                action()
             }) {
-                Text(totalMemberCount < 2 ? "Add Players" : "New Photo")
+                Text("New Photo")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#1199FF"))
+                    .foregroundColor(Color(hex: "#fff"))
+                    .cornerRadius(200)
+            }
+            .padding(.bottom, 20)
+            
+ 
+        }
+        .padding(20)
+        .background(Color(hex: "#F5F5F5"))
+        .cornerRadius(5)
+        .padding(.horizontal, 20)
+    }
+}
+
+struct NoPlayersView: View {
+    var action_player: () -> Void
+    
+    var body: some View {
+        VStack {
+            Text("No Other Players Yet")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.black) // Set the text color as needed
+                .padding(.top, 20)
+                .padding(.bottom, 20)
+            
+            Text("Players needed to compete")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundColor(.gray) // Set the text color as needed
+                .multilineTextAlignment(.center)
+                .lineSpacing(10)
+                .padding(.bottom, 25)
+            
+            Button(action: {
+                action_player()
+            }) {
+                Text("Add Players")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
