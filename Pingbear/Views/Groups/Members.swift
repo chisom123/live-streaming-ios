@@ -116,7 +116,7 @@ struct MembersView: View {
             ContentView()
         })
         .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs

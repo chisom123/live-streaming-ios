@@ -8,21 +8,12 @@ struct JoinSelectView: View {
     @State var selectedFriends: Set<String> = [] // Tracks selected friends
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
-    @State private var username: String = ""
-    @State private var messageStatus: MessageStatus? = nil
+    @State private var isShareSheetPresented = false
+    @State private var isLoading = true // Track loading state
     
     var competition: Competition // this holds the selected competition details
     
     @ObservedObject var viewModel: MyFriendsModel // Add this line
-    @ObservedObject var viewModel2: AddFriendsModel
-    
-    enum MessageStatus {
-        case error(String), success(String), none
-    }
-
-    func processUsername(_ username: String) -> String {
-        return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-    }
     
     var body: some View {
         VStack {
@@ -64,77 +55,56 @@ struct JoinSelectView: View {
             .padding(.vertical, 20)
             
             VStack {
+                Button(action: {
+                    // Open share sheet
+                    isShareSheetPresented = true
+                    PostHogSDK.shared.capture("Invite Share Sheet Tapped")
+                }) {
+                    HStack() { // Align by text baseline
+                        Text("Invite Friends to Play")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color(hex: "#1199FF"))
+                            .truncationMode(.tail)
+                            .padding(.leading, 10)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "square.and.arrow.up")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 25, height: 25) // Increase the size
+                            .font(.system(size: 25, weight: .bold)) // Apply bold weight
+                            .foregroundColor(Color(hex: "#1199FF"))
+
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(20)
+                    .background(Color(hex: "#F5F5F5"))
+                    .cornerRadius(5)
+                    .padding(.bottom, 20)
+                }
+                .sheet(isPresented: $isShareSheetPresented) {
+                    ActivityViewController(activityItems: [createShareText()])
+                }
                 
-                // Radio buttons for selection
-                HStack(spacing: 0) {
-                    Text("Add Friend")
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                if isLoading {
+                    Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if viewModel.friends.isEmpty {
+                    Spacer()
+                    Text("No Friends Yet")
+                        .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.gray)
-                        .padding(.trailing, 15)
-                    
-                    TextField("Enter Username", text: $username)
-                        .padding()
-                        .frame(height: 60)
-                        .background(Color(hex: "#fff"))
-                        .foregroundColor(Color(hex: "#000"))
-                        .clipShape(RoundedCorner(radius: 5, corners: [.topLeft, .bottomLeft]))
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                    
-                    Button(action: {
-                        let processedUsername = processUsername(username)
-                        viewModel2.addFriend(byUsername: processedUsername) { (success, error) in
-                            if success {
-                                findAndAddFriendByUsername(processedUsername)
-                            } else {
-                                messageStatus = .error("Failed to add friend")
-                            }
-                        }
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 22, weight: .bold, design: .default))
-                            .padding()
-                            .frame(height: 60)
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .clipShape(RoundedCorner(radius: 5, corners: [.topRight, .bottomRight]))
-                    }
-                }
-                .padding(15)
-                .background(Color(hex: "#F5F5F5"))
-                .cornerRadius(5) 
-                .padding(.vertical, 15)
-                
-                if let status = messageStatus {
-                    switch status {
-                    case .error(let message):
-                        Text(message)
-                            .foregroundColor(Color(hex: "#CC2255"))
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .padding(.bottom, 15)
-                            .padding(.horizontal)
-                    case .success(let message):
-                        Text(message)
-                            .foregroundColor(Color(hex: "#008000"))
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .padding(.bottom, 15)
-                            .padding(.horizontal)
-                    case .none:
-                        EmptyView()
-                    }
-                }
-                
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
-                            SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
-                                if self.selectedFriends.contains(friend.id) {
-                                    self.selectedFriends.remove(friend.id)
-                                } else {
-                                    self.selectedFriends.insert(friend.id)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
+                                SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
+                                    if self.selectedFriends.contains(friend.id) {
+                                        self.selectedFriends.remove(friend.id)
+                                    } else {
+                                        self.selectedFriends.insert(friend.id)
+                                    }
                                 }
                             }
                         }
@@ -161,7 +131,9 @@ struct JoinSelectView: View {
             .padding(.horizontal)
         }
         .onAppear {
-            viewModel.fetchFriends() // Fetch friends when the view appears
+            viewModel.fetchFriends {
+                isLoading = false // Set loading to false after fetching friends
+            }
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             // Pass the competition object to CompDetails
@@ -169,25 +141,8 @@ struct JoinSelectView: View {
         }
     }
     
-    private func findAndAddFriendByUsername(_ username: String) {
-        let db = Firestore.firestore()
-        db.collection("users").whereField("username", isEqualTo: username).getDocuments { (querySnapshot, err) in
-            if let err = err {
-                print("Error getting documents: \(err)")
-            } else {
-                for document in querySnapshot!.documents {
-                    let userId = document.documentID
-                    isUserAlreadyMember(userId: userId) { isAlreadyMember in
-                        if !isAlreadyMember {
-                            selectedFriends.insert(userId)
-                            updateCompetitionAllowJoin()
-                        } else {
-                            messageStatus = .error("Friend Already a Member")
-                        }
-                    }
-                }
-            }
-        }
+    private func createShareText() -> String {
+        return "pingbearapp.com"
     }
     
     private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
@@ -256,6 +211,21 @@ struct JoinSelectView: View {
         }
     }
 
+}
+
+struct ActivityViewController: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    let applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: applicationActivities
+        )
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // SelectableFriendView component

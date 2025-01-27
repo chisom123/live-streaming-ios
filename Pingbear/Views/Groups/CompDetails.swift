@@ -176,7 +176,7 @@ struct CompDetails: View {
             MyPostsView(competition: competition)
         }
         .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel(), viewModel2: AddFriendsModel())
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
         }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
