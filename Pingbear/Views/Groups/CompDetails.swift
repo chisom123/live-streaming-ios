@@ -376,7 +376,7 @@ struct NoPlayersView: View {
                 .padding(.top, 20)
                 .padding(.bottom, 20)
             
-            Text("Players needed to compete")
+            Text("Players needed to start")
                 .font(.system(size: 17, weight: .bold, design: .default))
                 .foregroundColor(.gray) // Set the text color as needed
                 .multilineTextAlignment(.center)

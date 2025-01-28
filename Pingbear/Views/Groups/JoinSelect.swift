@@ -9,6 +9,7 @@ struct JoinSelectView: View {
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
     @State private var isShareSheetPresented = false
+    @State private var showAddFriendsView = false
     @State private var isLoading = true // Track loading state
     
     var competition: Competition // this holds the selected competition details
@@ -40,15 +41,14 @@ struct JoinSelectView: View {
                 Spacer()
                 
                 Button(action: {
-            
+                    self.showAddFriendsView = true
                 }) {
-                    Image(systemName: "arrow.left")
+                    Image(systemName: "person.crop.circle.badge.plus")
                         .resizable() // Allows resizing of the image
                         .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
                         .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
                         .foregroundColor(Color.black) // Your desired color
                 }
-                .opacity(0)
                 
             }
             .padding(.horizontal, 20)
@@ -91,9 +91,20 @@ struct JoinSelectView: View {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if viewModel.friends.isEmpty {
                     Spacer()
+                    
                     Text("No Friends Yet")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.gray)
+                        .padding(.bottom, 10)
+
+                    Button(action: {
+                        self.showAddFriendsView = true
+                    }) {
+                        Text("Add Friend")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .foregroundColor(Color(hex: "#1199FF"))
+                    }
+                    
                     Spacer()
                 } else {
                     ScrollView {
@@ -138,6 +149,13 @@ struct JoinSelectView: View {
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             // Pass the competition object to CompDetails
             CompDetails(competition: competition)
+        }
+        .fullScreenCover(isPresented: $showAddFriendsView, onDismiss: {
+            viewModel.fetchFriends {
+                isLoading = false
+            }
+        }) {
+            AddFriendsView(addFriendsModel: AddFriendsModel())
         }
     }
     
