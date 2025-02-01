@@ -4,150 +4,161 @@ import FirebaseAuth
 import PostHog
 
 struct JoinSelectView: View {
-    
-    @State var selectedFriends: Set<String> = [] // Tracks selected friends
+    @State var selectedFriends: Set<String> = []
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
     @State private var isShareSheetPresented = false
     @State private var showAddFriendsView = false
-    @State private var isLoading = true // Track loading state
+    @State private var isLoading = true
     
-    var competition: Competition // this holds the selected competition details
-    
-    @ObservedObject var viewModel: MyFriendsModel // Add this line
+    var competition: Competition
+    @ObservedObject var viewModel: MyFriendsModel
     
     var body: some View {
-        VStack {
-            HStack {
-                Button(action: {
-                    isPresentingCompDetails = true
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
-                }
-                
-                Spacer()
-                
-                Text("Add Players to Competition")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.black)
-                    .padding(.horizontal)
-                
-                Spacer()
-                
-                Button(action: {
-                    self.showAddFriendsView = true
-                }) {
-                    Image(systemName: "person.crop.circle.badge.plus")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
-                }
-                
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
+        ZStack {
             
             VStack {
-                Button(action: {
-                    // Open share sheet
-                    isShareSheetPresented = true
-                    PostHogSDK.shared.capture("Invite Share Sheet Tapped")
-                }) {
-                    HStack() { // Align by text baseline
-                        Text("Invite Friends to Play")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(Color(hex: "#1199FF"))
-                            .truncationMode(.tail)
-                            .padding(.leading, 10)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "square.and.arrow.up")
+                // Header
+                HStack {
+                    Button(action: {
+                        isPresentingCompDetails = true
+                    }) {
+                        Image(systemName: "arrow.left")
                             .resizable()
-                            .scaledToFit()
-                            .frame(width: 25, height: 25) // Increase the size
-                            .font(.system(size: 25, weight: .bold)) // Apply bold weight
-                            .foregroundColor(Color(hex: "#1199FF"))
-
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(.white)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(20)
-                    .background(Color(hex: "#F5F5F5"))
-                    .cornerRadius(5)
-                    .padding(.bottom, 20)
-                }
-                .sheet(isPresented: $isShareSheetPresented) {
-                    ActivityViewController(activityItems: [createShareText()])
-                }
-                
-                if isLoading {
-                    Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if viewModel.friends.isEmpty {
+                    
                     Spacer()
                     
-                    Text("No Friends Yet")
+                    Text("Add Players to Competition")
                         .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.gray)
-                        .padding(.bottom, 10)
-
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                    
                     Button(action: {
                         self.showAddFriendsView = true
                     }) {
-                        Text("Add Friend")
-                            .font(.system(size: 17, weight: .bold, design: .default))
-                            .foregroundColor(Color(hex: "#1199FF"))
+                        Image(systemName: "person.crop.circle.badge.plus")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                
+                VStack {
+                    // Invite Friends Button
+                    Button(action: {
+                        isShareSheetPresented = true
+                        PostHogSDK.shared.capture("Invite Share Sheet Tapped")
+                    }) {
+                        HStack {
+                            Text("Invite Friends to Play")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(Color(hex: "#FFF"))
+                                .truncationMode(.tail)
+                                .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "square.and.arrow.up")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 25, height: 25)
+                                .font(.system(size: 25, weight: .bold))
+                                .foregroundColor(Color(hex: "#FF4081"))
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(20)
+                        .background(Color(hex: "#1A2245"))
+                        .cornerRadius(10)
+                        .padding(.bottom, 20)
+                    }
+                    .sheet(isPresented: $isShareSheetPresented) {
+                        ActivityViewController(activityItems: [createShareText()])
                     }
                     
-                    Spacer()
-                } else {
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            ForEach(viewModel.friends, id: \.id) { friend in // Use the real friends data
-                                SelectableFriendView(friend: friend.name, isSelected: self.selectedFriends.contains(friend.id)) { // Change from 'friend' to 'friend.id' if necessary
-                                    if self.selectedFriends.contains(friend.id) {
-                                        self.selectedFriends.remove(friend.id)
-                                    } else {
-                                        self.selectedFriends.insert(friend.id)
+                    if isLoading {
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if viewModel.friends.isEmpty {
+                        Spacer()
+                        
+                        Text("No Friends Yet")
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .foregroundColor(.white)
+                            .padding(.bottom, 10)
+                        
+                        Button(action: {
+                            self.showAddFriendsView = true
+                        }) {
+                            Text("Add Friend")
+                                .font(.system(size: 17, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#FF4081"))
+                        }
+                        
+                        Spacer()
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ForEach(viewModel.friends, id: \.id) { friend in
+                                    VStack(spacing: 0) {
+                                        SelectableFriendView(
+                                            friend: friend.name,
+                                            isSelected: self.selectedFriends.contains(friend.id)
+                                        ) {
+                                            if self.selectedFriends.contains(friend.id) {
+                                                self.selectedFriends.remove(friend.id)
+                                            } else {
+                                                self.selectedFriends.insert(friend.id)
+                                            }
+                                        }
+                                        
+                                        if friend.id != viewModel.friends.last?.id {
+                                            Divider()
+                                                .background(Color.white.opacity(0.2))
+                                        }
                                     }
                                 }
                             }
+                            .background(Color(hex: "#1A2245"))
+                            .cornerRadius(10)
                         }
                     }
+                    
+                    Button(action: {
+                        updateCompetitionAllowJoin()
+                        isPresentingCompDetails = true
+                    }) {
+                        Text("Continue")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .background(!self.selectedFriends.isEmpty ? Color(hex: "#FF4081") : Color(hex: "#D3D3D3").opacity(0.2))
+                            .foregroundColor(!self.selectedFriends.isEmpty ? Color(hex: "#FFF") : Color(hex: "#D3D3D3").opacity(0.2))
+                            .cornerRadius(200)
+                    }
+                    .padding(.top, 10)
+                    .padding(.bottom, 10)
+                    .disabled(self.selectedFriends.isEmpty)
                 }
-                
-                Button(action: {
-                    updateCompetitionAllowJoin()
-                    isPresentingCompDetails = true
-                }) {
-                    Text("Continue")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(!self.selectedFriends.isEmpty ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3")) // Change button
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
-                }
-                .padding(.top, 10)
-                .padding(.bottom, 10)
-                .disabled(self.selectedFriends.isEmpty)
-                
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
+        .background(Color(hex: "#10183C"))
         .onAppear {
             viewModel.fetchFriends {
-                isLoading = false // Set loading to false after fetching friends
+                isLoading = false
             }
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
-            // Pass the competition object to CompDetails
             CompDetails(competition: competition)
         }
         .fullScreenCover(isPresented: $showAddFriendsView, onDismiss: {
@@ -228,9 +239,9 @@ struct JoinSelectView: View {
             }
         }
     }
-
 }
 
+// Helper Views
 struct ActivityViewController: UIViewControllerRepresentable {
     let activityItems: [Any]
     let applicationActivities: [UIActivity]? = nil
@@ -246,7 +257,6 @@ struct ActivityViewController: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-// SelectableFriendView component
 struct SelectableFriendView: View {
     var friend: String
     var isSelected: Bool
@@ -257,26 +267,24 @@ struct SelectableFriendView: View {
             HStack {
                 Text(friend)
                     .font(.system(size: 16, weight: .bold))
-                    .lineLimit(2)
+                    .lineLimit(1)
                     .lineSpacing(9)
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .truncationMode(.tail)
-                    .padding(.leading, 10) // Increased padding
+                    .padding(.leading, 30)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(isSelected ? Color(hex: "#1199FF") : .black)
-                
+                    .foregroundColor(isSelected ? Color(hex: "#FF4081") : .white)
+                    .padding(.trailing, 30)
             }
-            .padding(20)
-            .padding(.vertical, 3)
-            .background(isSelected ? Color(hex: "#1199FF").opacity(0.2) : Color(hex: "#F5F5F5"))
-            .cornerRadius(5)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 25)
+            .background(isSelected ? Color(hex: "#FF4081").opacity(0.2) : Color.clear)
         }
     }
 }
 
-// RadioButtonField component
 struct RadioButtonField: View {
     let id: String
     let label: String
@@ -294,21 +302,21 @@ struct RadioButtonField: View {
         self.isMarked = isMarked
         self.callback = callback
     }
-
+    
     var body: some View {
         Button(action: {
             self.callback(self.id)
         }) {
             HStack(alignment: .center, spacing: 20) {
                 Image(systemName: self.isMarked ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(self.isMarked ? Color(hex: "#1199FF") : .black)
+                    .foregroundColor(self.isMarked ? Color(hex: "#FF4081") : .white)
                 Text(self.label)
-                    .foregroundColor(Color.black)
+                    .foregroundColor(.white)
                     .font(.system(size: 16, weight: .bold))
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-            .background(Color(hex: "#F5F5F5")) 
+            .background(Color(hex: "#1A2245"))
             .cornerRadius(20)
         }
     }

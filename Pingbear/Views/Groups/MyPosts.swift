@@ -13,70 +13,74 @@ struct MyPostsView: View {
     }
     
     var body: some View {
-        VStack {
-            HStack {
-                Button(action: {
-                    navigateToCompDetails = true
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
-                }
-                
-                Spacer()
-                
-                Text("My Photos")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.black)
-                    .padding(.horizontal)
-                    .onAppear {
-                        PostHogSDK.shared.capture("My Posts View Opened")
-                    }
-                
-                Spacer()
-                
-                Button(action: {
-             
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
-                        .opacity(0)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 20)
+        ZStack {
             
-            if isLoading {
-                Spacer()
-                ProgressView()
-                Spacer()
-            } else if viewModel.entries.isEmpty {
-                Spacer()
-                Text("No Photos Yet")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .foregroundColor(.gray)
-                Spacer()
-            } else {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        ForEach(viewModel.entries) { entry in
-                            PostCard(entry: entry)
-                        }
+            VStack {
+                // Header
+                HStack {
+                    Button(action: {
+                        navigateToCompDetails = true
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(.white)
                     }
-                    .padding(.bottom)
+                    
+                    Spacer()
+                    
+                    Text("My Photos")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                        .onAppear {
+                            PostHogSDK.shared.capture("My Posts View Opened")
+                        }
+                    
+                    Spacer()
+                    
+                    Button(action: {}) {
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(.white)
+                            .opacity(0)
+                    }
                 }
-                .refreshable {
-                    viewModel.refreshEntries()
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                
+                if isLoading {
+                    Spacer()
+                    ProgressView()
+                        .tint(.white)
+                    Spacer()
+                } else if viewModel.entries.isEmpty {
+                    Spacer()
+                    Text("No Photos Yet")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .foregroundColor(.white)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ForEach(viewModel.entries) { entry in
+                                PostCard(entry: entry)
+                            }
+                        }
+                        .padding(.bottom)
+                    }
+                    .refreshable {
+                        viewModel.refreshEntries()
+                    }
                 }
             }
         }
+        .background(Color(hex: "#10183C"))
         .onAppear {
             viewModel.fetchUserEntries { success in
                 isLoading = false
@@ -103,6 +107,7 @@ struct PostCard: View {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .frame(height: 200)
+                        .tint(.white)
                 case .success(let image):
                     ZStack(alignment: .bottomLeading) {
                         image
@@ -128,13 +133,14 @@ struct PostCard: View {
                     Image(systemName: "photo")
                         .frame(maxWidth: .infinity)
                         .frame(height: 200)
-                        .background(Color.gray.opacity(0.1))
+                        .background(Color(hex: "#1A2245"))
+                        .foregroundColor(.white)
                 @unknown default:
                     EmptyView()
                 }
             }
             
-            // Stats - keep padding for bottom content
+            // Stats section
             HStack {
                 HStack(spacing: 7) {
                     Text("\(entry.stars)")
@@ -168,13 +174,13 @@ struct PostCard: View {
                 
                 Text(formatDate(entry.creationDate))
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white)
             }
             .padding(.horizontal)
             .padding(.bottom, 10)
         }
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(10)
         .padding(.horizontal, 20)
     }
     

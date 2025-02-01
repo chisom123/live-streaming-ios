@@ -7,15 +7,29 @@ struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var selectedCompetition: Competition?
     @State private var isLoading = true
+    @State private var navigateToSettings = false
     
     var body: some View {
         VStack {
             // Top Bar with Title
             HStack {
-                Text("Home")
-                    .font(.system(size: 17, weight: .bold, design: .default))
-                    .foregroundColor(.black) // Set the text color as needed
-                    .padding(.horizontal, 20)
+                Button(action: {
+                    viewModel.cleanupListeners()
+                    navigateToSettings = true
+                }) {
+                    Image("settings")
+                        .resizable()
+                        .renderingMode(.template)
+                        .foregroundColor(.white) // or any color you want
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 30, height: 30)
+                }
+                
+                Spacer()
+                
+                Text("Competitions")
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .foregroundColor(.white) // Set the text color as needed
 
                 Spacer() // Pushes the remaining content to the trailing edge
                 
@@ -23,17 +37,15 @@ struct MyCompsView: View {
                     viewModel.cleanupListeners()
                     createNewCompetition()
                 }) {
-                    Image(systemName: "plus.circle.fill")
+                    Image(systemName: "plus.circle")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 40, height: 40) // Adjust the size as needed
-                        .foregroundColor(Color(hex: "#1199FF")) // Your desired color
-                        .background(Color.white)
-                        .clipShape(Circle())
+                        .frame(width: 30, height: 30)
+                        .foregroundColor(Color.white)
                 }
-                .padding(.trailing, 20)
             }
-            .padding(.vertical, 15)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 20)
 
             Spacer()
             
@@ -49,51 +61,63 @@ struct MyCompsView: View {
                 Spacer()
             } else {
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 0) {
                         ForEach(viewModel.competitions, id: \.id) { competition in
-                            HStack {
-                                Text(competition.description)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .lineLimit(2)
-                                    .lineSpacing(9)
-                                    .foregroundColor(.black)
-                                    .truncationMode(.tail)
-                                    .padding(.leading, 10)
-                                
-                                Spacer()
-                                
-                                HStack(spacing: 8) {
-                                    Text("\(competition.entriesNotVotedCount)")
-                                        .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(Color(hex: "#fff"))
+                            VStack(spacing: 0) { // Added spacing: 0 here to control internal spacing
+                                HStack {
+                                    Text(competition.description)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .lineLimit(2)
+                                        .lineSpacing(9)
+                                        .foregroundColor(.white)
+                                        .truncationMode(.tail)
+                                        .padding(.leading, 30)
                                     
-                                    Image(systemName: "photo.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18)
-                                        .foregroundColor(Color(hex: "#fff"))
+                                    Spacer()
+                                    
+                                    HStack(spacing: 8) {
+                                        Text("\(competition.entriesNotVotedCount)")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                        
+                                        Image(systemName: "photo.fill")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 18, height: 18)
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                    }
+                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                    .background(Color(hex: "#3B4374"))
+                                    .cornerRadius(200)
+                                    .padding(.trailing, 30)
                                 }
-                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                .background(Color(hex: "#7B68EE"))
-                                .cornerRadius(200)
-                                .padding(.trailing, 10)
-                            }
-                            .padding(20)
-                            .background(Color(hex: "#F5F5F5"))
-                            .cornerRadius(5)
-                            .padding(.horizontal, 20)
-                            .onTapGesture {
-                                viewModel.cleanupListeners()
-                                self.selectedCompetition = competition
+                                .padding(.vertical, 25)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    viewModel.cleanupListeners()
+                                    self.selectedCompetition = competition
+                                }
+                                
+                                if competition.id != viewModel.competitions.last?.id {
+                                    Divider()
+                                        .background(Color.white.opacity(0.2))
+                                }
                             }
                         }
                     }
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
                 }
             }
         }
         .navigationBarHidden(true)
+        .background(Color(hex: "#10183C"))
         .fullScreenCover(item: $selectedCompetition) { comp in
             CompDetails(competition: comp)
+        }
+        .fullScreenCover(isPresented: $navigateToSettings) {
+            SettingsView()
         }
         .onAppear {
             fetchData()
@@ -123,10 +147,12 @@ struct MyCompsView: View {
         let batch = db.batch()
         
         let competitionRef = db.collection("competitions").document()
+        let competitionId = competitionRef.documentID  // Get the ID early to use in the data
         let timestamp = Timestamp()
         let defaultName = "Unnamed Competition"
         
         let competitionData: [String: Any] = [
+            "id": competitionId,  // Add the ID to the competition document
             "description": defaultName,
             "timestamp": timestamp
         ]
@@ -153,7 +179,10 @@ struct MyCompsView: View {
                         date: timestamp.dateValue()
                     )
                 }
-                PostHogSDK.shared.capture("New Competition", properties: ["name": defaultName])
+                
+                PostHogSDK.shared.capture("New Competition", properties: [
+                    "competition_id": competitionId
+                ])
             }
         }
     }
@@ -166,25 +195,25 @@ struct EmptyCompsView: View {
         VStack {
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.black) // Set the text color as needed
-                .padding(.bottom, 20)
-            
-            Text("Start a competition or wait to be added")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
+                .foregroundColor(.white) // Changed to white for better contrast
+                .padding(.top, 20)
                 .padding(.bottom, 25)
             
-            Button(action: newCompAction) {  // This button now uses the passed function
+            Button(action: newCompAction) {
                 Text("New Competition")
                     .font(.system(size: 17, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
+                    .background(Color(hex: "#FF4081")) // Vibrant magenta from our earlier color palette
+                    .foregroundColor(.white)
                     .cornerRadius(200)
             }
+            .padding(.bottom, 20)
+            
         }
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .background(Color(hex: "#1A2245")) // Slightly lighter than background for contrast
+        .cornerRadius(10) // Increased corner radius for a softer look
         .padding(.horizontal, 20)
     }
 }

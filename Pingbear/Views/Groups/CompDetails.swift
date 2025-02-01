@@ -43,7 +43,7 @@ struct CompDetails: View {
                             .resizable() // Allows resizing of the image
                             .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
                             .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.black) // Your desired color
+                            .foregroundColor(Color.white) // Your desired color
                     }
                     
                     Spacer() // This spacer will ensure the two buttons are at opposite ends.
@@ -53,12 +53,14 @@ struct CompDetails: View {
                         isEditingCompetition = true
                     }) {
                         Text(competition.description)
-                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .font(.system(size: 18, weight: .bold, design: .default))
                             .lineLimit(1)
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .padding(.horizontal)
                             .onAppear {
-                                PostHogSDK.shared.capture("Comp Details View Opened")
+                                PostHogSDK.shared.capture("Comp Details View Opened", properties: [
+                                    "competition_id": competition.id
+                                ])
                             }
                     }
                     
@@ -73,8 +75,8 @@ struct CompDetails: View {
                         Image(systemName: "ellipsis")
                             .resizable() // Allows resizing of the image
                             .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 30, height: 30) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.black) // Your desired color
+                            .frame(width: 32, height: 32) // Adjust the width and height to decrease the size
+                            .foregroundColor(Color.white) // Your desired color
                     }
                 }
                 .padding(.horizontal, 20)
@@ -90,7 +92,7 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(Color(hex: "#000"))
+                            .foregroundColor(.white)
                             .clipShape(Circle())
                     }
 
@@ -103,8 +105,8 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#1199FF") : Color(hex: "#D3D3D3"))
-                            .foregroundColor(Color.white)
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#FF4081") : Color(hex: "#D3D3D3").opacity(0.2))
+                            .foregroundColor(entryViewModel.hasEntriesToVoteOn ? Color.white : Color(hex: "#D3D3D3").opacity(0.2))
                             .cornerRadius(200)
                     }
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
@@ -117,14 +119,14 @@ struct CompDetails: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(Color(hex: "#000"))
+                            .foregroundColor(.white)
                             .clipShape(Circle())
                     }
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
-                .background(Color(hex: "#F5F5F5"))
-                .cornerRadius(5)
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
                 .padding(.vertical, 20)
                 .padding(.horizontal, 20)
                 
@@ -132,24 +134,59 @@ struct CompDetails: View {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     if entryViewModel.userLeaderboard.isEmpty {
-                        EmptyLeaderboardView(action: initiateVideoCapture)
-                        Spacer()
+                        if entryViewModel.totalMemberCount == 1 {
+                            NoPlayersView(action_player: addPlayer)
+                        } else {
+                            EmptyLeaderboardView(action: initiateVideoCapture)
+                            Spacer()
+                        }
                     } else {
                         ScrollView {
-                            VStack(spacing: 15) {
+                            VStack(spacing: 0) {
                                 ForEach(entryViewModel.userLeaderboard) { userEntry in
-                                    leaderboardRowView(userEntry.userName, userEntry.totalStars)
-                                }
-                                
-                                if entryViewModel.totalMemberCount == 1 {
-                                    NoPlayersView(action_player: addPlayer)
-                                } else if entryViewModel.totalMemberCount == 2 {
-                                    dummyFriendRow()
+                                    VStack(spacing: 0) {
+                                        HStack {
+                                            Text(userEntry.userName)
+                                                .font(.system(size: 16, weight: .bold))
+                                                .lineLimit(1)
+                                                .truncationMode(.tail)
+                                                .foregroundColor(.white)
+                                                .padding(.leading, 30)
+
+                                            Spacer()
+
+                                            HStack(spacing: 8) {
+                                                Text("\(userEntry.totalStars)")
+                                                    .font(.system(size: 17, weight: .bold))
+                                                    .foregroundColor(Color(hex: "#FFF"))
+                                                
+                                                Image(systemName: "star.fill")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 18, height: 18)
+                                                    .foregroundColor(Color(hex: "#FFF"))
+                                            }
+                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                            .background(Color(hex: "#DAA520"))
+                                            .cornerRadius(200)
+                                            .padding(.trailing, 30)
+                                        }
+                                        .padding(.vertical, 25)
+                                        .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                                        
+                                        if userEntry.id != entryViewModel.userLeaderboard.last?.id {
+                                            Divider()
+                                                .background(Color.white.opacity(0.2))
+                                        }
+                                    }
                                 }
                             }
+                            .background(Color(hex: "#1A2245"))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20)
                         }
                         .refreshable {
-                            entryViewModel.fetchEntries(mode: .compDetailsView)  // Refresh the entries based on current mode
+                            entryViewModel.fetchEntries(mode: .compDetailsView)
                             entryViewModel.fetchMemberCount()
                         }
                     }
@@ -157,6 +194,7 @@ struct CompDetails: View {
                 
             }
         }
+        .background(Color(hex: "#10183C"))
         .onAppear {
             fetchData()
         }
@@ -167,7 +205,7 @@ struct CompDetails: View {
             EntryView(competitionId: competition.id, competition: competition)
         })
         .fullScreenCover(isPresented: $goToMyComps) {
-            ContentView()
+            MyCompsView()
         }
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition) // Replace this with the actual view you want to present
@@ -202,75 +240,6 @@ struct CompDetails: View {
             DispatchQueue.main.async {
                 self.isLoading = false
             }
-        }
-    }
-
-    func leaderboardRowView(_ userName: String, _ stars: Int) -> some View {
-        HStack {
-            Text(userName)
-                .font(.system(size: 16, weight: .bold))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .padding(.leading, 10)
-                .foregroundColor(userName == "Me" ? Color(hex: "#DAA520") : Color.black)  // Change text color if it's the current user
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                Text("\(stars)")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(Color.white)
-                
-                Image(systemName: "star.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(Color.white)
-            }
-            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-            .background(Color(hex: "#DAA520"))
-            .cornerRadius(200)
-            .padding(.trailing, 10)
-        }
-        .padding(20)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
-        .padding(.horizontal, 20)
-    }
-    
-    private func dummyFriendRow() -> some View {
-        HStack {
-            Text("Missing Player")
-                .font(.system(size: 16, weight: .bold))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .foregroundColor(Color.gray)  // Black with 50% opacity
-                .padding(.leading, 10)
-
-            Spacer()
-
-            HStack(spacing: 8) {
-                Text("0")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundColor(Color.white)
-                
-                Image(systemName: "star.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 18, height: 18)
-                    .foregroundColor(Color.white)
-            }
-            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-            .background(Color(hex: "#D3D3D3"))
-            .cornerRadius(200)
-            .padding(.trailing, 10)
-        }
-        .padding(20)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
-        .padding(.horizontal, 20)
-        .onTapGesture {
-            addPlayer()
         }
     }
     
@@ -332,15 +301,8 @@ struct EmptyLeaderboardView: View {
         VStack {
             Text("No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.black) // Set the text color as needed
+                .foregroundColor(.white) // Changed to white for better contrast
                 .padding(.top, 20)
-                .padding(.bottom, 20)
-            
-            Text("Get the competition started")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
                 .padding(.bottom, 25)
             
             Button(action: {
@@ -350,17 +312,18 @@ struct EmptyLeaderboardView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
+                    .background(Color(hex: "#FF4081"))
+                    .foregroundColor(.white)
                     .cornerRadius(200)
             }
             .padding(.bottom, 20)
             
  
         }
+        .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
+        .background(Color(hex: "#1A2245")) // Slightly lighter than background for contrast
+        .cornerRadius(10) // Increased corner radius for a softer look
         .padding(.horizontal, 20)
     }
 }
@@ -369,38 +332,69 @@ struct NoPlayersView: View {
     var action_player: () -> Void
     
     var body: some View {
-        VStack {
-            Text("No Other Players Yet")
-                .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.black) // Set the text color as needed
-                .padding(.top, 20)
-                .padding(.bottom, 20)
-            
-            Text("Players needed to start")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundColor(.gray) // Set the text color as needed
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .padding(.bottom, 25)
-            
-            Button(action: {
-                action_player()
-            }) {
-                Text("Add Players")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#1199FF"))
-                    .foregroundColor(Color(hex: "#fff"))
-                    .cornerRadius(200)
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(["Me", "Player 2", "Player 3", "Player 4"], id: \.self) { userName in
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text(userName)
+                                .font(.system(size: 16, weight: .bold))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .foregroundColor(.white)
+                                .padding(.leading, 30)
+
+                            Spacer()
+
+                            if userName == "Me" {
+                                HStack(spacing: 8) {
+                                    Text("0")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                    
+                                    Image(systemName: "star.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                }
+                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .background(Color(hex: "#DAA520"))
+                                .cornerRadius(200)
+                                .padding(.trailing, 30)
+                            } else {
+                                Button(action: action_player) {
+                                    HStack(spacing: 8) {
+                                        Text("Add")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                        
+                                        Image(systemName: "plus.circle.fill")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 18, height: 18)
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                    }
+                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                    .background(Color(hex: "#FF4081"))
+                                    .cornerRadius(200)
+                                }
+                                .padding(.trailing, 30)
+                            }
+                        }
+                        .padding(.vertical, 25)
+                        .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                        
+                        if userName != "Player 4" {
+                            Divider()
+                                .background(Color.white.opacity(0.2))
+                        }
+                    }
+                }
             }
-            .padding(.bottom, 20)
-            
- 
+            .background(Color(hex: "#1A2245"))
+            .cornerRadius(10)
+            .padding(.horizontal, 20)
         }
-        .padding(20)
-        .background(Color(hex: "#F5F5F5"))
-        .cornerRadius(5)
-        .padding(.horizontal, 20)
     }
 }

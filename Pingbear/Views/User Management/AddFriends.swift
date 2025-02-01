@@ -27,7 +27,7 @@ struct AddFriendsView: View {
                         .resizable() // Allows resizing of the image
                         .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
                         .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
+                        .foregroundColor(Color.white) // Your desired color
                 }
                 
                 Spacer()
@@ -36,7 +36,7 @@ struct AddFriendsView: View {
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .padding(.horizontal)
                 
                 Spacer()
@@ -48,7 +48,7 @@ struct AddFriendsView: View {
                         .resizable() // Allows resizing of the image
                         .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
                         .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.black) // Your desired color
+                        .foregroundColor(Color.white) // Your desired color
                 }
                 .opacity(0)
             }
@@ -56,14 +56,22 @@ struct AddFriendsView: View {
             .padding(.vertical, 20)
             
             VStack {
-                HStack(alignment: .center, spacing: 10) {
-                    TextField("Enter friend's username", text: $username)
+                HStack(alignment: .center, spacing: 0) {
+                    TextField("Enter Username", text: $username)
                         .padding()
-                        .padding(.vertical, 5)
-                        .background(Color(hex: "#F5F5F5"))
-                        .foregroundColor(Color(hex: "#000"))
-                        .cornerRadius(5)
+                        .frame(height: 70) // Same fixed height
+                        .background(
+                            Color(hex: "#3B4374")
+                                .clipShape(
+                                    RoundedCorner(
+                                        radius: 10,
+                                        corners: [.topLeft, .bottomLeft]
+                                    )
+                                )
+                        )
+                        .foregroundColor(.white)
                         .font(.system(size: 16, weight: .bold, design: .default))
+                        .accentColor(.white)
                     
                     Button(action: {
                         let processedUsername = processUsername(username)
@@ -79,22 +87,27 @@ struct AddFriendsView: View {
                     }) {
                         Image(systemName: "plus")
                             .font(.system(size: 22, weight: .bold, design: .default))
-                            .padding()
-                            .padding(.vertical, 5)
-                            .background(Color(hex: "#1199FF"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(5)
+                            .frame(width: 60, height: 70)
+                            .foregroundColor(.white)
+                            .background(
+                                Color(hex: username.isEmpty ? "#323862" : "#FF4081")
+                                    .clipShape(
+                                        RoundedCorner(
+                                            radius: 10,
+                                            corners: [.topRight, .bottomRight]
+                                        )
+                                    )
+                            )
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 30)
-                .padding(.top, 15)
                 
                 if let status = messageStatus {
                     switch status {
                     case .error:
                         Text("Failed to add friend")
-                            .foregroundColor(Color(hex: "#CC2255"))
+                            .foregroundColor(Color(hex: "#FF0000"))
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
@@ -103,7 +116,7 @@ struct AddFriendsView: View {
                                     
                     case .success:
                         Text("Friend added successfully")
-                            .foregroundColor(Color(hex: "#008000"))
+                            .foregroundColor(Color(hex: "#FFF"))
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
@@ -116,62 +129,90 @@ struct AddFriendsView: View {
             }
             
             ScrollView {
-                VStack(spacing: 25) {
+                VStack(spacing: 0) {
                     ForEach(viewModel.matchedUsers.indices, id: \.self) { index in
-                        Button(action: {
-                            if !viewModel.matchedUsers[index].isAdded {
-                                addFriendsModel.addFriend(byUsername: viewModel.matchedUsers[index].username) { success, error in
-                                    if success {
-                                        DispatchQueue.main.async {
-                                            viewModel.matchedUsers[index].isAdded = true
-                                            PostHogSDK.shared.capture("Friend successfully added from standalone view")
-                                        }
-                                    } else if let error = error {
-                                        print("Error adding friend: \(error.localizedDescription)")
-                                    }
-                                }
-                            }
-                        }) {
+                        VStack(spacing: 0) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text(viewModel.matchedUsers[index].fullName)
                                         .font(.system(size: 16, weight: .bold, design: .default))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(.white)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                     
                                     Text(viewModel.matchedUsers[index].username)
                                         .font(.system(size: 14, weight: .bold, design: .default))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(Color(hex: "#D3D3D3"))
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
+                                .padding(.leading, 30)
                                 
                                 Spacer()
                                 
-                                HStack(spacing: 6) { // Control spacing between text and icon
-                                    Text(viewModel.matchedUsers[index].isAdded ? "Added" : "Add")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(viewModel.matchedUsers[index].isAdded ? Color.green : Color(hex: "#1199FF"))
-                                        .font(.system(size: 16, weight: .bold, design: .default))
-                                    
-                                    Image(systemName: viewModel.matchedUsers[index].isAdded ? "checkmark.circle.fill" : "plus.circle")
-                                        .foregroundColor(viewModel.matchedUsers[index].isAdded ? Color.green : Color(hex: "#1199FF"))
-                                        .font(.system(size: 16, weight: .bold, design: .default))
+                                if !viewModel.matchedUsers[index].isAdded {
+                                    Button(action: {
+                                        addFriendsModel.addFriend(byUsername: viewModel.matchedUsers[index].username) { success, error in
+                                            if success {
+                                                DispatchQueue.main.async {
+                                                    viewModel.matchedUsers[index].isAdded = true
+                                                    PostHogSDK.shared.capture("Friend successfully added from standalone view")
+                                                }
+                                            } else if let error = error {
+                                                print("Error adding friend: \(error.localizedDescription)")
+                                            }
+                                        }
+                                    }) {
+                                        HStack(spacing: 8) {
+                                            Text("Add")
+                                                .font(.system(size: 17, weight: .bold))
+                                                .foregroundColor(Color(hex: "#FFF"))
+                                            
+                                            Image(systemName: "plus.circle.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .frame(width: 18, height: 18)
+                                                .foregroundColor(Color(hex: "#FFF"))
+                                        }
+                                        .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                        .background(Color(hex: "#FF4081"))
+                                        .cornerRadius(200)
+                                    }
+                                    .padding(.trailing, 30)
+                                } else {
+                                    HStack(spacing: 8) {
+                                        Text("Added")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(Color(hex: "#DAA520"))
+                                        
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 18, height: 18)
+                                            .foregroundColor(Color(hex: "#DAA520"))
+                                    }
+                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                    .background(Color(hex: "#FF4081"))
+                                    .cornerRadius(200)
+                                    .padding(.trailing, 30)
+                                    .opacity(0)
                                 }
-                                
                             }
                             .padding(.vertical, 25)
-                            .padding(.horizontal, 20)
-                            .background(Color(hex: "#F5F5F5"))
-                            .cornerRadius(5)
+                            
+                            if index != viewModel.matchedUsers.count - 1 {
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
+                            }
                         }
-                        .disabled(viewModel.matchedUsers[index].isAdded)
                     }
                 }
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
+        .background(Color(hex: "#10183C"))
         .onAppear {
             viewModel.requestContactAccess()
         }

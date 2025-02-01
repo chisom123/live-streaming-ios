@@ -12,7 +12,6 @@
 		4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */; };
 		4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */; };
 		4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F34080D2D3029C400F21247 /* PushNotificationManager.swift */; };
-		4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D042AE7CD3D0011F541 /* ContentView.swift */; };
 		4F375D092AEBBF990011F541 /* CompDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D082AEBBF990011F541 /* CompDetails.swift */; };
 		4F375D0B2AF444B70011F541 /* Camera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0A2AF444B70011F541 /* Camera.swift */; };
 		4F375D102B02A1320011F541 /* Entry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F375D0F2B02A1320011F541 /* Entry.swift */; };
@@ -104,7 +103,6 @@
 		4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPreview.swift; sourceTree = "<group>"; };
 		4F33E4682B98F5D9003098E8 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4F34080D2D3029C400F21247 /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
-		4F375D042AE7CD3D0011F541 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		4F375D082AEBBF990011F541 /* CompDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompDetails.swift; sourceTree = "<group>"; };
 		4F375D0A2AF444B70011F541 /* Camera.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Camera.swift; sourceTree = "<group>"; };
 		4F375D0F2B02A1320011F541 /* Entry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Entry.swift; sourceTree = "<group>"; };
@@ -316,7 +314,6 @@
 				4F31B8932BDBAA85007892BC /* Auth */,
 				4F31B8942BDBAB22007892BC /* User Management */,
 				4F31B8962BDBABB4007892BC /* Payments */,
-				4F375D042AE7CD3D0011F541 /* ContentView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -554,7 +551,6 @@
 				4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4F830F422D143A9E007992D2 /* MyPosts.swift in Sources */,
-				4F375D052AE7CD3D0011F541 /* ContentView.swift in Sources */,
 				4F830F442D15C676007992D2 /* MyPostsViewModel.swift in Sources */,
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
@@ -725,7 +721,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 126;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -733,10 +729,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
+				INFOPLIST_KEY_CFBundleDisplayName = SocialStar;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with other competitors in the competition.";
-				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with other players in the competition.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "SocialStar uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -744,15 +740,17 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDarkContent;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 10.6;
+				MARKETING_VERSION = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -772,7 +770,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 121;
+				CURRENT_PROJECT_VERSION = 126;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -780,10 +778,10 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pingbear/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Pingbear;
+				INFOPLIST_KEY_CFBundleDisplayName = SocialStar;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with other competitors in the competition.";
-				INFOPLIST_KEY_NSContactsUsageDescription = "Pingbear uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "The camera lets you take photos to share with other players in the competition.";
+				INFOPLIST_KEY_NSContactsUsageDescription = "SocialStar uses your contacts to help you connect with friends already on the platform. Your contacts won't be stored or shared with anyone.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app requires microphone access to capture audio with your videos.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -791,15 +789,17 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				INFOPLIST_KEY_UIStatusBarStyle = "";
+				INFOPLIST_KEY_UIStatusBarHidden = NO;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDarkContent;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 10.6;
+				MARKETING_VERSION = 11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

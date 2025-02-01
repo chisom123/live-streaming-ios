@@ -79,11 +79,11 @@ struct PingbearApp: App {
     var body: some Scene {
         WindowGroup {
             if isLoggedIn && Auth.auth().currentUser != nil {
-                ContentView()
+                MyCompsView()
                     .onAppear {
                         if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                            let window = scene.windows.first {
-                            window.overrideUserInterfaceStyle = .light
+                            window.overrideUserInterfaceStyle = .dark
                         }
                     }
                     .environment(\.didLogOut, didLogOut)
@@ -96,7 +96,7 @@ struct PingbearApp: App {
                         .onAppear {
                             if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                let window = scene.windows.first {
-                                window.overrideUserInterfaceStyle = .light
+                                window.overrideUserInterfaceStyle = .dark
                             }
                         }
                         .environment(\.didLogOut, didLogOut)
@@ -104,7 +104,7 @@ struct PingbearApp: App {
                             isLoggedIn = false
                         }
                 }
-                .accentColor(.black)
+                .accentColor(.white)
             }
         }
     }

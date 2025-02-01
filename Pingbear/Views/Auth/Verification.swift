@@ -6,6 +6,7 @@ import PostHog
 struct VerificationView: View {
     let phoneNumber: String
     let verificationID: String
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var verificationCode: String = ""
     @State private var errorMessage: String? = nil
@@ -16,67 +17,96 @@ struct VerificationView: View {
 
     var body: some View {
         VStack {
-            Text("Enter the verification code sent to \(phoneNumber)")
-                .font(.system(size: 18, weight: .bold, design: .default))
-                .multilineTextAlignment(.center)
-                .lineSpacing(10)
-                .foregroundColor(.black)
-                .padding(.bottom, 40)
-                .padding(.horizontal)
-                .onAppear {
-                    PostHogSDK.shared.capture("Verification Screen Viewed")
+            HStack {
+                Button(action: {
+                    // Dismiss the current view to go back
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .resizable() // Allows resizing of the image
+                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
+                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
+                        .foregroundColor(Color.white) // Your desired color
                 }
+                Spacer()
+            }
+            .padding(20)
             
-            // Phone Number TextField
-            TextField("Enter verification code", text: $verificationCode)
-                .keyboardType(.numberPad)
-                .padding()
-                .background(Color(hex: "#F5F5F5"))
-                .foregroundColor(Color(hex: "#000"))
-                .cornerRadius(5)
-                .font(.system(size: 16, weight: .bold, design: .default))
+            Spacer()
             
-            if let error = errorMessage {
-                Text(error)
-                    .foregroundColor(Color(hex: "#CC2255"))
-                    .font(.system(size: 15, weight: .bold, design: .default))
+            VStack {
+                Text("Enter the verification code sent to \(phoneNumber)")
+                    .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
-                    .padding(.bottom, 10)
+                    .foregroundColor(.white)
                     .padding(.top, 20)
+                    .padding(.bottom, 25)
                     .padding(.horizontal)
                     .onAppear {
-                        PostHogSDK.shared.capture("Verification Error", properties: ["error": error])
+                        PostHogSDK.shared.capture("Verification Screen Viewed")
                     }
-            }
-            if isLoading {
-                ProgressView()
-                    .padding(.top, 30)
-            } else {
-                Button(action: {
-                    self.verifyCode()
-                }) {
-                    Text("Continue")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                        .background(Color(hex: "#1199FF"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
+                
+                // Verification Code TextField
+                TextField("Enter verification code", text: $verificationCode)
+                    .keyboardType(.numberPad)
+                    .padding()
+                    .frame(height: 60)
+                    .background(
+                        Color(hex: "#3B4374")
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    )
+                    .foregroundColor(.white)
+                    .font(.system(size: 16, weight: .bold, design: .default))
+                
+                if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(Color(hex: "#FF0000"))
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .padding(.top, 20)
+                        .padding(.horizontal)
                 }
-                .padding(.top, 20)
-            }
             
-            // Conditional navigation based on user state
-            NavigationLink(destination: ContentView(), isActive: $navigateToHome) {
+                if isLoading {
+                    ProgressView()
+                        .padding(.vertical, 20)
+                        .tint(.white)
+                } else {
+                    Button(action: {
+                        self.verifyCode()
+                    }) {
+                        Text("Continue")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .background(Color(hex: "#FF4081"))
+                            .foregroundColor(Color(hex: "#fff"))
+                            .cornerRadius(200)
+                    }
+                    .padding(.top, 20)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(Color(hex: "#1A2245"))
+            .cornerRadius(10)
+            .padding(.horizontal, 20)
+            
+            // Navigation links
+            NavigationLink(destination: MyCompsView(), isActive: $navigateToHome) {
                 EmptyView()
             }.isDetailLink(false)
             
             NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
                 EmptyView()
             }.isDetailLink(false)
+            
+            Spacer()
         }
-        .padding()
+        .background(Color(hex: "#10183C"))
+        .navigationBarBackButtonHidden(true)
     }
 
     func verifyCode() {

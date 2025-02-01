@@ -15,10 +15,10 @@ struct MyFriendsView: View {
                         presentationMode.wrappedValue.dismiss()
                     }) {
                         Image(systemName: "arrow.left")
-                            .resizable() // Allows resizing of the image
-                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.black) // Your desired color
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
                     }
                     
                     Spacer()
@@ -27,55 +27,65 @@ struct MyFriendsView: View {
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .padding(.horizontal)
                     
                     Spacer()
                     
-                    Button(action: {
-                 
-                    }) {
+                    Button(action: {}) {
                         Image(systemName: "arrow.left")
-                            .resizable() // Allows resizing of the image
-                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.black) // Your desired color
-                            .opacity(0)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
                     }
+                    .opacity(0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
 
                 ScrollView {
-                    VStack(spacing: 25) {
+                    VStack(spacing: 0) {
                         ForEach(viewModel.friends, id: \.id) { friend in
-                            Button(action: {
-                                self.friendToManage = friend.id
-                                self.showActionSheet = true
-                            }) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 18) {
-                                        Text(friend.name)
-                                            .font(.system(size: 16, weight: .bold, design: .default))
-                                            .foregroundColor(.black)
+                            VStack(spacing: 0) {
+                                Button(action: {
+                                    self.friendToManage = friend.id
+                                    self.showActionSheet = true
+                                }) {
+                                    HStack {
+                                        VStack(alignment: .leading, spacing: 10) {
+                                            Text(friend.name)
+                                                .font(.system(size: 16, weight: .bold, design: .default))
+                                                .foregroundColor(.white)
+                                                .lineLimit(1)
+                                                .truncationMode(.tail)
+                                        }
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(Color(hex: "#D3D3D3"))
+                                            .font(.system(size: 15, weight: .bold))
                                     }
-                                    Spacer()
-                                    
-                                    Text("Options")
-                                        .font(.system(size: 16, weight: .bold, design: .default))
-                                        .foregroundColor(Color(hex: "#1199FF"))
+                                    .padding(.vertical, 30)
+                                    .padding(.horizontal, 20)
+                                    .background(Color(hex: "#1A2245"))
+                                    .contentShape(Rectangle())
                                 }
-                                .padding(.vertical, 25)
-                                .padding(.horizontal, 20)
-                                .background(Color(hex: "#F5F5F5"))
-                                .cornerRadius(5)
+                                .buttonStyle(PlainButtonStyle())
+
+                                if friend.id != viewModel.friends.last?.id {
+                                    Divider()
+                                        .background(Color.white.opacity(0.2))
+                                }
                             }
-                            .buttonStyle(PlainButtonStyle())  // This will ensure the default blue color overlay on tap is not applied.
                         }
                     }
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(10)
                     .padding(.horizontal, 20)
                 }
             }
+            .background(Color(hex: "#10183C"))
             .onAppear {
                 viewModel.fetchFriends()
             }

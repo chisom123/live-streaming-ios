@@ -93,10 +93,11 @@ struct FinalPreview: View {
          GeometryReader { proxy in
              ZStack {
                  if isUploading {
-                     Color.white.edgesIgnoringSafeArea(.all)
+                     Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
                      VStack {
                          ProgressView()
                              .padding()
+                             .tint(.white)
                      }
                  } else {
                      Color.black.edgesIgnoringSafeArea(.all)
@@ -198,7 +199,7 @@ struct FinalPreview: View {
                                  .frame(maxWidth: .infinity, minHeight: 44)
                                  .font(.system(size: 18, weight: .bold, design: .default))
                                  .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                 .background(Color(hex: "#1199FF"))
+                                 .background(Color(hex: "#FF4081"))
                                  .foregroundColor(.white)
                                  .cornerRadius(200)
                          }

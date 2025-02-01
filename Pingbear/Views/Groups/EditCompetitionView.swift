@@ -47,6 +47,7 @@ struct EditCompetitionView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Header
             HStack {
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
@@ -55,47 +56,51 @@ struct EditCompetitionView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 27, height: 27)
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                 }
                 
                 Spacer()
                 
                 Text("Edit Name")
                     .font(.system(size: 18, weight: .bold, design: .default))
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
                 Button(action: updateCompetitionName) {
                     Text("Save")
                         .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(Color(hex: "#1199FF"))
+                        .foregroundColor(Color(hex: "#FFF"))
                 }
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            
-            Divider()
+            .background(Color(hex: "#1A2245"))
             
             VStack(alignment: .leading, spacing: 20) {
                 TextField("Competition name", text: $competitionName)
                     .padding()
-                    .background(Color(hex: "#F5F5F5"))
-                    .foregroundColor(Color(hex: "#000"))
-                    .cornerRadius(5)
+                    .frame(height: 60)
+                    .background(Color(hex: "#3B4374"))
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                     .font(.system(size: 16, weight: .bold, design: .default))
                 
                 if let error = errorMessage {
                     Text(error)
-                        .foregroundColor(Color(hex: "#CC2255"))
+                        .foregroundColor(Color(hex: "#FF0000"))
                         .font(.system(size: 16, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 20)
+            .padding(.top, 30)
             
             Spacer()
         }
-        .ignoresSafeArea(edges: .top)
+        .background(Color(hex: "#10183C"))
+        .accentColor(.white)
+        .ignoresSafeArea()
         .onAppear {
             PostHogSDK.shared.capture("Edit Name View Opened")
         }

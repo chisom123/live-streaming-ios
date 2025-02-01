@@ -139,7 +139,7 @@ struct EntryView: View {
                     .padding(.horizontal) // Adds horizontal padding to the HStack
                     .padding(.vertical, 10) // Increase vertical padding of the HStack
                     .background(RoundedRectangle(cornerRadius: 200)
-                        .foregroundColor(AppColors.primary.opacity(0.95))) // Background color similar to the button
+                        .foregroundColor(Color(hex: "#1A2245"))) // Background color similar to the button
                     // Removed the shadow from the background
                 }
                 .padding(.horizontal)
