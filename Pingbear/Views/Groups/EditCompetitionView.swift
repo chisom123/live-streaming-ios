@@ -90,7 +90,7 @@ struct EditCompetitionView: View {
                     Text(error)
                         .foregroundColor(Color(hex: "#FF0000"))
                         .font(.system(size: 16, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                 }
             }
             .padding(.horizontal, 20)

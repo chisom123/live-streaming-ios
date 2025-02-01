@@ -1,12 +1,12 @@
 import SwiftUI
 import FirebaseAuth
+import NotificationBannerSwift
 
 struct MembersView: View {
     
     var competition: Competition
     @ObservedObject private var viewModel: MembersViewModel
     @State private var leaveGroupAlert = false
-    @State private var goHome = false
     @State private var showingJoinSelectView = false
     @State private var navigateToCompDetails = false
     
@@ -157,19 +157,18 @@ struct MembersView: View {
                     self.leaveGroupAlert = true
                 }) {
                     Text("Leave Competition")
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .font(.system(size: 15, weight: .bold, design: .default))
                         .foregroundColor(Color(hex: "#FFF"))
                         .frame(maxWidth: .infinity)
                         .padding(15)
-                        .cornerRadius(200)
-                        .padding(.horizontal, 20)
                 }
                 .alert(isPresented: $leaveGroupAlert) {
                     Alert(
                         title: Text("Are you sure?"),
                         primaryButton: .destructive(Text("Yes")) {
                             viewModel.leaveCompetition(competitionId: competition.id, userId: Auth.auth().currentUser?.uid ?? "")
-                            goHome = true
+                            let banner = NotificationBanner(title: "Successfully Left Competition", style: .success)
+                            banner.show(bannerPosition: .bottom)
                         },
                         secondaryButton: .cancel()
                     )
@@ -180,9 +179,6 @@ struct MembersView: View {
         .onAppear {
             viewModel.fetchMembersDetails(for: competition)
         }
-        .fullScreenCover(isPresented: $goHome, content: {
-            MyCompsView()
-        })
         .fullScreenCover(isPresented: $showingJoinSelectView) {
             JoinSelectView(competition: competition, viewModel: MyFriendsModel())
         }
