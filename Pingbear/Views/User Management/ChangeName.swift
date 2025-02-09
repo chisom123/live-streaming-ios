@@ -6,7 +6,9 @@ import PostHog
 struct ChangeNameView: View {
     
     @Environment(\.presentationMode) var presentationMode
+    @StateObject private var profileManager = ProfilePictureManager.shared
     @State private var userName: String = ""
+    @State private var profilePictureUrl: String = ""
     @State private var updatedName: String = ""
     @State private var errorMessage: String?
     @State private var messageStatus: MessageStatus? = nil  // 1. Add an enum-based state for the message status
@@ -34,6 +36,24 @@ struct ChangeNameView: View {
                     }
                     
                     Spacer()
+                    
+                    Text("My Account")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.white)
+                        .padding(.horizontal)
+                    
+                    Spacer()
+                    
+                    Button(action: {}) {
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
+                    }
+                    .opacity(0)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -41,25 +61,66 @@ struct ChangeNameView: View {
                 Spacer()
 
                 VStack {
-                    Text("My Username")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .foregroundColor(.white)
-                        .padding(.vertical, 20)
-                        .onAppear {
-                            PostHogSDK.shared.capture("Change Name View Opened")
-                        }
+                    HStack(spacing: 20) {
+                        ProfilePictureView(url: profileManager.currentProfileUrl ?? profilePictureUrl, size: 90)  // Update this line
+                        
+                        ProfilePictureSelector(onUpdateSuccess: { newUrl in
+                            profilePictureUrl = newUrl  // Add this line to update local state
+                        })
+                    }
+                    .padding(.bottom, 20)
                     
-                    TextField("Enter new username", text: $updatedName)
-                        .padding()
-                        .frame(height: 60)
-                        .background(Color(hex: "#3B4374"))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .padding(.horizontal)
-                        .accentColor(.white)
+                    Divider()
+                    
+                    HStack {
+                        Text("My Username")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .foregroundColor(.white)
+                            .padding(.vertical, 20)
+                            .onAppear {
+                                PostHogSDK.shared.capture("Change Name View Opened")
+                            }
+                        
+                        Spacer()
+                    }
+                    
+                    HStack(alignment: .center, spacing: 0) {
+                        TextField("Enter new username", text: $updatedName)
+                            .padding()
+                            .frame(height: 70)
+                            .background(
+                                Color(hex: "#3B4374")
+                                    .clipShape(
+                                        RoundedCorner(
+                                            radius: 10,
+                                            corners: [.topLeft, .bottomLeft]
+                                        )
+                                    )
+                            )
+                            .foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .accentColor(.white)
+                        
+                        Button(action: {
+                            updateUserName()
+                        }) {
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 20, weight: .bold, design: .default))
+                                .frame(width: 60, height: 70)
+                                .foregroundColor(.white)
+                                .background(
+                                    Color(hex: updatedName.isEmpty ? "#323862" : "#FF4081")
+                                        .clipShape(
+                                            RoundedCorner(
+                                                radius: 10,
+                                                corners: [.topRight, .bottomRight]
+                                                )
+                                        )
+                                )
+                        }
+                    }
                     
                     // Message Text
                     if let status = messageStatus {
@@ -70,7 +131,7 @@ struct ChangeNameView: View {
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(10)
-                                .padding(.top, 20)
+                                .padding(.vertical, 20)
                                 .padding(.horizontal)
                             
                         case .success:
@@ -79,31 +140,11 @@ struct ChangeNameView: View {
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .multilineTextAlignment(.center)
                                 .lineSpacing(10)
-                                .padding(.top, 20)
+                                .padding(.vertical, 20)
                                 .padding(.horizontal)
                         case .none:
                             EmptyView()
                         }
-                    }
-                    
-                    if isLoading {
-                        ProgressView()
-                            .padding(.vertical, 20)
-                            .tint(.white)
-                    } else {
-                        Button(action: {
-                            updateUserName()
-                        }) {
-                            Text("Save")
-                                .frame(maxWidth: .infinity, minHeight: 44)
-                                .font(.system(size: 18, weight: .bold, design: .default))
-                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color(hex: "#FF4081"))
-                                .foregroundColor(Color(hex: "#fff"))
-                                .cornerRadius(200)
-                        }
-                        .padding(.vertical, 20)
-                        .padding(.horizontal)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -124,9 +165,11 @@ struct ChangeNameView: View {
         let docRef = db.collection("users").document(userId)
 
         docRef.getDocument { (document, error) in
-            if let document = document, document.exists, let username = document.data()?["username"] as? String {
-                self.userName = username
-                self.updatedName = username
+            if let document = document, document.exists {
+                let data = document.data()
+                self.userName = data?["username"] as? String ?? ""
+                self.updatedName = self.userName
+                self.profilePictureUrl = data?["profilePictureUrl"] as? String ?? ""
             } else {
                 print("Document does not exist or username not found")
             }
@@ -170,6 +213,7 @@ struct ChangeNameView: View {
                         self.errorMessage = "Error updating username: \(err.localizedDescription)"
                     } else {
                         self.messageStatus = .success
+                        hideKeyboard()
                         PostHogSDK.shared.capture("Username Updated")
                     }
                 }

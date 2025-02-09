@@ -167,14 +167,8 @@ struct AddFriendsView: View {
                                             Text("Add")
                                                 .font(.system(size: 17, weight: .bold))
                                                 .foregroundColor(Color(hex: "#FFF"))
-                                            
-                                            Image(systemName: "plus.circle.fill")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 18, height: 18)
-                                                .foregroundColor(Color(hex: "#FFF"))
                                         }
-                                        .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                        .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
                                         .background(Color(hex: "#FF4081"))
                                         .cornerRadius(200)
                                     }

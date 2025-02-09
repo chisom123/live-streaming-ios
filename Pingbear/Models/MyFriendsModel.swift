@@ -5,12 +5,10 @@ import PostHog
 class AppUser: Identifiable {
     var id: String
     var name: String
-    var phoneNumber: String
 
-    init(id: String, name: String, phoneNumber: String) {
+    init(id: String, name: String) {
         self.id = id
         self.name = name
-        self.phoneNumber = phoneNumber
     }
 }
 
@@ -57,9 +55,8 @@ class MyFriendsModel: ObservableObject {
             usersRef.document(friendID).getDocument { (document, error) in
                 defer { group.leave() }
                 if let document = document, document.exists,
-                   let name = document.data()?["username"] as? String,
-                   let phoneNumber = document.data()?["phoneNumber"] as? String {
-                    let user = AppUser(id: friendID, name: name, phoneNumber: phoneNumber)
+                   let name = document.data()?["username"] as? String {
+                    let user = AppUser(id: friendID, name: name)
                     users.append(user)
                 } else if let error = error {
                     print("Error fetching user details: \(error)")

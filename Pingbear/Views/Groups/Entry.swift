@@ -48,7 +48,7 @@ struct EntryView: View {
                                 AsyncImage(url: imageURL) { phase in
                                     switch phase {
                                     case .empty:
-                                        ProgressView().tint(.white)
+                                        Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                                     case .success(let image):
                                         image
                                             .resizable()
@@ -80,7 +80,7 @@ struct EntryView: View {
                                 .id(viewModel.currentIndex)
                                 .ignoresSafeArea()
                             } else {
-                                ProgressView()
+                                ProgressView().tint(.white)
                             }
                         }
                     }

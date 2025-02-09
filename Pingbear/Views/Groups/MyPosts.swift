@@ -132,7 +132,7 @@ struct PostCard: View {
                 case .failure:
                     Image(systemName: "photo")
                         .frame(maxWidth: .infinity)
-                        .frame(height: 200)
+                        .frame(height: 300)
                         .background(Color(hex: "#1A2245"))
                         .foregroundColor(.white)
                 @unknown default:
@@ -162,6 +162,12 @@ struct PostCard: View {
                     HStack(spacing: 7) {
                         Text("Boost")
                             .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image(systemName: "arrow.up.square.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 17, height: 17)
                             .foregroundColor(.white)
                     }
                     .padding(.horizontal, 10)

@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import CryptoKit
 import PostHog
 
 struct NameEntryView: View {
@@ -116,6 +117,21 @@ struct NameEntryView: View {
             }
         }
     }
+    
+    func hashPhoneNumber(_ phoneNumber: String) -> String {
+        // Normalize phone number (remove non-digit characters)
+        let cleanedNumber = phoneNumber
+            .components(separatedBy: CharacterSet.decimalDigits.inverted)
+            .joined()
+        
+        // Use a fixed, app-wide salt
+        let salt = "5Ax1HpaMDwxIv15M6t4ZdGuC8"
+        
+        // Hash the normalized number with the consistent salt
+        let hashInput = salt + cleanedNumber
+        let hash = SHA256.hash(data: Data(hashInput.utf8))
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
 
     func saveUsernameToFirestore(processedUsername: String) {
         guard let userID = Auth.auth().currentUser?.uid else {
@@ -125,10 +141,13 @@ struct NameEntryView: View {
         }
        
         let db = Firestore.firestore()
+        
+        // Hash the phone number before storing
+        let hashedPhoneNumber = hashPhoneNumber(phoneNumber)
        
         db.collection("users").document(userID).setData([
             "username": processedUsername,
-            "phoneNumber": phoneNumber
+            "phoneNumberHash": hashedPhoneNumber // Store hashed phone number instead
         ], merge: true) { error in
             isLoading = false
             if let error = error {

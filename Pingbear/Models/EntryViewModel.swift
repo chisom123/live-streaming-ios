@@ -7,6 +7,7 @@ struct Entry: Identifiable {
     let photoUrl: String
     let userName: String
     let stars: Int
+    let userProfilePictureUrl: String?
     let isCurrentUser: Bool
     let isSuperstar: Bool
     let creationDate: Date
@@ -18,6 +19,7 @@ struct Entry: Identifiable {
 struct UserEntry: Identifiable {
     let id: String
     let userName: String
+    let profilePictureUrl: String?
     var totalStars: Int
 }
 
@@ -211,6 +213,7 @@ class EntryViewModel: ObservableObject {
         
         let group = DispatchGroup()
         var userNames: [String: String] = [:]
+        var userProfilePictures: [String: String] = [:]
         var localEntries = [Entry]()
         var userStarsDict = [String: UserEntry]()
 
@@ -227,8 +230,14 @@ class EntryViewModel: ObservableObject {
                 }
                 
                 snapshot?.documents.forEach { document in
-                    if let username = document.data()["username"] as? String {
+                    // UPDATED: Get all user data at once
+                    let data = document.data()
+                    if let username = data["username"] as? String {
                         userNames[document.documentID] = username
+                    }
+                    // ADDED: Store profile picture URL
+                    if let profilePictureUrl = data["profilePictureUrl"] as? String {
+                        userProfilePictures[document.documentID] = profilePictureUrl
                     }
                 }
             }
@@ -254,11 +263,13 @@ class EntryViewModel: ObservableObject {
                 let isFromCamera = document.data()["isFromCamera"] as? Bool ?? true
                 let isCurrentUser = userId == currentUserId
                 let userName = isCurrentUser ? "Me" : (userNames[userId] ?? "Unknown")
+                let profilePictureUrl = userProfilePictures[userId]
                 
                 let entry = Entry(id: documentId,
                                   photoUrl: imageUrl,
                                   userName: userName,
-                                  stars: stars,
+                                  stars: stars, 
+                                  userProfilePictureUrl: profilePictureUrl,
                                   isCurrentUser: isCurrentUser,
                                   isSuperstar: isSuperstar,
                                   creationDate: creationDate,
@@ -271,7 +282,7 @@ class EntryViewModel: ObservableObject {
                 if let userEntry = userStarsDict[userId] {
                     userStarsDict[userId]?.totalStars += stars
                 } else {
-                    userStarsDict[userId] = UserEntry(id: userId, userName: userName, totalStars: stars)
+                    userStarsDict[userId] = UserEntry(id: userId, userName: userName, profilePictureUrl: profilePictureUrl, totalStars: stars)
                 }
             }
             

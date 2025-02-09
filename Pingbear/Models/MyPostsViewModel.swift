@@ -61,6 +61,7 @@ class MyPostsViewModel: ObservableObject {
                         photoUrl: photoUrl,
                         userName: "Me",
                         stars: stars,
+                        userProfilePictureUrl: "",
                         isCurrentUser: true,
                         isSuperstar: data["superstar"] as? Bool ?? false,
                         creationDate: timestamp.dateValue(),

@@ -3,6 +3,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import PhoneNumberKit
 import PostHog
+import CryptoKit
 
 struct Contact {
     var firstName: String
@@ -22,6 +23,8 @@ class ContactViewModel: ObservableObject {
     private let phoneNumberKit = PhoneNumberKit()
     private var currentUserFriends: Set<String> = []
     private var processedPhoneNumbers: Set<String> = []
+    
+    private let salt = "5Ax1HpaMDwxIv15M6t4ZdGuC8"
     
     var hasAddedAnyFriends: Bool {
         matchedUsers.contains(where: { $0.isAdded })
@@ -107,6 +110,18 @@ class ContactViewModel: ObservableObject {
         }
     }
     
+    private func hashPhoneNumber(_ phoneNumber: String) -> String {
+        // Normalize phone number by removing non-digit characters
+        let cleanedNumber = phoneNumber
+            .components(separatedBy: CharacterSet.decimalDigits.inverted)
+            .joined()
+        
+        // Create a consistent hash using a fixed salt
+        let hashInput = salt + cleanedNumber
+        let hash = SHA256.hash(data: Data(hashInput.utf8))
+        return hash.compactMap { String(format: "%02x", $0) }.joined()
+    }
+    
     private func compareContacts(phoneNumber: String, firstName: String, lastName: String) {
         if processedPhoneNumbers.contains(phoneNumber) {
             return
@@ -114,7 +129,9 @@ class ContactViewModel: ObservableObject {
         
         processedPhoneNumbers.insert(phoneNumber)
         
-        db.collection("users").whereField("phoneNumber", isEqualTo: phoneNumber).getDocuments { [weak self] snapshot, error in
+        let hashedPhoneNumber = hashPhoneNumber(phoneNumber)
+        
+        db.collection("users").whereField("phoneNumberHash", isEqualTo: hashedPhoneNumber).getDocuments { [weak self] snapshot, error in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
@@ -126,10 +143,9 @@ class ContactViewModel: ObservableObject {
                     for doc in snapshot.documents {
                         let data = doc.data()
                         if let username = data["username"] as? String,
-                           let phoneNumber = data["phoneNumber"] as? String,
                            !self.currentUserFriends.contains(doc.documentID) {
-                            let newContact = Contact(firstName: firstName, lastName: lastName, username: username, phoneNumber: phoneNumber)
-                            if !self.matchedUsers.contains(where: { $0.phoneNumber == phoneNumber }) {
+                            let newContact = Contact(firstName: firstName, lastName: lastName, username: username, phoneNumber: hashedPhoneNumber)
+                            if !self.matchedUsers.contains(where: { $0.phoneNumber == hashedPhoneNumber }) {
                                 self.matchedUsers.append(newContact)
                             }
                         }

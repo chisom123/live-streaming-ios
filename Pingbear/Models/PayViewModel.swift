@@ -11,7 +11,7 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     var competitionId: String = "" // Add this line
     var entryDocId: String = "" // Add this line
     
-    private var productIdentifiers: Set<String> = ["one_day_boost", "one_month_boost", "one_week_boost"]
+    private var productIdentifiers: Set<String> = ["one_day_boost", "one_hour_boost", "one_week_boost"]
 
     override init() {
         super.init()
@@ -51,8 +51,8 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             expirationDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
         case "one_week_boost":
             expirationDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: currentDate)!
-        case "one_month_boost":
-            expirationDate = Calendar.current.date(byAdding: .month, value: 1, to: currentDate)!
+        case "one_hour_boost":
+            expirationDate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
         default:
             print("Unknown or unsupported product identifier")
             PostHogSDK.shared.capture("Unsupported Product Identifier", properties: ["productID": transaction.payment.productIdentifier])

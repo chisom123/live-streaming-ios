@@ -143,15 +143,27 @@ struct CompDetails: View {
                     } else {
                         ScrollView {
                             VStack(spacing: 0) {
-                                ForEach(entryViewModel.userLeaderboard) { userEntry in
+                                // Update the ForEach loop section to include index
+                                ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
                                     VStack(spacing: 0) {
                                         HStack {
-                                            Text(userEntry.userName)
+                                            // Position number
+                                            Text("\(index + 1)")
                                                 .font(.system(size: 16, weight: .bold))
-                                                .lineLimit(1)
-                                                .truncationMode(.tail)
                                                 .foregroundColor(.white)
-                                                .padding(.leading, 30)
+                                                .frame(width: 30)
+                                                .padding(.leading, 20)
+                                            
+                                            // Profile picture and username group
+                                            HStack(spacing: 20) {
+                                                ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
+                                                
+                                                Text(userEntry.userName)
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .lineLimit(1)
+                                                    .truncationMode(.tail)
+                                                    .foregroundColor(.white)
+                                            }
 
                                             Spacer()
 
@@ -330,19 +342,33 @@ struct EmptyLeaderboardView: View {
 
 struct NoPlayersView: View {
     var action_player: () -> Void
+    @State private var currentUserProfileUrl: String?
+    private let db = Firestore.firestore()
     
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(["Me", "Player 2", "Player 3", "Player 4"], id: \.self) { userName in
+                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         HStack {
-                            Text(userName)
+                            // Position number
+                            Text("\(index + 1)")
                                 .font(.system(size: 16, weight: .bold))
-                                .lineLimit(1)
-                                .truncationMode(.tail)
                                 .foregroundColor(.white)
-                                .padding(.leading, 30)
+                                .frame(width: 30)
+                                .padding(.leading, 20)
+                            
+                            // Profile picture and username group
+                            HStack(spacing: 20) {
+                                // Use fetched profile picture URL for "Me", nil for others
+                                ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
+                                
+                                Text(userName)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .foregroundColor(.white)
+                            }
 
                             Spacer()
 
@@ -368,14 +394,8 @@ struct NoPlayersView: View {
                                         Text("Add")
                                             .font(.system(size: 17, weight: .bold))
                                             .foregroundColor(Color(hex: "#FFF"))
-                                        
-                                        Image(systemName: "plus.circle.fill")
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 18, height: 18)
-                                            .foregroundColor(Color(hex: "#FFF"))
                                     }
-                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                    .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
                                     .background(Color(hex: "#FF4081"))
                                     .cornerRadius(200)
                                 }
@@ -395,6 +415,19 @@ struct NoPlayersView: View {
             .background(Color(hex: "#1A2245"))
             .cornerRadius(10)
             .padding(.horizontal, 20)
+        }
+        .onAppear {
+            fetchCurrentUserProfilePicture()
+        }
+    }
+    
+    private func fetchCurrentUserProfilePicture() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let document = document, document.exists {
+                self.currentUserProfileUrl = document.data()?["profilePictureUrl"] as? String
+            }
         }
     }
 }

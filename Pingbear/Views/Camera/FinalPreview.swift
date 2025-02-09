@@ -310,13 +310,11 @@ struct FinalPreview: View {
                     print("Entry saved successfully")
                     
                     DispatchQueue.main.async {
-                        self.navigateToCompDetails = true
-                        
-//                        if superstar {
-//                            self.navigateToCompDetails = true
-//                        } else {
-//                            self.entrySaved = true
-//                        }
+                        if superstar {
+                            self.navigateToCompDetails = true
+                        } else {
+                            self.entrySaved = true
+                        }
                     }
                 }
 

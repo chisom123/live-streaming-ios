@@ -11,13 +11,13 @@ struct SettingsView: View {
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
     
     enum ActiveSheet: Identifiable {
-        case addFriends, myFriends, changeName
+        case addFriends, myFriends, myAccount
         
         var id: Int {
             switch self {
             case .addFriends: return 0
             case .myFriends: return 1
-            case .changeName: return 2
+            case .myAccount: return 2
             }
         }
     }
@@ -72,20 +72,20 @@ struct SettingsView: View {
                 VStack(spacing: 50) {
                     // Account Settings Section
                     VStack(spacing: 0) {
-                        ForEach(["Add Friends", "My Friends", "My Username"], id: \.self) { text in
+                        ForEach(["Add Friends", "My Friends", "My Account"], id: \.self) { text in
                             VStack(spacing: 0) {
                                 Button(action: {
                                     switch text {
                                     case "Add Friends": activeSheet = .addFriends
                                     case "My Friends": activeSheet = .myFriends
-                                    case "My Username": activeSheet = .changeName
+                                    case "My Account": activeSheet = .myAccount
                                     default: break
                                     }
                                 }) {
                                     SettingsRow(text: text, color: .white)
                                 }
                                 
-                                if text != "My Username" {
+                                if text != "My Account" {
                                     Divider()
                                         .background(Color.white.opacity(0.2))
                                 }
@@ -133,7 +133,7 @@ struct SettingsView: View {
                 AddFriendsView(addFriendsModel: AddFriendsModel())
             case .myFriends:
                 MyFriendsView(viewModel: MyFriendsModel())
-            case .changeName:
+            case .myAccount:
                 ChangeNameView()
             }
         }

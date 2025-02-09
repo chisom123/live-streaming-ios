@@ -59,15 +59,14 @@ struct MembersView: View {
                         
                         Spacer()
                         
-                        Image(systemName: "person.badge.plus.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 25, height: 25)
-                            .font(.system(size: 25, weight: .bold))
-                            .foregroundColor(Color(hex: "#FF4081"))
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(Color(hex: "#D3D3D3"))
+                            .font(.system(size: 15, weight: .bold))
+                            .padding(.trailing, 10)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(20)
+                    .padding(.vertical, 5)
                     .background(Color(hex: "#1A2245"))
                     .cornerRadius(10)
                     .padding(.bottom, 20)
@@ -105,14 +104,8 @@ struct MembersView: View {
                                                 Text("Add")
                                                     .font(.system(size: 17, weight: .bold))
                                                     .foregroundColor(Color(hex: "#FFF"))
-                                                
-                                                Image(systemName: "plus.circle.fill")
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .frame(width: 18, height: 18)
-                                                    .foregroundColor(Color(hex: "#FFF"))
                                             }
-                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                            .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
                                             .background(Color(hex: "#FF4081"))
                                             .cornerRadius(200)
                                         }

@@ -10,6 +10,7 @@ struct JoinSelectView: View {
     @State private var isShareSheetPresented = false
     @State private var showAddFriendsView = false
     @State private var isLoading = true
+    @Environment(\.presentationMode) var presentationMode
     
     var competition: Competition
     @ObservedObject var viewModel: MyFriendsModel
@@ -21,7 +22,7 @@ struct JoinSelectView: View {
                 // Header
                 HStack {
                     Button(action: {
-                        isPresentingCompDetails = true
+                        presentationMode.wrappedValue.dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()
@@ -62,22 +63,21 @@ struct JoinSelectView: View {
                     }) {
                         HStack {
                             Text("Invite Friends to Play")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
-                                .truncationMode(.tail)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.leading, 10)
                             
                             Spacer()
                             
-                            Image(systemName: "square.and.arrow.up")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 25, height: 25)
-                                .font(.system(size: 25, weight: .bold))
-                                .foregroundColor(Color(hex: "#FF4081"))
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Color(hex: "#D3D3D3"))
+                                .padding(.trailing, 10)
+                                .font(.system(size: 15, weight: .bold))
                         }
                         .frame(maxWidth: .infinity)
                         .padding(20)
+                        .padding(.vertical, 5)
                         .background(Color(hex: "#1A2245"))
                         .cornerRadius(10)
                         .padding(.bottom, 20)
@@ -171,7 +171,7 @@ struct JoinSelectView: View {
     }
     
     private func createShareText() -> String {
-        return "pingbearapp.com"
+        return "apps.apple.com/app/socialstar-social-competition/id6473705189"
     }
     
     private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
@@ -205,37 +205,50 @@ struct JoinSelectView: View {
     
     func updateCompetitionWithNotifications(username: String) {
         let db = Firestore.firestore()
-        let batch = db.batch()
         let dispatchGroup = DispatchGroup()
-
+        
+        // Changed from batch write to sequential operations
         for userId in selectedFriends {
             dispatchGroup.enter()
-            isUserAlreadyMember(userId: userId) { isMember in
-                if !isMember {
-                    let memberRef = db.collection("competitions").document(self.competition.id).collection("members").document(userId)
-                    let memberData: [String: Any] = ["userId": userId]
-                    batch.setData(memberData, forDocument: memberRef)
-
-                    let membershipRef = db.collection("groupMemberships").document(userId).collection("competitions").document(self.competition.id)
-                    let membershipData: [String: Any] = ["competitionId": self.competition.id]
-                    batch.setData(membershipData, forDocument: membershipRef)
-                    
-                    PostHogSDK.shared.capture("Friend Added to Competition", properties: ["userId": userId])
+            
+            // STEP 1: First add to competition members collection
+            // This establishes membership which is required by security rules
+            let memberRef = db.collection("competitions")
+                .document(competition.id)
+                .collection("members")
+                .document(userId)
+            
+            memberRef.setData(["userId": userId]) { error in
+                if let error = error {
+                    print("Error adding member: \(error)")
+                    dispatchGroup.leave()
+                    return
                 }
-                dispatchGroup.leave()
+                
+                // STEP 2: Now that membership is established, we can add to groupMemberships
+                // This should now work because the security rules can verify membership
+                let membershipRef = db.collection("groupMemberships")
+                    .document(userId)
+                    .collection("competitions")
+                    .document(competition.id)
+                
+                membershipRef.setData(["competitionId": competition.id]) { error in
+                    if let error = error {
+                        print("Error adding to groupMemberships: \(error)")
+                    } else {
+                        // Analytics event only tracked on successful addition
+                        PostHogSDK.shared.capture("Friend Added to Competition",
+                                                properties: ["userId": userId])
+                    }
+                    dispatchGroup.leave()
+                }
             }
         }
 
+        // Wait for all operations to complete before continuing
         dispatchGroup.notify(queue: .main) {
-            batch.commit { err in
-                if let err = err {
-                    print("Error writing batch: \(err)")
-                } else {
-                    print("Batch write succeeded.")
-                    DispatchQueue.main.async {
-                        self.isPresentingCompDetails = true
-                    }
-                }
+            DispatchQueue.main.async {
+                self.isPresentingCompDetails = true
             }
         }
     }
