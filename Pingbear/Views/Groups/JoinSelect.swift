@@ -99,8 +99,8 @@ struct JoinSelectView: View {
                         Button(action: {
                             self.showAddFriendsView = true
                         }) {
-                            Text("Add Friend")
-                                .font(.system(size: 17, weight: .bold, design: .default))
+                            Text("Add Friends")
+                                .font(.system(size: 18, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FF4081"))
                         }
                         

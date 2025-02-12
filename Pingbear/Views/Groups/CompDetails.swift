@@ -373,7 +373,7 @@ struct NoPlayersView: View {
                             Spacer()
 
                             if userName == "Me" {
-                                HStack(spacing: 8) {
+                                HStack(spacing: 6.5) {
                                     Text("0")
                                         .font(.system(size: 17, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF"))
@@ -384,7 +384,7 @@ struct NoPlayersView: View {
                                         .frame(width: 18, height: 18)
                                         .foregroundColor(Color(hex: "#FFF"))
                                 }
-                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
                                 .background(Color(hex: "#DAA520"))
                                 .cornerRadius(200)
                                 .padding(.trailing, 30)
