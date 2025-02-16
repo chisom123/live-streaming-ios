@@ -50,7 +50,9 @@ struct MyCompsView: View {
             Spacer()
             
             if isLoading {
-                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                ProgressView()
+                    .tint(.white)
+                Spacer()
             } else if viewModel.competitions.isEmpty {
                 EmptyCompsView(
                     newCompAction: {
