@@ -10,6 +10,8 @@ struct JoinSelectView: View {
     @State private var isShareSheetPresented = false
     @State private var showAddFriendsView = false
     @State private var isLoading = true
+    @State private var showMinimumPlayersAlert = false
+    @State private var currentMemberCount: Int = 0
     @Environment(\.presentationMode) var presentationMode
     
     var competition: Competition
@@ -133,9 +135,21 @@ struct JoinSelectView: View {
                         }
                     }
                     
+                    if !selectedFriends.isEmpty && (currentMemberCount + selectedFriends.count) < 3 {
+                        Text("\(3 - (currentMemberCount + selectedFriends.count)) More Player Needed")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(Color(hex: "#FFF"))
+                            .padding(.top, 10)
+                    }
+                    
                     Button(action: {
-                        updateCompetitionAllowJoin()
-                        isPresentingCompDetails = true
+                        if (currentMemberCount + selectedFriends.count) >= 3 {
+                            updateCompetitionAllowJoin()
+                            isPresentingCompDetails = true
+                        } else {
+                            showMinimumPlayersAlert = true
+                            PostHogSDK.shared.capture("Minimum Player Alert Showed")
+                        }
                     }) {
                         Text("Continue")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -154,6 +168,7 @@ struct JoinSelectView: View {
         }
         .background(Color(hex: "#10183C"))
         .onAppear {
+            fetchMemberCount()
             viewModel.fetchFriends {
                 isLoading = false
             }
@@ -168,6 +183,29 @@ struct JoinSelectView: View {
         }) {
             AddFriendsView(addFriendsModel: AddFriendsModel())
         }
+        .alert(isPresented: $showMinimumPlayersAlert) {
+            Alert(
+                title: Text("1 More Player Needed to Continue"),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+    
+    private func fetchMemberCount() {
+        let db = Firestore.firestore()
+        db.collection("competitions")
+            .document(competition.id)
+            .collection("members")
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error fetching member count: \(error)")
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self.currentMemberCount = snapshot?.documents.count ?? 0
+                }
+            }
     }
     
     private func createShareText() -> String {

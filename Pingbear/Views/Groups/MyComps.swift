@@ -146,16 +146,42 @@ struct MyCompsView: View {
         }
         
         let db = Firestore.firestore()
+        
+        // First fetch the user's username
+        db.collection("users").document(userID).getDocument { (document, error) in
+            if let error = error {
+                print("Error fetching username: \(error.localizedDescription)")
+                // Fallback to creating competition with default name
+                self.createCompetitionWithName("Unnamed Competition")
+                return
+            }
+            
+            guard let document = document, document.exists,
+                  let username = document.data()?["username"] as? String else {
+                // Fallback to creating competition with default name if username not found
+                self.createCompetitionWithName("Unnamed Competition")
+                return
+            }
+            
+            // Create competition with username
+            let competitionName = "\(username)'s competition"
+            self.createCompetitionWithName(competitionName)
+        }
+    }
+
+    private func createCompetitionWithName(_ name: String) {
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+        
+        let db = Firestore.firestore()
         let batch = db.batch()
         
         let competitionRef = db.collection("competitions").document()
-        let competitionId = competitionRef.documentID  // Get the ID early to use in the data
+        let competitionId = competitionRef.documentID
         let timestamp = Timestamp()
-        let defaultName = "Unnamed Competition"
         
         let competitionData: [String: Any] = [
-            "id": competitionId,  // Add the ID to the competition document
-            "description": defaultName,
+            "id": competitionId,
+            "description": name,
             "timestamp": timestamp
         ]
         
@@ -177,7 +203,7 @@ struct MyCompsView: View {
                 DispatchQueue.main.async {
                     self.selectedCompetition = Competition( // Changed to use existing selectedCompetition
                         id: competitionRef.documentID,
-                        description: defaultName,
+                        description: name,
                         date: timestamp.dateValue()
                     )
                 }

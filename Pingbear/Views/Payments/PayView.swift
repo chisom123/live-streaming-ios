@@ -24,16 +24,20 @@ struct PayView: View {
                 VStack {
                     HStack {
                         Spacer()
-                        Button("Skip") {
+                        Button(action: {
                             navigateToCompDetails = true
-                            PostHogSDK.shared.capture("Boost Skip")
+                        }) {
+                            Image("x")
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(.white) // or any color you want
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 35, height: 35)
                         }
-                        .font(.system(size: 17, weight: .bold, design: .default))
-                        .foregroundColor(Color(hex: "#FFF"))
                     }
                     .padding(.top, 20)
-                    .padding(.horizontal, 25)
-                    .padding(.bottom, 25)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
                     
                     Text("Boost Your Ratings")
                         .font(.system(size: 25, weight: .bold, design: .default)) // Apply common styling here
@@ -41,7 +45,7 @@ struct PayView: View {
                         .lineSpacing(10)
                         .foregroundColor(Color(hex: "#FFF")) // This affects the entire Text view, might need adjustment if it overrides individual colors
                         .padding(.bottom, 20)
-                        .padding(.top, 25)
+                        .padding(.top, 20)
                         .padding(.horizontal, 20)
                     
                     HStack {
