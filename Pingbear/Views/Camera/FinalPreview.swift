@@ -3,6 +3,7 @@ import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
 import PostHog
+import FirebaseMessaging
 
 struct CustomTextView: UIViewRepresentable {
     @Binding var text: String
@@ -86,6 +87,7 @@ struct FinalPreview: View {
     @State private var overlayVerticalPosition: CGFloat = UIScreen.main.bounds.height / 2
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
+    @StateObject private var notificationSender = PushNotificationSender()
     let characterLimit = 150
     var isFromCamera: Bool
 
@@ -193,7 +195,10 @@ struct FinalPreview: View {
                          Spacer()
                          Button(action: {
                              isUploading = true
-                             submitEntry()
+                             // Send dummy notification to warm up the function before submitting the entry
+                             sendDummyNotification {
+                                 submitEntry()
+                             }
                          }) {
                              Text("Share")
                                  .frame(maxWidth: .infinity, minHeight: 44)
@@ -222,6 +227,36 @@ struct FinalPreview: View {
              }
          }
      }
+    
+    // Add a function to send a dummy notification
+    func sendDummyNotification(completion: (() -> Void)? = nil) {
+        // Get the current FCM token
+        if let token = Messaging.messaging().fcmToken {
+            // Send a silent dummy notification that won't be shown to the user
+            notificationSender.sendPushNotification(
+                to: token,
+                title: "warmup",
+                body: "warmup",
+                completion: { result in
+                    switch result {
+                    case .success:
+                        print("Warmup notification sent successfully")
+                    case .failure(let error):
+                        print("Failed to send warmup notification: \(error.localizedDescription)")
+                    }
+                    // Execute the completion handler regardless of success/failure
+                    DispatchQueue.main.async {
+                        completion?()
+                    }
+                }
+            )
+        } else {
+            print("FCM token not available for warmup notification")
+            DispatchQueue.main.async {
+                completion?()
+            }
+        }
+    }
     
     func submitEntry() {
         isUploading = true
@@ -310,6 +345,15 @@ struct FinalPreview: View {
                     print("Entry saved successfully")
                     
                     DispatchQueue.main.async {
+                        // Queue the notification to be sent later - after UI transitions are complete
+                        NotificationQueueManager.shared.queueNotification(
+                            competitionId: self.competitionId,
+                            competitionDescription: self.competition.description,
+                            userId: userId
+                        )
+                        
+                        PostHogSDK.shared.capture("New Photo Shared")
+                        
                         if superstar {
                             self.navigateToCompDetails = true
                         } else {
@@ -317,8 +361,6 @@ struct FinalPreview: View {
                         }
                     }
                 }
-
-                PostHogSDK.shared.capture("New Photo Shared")
             }
         }
     }

@@ -1,15 +1,16 @@
 import SwiftUI
 import Firebase
+import FirebaseMessaging
 import Combine
 import PostHog
 import AVFoundation
+import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
-    var pushNotificationManager: PushNotificationManager?
+    var pushNotificationManager = PushNotificationManager.shared
   
-    func application(_ application: UIApplication,
-                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
 
         let POSTHOG_API_KEY = "phc_TiMANSKNXenX3AKMp8mt9emsGH3W1hPJBM9Rc7AQCzZ"
@@ -18,21 +19,25 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let config = PostHogConfig(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
         PostHogSDK.shared.setup(config)
         
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized && Auth.auth().currentUser != nil {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
+        
+        // Then setup the notification manager
+        pushNotificationManager.setup()
+        
         setupDefaultCameraPosition()
+        
+        // Setup notification center delegate
+        UNUserNotificationCenter.current().delegate = self
         
         NotificationCenter.default.addObserver(self, selector: #selector(clearNotifications), name: UIApplication.willEnterForegroundNotification, object: nil)
         
-        UNUserNotificationCenter.current().delegate = self
-        
         return true
-    }
-    
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        completionHandler([.banner, .sound])
     }
     
     private func setupDefaultCameraPosition() {
@@ -43,11 +48,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        pushNotificationManager?.handleDeviceToken(deviceToken)
+        pushNotificationManager.handleDeviceToken(deviceToken)
     }
     
     @objc private func clearNotifications() {
         UNUserNotificationCenter.current().removeAllDeliveredNotifications()
+        UIApplication.shared.applicationIconBadgeNumber = 0
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

@@ -6,6 +6,17 @@ import AVFoundation
 
 struct CompDetails: View {
     
+    enum AlertType: Identifiable {
+        case camera, notification
+        
+        var id: Int {
+            switch self {
+                case .camera: return 0
+                case .notification: return 1
+            }
+        }
+    }
+    
     @Environment(\.presentationMode) var presentationMode
     @State private var goToMyComps = false
     @State private var isCameraPresented = false
@@ -15,8 +26,9 @@ struct CompDetails: View {
     @State private var isEditingCompetition = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
-    @State private var showPermissionAlert = false
     @State private var showingJoinSelectView = false
+    @StateObject private var notificationManager = PushNotificationManager.shared
+    @State private var activeAlert: AlertType?
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -209,6 +221,7 @@ struct CompDetails: View {
         .background(Color(hex: "#10183C"))
         .onAppear {
             fetchData()
+            NotificationQueueManager.shared.processQueuedNotifications()
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competition: competition)
@@ -234,13 +247,26 @@ struct CompDetails: View {
         .onDisappear {
             entryViewModel.removeListeners()
         }
-        .alert(isPresented: $showPermissionAlert) {
-            Alert(
-                title: Text("Camera Required"),
-                message: Text("Camera access is required to take photos. Please enable it in Settings."),
-                primaryButton: .default(Text("Open Settings"), action: openSettings),
-                secondaryButton: .cancel()
-            )
+        .alert(item: $activeAlert) { alertType in
+            switch alertType {
+            case .camera:
+                return Alert(
+                    title: Text("Camera Required"),
+                    message: Text("Camera access is required to take photos. Please enable it in Settings."),
+                    primaryButton: .default(Text("Open Settings"), action: openSettings),
+                    secondaryButton: .cancel()
+                )
+            case .notification:
+                return Alert(
+                    title: Text("Turn On Notifications"),
+                    message: Text("Don't miss out when new photos are shared and ready to be rated."),
+                    dismissButton: .default(Text("OK"), action: {
+                        notificationManager.requestNotificationPermission { _ in
+                            print("Permission request completed")
+                        }
+                    })
+                )
+            }
         }
     }
     
@@ -251,6 +277,16 @@ struct CompDetails: View {
             entryViewModel.fetchMemberCount()
             DispatchQueue.main.async {
                 self.isLoading = false
+                
+                UNUserNotificationCenter.current().getNotificationSettings { settings in
+                    DispatchQueue.main.async {
+                        if settings.authorizationStatus == .notDetermined {
+                            if entryViewModel.totalMemberCount >= 2 {
+                                self.activeAlert = .notification
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -263,7 +299,7 @@ struct CompDetails: View {
                 PostHogSDK.shared.capture("Add Photo Initiated")
                 joincomp()
             } else {
-                showPermissionAlert = true
+                self.activeAlert = .camera
             }
         }
     }

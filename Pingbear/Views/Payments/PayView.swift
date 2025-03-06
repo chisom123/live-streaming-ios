@@ -189,6 +189,7 @@ struct PayView: View {
             .onAppear {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
+                NotificationQueueManager.shared.processQueuedNotifications()
             }
         }
     }
