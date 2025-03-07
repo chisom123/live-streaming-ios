@@ -26,6 +26,7 @@ struct PayView: View {
                         Spacer()
                         Button(action: {
                             navigateToCompDetails = true
+                            PostHogSDK.shared.capture("Boost Skip")
                         }) {
                             Image("x")
                                 .resizable()

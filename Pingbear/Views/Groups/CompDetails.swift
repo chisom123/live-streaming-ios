@@ -145,73 +145,73 @@ struct CompDetails: View {
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if entryViewModel.userLeaderboard.isEmpty {
-                        if entryViewModel.totalMemberCount == 1 {
-                            NoPlayersView(action_player: addPlayer)
-                        } else {
+                    if entryViewModel.totalMemberCount == 1 {
+                        NoPlayersView(action_player: addPlayer)
+                    } else {
+                        if entryViewModel.userLeaderboard.isEmpty {
                             EmptyLeaderboardView(action: initiateVideoCapture)
                             Spacer()
-                        }
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                // Update the ForEach loop section to include index
-                                ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
-                                    VStack(spacing: 0) {
-                                        HStack {
-                                            // Position number
-                                            Text("\(index + 1)")
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(.white)
-                                                .frame(width: 30)
-                                                .padding(.leading, 20)
-                                            
-                                            // Profile picture and username group
-                                            HStack(spacing: 20) {
-                                                ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
-                                                
-                                                Text(userEntry.userName)
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    // Update the ForEach loop section to include index
+                                    ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
+                                        VStack(spacing: 0) {
+                                            HStack {
+                                                // Position number
+                                                Text("\(index + 1)")
                                                     .font(.system(size: 16, weight: .bold))
-                                                    .lineLimit(1)
-                                                    .truncationMode(.tail)
                                                     .foregroundColor(.white)
-                                            }
-
-                                            Spacer()
-
-                                            HStack(spacing: 8) {
-                                                Text("\(userEntry.totalStars)")
-                                                    .font(.system(size: 17, weight: .bold))
-                                                    .foregroundColor(Color(hex: "#FFF"))
+                                                    .frame(width: 30)
+                                                    .padding(.leading, 20)
                                                 
-                                                Image(systemName: "star.fill")
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .frame(width: 18, height: 18)
-                                                    .foregroundColor(Color(hex: "#FFF"))
+                                                // Profile picture and username group
+                                                HStack(spacing: 20) {
+                                                    ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
+                                                    
+                                                    Text(userEntry.userName)
+                                                        .font(.system(size: 16, weight: .bold))
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
+                                                        .foregroundColor(.white)
+                                                }
+                                                
+                                                Spacer()
+                                                
+                                                HStack(spacing: 8) {
+                                                    Text("\(userEntry.totalStars)")
+                                                        .font(.system(size: 17, weight: .bold))
+                                                        .foregroundColor(Color(hex: "#FFF"))
+                                                    
+                                                    Image(systemName: "star.fill")
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .frame(width: 18, height: 18)
+                                                        .foregroundColor(Color(hex: "#FFF"))
+                                                }
+                                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                                .background(Color(hex: "#DAA520"))
+                                                .cornerRadius(200)
+                                                .padding(.trailing, 30)
                                             }
-                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                            .background(Color(hex: "#DAA520"))
-                                            .cornerRadius(200)
-                                            .padding(.trailing, 30)
-                                        }
-                                        .padding(.vertical, 25)
-                                        .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
-                                        
-                                        if userEntry.id != entryViewModel.userLeaderboard.last?.id {
-                                            Divider()
-                                                .background(Color.white.opacity(0.2))
+                                            .padding(.vertical, 25)
+                                            .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                                            
+                                            if userEntry.id != entryViewModel.userLeaderboard.last?.id {
+                                                Divider()
+                                                    .background(Color.white.opacity(0.2))
+                                            }
                                         }
                                     }
                                 }
+                                .background(Color(hex: "#1A2245"))
+                                .cornerRadius(10)
+                                .padding(.horizontal, 20)
                             }
-                            .background(Color(hex: "#1A2245"))
-                            .cornerRadius(10)
-                            .padding(.horizontal, 20)
-                        }
-                        .refreshable {
-                            entryViewModel.fetchEntries(mode: .compDetailsView)
-                            entryViewModel.fetchMemberCount()
+                            .refreshable {
+                                entryViewModel.fetchEntries(mode: .compDetailsView)
+                                entryViewModel.fetchMemberCount()
+                            }
                         }
                     }
                 }
