@@ -78,16 +78,11 @@ struct PhoneEntryView: View {
     
     var body: some View {
         VStack {
-            Image("Logo")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 50, height: 50)
-                .padding(.top, 20)
             
             Spacer()
             
             VStack {
-                Text("Enter your phone number to continue")
+                Text("Enter your phone number")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -187,7 +182,6 @@ struct PhoneEntryView: View {
             
             Spacer()
             
-            DisclaimerText()
         }
         .background(Color(hex: "#10183C"))
         .navigationBarBackButtonHidden(true)
@@ -229,35 +223,6 @@ struct PhoneEntryView: View {
             self.isLoading = false
             errorMessage = "Invalid phone number"
             PostHogSDK.shared.capture("Invalid Phone Number", properties: ["phoneNumber": fullPhoneNumber, "error": errorMessage ?? ""])
-        }
-    }
-}
-
-struct DisclaimerText: View {
-    var body: some View {
-        VStack {
-            
-            HStack(spacing: 5) {
-                Text("Read our")
-                
-                Text("Privacy Policy")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io/privacy-policy")
-                    }
-                
-                Text("and")
-                    .font(.system(size: 14, weight: .semibold, design: .default))
-                
-                Text("Terms of Use")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io")
-                    }
-            }
-            .font(.system(size: 14, weight: .semibold, design: .default))
-            .foregroundColor(.white)
-            .padding(.bottom, 20)
         }
     }
 }

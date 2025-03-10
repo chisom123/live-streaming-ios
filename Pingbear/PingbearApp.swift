@@ -98,7 +98,7 @@ struct PingbearApp: App {
                     }
             } else {
                 NavigationView {
-                    PhoneEntryView()
+                    WelcomeView()
                         .onAppear {
                             if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                let window = scene.windows.first {
