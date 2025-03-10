@@ -8,6 +8,8 @@ struct MyCompsView: View {
     @State private var selectedCompetition: Competition?
     @State private var isLoading = true
     @State private var navigateToSettings = false
+    @State private var competitionToLeave: Competition?
+    @State private var showLeaveConfirmation = false
     
     var body: some View {
         VStack {
@@ -65,46 +67,18 @@ struct MyCompsView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.competitions, id: \.id) { competition in
-                            VStack(spacing: 0) { // Added spacing: 0 here to control internal spacing
-                                HStack {
-                                    Text(competition.description)
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(2)
-                                        .lineSpacing(9)
-                                        .foregroundColor(.white)
-                                        .truncationMode(.tail)
-                                        .padding(.leading, 30)
-                                    
-                                    Spacer()
-                                    
-                                    HStack(spacing: 8) {
-                                        Text("\(competition.entriesNotVotedCount)")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                        
-                                        Image(systemName: "photo.fill")
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(width: 18, height: 18)
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                    }
-                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#3B4374"))
-                                    .cornerRadius(200)
-                                    .padding(.trailing, 30)
-                                }
-                                .padding(.vertical, 25)
-                                .contentShape(Rectangle())
-                                .onTapGesture {
+                            CompetitionCell(
+                                competition: competition,
+                                isLast: competition.id == viewModel.competitions.last?.id,
+                                onTap: {
                                     viewModel.cleanupListeners()
-                                    self.selectedCompetition = competition
+                                    selectedCompetition = competition
+                                },
+                                onLeave: {
+                                    competitionToLeave = competition
+                                    showLeaveConfirmation = true
                                 }
-                                
-                                if competition.id != viewModel.competitions.last?.id {
-                                    Divider()
-                                        .background(Color.white.opacity(0.2))
-                                }
-                            }
+                            )
                         }
                     }
                     .background(Color(hex: "#1A2245"))
@@ -120,6 +94,20 @@ struct MyCompsView: View {
         }
         .fullScreenCover(isPresented: $navigateToSettings) {
             SettingsView()
+        }
+        .alert("Leave Competition", isPresented: $showLeaveConfirmation) {
+            Button("Cancel", role: .cancel) {
+                competitionToLeave = nil
+            }
+            Button("Leave", role: .destructive) {
+                if let competition = competitionToLeave,
+                   let userId = Auth.auth().currentUser?.uid {
+                    leaveCompetition(competitionId: competition.id, userId: userId)
+                }
+                competitionToLeave = nil
+            }
+        } message: {
+            Text("Are you sure you want to leave this competition?")
         }
         .onAppear {
             fetchData()
@@ -137,6 +125,20 @@ struct MyCompsView: View {
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
         }
+    }
+    
+    private func leaveCompetition(competitionId: String, userId: String) {
+        let membersViewModel = MembersViewModel()
+        membersViewModel.leaveCompetition(competitionId: competitionId, userId: userId)
+        
+        // Capture analytics event
+        PostHogSDK.shared.capture("Left Competition", properties: [
+            "competition_id": competitionId
+        ])
+        
+        // Optionally provide haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
     }
     
     private func createNewCompetition() {
@@ -211,6 +213,74 @@ struct MyCompsView: View {
                 PostHogSDK.shared.capture("New Competition", properties: [
                     "competition_id": competitionId
                 ])
+            }
+        }
+    }
+}
+
+// New component for the competition cell with swipe and long press actions
+struct CompetitionCell: View {
+    let competition: Competition
+    let isLast: Bool
+    let onTap: () -> Void
+    let onLeave: () -> Void
+    
+    @State private var isLongPressing = false
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(competition.description)
+                    .font(.system(size: 16, weight: .bold))
+                    .lineLimit(2)
+                    .lineSpacing(9)
+                    .foregroundColor(.white)
+                    .truncationMode(.tail)
+                    .padding(.leading, 30)
+                
+                Spacer()
+                
+                HStack(spacing: 8) {
+                    Text("\(competition.entriesNotVotedCount)")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(hex: "#FFF"))
+                    
+                    Image(systemName: "photo.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                        .foregroundColor(Color(hex: "#FFF"))
+                }
+                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                .background(Color(hex: "#3B4374"))
+                .cornerRadius(200)
+                .padding(.trailing, 30)
+            }
+            .padding(.vertical, 25)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onTap()
+            }
+            .contextMenu {
+                Button() {
+                    onLeave()
+                } label: {
+                    Label("Leave Competition", systemImage: "rectangle.portrait.and.arrow.right")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
+            .onLongPressGesture(minimumDuration: 0.5) {
+                // Provide haptic feedback on long press
+                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                impactGenerator.impactOccurred()
+            }
+            .scaleEffect(isLongPressing ? 0.95 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isLongPressing)
+            
+            if !isLast {
+                Divider()
+                    .background(Color.white.opacity(0.2))
             }
         }
     }

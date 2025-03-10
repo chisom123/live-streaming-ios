@@ -6,7 +6,6 @@ struct MembersView: View {
     
     var competition: Competition
     @ObservedObject private var viewModel: MembersViewModel
-    @State private var leaveGroupAlert = false
     @State private var showingJoinSelectView = false
     @State private var navigateToCompDetails = false
     
@@ -141,30 +140,6 @@ struct MembersView: View {
                     .background(Color(hex: "#1A2245"))
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
-                }
-                
-                Spacer()
-                
-                // Leave Competition Button
-                Button(action: {
-                    self.leaveGroupAlert = true
-                }) {
-                    Text("Leave Competition")
-                        .font(.system(size: 15, weight: .bold, design: .default))
-                        .foregroundColor(Color(hex: "#FFF"))
-                        .frame(maxWidth: .infinity)
-                        .padding(15)
-                }
-                .alert(isPresented: $leaveGroupAlert) {
-                    Alert(
-                        title: Text("Are you sure?"),
-                        primaryButton: .destructive(Text("Yes")) {
-                            viewModel.leaveCompetition(competitionId: competition.id, userId: Auth.auth().currentUser?.uid ?? "")
-                            let banner = NotificationBanner(title: "Successfully Left Competition", style: .success)
-                            banner.show(bannerPosition: .bottom)
-                        },
-                        secondaryButton: .cancel()
-                    )
                 }
             }
         }
