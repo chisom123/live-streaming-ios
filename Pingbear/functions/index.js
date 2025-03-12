@@ -3,15 +3,20 @@ const admin = require("firebase-admin");
 const { google } = require('googleapis');
 const logger = require("firebase-functions/logger");
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK outside function handler
 admin.initializeApp();
 
-// Function to get access token
+// Pre-initialize auth client
+const auth = new google.auth.GoogleAuth({
+  scopes: ['https://www.googleapis.com/auth/firebase.messaging']
+});
+// Create auth client outside function scope
+const authClientPromise = auth.getClient();
+
 exports.getAccessToken = onRequest({
-  // Optionally restrict CORS
   cors: ["*"],
-  // Set max instances as needed
   maxInstances: 10,
+  minInstances: 1, // Keep at least one instance warm
 }, async (request, response) => {
   try {
     // Handle CORS preflight requests
@@ -31,13 +36,8 @@ exports.getAccessToken = onRequest({
     
     logger.info(`Using project ID: ${projectId}`);
     
-    // Use Application Default Credentials (ADC)
-    // This automatically uses the Firebase service account credentials
-    const auth = new google.auth.GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/firebase.messaging']
-    });
-    
-    const authClient = await auth.getClient();
+    // Use the pre-initialized client
+    const authClient = await authClientPromise;
     const { token } = await authClient.getAccessToken();
     
     if (!token) {
@@ -48,15 +48,14 @@ exports.getAccessToken = onRequest({
     logger.info("Access token obtained successfully");
     
     // Return the token
-    response.json({ 
+    response.json({
       accessToken: token,
-      // Token typically expires in 1 hour (3600 seconds)
       expiresIn: 3600
     });
     
   } catch (error) {
     logger.error("Error obtaining access token:", error);
-    response.status(500).json({ 
+    response.status(500).json({
       error: "Failed to generate token",
       message: process.env.NODE_ENV === 'development' ? error.message : "Server error"
     });
