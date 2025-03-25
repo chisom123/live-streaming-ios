@@ -5,6 +5,64 @@ import FirebaseFirestore
 import PostHog
 import FirebaseMessaging
 
+// Add this extension to UIImage for image optimization
+extension UIImage {
+    func optimizedForUpload(maxDimension: CGFloat = 1200.0, compressionQuality: CGFloat = 0.4) -> Data? {
+        // Step 1: Resize the image if needed
+        let resizedImage = self.resizeIfNeeded(maxDimension: maxDimension)
+        
+        // Step 2: Apply progressive compression until we get a reasonable file size
+        return resizedImage.compressedData(compressionQuality: compressionQuality)
+    }
+    
+    private func resizeIfNeeded(maxDimension: CGFloat) -> UIImage {
+        let originalWidth = self.size.width
+        let originalHeight = self.size.height
+        
+        // If the image is already smaller than our target, return the original
+        if originalWidth <= maxDimension && originalHeight <= maxDimension {
+            return self
+        }
+        
+        // Figure out which dimension to scale based on
+        let scaleFactor: CGFloat
+        if originalWidth > originalHeight {
+            scaleFactor = maxDimension / originalWidth
+        } else {
+            scaleFactor = maxDimension / originalHeight
+        }
+        
+        let newWidth = originalWidth * scaleFactor
+        let newHeight = originalHeight * scaleFactor
+        let newSize = CGSize(width: newWidth, height: newHeight)
+        
+        // Render the resized image
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        self.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? self
+        UIGraphicsEndImageContext()
+        
+        return resizedImage
+    }
+    
+    private func compressedData(compressionQuality: CGFloat) -> Data? {
+        // Start with the specified compression quality
+        var quality = compressionQuality
+        var data = self.jpegData(compressionQuality: quality)
+        
+        // Target size: 500KB for average mobile uploads
+        let targetSize: Int = 500 * 1024
+        
+        // Try progressively lower quality if needed, with a minimum threshold
+        while let imageData = data, imageData.count > targetSize && quality > 0.1 {
+            quality -= 0.1
+            data = self.jpegData(compressionQuality: quality)
+        }
+        
+        return data
+    }
+}
+
 struct CustomTextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var isEditingText: Bool
@@ -82,6 +140,7 @@ struct FinalPreview: View {
     @State private var entrySaved = false
     @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
+    @State private var uploadProgress: Double = 0.0 // Added to track upload progress
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
     @State private var overlayText: String = ""
     @State private var overlayVerticalPosition: CGFloat = UIScreen.main.bounds.height / 2
@@ -97,10 +156,19 @@ struct FinalPreview: View {
                  if isUploading {
                      Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
                      VStack {
-                         ProgressView()
+                         // Show progress view with percentage
+                         ProgressView(value: uploadProgress, total: 100)
                              .scaleEffect(1.5)
                              .tint(.white)
+                             .padding(.horizontal, 40)
+                         
+                         // Add percentage text below progress bar
+                         Text("\(Int(uploadProgress))%")
+                             .foregroundColor(.white)
+                             .font(.system(size: 17, weight: .medium))
+                             .padding(.top)
                      }
+                     .padding(50)
                  } else {
                      Color(hex: "#10183C")
                          .edgesIgnoringSafeArea(.all)
@@ -196,6 +264,7 @@ struct FinalPreview: View {
                          Spacer()
                          Button(action: {
                              isUploading = true
+                             uploadProgress = 0.0 // Reset progress for new upload
                              // Send dummy notification to warm up the function before submitting the entry
                              sendDummyNotification {
                                  submitEntry()
@@ -229,7 +298,7 @@ struct FinalPreview: View {
          }
      }
     
-    // Add a function to send a dummy notification
+    // Function to send a dummy notification
     func sendDummyNotification(completion: (() -> Void)? = nil) {
         // Get the current FCM token
         if let token = Messaging.messaging().fcmToken {
@@ -259,59 +328,98 @@ struct FinalPreview: View {
         }
     }
     
+    // Updated submitEntry function with optimization
     func submitEntry() {
         isUploading = true
+        uploadProgress = 5.0 // Show initial progress
         
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
             return
         }
 
-        // Convert image to data
-        guard let imageData = image.jpegData(compressionQuality: 0.6) else {
-            print("Failed to convert image to data")
+        // Optimize image on background thread
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Update UI to show we're processing the image
             DispatchQueue.main.async {
-                self.isUploading = false
+                uploadProgress = 10.0
             }
-            return
-        }
-        
-        // Upload the image
-        let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
-        let metadata = StorageMetadata()
-        metadata.contentType = "image/jpeg"
-        metadata.customMetadata = [
-            "competitionId": self.competitionId,
-            "userId": userId
-        ]
-        
-        let uploadTask = storageRef.putData(imageData, metadata: metadata)
-        
-        uploadTask.observe(.success) { _ in
-            storageRef.downloadURL { result in
-                switch result {
-                case .success(let downloadURL):
-                    self.saveEntryToFirestore(userId: userId, imageURL: downloadURL.absoluteString)
-                case .failure(let error):
-                    print("Error getting download URL: \(error)")
+            
+            // Convert image to optimized data
+            guard let imageData = image.optimizedForUpload() else {
+                print("Failed to convert image to data")
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                uploadProgress = 20.0
+            }
+            
+            print("Image optimized for upload. Size: \(Double(imageData.count) / 1024.0) KB")
+            
+            // Upload the image
+            let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
+            let metadata = StorageMetadata()
+            metadata.contentType = "image/jpeg"
+            metadata.customMetadata = [
+                "competitionId": self.competitionId,
+                "userId": userId
+            ]
+            
+            let uploadTask = storageRef.putData(imageData, metadata: metadata)
+            
+            // Add upload progress monitoring
+            uploadTask.observe(.progress) { snapshot in
+                if let progress = snapshot.progress {
+                    let percentComplete = Double(progress.completedUnitCount) / Double(progress.totalUnitCount) * 100.0
+                    print("Upload progress: \(percentComplete)%")
+                    
+                    // Scale the progress from 20-80% range during upload
+                    let scaledProgress = 20.0 + (percentComplete * 0.6) // 20% to 80%
+                    
                     DispatchQueue.main.async {
-                        self.isUploading = false
+                        self.uploadProgress = scaledProgress
                     }
                 }
             }
-        }
-        
-        uploadTask.observe(.failure) { snapshot in
-            if let error = snapshot.error {
-                print("Upload failed: \(error.localizedDescription)")
+            
+            uploadTask.observe(.success) { _ in
+                DispatchQueue.main.async {
+                    self.uploadProgress = 90.0 // Almost done, waiting for URL
+                }
+                
+                storageRef.downloadURL { result in
+                    switch result {
+                    case .success(let downloadURL):
+                        self.saveEntryToFirestore(userId: userId, imageURL: downloadURL.absoluteString)
+                    case .failure(let error):
+                        print("Error getting download URL: \(error)")
+                        DispatchQueue.main.async {
+                            self.isUploading = false
+                        }
+                    }
+                }
             }
-            DispatchQueue.main.async {
-                self.isUploading = false
+            
+            uploadTask.observe(.failure) { snapshot in
+                if let error = snapshot.error {
+                    print("Upload failed: \(error.localizedDescription)")
+                }
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                }
             }
         }
     }
     
     func saveEntryToFirestore(userId: String, imageURL: String) {
+        DispatchQueue.main.async {
+            self.uploadProgress = 95.0 // Almost done, saving to Firestore
+        }
+        
         let db = Firestore.firestore()
         
         let userDocRef = Firestore.firestore().collection("users").document(userId)
@@ -334,7 +442,7 @@ struct FinalPreview: View {
                 "superstar": superstar,
                 "overlayText": self.overlayText,
                 "overlayVerticalPosition": self.overlayVerticalPosition,
-                "isFromCamera": self.isFromCamera  // Add this field
+                "isFromCamera": self.isFromCamera
             ]
             
             var newEntryRef: DocumentReference? = nil
@@ -346,6 +454,8 @@ struct FinalPreview: View {
                     print("Entry saved successfully")
                     
                     DispatchQueue.main.async {
+                        self.uploadProgress = 100.0 // Complete
+                        
                         // Queue the notification to be sent later - after UI transitions are complete
                         NotificationQueueManager.shared.queueNotification(
                             competitionId: self.competitionId,
