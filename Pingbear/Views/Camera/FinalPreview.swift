@@ -98,11 +98,12 @@ struct FinalPreview: View {
                      Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
                      VStack {
                          ProgressView()
-                             .padding()
+                             .scaleEffect(1.5)
                              .tint(.white)
                      }
                  } else {
-                     Color.black.edgesIgnoringSafeArea(.all)
+                     Color(hex: "#10183C")
+                         .edgesIgnoringSafeArea(.all)
                      
                      Image(uiImage: image)
                          .resizable()

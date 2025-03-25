@@ -8,6 +8,7 @@
 import SwiftUI
 import NotificationBannerSwift
 import PostHog
+import Kingfisher
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
@@ -15,6 +16,13 @@ struct EntryView: View {
     @State private var rating: Int = 0
     @State private var isRatingEnabled: Bool = true
     @State private var navigateToCompDetails = false
+    @State private var animateRating: Bool = false
+    @State private var isTransitioning: Bool = false
+    @State private var slideDirection: SlideDirection = .left
+    
+    enum SlideDirection {
+        case left, right
+    }
     
     var competition: Competition
 
@@ -25,10 +33,67 @@ struct EntryView: View {
     }
     
     private func triggerHapticFeedback(for star: Int) {
+        // Enhanced haptic feedback based on star value
+        let intensity = Float(star) / 5.0
         let generator = UIImpactFeedbackGenerator(style: .rigid)
         generator.prepare()
+        generator.impactOccurred(intensity: CGFloat(intensity))
         
-        generator.impactOccurred(intensity: 1.0)
+        // Add a short vibration pattern for casino-like feel
+        let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            heavyGenerator.impactOccurred()
+        }
+    }
+    
+    /// Prefetches the next image to ensure smooth transitions
+    private func prefetchNextImage() {
+        guard viewModel.entries.indices.contains(viewModel.currentIndex + 1) else { return }
+        
+        // Capture these values outside the closure to avoid actor-isolation issues
+        let nextIndex = viewModel.currentIndex + 1
+        let nextEntry = viewModel.entries[nextIndex]
+        
+        if let imageURL = URL(string: nextEntry.photoUrl) {
+            KingfisherManager.shared.retrieveImage(with: imageURL) { result in
+                // Result already handled by Kingfisher's cache
+            }
+        }
+    }
+    
+    /// Transitions to the next entry with smooth animation
+    private func transitionToNextEntry() {
+        guard viewModel.currentIndex < viewModel.entries.count - 1 else {
+            // Clean up before navigating away
+            cleanupResources()
+            navigateToCompDetails = true
+            return
+        }
+        
+        // Start transition animation
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isTransitioning = true
+            slideDirection = .left
+        }
+        
+        // After a short delay, update the index and prepare for next view
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            viewModel.currentIndex += 1
+            prefetchNextImage()
+            
+            // Reset the view position and reveal the new image
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isTransitioning = false
+                rating = 0
+                isRatingEnabled = true
+            }
+        }
+    }
+    
+    /// Cleans up resources to prevent memory leaks and data glitches
+    private func cleanupResources() {
+        // Cancel any pending image downloads
+        KingfisherManager.shared.downloader.cancelAll()
     }
     
     var body: some View {
@@ -36,54 +101,56 @@ struct EntryView: View {
             let size = proxy.size
             
             ZStack {
-                
-                Color.black
+                // Solid navy blue background matching the star rating bar
+                Color(hex: "#10183C")
                     .edgesIgnoringSafeArea(.all)
                 
-                Group {
-                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                        let entry = viewModel.entries[viewModel.currentIndex]
-                        VStack {
-                            if let imageURL = URL(string: entry.photoUrl) {
-                                AsyncImage(url: imageURL) { phase in
-                                    switch phase {
-                                    case .empty:
-                                        Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: entry.isFromCamera ? .fill : .fit)
-                                            .frame(width: size.width, height: size.height)
-                                            .clipped()
-                                            .overlay {
-                                                if let overlayText = entry.overlayText {
-                                                    Text(overlayText)
-                                                        .foregroundColor(.white)
-                                                        .font(.system(size: 24, weight: .bold))
-                                                        .multilineTextAlignment(.center)
-                                                        .frame(width: size.width * 0.8)
-                                                        .position(x: size.width / 2, y: entry.overlayVerticalPosition)
-                                                }
-                                            }
-                                    case .failure(_):
-                                        Image(systemName: "photo.fill")
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .foregroundColor(.gray)
-                                            .frame(width: 80, height: 80)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            .background(Color.black.opacity(0.1))
-                                    @unknown default:
-                                        EmptyView()
+                // Entry image view with transition
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let entry = viewModel.entries[viewModel.currentIndex]
+                    
+                    // Main image container with animations
+                    ZStack {
+                        if let imageURL = URL(string: entry.photoUrl) {
+                            KFImage(imageURL)
+                                .placeholder {
+                                    ZStack {
+                                        Color(hex: "#10183C")
+                                        ProgressView()
+                                            .scaleEffect(1.5)
+                                            .tint(.white)
                                     }
                                 }
-                                .id(viewModel.currentIndex)
-                                .ignoresSafeArea()
-                            } else {
-                                ProgressView().tint(.white)
+                                .fade(duration: 0.25)
+                                .cacheMemoryOnly()
+                                .resizable()
+                                .aspectRatio(contentMode: entry.isFromCamera ? .fill : .fit)
+                                .frame(width: size.width, height: size.height)
+                                .clipped()
+                                .overlay {
+                                    if let overlayText = entry.overlayText {
+                                        Text(overlayText)
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 24, weight: .bold))
+                                            .multilineTextAlignment(.center)
+                                            .frame(width: size.width * 0.8)
+                                            .position(x: size.width / 2, y: entry.overlayVerticalPosition)
+                                    }
+                                }
+                                .offset(x: isTransitioning ? (slideDirection == .left ? -size.width : size.width) : 0)
+                                .onAppear {
+                                    prefetchNextImage()
+                                }
+                        } else {
+                            ZStack {
+                                Color(hex: "#10183C")
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                    .tint(.white)
                             }
                         }
                     }
+                    .animation(.easeInOut(duration: 0.3), value: isTransitioning)
                 }
             }
             .onChange(of: viewModel.currentIndex) { _ in
@@ -91,13 +158,17 @@ struct EntryView: View {
                 self.isRatingEnabled = true
             }
             
-            // Bottom - Heart button, horizontally centered
+            // Bottom - Star rating, horizontally centered
             VStack {
                 Spacer() // Pushes the content to the bottom
 
                 // Container view for stars with background
                 ZStack {
-                    HStack(alignment: .center, spacing: 10) {
+                    // Beautiful glass-like background for stars
+                    RoundedRectangle(cornerRadius: 200)
+                        .fill(Color(hex: "#1A2245"))
+                    
+                    HStack(alignment: .center, spacing: 12) { // Reduced spacing between stars
                         if viewModel.entries.indices.contains(viewModel.currentIndex) {
                             let maxStars = 5
 
@@ -109,46 +180,52 @@ struct EntryView: View {
                                     triggerHapticFeedback(for: star)
                                     let ratingIncrement = star
                                     self.rating = ratingIncrement
+                                    
+                                    // Animate star rating
+                                    animateRating = true
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        animateRating = false
+                                    }
+                                    
                                     let currentEntryId = currentEntry.id
                                     viewModel.updateStarRating(for: currentEntryId, with: ratingIncrement)
 
                                     // Add check here to see if it's the last entry
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                                            cleanupResources()
                                             navigateToCompDetails = true
                                         }
                                     } else {
-                                        // Existing code to handle non-last entries
-
+                                        // Use the new transition function
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-                                            if viewModel.currentIndex < viewModel.entries.count - 1 {
-                                                viewModel.currentIndex += 1
-                                            }
+                                            transitionToNextEntry()
                                         }
                                     }
                                 }) {
                                     Image(systemName: "star.fill")
                                         .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                        .font(.system(size: 33))
-                                        .padding(5)
+                                        .font(.system(size: 34)) // Larger initial star size
+                                        .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0) // Reduced animation scale
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
                                 }
                                 .disabled(!isRatingEnabled)
+                                .padding(5)
                             }
                         }
                     }
-                    .padding(.horizontal) // Adds horizontal padding to the HStack
-                    .padding(.vertical, 10) // Increase vertical padding of the HStack
-                    .background(RoundedRectangle(cornerRadius: 200)
-                        .foregroundColor(Color(hex: "#1A2245"))) // Background color similar to the button
-                    // Removed the shadow from the background
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 15)
                 }
-                .padding(.horizontal)
+                .frame(height: 80)
+                .padding(.horizontal, 30) // Increased horizontal padding to make the bar narrower
                 .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
 
             HStack {
                 Button(action: {
+                    cleanupResources()
                     navigateToCompDetails = true
                 }) {
                     Image(systemName: "arrow.left")
@@ -191,6 +268,23 @@ struct EntryView: View {
             CompDetails(competition: competition) // Adjust according to your needs
         }
         .ignoresSafeArea(edges: .all)
+        .onAppear {
+            // Preload first few images when view appears
+            let entriesToLoad = min(3, viewModel.entries.count)
+            let currentIdx = viewModel.currentIndex
+            
+            // Preload each image
+            for i in 0..<entriesToLoad {
+                if i != currentIdx, i < viewModel.entries.count,
+                   let url = URL(string: viewModel.entries[i].photoUrl) {
+                    KingfisherManager.shared.retrieveImage(with: url) { _ in }
+                }
+            }
+        }
+        .onDisappear {
+            // Clean up when the view disappears
+            cleanupResources()
+        }
     }
 }
 
