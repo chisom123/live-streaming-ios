@@ -1,6 +1,25 @@
 import SwiftUI
 import PhotosUI
 
+// MARK: - Flash Button Component
+struct FlashButton: View {
+    @ObservedObject var cameraModel: CameraViewModel
+    
+    var body: some View {
+        Button(action: {
+            cameraModel.toggleFlashMode()
+        }) {
+            Image(systemName: cameraModel.flashMode.iconName)
+                .font(.system(size: 30))
+                .foregroundColor(.white)
+                .padding(5)
+                .shadow(radius: 10)
+        }
+        // Always enabled for front camera, and conditionally for back camera
+        .opacity(cameraModel.isFlashAvailable ? 1.0 : 0.5)
+    }
+}
+
 struct CameraView: View {
     @StateObject var cameraModel = CameraViewModel()
     var competition: Competition
@@ -21,26 +40,33 @@ struct CameraView: View {
                 .environmentObject(cameraModel)
                 .ignoresSafeArea()
             
-            // Other controls (Preview and Reset) remain the same
+            // Controls
             VStack {
                 HStack {
                     Button {
                         navigateToCompDetails = true
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 30)) // Increase the font size as needed
+                            .font(.system(size: 30))
                             .foregroundColor(.white)
-                            .padding(5) // Adjust the padding to balance the increased size
+                            .padding(5)
                             .shadow(radius: 10)
                     }
+                    
                     Spacer()
+                    
+                    // Flash button
+                    FlashButton(cameraModel: cameraModel)
+                    
+                    Spacer()
+                    
                     Button(action: {
                         cameraModel.toggleCamera()
                     }) {
                         Image(systemName: "arrow.2.circlepath")
-                            .font(.system(size: 30)) // Increase the font size as needed
+                            .font(.system(size: 30))
                             .foregroundColor(.white)
-                            .padding(5) // Adjust the padding to balance the increased size
+                            .padding(5)
                             .shadow(radius: 10)
                     }
                 }
@@ -68,7 +94,7 @@ struct CameraView: View {
                     // Camera Button
                     Button(action: {
                         imageSource = .camera
-                        cameraModel.capturePhoto()
+                        cameraModel.capturePhotoWithFlash() // Using improved method with flash
                     }) {
                         Circle()
                             .fill(Color.clear)
@@ -87,7 +113,6 @@ struct CameraView: View {
                         .frame(width: 60, height: 60)
                 }
                 .padding(.bottom, 50)
-                
             }
         }
         .onChange(of: selectedItem) { newItem in
@@ -116,12 +141,20 @@ struct CameraView: View {
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition)
         }
+        .onAppear {
+            cameraModel.checkPermission() // This will call setUp() which now includes flash setup
+        }
+        .onDisappear {
+            // Make sure to reset flash when view disappears
+            cameraModel.resetFlash()
+        }
     }
     
     private func resetCamera() {
         cameraModel.capturedImage = nil
         cameraModel.session.startRunning()
-        imageSource = .camera 
+        cameraModel.resetFlash() // Make sure to reset flash state
+        imageSource = .camera
         selectedItem = nil
         selectedImage = nil
     }
