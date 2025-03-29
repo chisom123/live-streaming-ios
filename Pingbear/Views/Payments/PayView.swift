@@ -17,6 +17,7 @@ struct PayView: View {
             ProgressView()
                 .padding()
                 .tint(.white)
+                .scaleEffect(1.5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(hex: "#10183C"))
         } else {
@@ -60,7 +61,7 @@ struct PayView: View {
                     }
                     
                     ScrollView {
-                        VStack {
+                        VStack(spacing: 0) {
                             if let subscriptionProduct3 = viewModel.products.first(where: { $0.productIdentifier == "one_hour_boost" }) {
                                 Button(action: {
                                     viewModel.purchase(product: subscriptionProduct3)
@@ -82,14 +83,15 @@ struct PayView: View {
                                                 .font(.system(size: 18, weight: .bold))
                                         }
                                         .frame(width: 36, height: 36) // Adjust the size as needed
-                                        .background(Color(hex: "#FF4081")) // Blue background
+                                        .background(Color(hex: "#FF4081")) // Pink background
                                         .cornerRadius(5)
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#1A2245"))
-                                    .cornerRadius(5)
                                 }
-                                .padding(.vertical, 10)
+                                
+                                // Add divider after first item if it's not the last item
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
                             }
                             
                             if let subscriptionProduct1 = viewModel.products.first(where: { $0.productIdentifier == "one_day_boost" }) {
@@ -113,14 +115,15 @@ struct PayView: View {
                                                 .font(.system(size: 18, weight: .bold))
                                         }
                                         .frame(width: 36, height: 36) // Adjust the size as needed
-                                        .background(Color(hex: "#FF4081")) // Blue background
+                                        .background(Color(hex: "#FF4081")) // Pink background
                                         .cornerRadius(5)
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#1A2245"))
-                                    .cornerRadius(5)
                                 }
-                                .padding(.vertical, 10)
+                                
+                                // Add divider after second item if there's still another item
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
                             }
                             
                             if let subscriptionProduct2 = viewModel.products.first(where: { $0.productIdentifier == "one_week_boost" }) {
@@ -144,16 +147,15 @@ struct PayView: View {
                                                 .font(.system(size: 18, weight: .bold))
                                         }
                                         .frame(width: 36, height: 36) // Adjust the size as needed
-                                        .background(Color(hex: "#FF4081")) // Blue background
+                                        .background(Color(hex: "#FF4081")) // Pink background
                                         .cornerRadius(5)
                                     }
                                     .padding(EdgeInsets(top: 30, leading: 30, bottom: 30, trailing: 30))
-                                    .background(Color(hex: "#1A2245"))
-                                    .cornerRadius(5)
                                 }
-                                .padding(.vertical, 10)
                             }
                         }
+                        .background(Color(hex: "#1A2245"))
+                        .cornerRadius(5)
                         .padding(.horizontal, 20)
                     }
                     
