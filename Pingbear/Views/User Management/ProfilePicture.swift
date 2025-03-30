@@ -24,31 +24,83 @@ class ProfilePictureManager: ObservableObject {
         isUploading = true
         uploadProgress = 0
         
+        // Process the image optimization on a background thread
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            
+            // Update progress to indicate processing started
+            DispatchQueue.main.async {
+                self.uploadProgress = 0.1
+            }
+            
+            // Convert raw image data to UIImage for optimization
+            guard let image = UIImage(data: imageData) else {
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to process image"])))
+                }
+                return
+            }
+            
+            // Get optimized image data
+            guard let optimizedData = image.optimizedForUpload() else {
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to optimize image"])))
+                }
+                return
+            }
+            
+            print("Image optimized for upload. Size: \(Double(optimizedData.count) / 1024.0) KB")
+            
+            DispatchQueue.main.async {
+                self.uploadProgress = 0.2
+            }
+            
+            // Continue with the upload process on the main thread
+            DispatchQueue.main.async {
+                self.performUpload(optimizedData: optimizedData, userId: userId, completion: completion)
+            }
+        }
+    }
+    
+    private func performUpload(optimizedData: Data, userId: String, completion: @escaping (Result<String, Error>) -> Void) {
         let storageRef = storage.reference().child("profile_pictures/\(userId)")
         
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
         
-        let uploadTask = storageRef.putData(imageData, metadata: metadata)
+        let uploadTask = storageRef.putData(optimizedData, metadata: metadata)
         
         uploadTask.observe(.progress) { [weak self] snapshot in
             guard let percentComplete = snapshot.progress?.fractionCompleted else { return }
+            // Scale the progress from 20-90% range during upload
+            let scaledProgress = 0.2 + (percentComplete * 0.7) // 20% to 90%
+            
             DispatchQueue.main.async {
-                self?.uploadProgress = percentComplete
+                self?.uploadProgress = scaledProgress
             }
         }
         
         uploadTask.observe(.success) { [weak self] _ in
+            DispatchQueue.main.async {
+                self?.uploadProgress = 0.9 // Almost done, waiting for URL
+            }
+            
             storageRef.downloadURL { url, error in
-                self?.isUploading = false
-                
                 if let error = error {
-                    completion(.failure(error))
+                    DispatchQueue.main.async {
+                        self?.isUploading = false
+                        completion(.failure(error))
+                    }
                     return
                 }
                 
                 guard let downloadURL = url?.absoluteString else {
-                    completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get download URL"])))
+                    DispatchQueue.main.async {
+                        self?.isUploading = false
+                        completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get download URL"])))
+                    }
                     return
                 }
                 
@@ -56,22 +108,27 @@ class ProfilePictureManager: ObservableObject {
                 self?.db.collection("users").document(userId).updateData([
                     "profilePictureUrl": downloadURL
                 ]) { error in
-                    if let error = error {
-                        completion(.failure(error))
-                    } else {
-                        DispatchQueue.main.async {
+                    DispatchQueue.main.async {
+                        self?.uploadProgress = 1.0 // Complete
+                        self?.isUploading = false
+                        
+                        if let error = error {
+                            completion(.failure(error))
+                        } else {
                             self?.currentProfileUrl = downloadURL  // Update the published property
+                            completion(.success(downloadURL))
                         }
-                        completion(.success(downloadURL))
                     }
                 }
             }
         }
         
         uploadTask.observe(.failure) { [weak self] snapshot in
-            self?.isUploading = false
-            if let error = snapshot.error {
-                completion(.failure(error))
+            DispatchQueue.main.async {
+                self?.isUploading = false
+                if let error = snapshot.error {
+                    completion(.failure(error))
+                }
             }
         }
     }
@@ -87,7 +144,11 @@ struct ProfilePictureSelector: View {
     var body: some View {
         VStack {
             if uploadManager.isUploading {
-                ProgressView(value: uploadManager.uploadProgress) {}
+                ProgressView(value: uploadManager.uploadProgress) {
+                    Text("\(Int(uploadManager.uploadProgress * 100))%")
+                        .font(.caption)
+                        .foregroundColor(Color(hex: "#FF4081"))
+                }
                 .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: "#FF4081")))
                 .padding()
             } else {
