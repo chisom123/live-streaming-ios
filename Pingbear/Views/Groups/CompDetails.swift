@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
-import PostHog
 import AVFoundation
 
 struct CompDetails: View {
@@ -49,18 +48,20 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         goToMyComps = true
-                        PostHogSDK.shared.capture("Close Competition Details")
+                        Analytics.shared.trackTap(
+                            elementId: "back_button",
+                            screenName: "competition_details"
+                        )
                     }) {
                         Image(systemName: "arrow.left")
-                            .resizable() // Allows resizing of the image
-                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.white) // Your desired color
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
                     }
                     
-                    Spacer() // This spacer will ensure the two buttons are at opposite ends.
+                    Spacer()
                     
-                    // Just make the Text view into a Button
                     Button(action: {
                         isEditingCompetition = true
                     }) {
@@ -70,32 +71,34 @@ struct CompDetails: View {
                             .foregroundColor(.white)
                             .padding(.horizontal)
                             .onAppear {
-                                PostHogSDK.shared.capture("Comp Details View Opened", properties: [
-                                    "competition_id": competition.id
-                                ])
+                                Analytics.shared.trackCompetition(
+                                    action: "view",
+                                    competitionId: competition.id
+                                )
                             }
                     }
                     
                     Spacer()
                     
-                    // Step 2: Share Button
                     Button(action: {
                         entryViewModel.removeListeners()
                         isMembersPresented = true
-                        PostHogSDK.shared.capture("View Competition Competitors")
+                        Analytics.shared.trackTap(
+                            elementId: "view_competitors",
+                            screenName: "competition_details"
+                        )
                     }) {
                         Image(systemName: "ellipsis")
-                            .resizable() // Allows resizing of the image
-                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 32, height: 32) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.white) // Your desired color
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(Color.white)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
                 
-                HStack(spacing: 10) { // Add an HStack with some spacing between the buttons
-                    // Button positioned at the bottom right
+                HStack(spacing: 10) {
                     Button(action: {
                         entryViewModel.removeListeners()
                         initiateVideoCapture()
@@ -111,7 +114,10 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         vote()
-                        PostHogSDK.shared.capture("Rating Initiated")
+                        Analytics.shared.trackEntry(
+                            action: "rate",
+                            competitionId: competition.id
+                        )
                     }) {
                         Text("Start Rating")
                             .frame(maxWidth: .infinity, minHeight: 45)
@@ -154,18 +160,15 @@ struct CompDetails: View {
                         } else {
                             ScrollView {
                                 VStack(spacing: 0) {
-                                    // Update the ForEach loop section to include index
                                     ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
                                         VStack(spacing: 0) {
                                             HStack {
-                                                // Position number
                                                 Text("\(index + 1)")
                                                     .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(.white)
                                                     .frame(width: 30)
                                                     .padding(.leading, 20)
                                                 
-                                                // Profile picture and username group
                                                 HStack(spacing: 20) {
                                                     ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
                                                     
@@ -233,7 +236,7 @@ struct CompDetails: View {
             MyCompsView()
         }
         .fullScreenCover(isPresented: $isMembersPresented) {
-            MembersView(competition: competition) // Replace this with the actual view you want to present
+            MembersView(competition: competition)
         }
         .fullScreenCover(isPresented: $isMyPostsPresented) {
             MyPostsView(competition: competition)
@@ -296,7 +299,10 @@ struct CompDetails: View {
         entryViewModel.removeListeners()
         checkCameraAndMicrophonePermissions { granted in
             if granted {
-                PostHogSDK.shared.capture("Add Photo Initiated")
+                Analytics.shared.trackTap(
+                    elementId: "add_photo_initiated",
+                    screenName: "competition_details"
+                )
                 joincomp()
             } else {
                 self.activeAlert = .camera
@@ -338,7 +344,10 @@ struct CompDetails: View {
     func addPlayer() {
         entryViewModel.removeListeners()
         showingJoinSelectView = true
-        PostHogSDK.shared.capture("Tapped Add Player From Prompt")
+        Analytics.shared.trackTap(
+            elementId: "add_player_prompt",
+            screenName: "competition_details"
+        )
     }
 }
 
@@ -349,7 +358,7 @@ struct EmptyLeaderboardView: View {
         VStack {
             Text("No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white) // Changed to white for better contrast
+                .foregroundColor(.white)
                 .padding(.top, 20)
                 .padding(.bottom, 25)
             
@@ -365,13 +374,11 @@ struct EmptyLeaderboardView: View {
                     .cornerRadius(200)
             }
             .padding(.bottom, 20)
-            
- 
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color(hex: "#1A2245")) // Slightly lighter than background for contrast
-        .cornerRadius(10) // Increased corner radius for a softer look
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(10)
         .padding(.horizontal, 20)
     }
 }
@@ -387,16 +394,13 @@ struct NoPlayersView: View {
                 ForEach(Array(["Me", "Player 2", "Player 3"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         HStack {
-                            // Position number
                             Text("\(index + 1)")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(width: 30)
                                 .padding(.leading, 20)
                             
-                            // Profile picture and username group
                             HStack(spacing: 20) {
-                                // Use fetched profile picture URL for "Me", nil for others
                                 ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
                                 
                                 Text(userName)

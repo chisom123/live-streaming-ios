@@ -1,5 +1,4 @@
 import FirebaseFirestore
-import PostHog
 import FirebaseAuth
 
 struct MemberUser: Identifiable {
@@ -69,7 +68,7 @@ class MembersViewModel: ObservableObject {
                 }
                 self?.myFriendsModel.fetchFriends()
                 completion(true, nil)
-                PostHogSDK.shared.capture("Friend Added from Members View")
+                Analytics.shared.track(event: "friend_added", properties: ["source": "members_view"])
             } else {
                 completion(false, error)
             }

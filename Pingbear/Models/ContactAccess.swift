@@ -2,7 +2,6 @@ import Contacts
 import FirebaseAuth
 import FirebaseFirestore
 import PhoneNumberKit
-import PostHog
 import CryptoKit
 
 struct Contact {
@@ -43,10 +42,10 @@ class ContactViewModel: ObservableObject {
             }
             if granted {
                 self.fetchContacts()
-                PostHogSDK.shared.capture("Contacts Fetched")
+                Analytics.shared.track(event: "contacts_fetched")
             } else {
                 print("Access Denied")
-                PostHogSDK.shared.capture("Contacts Access Denied")
+                Analytics.shared.track(event: "contacts_access_denied")
             }
         }
     }

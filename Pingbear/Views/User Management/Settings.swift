@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseAuth
 import Combine
-import PostHog
 
 struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -26,8 +25,8 @@ struct SettingsView: View {
         do {
             try Auth.auth().signOut()
             FirestoreListenerManager.shared.removeAllListeners()
-            PostHogSDK.shared.capture("Sign Out")
-            PostHogSDK.shared.reset()
+            Analytics.shared.track(event: "user_logged_out")
+            Analytics.shared.reset()
             UserDefaults.standard.set(false, forKey: "isLoggedIn")
             didLogOut.send(())
         } catch {
@@ -104,6 +103,10 @@ struct SettingsView: View {
                                     case "Contact Us":
                                         if let url = URL(string: "mailto:pingbearapp@gmail.com") {
                                             UIApplication.shared.open(url)
+                                            Analytics.shared.trackTap(
+                                                elementId: "contact_us_button",
+                                                screenName: "settings"
+                                            )
                                         }
                                     case "Log Out": showSignOutAlert = true
                                     case "Delete Account": showDeleteAccountAlert = true
@@ -148,6 +151,9 @@ struct SettingsView: View {
             Button("Yes", role: .destructive) {
                 signOut()
             }
+        }
+        .onAppear {
+            Analytics.shared.trackScreen(name: "settings")
         }
     }
 }

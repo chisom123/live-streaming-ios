@@ -1,7 +1,6 @@
 import SwiftUI
 import AVFoundation
 import Combine
-import PostHog
 
 // MARK: - Flash Mode Enum
 enum FlashMode: Int, CaseIterable {
@@ -195,7 +194,7 @@ class CameraViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(currentCameraPosition.rawValue, forKey: "CameraPosition")
             
             session.commitConfiguration()
-            PostHogSDK.shared.capture("Camera Toggled", properties: ["newPosition": newCameraPosition.rawValue])
+            Analytics.shared.track(event: "camera_toggled", properties: ["new_position": newCameraPosition == .front ? "front" : "back"])
         } catch {
             print("Failed to switch cameras: \(error)")
         }
@@ -280,7 +279,7 @@ class CameraViewModel: NSObject, ObservableObject {
         guard !isTakingPhoto else { return }
         
         isTakingPhoto = true
-        PostHogSDK.shared.capture("Photo Captured")
+        Analytics.shared.track(event: "photo_captured")
         
         let settings = AVCapturePhotoSettings()
         
@@ -321,9 +320,9 @@ class CameraViewModel: NSObject, ObservableObject {
                     self.photoOutput.capturePhoto(with: settings, delegate: self)
                 }
                 
-                // Log analytics
-                PostHogSDK.shared.capture("Photo Captured", properties: [
-                    "flashMode": self.flashMode.title,
+                // Track analytics
+                Analytics.shared.track(event: "photo_captured", properties: [
+                    "flash_mode": self.flashMode.title,
                     "camera": "front",
                     "flash": "screen"
                 ])
@@ -338,9 +337,9 @@ class CameraViewModel: NSObject, ObservableObject {
         // For back camera or front without flash
         photoOutput.capturePhoto(with: settings, delegate: self)
         
-        // Log analytics
-        PostHogSDK.shared.capture("Photo Captured", properties: [
-            "flashMode": flashMode.title,
+        // Track analytics
+        Analytics.shared.track(event: "photo_captured", properties: [
+            "flash_mode": flashMode.title,
             "camera": currentCameraPosition == .front ? "front" : "back",
             "flash": currentCameraPosition == .back && flashMode != .off ? "physical" : "none"
         ])
@@ -381,7 +380,7 @@ class CameraViewModel: NSObject, ObservableObject {
         if let currentIndex = modes.firstIndex(of: flashMode) {
             let nextIndex = (currentIndex + 1) % modes.count
             flashMode = modes[nextIndex]
-            PostHogSDK.shared.capture("Flash Mode Changed", properties: ["mode": flashMode.title])
+            Analytics.shared.track(event: "flash_mode_changed", properties: ["mode": flashMode.title])
         }
         
         // Save the flash mode to UserDefaults

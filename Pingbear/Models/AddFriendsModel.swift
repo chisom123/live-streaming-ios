@@ -1,6 +1,5 @@
 import FirebaseAuth
 import FirebaseFirestore
-import PostHog
 
 class AddFriendsModel: ObservableObject {
     
@@ -52,7 +51,7 @@ class AddFriendsModel: ObservableObject {
                     return
                 }
                 completion(true, nil)
-                PostHogSDK.shared.capture("Friend Added")
+                Analytics.shared.track(event: "friend_added")
             }
         }
     }

@@ -2,7 +2,6 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 import CryptoKit
-import PostHog
 
 struct NameEntryView: View {
     let phoneNumber: String
@@ -25,7 +24,7 @@ struct NameEntryView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 25)
                     .onAppear {
-                        PostHogSDK.shared.capture("Username Entry View Opened")
+                        Analytics.shared.trackScreen(name: "username_entry")
                     }
                 
                 TextField("Enter your username", text: $username)
@@ -47,7 +46,10 @@ struct NameEntryView: View {
                         .padding(.top, 20)
                         .padding(.horizontal)
                         .onAppear {
-                            PostHogSDK.shared.capture("Username Entry Error", properties: ["error": error])
+                            Analytics.shared.track(
+                                event: "username_entry_error",
+                                properties: ["error": error]
+                            )
                         }
                 }
                 
@@ -95,7 +97,13 @@ struct NameEntryView: View {
         guard validation.isValid else {
             errorMessage = validation.error
             isLoading = false
-            PostHogSDK.shared.capture("Username Validation Failed", properties: ["username": processedUsername, "error": validation.error ?? "No error provided"])
+            Analytics.shared.track(
+                event: "username_validation_failed",
+                properties: [
+                    "username": processedUsername,
+                    "error": validation.error ?? "No error provided"
+                ]
+            )
             return
         }
 
@@ -106,14 +114,20 @@ struct NameEntryView: View {
             if let err = err {
                 isLoading = false
                 errorMessage = "Error checking username: \(err.localizedDescription)"
-                PostHogSDK.shared.capture("Username Check Failed", properties: ["error": err.localizedDescription])
+                Analytics.shared.track(
+                    event: "username_check_failed",
+                    properties: ["error": err.localizedDescription]
+                )
             } else if querySnapshot!.documents.isEmpty {
                 // Username is unique, proceed to save
                 saveUsernameToFirestore(processedUsername: processedUsername)
             } else {
                 isLoading = false
                 errorMessage = "This username is already taken"
-                PostHogSDK.shared.capture("Username Already Taken", properties: ["username": processedUsername])
+                Analytics.shared.track(
+                    event: "username_already_taken",
+                    properties: ["username": processedUsername]
+                )
             }
         }
     }
@@ -152,12 +166,21 @@ struct NameEntryView: View {
             isLoading = false
             if let error = error {
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
-                PostHogSDK.shared.capture("Username Save Failed", properties: ["error": error.localizedDescription])
+                Analytics.shared.track(
+                    event: "username_save_failed",
+                    properties: ["error": error.localizedDescription]
+                )
             } else {
                 self.navigateToHome = true
                 UserDefaults.standard.set(true, forKey: "isLoggedIn")
                 UserDefaults.standard.synchronize()
-                PostHogSDK.shared.capture("New User Created", properties: ["userID": userID, "username": processedUsername])
+                Analytics.shared.track(
+                    event: "new_user_created",
+                    properties: [
+                        "user_id": userID,
+                        "username": processedUsername
+                    ]
+                )
             }
         }
     }

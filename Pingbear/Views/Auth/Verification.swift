@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
-import PostHog
 
 struct VerificationView: View {
     let phoneNumber: String
@@ -44,7 +43,7 @@ struct VerificationView: View {
                     .padding(.bottom, 25)
                     .padding(.horizontal)
                     .onAppear {
-                        PostHogSDK.shared.capture("Verification Screen Viewed")
+                        Analytics.shared.trackScreen(name: "verification")
                     }
                 
                 // Verification Code TextField
@@ -120,7 +119,10 @@ struct VerificationView: View {
             if let error = error {
                 self.isLoading = false
                 self.errorMessage = error.localizedDescription
-                PostHogSDK.shared.capture("Verification Failed", properties: ["error": error.localizedDescription])
+                Analytics.shared.track(
+                    event: "verification_failed",
+                    properties: ["error": error.localizedDescription]
+                )
                 return
             }
             
@@ -131,7 +133,7 @@ struct VerificationView: View {
                 return
             }
             
-            PostHogSDK.shared.identify(userID)
+            Analytics.shared.identify(userId: userID)
             
             let db = Firestore.firestore()
             db.collection("users").document(userID).getDocument { (document, error) in
@@ -143,18 +145,18 @@ struct VerificationView: View {
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
                         UserDefaults.standard.set(true, forKey: "isFriendActivated")
                         UserDefaults.standard.synchronize()
-                        PostHogSDK.shared.capture("Returning User Signed In")
+                        Analytics.shared.track(event: "returning_user_signed_in")
                     } else {
                         self.isLoading = false
                         // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true
-                        PostHogSDK.shared.capture("New User Registration Started")
+                        Analytics.shared.track(event: "new_user_registration_started")
                     }
                 } else {
                     self.isLoading = false
                     // Error or user document does not exist, navigate to NameEntryView
                     self.navigateToNameEntry = true
-                    PostHogSDK.shared.capture("User Document Not Found")
+                    Analytics.shared.track(event: "user_document_not_found")
                 }
             }
         }

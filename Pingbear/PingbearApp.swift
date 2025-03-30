@@ -2,7 +2,6 @@ import SwiftUI
 import Firebase
 import FirebaseMessaging
 import Combine
-import PostHog
 import AVFoundation
 import UserNotifications
 
@@ -13,11 +12,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         FirebaseApp.configure()
 
-        let POSTHOG_API_KEY = "phc_TiMANSKNXenX3AKMp8mt9emsGH3W1hPJBM9Rc7AQCzZ"
-        let POSTHOG_HOST = "https://eu.posthog.com"
-
-        let config = PostHogConfig(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
-        PostHogSDK.shared.setup(config)
+        // Configure analytics with PostHog
+        let POSTHOG_API_KEY = "phc_CJVEsIrEFGVZez7JKBE2g5F0jGUDuNZkRC8e7Nx7VAK"
+        let POSTHOG_HOST = "https://eu.i.posthog.com"
+        
+        // Setup analytics with PostHog implementation
+        let analyticsService = PostHogAnalyticsService(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
+        Analytics.shared.configure(with: analyticsService)
         
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized && Auth.auth().currentUser != nil {

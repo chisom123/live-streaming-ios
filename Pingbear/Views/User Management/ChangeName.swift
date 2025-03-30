@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
-import PostHog
 
 struct ChangeNameView: View {
     
@@ -66,6 +65,10 @@ struct ChangeNameView: View {
                         
                         ProfilePictureSelector(onUpdateSuccess: { newUrl in
                             profilePictureUrl = newUrl  // Add this line to update local state
+                            Analytics.shared.track(
+                                event: "profile_picture_updated",
+                                properties: ["has_url": !newUrl.isEmpty]
+                            )
                         })
                     }
                     .padding(.bottom, 20)
@@ -80,7 +83,7 @@ struct ChangeNameView: View {
                             .foregroundColor(.white)
                             .padding(.vertical, 20)
                             .onAppear {
-                                PostHogSDK.shared.capture("Change Name View Opened")
+                                Analytics.shared.trackScreen(name: "change_name")
                             }
                         
                         Spacer()
@@ -187,6 +190,10 @@ struct ChangeNameView: View {
             messageStatus = .error
             errorMessage = validation.error
             isLoading = false
+            Analytics.shared.track(
+                event: "username_update_validation_failed",
+                properties: ["error": validation.error ?? "Unknown validation error"]
+            )
             return
         }
 
@@ -202,6 +209,10 @@ struct ChangeNameView: View {
                 self.messageStatus = .error
                 self.errorMessage = "Error checking username: \(err.localizedDescription)"
                 self.isLoading = false
+                Analytics.shared.trackError(
+                    message: err.localizedDescription,
+                    properties: ["context": "username_update_check"]
+                )
             } else if querySnapshot!.documents.isEmpty || (querySnapshot!.documents.first?.documentID == userId) {
                 // Username is either unique or belongs to the current user, proceed to update
                 docRef.updateData([
@@ -211,10 +222,14 @@ struct ChangeNameView: View {
                     if let err = err {
                         self.messageStatus = .error
                         self.errorMessage = "Error updating username: \(err.localizedDescription)"
+                        Analytics.shared.trackError(
+                            message: err.localizedDescription,
+                            properties: ["context": "username_update"]
+                        )
                     } else {
                         self.messageStatus = .success
                         hideKeyboard()
-                        PostHogSDK.shared.capture("Username Updated")
+                        Analytics.shared.track(event: "username_updated")
                     }
                 }
             } else {
@@ -222,6 +237,10 @@ struct ChangeNameView: View {
                 self.messageStatus = .error
                 self.errorMessage = "This username is already taken"
                 self.isLoading = false
+                Analytics.shared.track(
+                    event: "username_update_failed",
+                    properties: ["reason": "already_taken"]
+                )
             }
         }
     }

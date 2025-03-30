@@ -1,5 +1,4 @@
 import SwiftUI
-import PostHog
 
 struct PayView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -27,7 +26,7 @@ struct PayView: View {
                         Spacer()
                         Button(action: {
                             navigateToCompDetails = true
-                            PostHogSDK.shared.capture("Boost Skip")
+                            Analytics.shared.track(event: "boost_skipped")
                         }) {
                             Image("x")
                                 .resizable()
@@ -193,6 +192,7 @@ struct PayView: View {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
                 NotificationQueueManager.shared.processQueuedNotifications()
+                Analytics.shared.trackScreen(name: "boost_options")
             }
         }
     }

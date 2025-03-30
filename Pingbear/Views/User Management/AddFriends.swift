@@ -1,5 +1,4 @@
 import SwiftUI
-import PostHog
 
 struct AddFriendsView: View {
     
@@ -156,7 +155,10 @@ struct AddFriendsView: View {
                                             if success {
                                                 DispatchQueue.main.async {
                                                     viewModel.matchedUsers[index].isAdded = true
-                                                    PostHogSDK.shared.capture("Friend successfully added from standalone view")
+                                                    Analytics.shared.track(
+                                                        event: "friend_added_from_contacts",
+                                                        properties: ["username": viewModel.matchedUsers[index].username]
+                                                    )
                                                 }
                                             } else if let error = error {
                                                 print("Error adding friend: \(error.localizedDescription)")
@@ -209,6 +211,7 @@ struct AddFriendsView: View {
         .background(Color(hex: "#10183C"))
         .onAppear {
             viewModel.requestContactAccess()
+            Analytics.shared.trackScreen(name: "add_friends")
         }
     }
 }

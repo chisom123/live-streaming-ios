@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseMessaging
 import Foundation
-import PostHog
 
 /// Response structure from token endpoint
 struct TokenResponse: Codable {
@@ -183,10 +182,13 @@ class PushNotificationSender: ObservableObject {
                 }
                 
                 // Log analytics event for successful notification
-                PostHogSDK.shared.capture("Push notification sent", properties: [
-                    "success": true,
-                    "hasData": data != nil
-                ])
+                Analytics.shared.track(
+                    event: "push_notification_sent",
+                    properties: [
+                        "success": true,
+                        "has_data": data != nil
+                    ]
+                )
                 
                 completion?(.success(()))
             }

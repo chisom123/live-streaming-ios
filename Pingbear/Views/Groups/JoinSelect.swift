@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
-import PostHog
 
 struct JoinSelectView: View {
     @State var selectedFriends: Set<String> = []
@@ -61,7 +60,10 @@ struct JoinSelectView: View {
                     // Invite Friends Button
                     Button(action: {
                         isShareSheetPresented = true
-                        PostHogSDK.shared.capture("Invite Share Sheet Tapped")
+                        Analytics.shared.trackTap(
+                            elementId: "invite_share_sheet",
+                            screenName: "add_players"
+                        )
                     }) {
                         HStack {
                             Text("Invite Friends to Play")
@@ -148,7 +150,10 @@ struct JoinSelectView: View {
                             isPresentingCompDetails = true
                         } else {
                             showMinimumPlayersAlert = true
-                            PostHogSDK.shared.capture("Minimum Player Alert Showed")
+                            Analytics.shared.track(
+                                event: "minimum_player_alert_shown",
+                                properties: ["competition_id": competition.id]
+                            )
                         }
                     }) {
                         Text("Continue")
@@ -172,6 +177,7 @@ struct JoinSelectView: View {
             viewModel.fetchFriends {
                 isLoading = false
             }
+            Analytics.shared.trackScreen(name: "add_players")
         }
         .fullScreenCover(isPresented: $isPresentingCompDetails) {
             CompDetails(competition: competition)
@@ -275,8 +281,11 @@ struct JoinSelectView: View {
                         print("Error adding to groupMemberships: \(error)")
                     } else {
                         // Analytics event only tracked on successful addition
-                        PostHogSDK.shared.capture("Friend Added to Competition",
-                                                properties: ["userId": userId])
+                        Analytics.shared.trackCompetition(
+                            action: "join",
+                            competitionId: competition.id,
+                            properties: ["user_id": userId]
+                        )
                     }
                     dispatchGroup.leave()
                 }

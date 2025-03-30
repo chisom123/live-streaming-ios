@@ -2,7 +2,6 @@ import SwiftUI
 import FirebaseAuth
 import CountryPicker
 import PhoneNumberKit
-import PostHog
 
 struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
     
@@ -33,7 +32,10 @@ struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
 
         func countryPicker(didSelect country: Country) {
             parent.selectedCountry = country
-            PostHogSDK.shared.capture("Country Selected", properties: ["country": country.isoCode])
+            Analytics.shared.track(
+                event: "country_selected",
+                properties: ["country": country.isoCode]
+            )
         }
     }
 }
@@ -90,7 +92,7 @@ struct PhoneEntryView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 25)
                     .onAppear {
-                        PostHogSDK.shared.capture("Phone Entry View Opened")
+                        Analytics.shared.trackScreen(name: "phone_entry")
                     }
                 
                 HStack(spacing: 0) {
@@ -195,7 +197,10 @@ struct PhoneEntryView: View {
         guard let country = selectedCountry else {
             self.isLoading = false
             errorMessage = "Please select a country."
-            PostHogSDK.shared.capture("Country Not Selected", properties: ["error": errorMessage ?? "No error message"])
+            Analytics.shared.track(
+                event: "country_not_selected",
+                properties: ["error": errorMessage ?? "No error message"]
+            )
             return
         }
 
@@ -210,19 +215,31 @@ struct PhoneEntryView: View {
                 
                 if let error = error {
                     self.errorMessage = error.localizedDescription
-                    PostHogSDK.shared.capture("Verification Code Sending Failed", properties: ["error": error.localizedDescription])
+                    Analytics.shared.track(
+                        event: "verification_code_sending_failed",
+                        properties: ["error": error.localizedDescription]
+                    )
                     return
                 }
 
                 self.verificationID = verificationID
                 self.showVerificationView = true
-                PostHogSDK.shared.capture("Verification Code Sent", properties: ["phoneNumber": formattedPhoneNumber])
+                Analytics.shared.track(
+                    event: "verification_code_sent",
+                    properties: ["phone_number": formattedPhoneNumber]
+                )
             }
 
         } catch {
             self.isLoading = false
             errorMessage = "Invalid phone number"
-            PostHogSDK.shared.capture("Invalid Phone Number", properties: ["phoneNumber": fullPhoneNumber, "error": errorMessage ?? ""])
+            Analytics.shared.track(
+                event: "invalid_phone_number",
+                properties: [
+                    "phone_number": fullPhoneNumber,
+                    "error": errorMessage ?? ""
+                ]
+            )
         }
     }
 }

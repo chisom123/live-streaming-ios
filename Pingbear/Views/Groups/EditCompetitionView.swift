@@ -1,6 +1,5 @@
 import SwiftUI
 import FirebaseFirestore
-import PostHog
 
 struct EditCompetitionView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -35,10 +34,11 @@ struct EditCompetitionView: View {
                     errorMessage = "Failed to update: \(error.localizedDescription)"
                 } else {
                     self.competition.description = self.competitionName
-                    PostHogSDK.shared.capture("Competition Name Updated", properties: [
-                        "competitionId": competition.id,
-                        "newName": competitionName
-                    ])
+                    Analytics.shared.trackCompetition(
+                        action: "edit",
+                        competitionId: competition.id,
+                        properties: ["new_name": competitionName]
+                    )
                     presentationMode.wrappedValue.dismiss()
                 }
             }
@@ -102,7 +102,7 @@ struct EditCompetitionView: View {
         .accentColor(.white)
         .ignoresSafeArea()
         .onAppear {
-            PostHogSDK.shared.capture("Edit Name View Opened")
+            Analytics.shared.trackScreen(name: "edit_competition")
         }
     }
 }

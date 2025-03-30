@@ -1,15 +1,14 @@
 import StoreKit
 import FirebaseAuth
 import FirebaseFirestore
-import PostHog
 
 class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPaymentTransactionObserver {
     @Published var products: [SKProduct] = []
     @Published var purchaseCompleted: Bool = false
     @Published var isLoading: Bool = false
     
-    var competitionId: String = "" // Add this line
-    var entryDocId: String = "" // Add this line
+    var competitionId: String = ""
+    var entryDocId: String = ""
     
     private var productIdentifiers: Set<String> = ["one_day_boost", "one_hour_boost", "one_week_boost"]
 
@@ -28,7 +27,10 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     func purchase(product: SKProduct) {
         DispatchQueue.main.async {
             self.isLoading = true
-            PostHogSDK.shared.capture("Purchase Attempt", properties: ["productID": product.productIdentifier])
+            Analytics.shared.trackPurchase(
+                action: "initiate",
+                productId: product.productIdentifier
+            )
         }
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
@@ -37,7 +39,10 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
         guard let userID = Auth.auth().currentUser?.uid else {
             print("Validation failed")
-            PostHogSDK.shared.capture("Validation Failed", properties: ["productID": transaction.payment.productIdentifier])
+            Analytics.shared.trackError(
+                message: "User not authenticated during purchase validation",
+                properties: ["product_id": transaction.payment.productIdentifier]
+            )
             return
         }
         
@@ -55,7 +60,10 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             expirationDate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
         default:
             print("Unknown or unsupported product identifier")
-            PostHogSDK.shared.capture("Unsupported Product Identifier", properties: ["productID": transaction.payment.productIdentifier])
+            Analytics.shared.trackError(
+                message: "Unsupported product identifier",
+                properties: ["product_id": transaction.payment.productIdentifier]
+            )
             return
         }
         
@@ -63,7 +71,10 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
         userDocRef.updateData(["boost": expirationDate]) { [weak self] error in
             if let error = error {
                 print("Error updating user boost data: \(error)")
-                PostHogSDK.shared.capture("Boost Data Update Failed", properties: ["error": error.localizedDescription])
+                Analytics.shared.trackError(
+                    message: "Boost data update failed",
+                    properties: ["error": error.localizedDescription]
+                )
                 return
             }
 
@@ -87,13 +98,20 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
                 entriesDocRef.updateData(["superstar": true]) { error in
                     if let error = error {
                         print("Error updating entry to superstar: \(error)")
-                        PostHogSDK.shared.capture("Superstar Status Update Failed", properties: ["error": error.localizedDescription])
+                        Analytics.shared.trackError(
+                            message: "Superstar status update failed",
+                            properties: ["error": error.localizedDescription]
+                        )
                         return
                     }
                     
                     guard let self = self else { return }
                     self.purchaseCompleted = true
-                    PostHogSDK.shared.capture("\(transaction.payment.productIdentifier) Purchased", properties: ["status": "Superstar set"])
+                    Analytics.shared.trackPurchase(
+                        action: "completed",
+                        productId: transaction.payment.productIdentifier,
+                        properties: ["status": "superstar_set"]
+                    )
                     
                     DispatchQueue.main.async {
                         self.isLoading = false
@@ -107,7 +125,10 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         DispatchQueue.main.async {
             self.products = response.products
-            PostHogSDK.shared.capture("Products Fetched", properties: ["productIDs": self.products.map { $0.productIdentifier }])
+            Analytics.shared.track(
+                event: "products_fetched",
+                properties: ["product_ids": self.products.map { $0.productIdentifier }]
+            )
         }
     }
     
@@ -124,14 +145,21 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
                 // Handle failed transaction
                 DispatchQueue.main.async {
                     self.isLoading = false
-                    PostHogSDK.shared.capture("Purchase Failed", properties: ["productID": transaction.payment.productIdentifier, "error": transaction.error?.localizedDescription ?? "No error information"])
+                    Analytics.shared.trackPurchase(
+                        action: "failed",
+                        productId: transaction.payment.productIdentifier,
+                        properties: ["error": transaction.error?.localizedDescription ?? "No error information"]
+                    )
                 }
                 SKPaymentQueue.default().finishTransaction(transaction)
             case .restored:
                 // Handle restored transaction if your app supports it
                 DispatchQueue.main.async {
                     self.isLoading = false
-                    PostHogSDK.shared.capture("Purchase Restored", properties: ["productID": transaction.payment.productIdentifier])
+                    Analytics.shared.trackPurchase(
+                        action: "restored",
+                        productId: transaction.payment.productIdentifier
+                    )
                 }
                 SKPaymentQueue.default().finishTransaction(transaction)
             default:

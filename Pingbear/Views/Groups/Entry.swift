@@ -7,7 +7,6 @@
 
 import SwiftUI
 import NotificationBannerSwift
-import PostHog
 import Kingfisher
 
 struct EntryView: View {
@@ -25,7 +24,6 @@ struct EntryView: View {
     }
     
     var competition: Competition
-
 
     init(competitionId: String, competition: Competition) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
@@ -176,7 +174,12 @@ struct EntryView: View {
                                 let currentEntry = viewModel.entries[viewModel.currentIndex]
                                 Button(action: {
                                     isRatingEnabled = false
-                                    PostHogSDK.shared.capture("Star Rating", properties: ["rating": star])
+                                    Analytics.shared.trackEntry(
+                                        action: "rate",
+                                        entryId: currentEntry.id,
+                                        competitionId: competition.id,
+                                        properties: ["rating": star]
+                                    )
                                     triggerHapticFeedback(for: star)
                                     let ratingIncrement = star
                                     self.rating = ratingIncrement
@@ -252,7 +255,7 @@ struct EntryView: View {
                 Button(action: {
                     let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
                     banner.show()
-                    PostHogSDK.shared.capture("Photo Reported")
+                    Analytics.shared.track(event: "photo_reported")
                 }) {
                     Image(systemName: "flag")
                         .font(.system(size: 30))
@@ -280,6 +283,8 @@ struct EntryView: View {
                     KingfisherManager.shared.retrieveImage(with: url) { _ in }
                 }
             }
+            
+            Analytics.shared.trackScreen(name: "entry_rating")
         }
         .onDisappear {
             // Clean up when the view disappears

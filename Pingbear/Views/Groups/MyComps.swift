@@ -1,7 +1,6 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
-import PostHog
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
@@ -111,6 +110,7 @@ struct MyCompsView: View {
         }
         .onAppear {
             fetchData()
+            Analytics.shared.trackScreen(name: "competitions_list")
         }
         .onDisappear {
             viewModel.cleanupListeners()
@@ -131,10 +131,11 @@ struct MyCompsView: View {
         let membersViewModel = MembersViewModel()
         membersViewModel.leaveCompetition(competitionId: competitionId, userId: userId)
         
-        // Capture analytics event
-        PostHogSDK.shared.capture("Left Competition", properties: [
-            "competition_id": competitionId
-        ])
+        // Track analytics event
+        Analytics.shared.trackCompetition(
+            action: "leave",
+            competitionId: competitionId
+        )
         
         // Optionally provide haptic feedback
         let generator = UINotificationFeedbackGenerator()
@@ -184,9 +185,10 @@ struct MyCompsView: View {
                      )
                  }
                  
-                 PostHogSDK.shared.capture("New Competition", properties: [
-                     "competition_id": competitionId
-                 ])
+                 Analytics.shared.trackCompetition(
+                     action: "create",
+                     competitionId: competitionId
+                 )
              }
          }
      }

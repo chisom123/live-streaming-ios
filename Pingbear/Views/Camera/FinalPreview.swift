@@ -2,7 +2,6 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
-import PostHog
 import FirebaseMessaging
 
 // Add this extension to UIImage for image optimization
@@ -463,7 +462,15 @@ struct FinalPreview: View {
                             userId: userId
                         )
                         
-                        PostHogSDK.shared.capture("New Photo Shared")
+                        Analytics.shared.trackEntry(
+                            action: "create",
+                            competitionId: self.competitionId,
+                            properties: [
+                                "has_text": !self.overlayText.isEmpty,
+                                "is_superstar": superstar,
+                                "from_camera": self.isFromCamera
+                            ]
+                        )
                         
                         if superstar {
                             self.navigateToCompDetails = true

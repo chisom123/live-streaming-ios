@@ -1,5 +1,4 @@
 import SwiftUI
-import PostHog
 
 struct WelcomeView: View {
     @State private var showPhoneEntry = false
@@ -98,7 +97,10 @@ struct WelcomeView: View {
                 
                 // CTA Button
                 Button(action: {
-                    PostHogSDK.shared.capture("Welcome CTA Clicked")
+                    Analytics.shared.trackTap (
+                        elementId: "welcome_cta",
+                        screenName: "welcome"
+                    )
                     showPhoneEntry = true
                 }) {
                     HStack {
@@ -135,7 +137,7 @@ struct WelcomeView: View {
             }
             .padding(.horizontal, 20)
             .onAppear {
-                PostHogSDK.shared.capture("Welcome View Opened")
+                Analytics.shared.trackScreen(name: "welcome")
             }
             
             NavigationLink(destination: PhoneEntryView(), isActive: $showPhoneEntry) {

@@ -1,5 +1,4 @@
 import SwiftUI
-import PostHog
 
 struct MyFriendsView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -88,6 +87,7 @@ struct MyFriendsView: View {
             .background(Color(hex: "#10183C"))
             .onAppear {
                 viewModel.fetchFriends()
+                Analytics.shared.trackScreen(name: "my_friends")
             }
             .actionSheet(isPresented: $showActionSheet) {
                 ActionSheet(
@@ -97,13 +97,11 @@ struct MyFriendsView: View {
                         .destructive(Text("Remove Friend")) {
                             if let id = self.friendToManage {
                                 viewModel.removeFriend(id: id)
-                                PostHogSDK.shared.capture("Remove Friend Tapped")
                             }
                         },
                         .default(Text("Block Friend")) {
                             if let id = self.friendToManage {
                                 viewModel.removeFriend(id: id)
-                                PostHogSDK.shared.capture("Block Friend Tapped")
                             }
                         },
                         .cancel()

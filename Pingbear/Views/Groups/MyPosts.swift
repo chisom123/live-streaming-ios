@@ -1,5 +1,4 @@
 import SwiftUI
-import PostHog
 
 struct MyPostsView: View {
     @StateObject private var viewModel: MyPostsViewModel
@@ -37,7 +36,7 @@ struct MyPostsView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal)
                         .onAppear {
-                            PostHogSDK.shared.capture("My Posts View Opened")
+                            Analytics.shared.trackScreen(name: "my_posts")
                         }
                     
                     Spacer()
