@@ -1,32 +1,15 @@
 import SwiftUI
 import PhotosUI
 
-// MARK: - Flash Button Component
-struct FlashButton: View {
-    @ObservedObject var cameraModel: CameraViewModel
-    
-    var body: some View {
-        Button(action: {
-            cameraModel.toggleFlashMode()
-        }) {
-            Image(systemName: cameraModel.flashMode.iconName)
-                .font(.system(size: 30))
-                .foregroundColor(.white)
-                .padding(5)
-                .shadow(radius: 10)
-        }
-        // Always enabled for front camera, and conditionally for back camera
-        .opacity(cameraModel.isFlashAvailable ? 1.0 : 0.5)
-    }
-}
-
 struct CameraView: View {
-    @StateObject var cameraModel = CameraViewModel()
+    // Use StateObject for view-owned objects, ObservedObject for parent-injected
+    @StateObject private var cameraModel = CameraViewModel()
     var competition: Competition
     @State private var navigateToCompDetails = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var imageSource: ImageSource = .camera
+    @State private var isViewAppeared = false
     
     enum ImageSource {
         case camera
@@ -36,11 +19,17 @@ struct CameraView: View {
     var body: some View {
         ZStack {
             // MARK: Camera View
-            CameraInitView()
-                .environmentObject(cameraModel)
-                .ignoresSafeArea()
+            if isViewAppeared {
+                CameraInitView()
+                    .environmentObject(cameraModel)
+                    .ignoresSafeArea()
+            } else {
+                // Show a loading placeholder until view appears
+                Color.black
+                    .ignoresSafeArea()
+            }
             
-            // Controls
+            // Controls overlay
             VStack {
                 HStack {
                     Button {
@@ -77,7 +66,6 @@ struct CameraView: View {
 
                 // Bottom Controls
                 HStack(spacing: 60) {
-                    
                     PhotosPicker(
                         selection: $selectedItem,
                         matching: .images,
@@ -94,7 +82,7 @@ struct CameraView: View {
                     // Camera Button
                     Button(action: {
                         imageSource = .camera
-                        cameraModel.capturePhotoWithFlash() // Using improved method with flash
+                        cameraModel.capturePhotoWithFlash()
                     }) {
                         Circle()
                             .fill(Color.clear)
@@ -142,20 +130,43 @@ struct CameraView: View {
             CompDetails(competition: competition)
         }
         .onAppear {
-            cameraModel.checkPermission() // This will call setUp() which now includes flash setup
+            // Optimization: Mark the view as appeared first, then request camera setup
+            // This allows UI to render immediately while camera initializes in background
+            DispatchQueue.main.async {
+                self.isViewAppeared = true
+                // Camera permission check will be triggered by CameraInitView
+            }
         }
         .onDisappear {
-            // Make sure to reset flash when view disappears
+            // Clean up resources when view disappears
             cameraModel.resetFlash()
         }
     }
     
     private func resetCamera() {
         cameraModel.capturedImage = nil
-        cameraModel.session.startRunning()
-        cameraModel.resetFlash() // Make sure to reset flash state
+        cameraModel.resetFlash()
         imageSource = .camera
         selectedItem = nil
         selectedImage = nil
+    }
+}
+
+// MARK: - Flash Button Component
+struct FlashButton: View {
+    @ObservedObject var cameraModel: CameraViewModel
+    
+    var body: some View {
+        Button(action: {
+            cameraModel.toggleFlashMode()
+        }) {
+            Image(systemName: cameraModel.flashMode.iconName)
+                .font(.system(size: 30))
+                .foregroundColor(.white)
+                .padding(5)
+                .shadow(radius: 10)
+        }
+        // Always enabled for front camera, and conditionally for back camera
+        .opacity(cameraModel.isFlashAvailable ? 1.0 : 0.5)
     }
 }

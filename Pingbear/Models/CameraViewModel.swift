@@ -33,7 +33,12 @@ class FlashService {
     private var flashView: UIView?
     private var isFlashing = false
     
-    // Front camera screen flash with improved timing
+    // Cached ambient light data to avoid repeated expensive computations
+    private var lastLightReadingTime: Date = Date.distantPast
+    private var cachedShouldUseFlash: Bool = false
+    private let lightReadingCacheTime: TimeInterval = 2.0 // 2 seconds cache
+    
+    // Front camera screen flash with improved timing and performance
     func enableScreenFlash(completion: @escaping () -> Void) {
         // Prevent multiple flashes from happening simultaneously
         guard !isFlashing, flashView == nil else {
@@ -47,43 +52,37 @@ class FlashService {
         // Store original brightness
         originalBrightness = UIScreen.main.brightness
         
-        // Create flash view
+        // Create flash view (lazily)
         let flashView = UIView(frame: UIScreen.main.bounds)
         flashView.backgroundColor = .white
         flashView.alpha = 0
         
-        // Add to key window
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.addSubview(flashView)
-            
-            // Pre-flash delay to ensure timing is correct
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                // Animation to simulate flash
-                UIView.animate(withDuration: 0.15, animations: {
+        // Add to key window (dispatcher to UI thread)
+        DispatchQueue.main.async {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                window.addSubview(flashView)
+                
+                // Animation to simulate flash - use shorter duration for better performance
+                UIView.animate(withDuration: 0.1, animations: {
                     // Increase screen brightness to maximum
                     UIScreen.main.brightness = 1.0
                     flashView.alpha = 1.0
                 }, completion: { _ in
                     // Call completion when flash is at peak brightness
-                    // This is the critical timing improvement
                     completion()
                     
                     // Then fade out the flash
-                    UIView.animate(withDuration: 0.25, animations: {
+                    UIView.animate(withDuration: 0.2, animations: {
                         flashView.alpha = 0
                     }, completion: { _ in
                         // Remove flash view
                         flashView.removeFromSuperview()
                         self.flashView = nil
                         
-                        // Restore original brightness with slight delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            UIView.animate(withDuration: 0.3) {
-                                UIScreen.main.brightness = self.originalBrightness
-                            }
-                            self.isFlashing = false
-                        }
+                        // Restore original brightness
+                        UIScreen.main.brightness = self.originalBrightness
+                        self.isFlashing = false
                     })
                 })
             }
@@ -92,31 +91,30 @@ class FlashService {
         self.flashView = flashView
     }
     
-    // Improved ambient light detection for front camera
+    // Improved ambient light detection with caching for front camera
     func shouldUseFlashInAutoMode(forceLowLightThreshold: Bool = false) -> Bool {
-        guard let device = AVCaptureDevice.default(for: .video) else { return false }
+        // Use cached value if recent enough
+        let now = Date()
+        if now.timeIntervalSince(lastLightReadingTime) < lightReadingCacheTime {
+            return cachedShouldUseFlash
+        }
+        
+        guard let device = AVCaptureDevice.default(for: .video) else {
+            return false
+        }
+        
+        var result = false
         
         do {
             try device.lockForConfiguration()
             
             // Check if low light boost is enabled (strong indicator)
             if device.isLowLightBoostSupported && device.isLowLightBoostEnabled {
-                device.unlockForConfiguration()
-                return true
-            }
-            
-            if device.isExposureModeSupported(.continuousAutoExposure) {
-                // Lower ISO threshold for front camera to be more sensitive
-                // Front cameras usually have higher ISO in the same lighting conditions
+                result = true
+            } else if device.isExposureModeSupported(.continuousAutoExposure) {
+                // Simplified threshold check for better performance
                 let isoDarkThreshold: Float = forceLowLightThreshold ? 300 : 500
-                let isDark = device.iso > isoDarkThreshold
-                
-                // Also consider exposure duration as a factor
-                let exposureDuration = CMTimeGetSeconds(device.exposureDuration)
-                let isLongExposure = exposureDuration > 0.05 // 1/20th of a second
-                
-                device.unlockForConfiguration()
-                return isDark || isLongExposure
+                result = device.iso > isoDarkThreshold
             }
             
             device.unlockForConfiguration()
@@ -124,13 +122,19 @@ class FlashService {
             print("Error checking light levels: \(error)")
         }
         
-        return false
+        // Cache the result
+        lastLightReadingTime = now
+        cachedShouldUseFlash = result
+        
+        return result
     }
     
     // Reset any ongoing flash operations
     func reset() {
         if let flashView = self.flashView {
-            flashView.removeFromSuperview()
+            DispatchQueue.main.async {
+                flashView.removeFromSuperview()
+            }
             self.flashView = nil
         }
         
@@ -138,12 +142,14 @@ class FlashService {
         
         // Reset screen brightness if it was changed
         if UIScreen.main.brightness > originalBrightness + 0.3 {
-            UIScreen.main.brightness = originalBrightness
+            DispatchQueue.main.async {
+                UIScreen.main.brightness = self.originalBrightness
+            }
         }
     }
 }
 
-// MARK: Camera View Model
+// MARK: - Camera View Model with Performance Optimization
 class CameraViewModel: NSObject, ObservableObject {
     @Published var session = AVCaptureSession()
     @Published var currentCameraPosition: AVCaptureDevice.Position = .front
@@ -159,13 +165,53 @@ class CameraViewModel: NSObject, ObservableObject {
     @Published var flashMode: FlashMode = .auto
     @Published var isFlashAvailable: Bool = false
     
+    // Session configuration queue for background processing
+    private let sessionQueue = DispatchQueue(label: "session.queue", qos: .userInitiated)
     private var photoOutput = AVCapturePhotoOutput()
     private var cancellables = Set<AnyCancellable>()
+    private var isConfigured = false
+    
+    override init() {
+        super.init()
+        
+        // Load saved flash mode immediately
+        if let savedFlashMode = FlashMode(rawValue: UserDefaults.standard.integer(forKey: "FlashMode")) {
+            flashMode = savedFlashMode
+        }
+        
+        // Load camera position from UserDefaults
+        currentCameraPosition = AVCaptureDevice.Position(rawValue:
+                               UserDefaults.standard.integer(forKey: "CameraPosition")) ?? .front
+    }
     
     func toggleCamera() {
         let newCameraPosition: AVCaptureDevice.Position = (currentCameraPosition == .front) ? .back : .front
-        let devices = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera], mediaType: .video, position: newCameraPosition).devices
-
+        
+        // Save the new camera position to UserDefaults immediately
+        UserDefaults.standard.set(newCameraPosition.rawValue, forKey: "CameraPosition")
+        
+        // Update UI state immediately
+        currentCameraPosition = newCameraPosition
+        
+        // Perform actual device switching on background queue
+        sessionQueue.async {
+            self.reconfigureSession(with: newCameraPosition)
+            
+            // Update flash availability after camera switch
+            DispatchQueue.main.async {
+                self.updateFlashAvailability()
+                Analytics.shared.track(event: "camera_toggled", properties: ["new_position": newCameraPosition == .front ? "front" : "back"])
+            }
+        }
+    }
+    
+    private func reconfigureSession(with position: AVCaptureDevice.Position) {
+        let devices = AVCaptureDevice.DiscoverySession(
+            deviceTypes: [.builtInWideAngleCamera],
+            mediaType: .video,
+            position: position
+        ).devices
+        
         guard let newCameraDevice = devices.first else { return }
         
         do {
@@ -180,112 +226,110 @@ class CameraViewModel: NSObject, ObservableObject {
             // Add new video input
             if session.canAddInput(newVideoInput) {
                 session.addInput(newVideoInput)
-                currentCameraPosition = newCameraPosition
                 
                 // Update mirroring for front camera
                 if let photoConnection = photoOutput.connection(with: .video) {
                     if photoConnection.isVideoMirroringSupported {
-                        photoConnection.isVideoMirrored = (currentCameraPosition == .front)
+                        photoConnection.isVideoMirrored = (position == .front)
                     }
                 }
             }
             
-            // Save the new camera position to UserDefaults
-            UserDefaults.standard.set(currentCameraPosition.rawValue, forKey: "CameraPosition")
-            
             session.commitConfiguration()
-            Analytics.shared.track(event: "camera_toggled", properties: ["new_position": newCameraPosition == .front ? "front" : "back"])
         } catch {
             print("Failed to switch cameras: \(error)")
         }
-        
-        // Update flash availability after camera switch
-        updateFlashAvailability()
     }
     
-    func checkPermission(){
+    func checkPermission() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            setUp()
-            return
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { (status) in
-                if status {
+            // Only configure session if not already configured
+            if !isConfigured {
+                sessionQueue.async {
+                    self.configureSession()
+                    
                     DispatchQueue.main.async {
-                        self.setUp()
+                        self.isConfigured = true
+                        self.updateFlashAvailability()
                     }
                 }
             }
-        case .denied:
-            self.alert.toggle()
             return
+            
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] status in
+                guard let self = self, status else { return }
+                
+                DispatchQueue.main.async {
+                    if !self.isConfigured {
+                        self.sessionQueue.async {
+                            self.configureSession()
+                            
+                            DispatchQueue.main.async {
+                                self.isConfigured = true
+                                self.updateFlashAvailability()
+                            }
+                        }
+                    }
+                }
+            }
+            
+        case .denied:
+            DispatchQueue.main.async {
+                self.alert.toggle()
+            }
+            return
+            
         default:
             return
         }
     }
     
-    func setUp() {
-        let cameraPosition = AVCaptureDevice.Position(rawValue: UserDefaults.standard.integer(forKey: "CameraPosition")) ?? .front
-        currentCameraPosition = cameraPosition
-        
+    private func configureSession() {
         do {
-            self.session.beginConfiguration()
+            session.beginConfiguration()
             
             // Configure camera input
-            guard let cameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: currentCameraPosition) else {
+            guard let cameraDevice = AVCaptureDevice.default(
+                .builtInWideAngleCamera,
+                for: .video,
+                position: currentCameraPosition
+            ) else {
                 return
             }
+            
             let videoInput = try AVCaptureDeviceInput(device: cameraDevice)
             
             // Remove any existing inputs
             session.inputs.forEach { session.removeInput($0) }
             
             // Add new video input
-            if self.session.canAddInput(videoInput) {
-                self.session.addInput(videoInput)
+            if session.canAddInput(videoInput) {
+                session.addInput(videoInput)
             }
             
-            // Configure photo output
-            if session.canAddOutput(photoOutput) {
+            // Configure photo output if not already added
+            if !session.outputs.contains(photoOutput), session.canAddOutput(photoOutput) {
                 session.addOutput(photoOutput)
                 
-                // Configure output settings - this is the key part for mirroring
+                // Configure output settings for mirroring
                 if let photoConnection = photoOutput.connection(with: .video) {
                     if photoConnection.isVideoMirroringSupported {
-                        // For preview, front camera should be mirrored
                         photoConnection.isVideoMirrored = (currentCameraPosition == .front)
                     }
                 }
             }
             
-            self.session.commitConfiguration()
+            session.commitConfiguration()
+            
+            // Start session running on background thread
+            if !session.isRunning {
+                session.startRunning()
+            }
         } catch {
-            print(error.localizedDescription)
+            print("Session configuration error: \(error.localizedDescription)")
         }
-        
-        // Load saved flash mode
-        if let savedFlashMode = FlashMode(rawValue: UserDefaults.standard.integer(forKey: "FlashMode")) {
-            flashMode = savedFlashMode
-        }
-        
-        // Reset any ongoing flash operations
-        FlashService.shared.reset()
-        
-        updateFlashAvailability()
-    }
-    
-    // Original capture photo method - kept for backward compatibility
-    func capturePhoto() {
-        guard !isTakingPhoto else { return }
-        
-        isTakingPhoto = true
-        Analytics.shared.track(event: "photo_captured")
-        
-        let settings = AVCapturePhotoSettings()
-        
-        settings.maxPhotoDimensions = photoOutput.maxPhotoDimensions
-               
-        photoOutput.capturePhoto(with: settings, delegate: self)
     }
     
     // Improved method for capturing photo with flash
@@ -296,17 +340,6 @@ class CameraViewModel: NSObject, ObservableObject {
         
         var settings = AVCapturePhotoSettings()
         settings.maxPhotoDimensions = photoOutput.maxPhotoDimensions
-        
-        // Preserve the mirroring behavior (this is crucial for front camera)
-        if currentCameraPosition == .front {
-            // Make sure to set the correct mirroring properties
-            settings.isAutoStillImageStabilizationEnabled = true
-            
-            // Important: Don't modify the mirroring behavior from the original code
-            if let photoConnection = photoOutput.connection(with: .video) {
-                photoConnection.isVideoMirrored = true
-            }
-        }
         
         // Handle front camera flash with improved timing
         if currentCameraPosition == .front && flashMode != .off {
@@ -330,7 +363,7 @@ class CameraViewModel: NSObject, ObservableObject {
                 return // Early return because capture is done in completion handler
             }
         } else if currentCameraPosition == .back {
-            // Configure flash for back camera (same as before)
+            // Configure flash for back camera
             configureFlashForCapture(settings: &settings)
         }
         
