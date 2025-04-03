@@ -30,7 +30,7 @@ struct ThemeSelectionSheet: View {
                     
                     Spacer()
                     
-                    Text("Select a Theme")
+                    Text("Pick a Theme")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.white)
                     
