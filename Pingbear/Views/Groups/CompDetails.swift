@@ -65,7 +65,7 @@ struct CompDetails: View {
                     Button(action: {
                         isEditingCompetition = true
                     }) {
-                        Text(competition.description)
+                        Text(competition.description == "Unnamed Competition" ? "Add Competition Name" : competition.description)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .lineLimit(1)
                             .foregroundColor(.white)
