@@ -146,6 +146,9 @@ struct FinalPreview: View {
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
     @StateObject private var notificationSender = PushNotificationSender()
+    @StateObject private var themesViewModel = ThemesViewModel()
+    @State private var selectedTheme: Theme?
+    @State private var showingThemeSelection = false
     let characterLimit = 150
     var isFromCamera: Bool
 
@@ -233,6 +236,38 @@ struct FinalPreview: View {
                              
                              Spacer()
                              
+                             // Theme Button with integrated theme display
+                             if !isEditingText {
+                                 Button(action: {
+                                     showingThemeSelection = true
+                                 }) {
+                                     HStack(spacing: 5) {
+                                         Image(systemName: "tag.fill")
+                                             .font(.system(size: 18))
+                                             .foregroundColor(.white)
+                                         
+                                         if let theme = selectedTheme {
+                                             // Show the selected theme name directly in the button
+                                             Text(theme.name)
+                                                 .font(.system(size: 16, weight: .bold))
+                                                 .foregroundColor(.white)
+                                                 .truncationMode(.tail)
+                                                 .lineLimit(1)
+                                         } else {
+                                             Text("Add Theme")
+                                                 .font(.system(size: 16, weight: .bold))
+                                                 .foregroundColor(.white)
+                                         }
+                                     }
+                                     .padding(.horizontal, 12)
+                                     .padding(.vertical, 8)
+                                     .background(Color(hex: "#FF8C00"))
+                                     .cornerRadius(200)
+                                 }
+                             }
+                             
+                             Spacer()
+                             
                              // Text Button (doubles as Done button)
                              Button(action: {
                                  self.isEditingText.toggle()
@@ -281,6 +316,7 @@ struct FinalPreview: View {
                          .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 20)
                          .opacity(isEditingText ? 0 : 1)
                      }
+                     .padding(.horizontal, 30)
                  }
              }
          }
@@ -294,6 +330,17 @@ struct FinalPreview: View {
              if let entryDocId = newentryDocId {
                  CompDetails(competition: competition)
              }
+         }
+         .sheet(isPresented: $showingThemeSelection) {
+             ThemeSelectionSheet(
+                 viewModel: themesViewModel,
+                 competitionId: competitionId,
+                 selectedTheme: $selectedTheme
+             )
+         }
+         .onAppear {
+             // Load themes when view appears
+             themesViewModel.loadThemes(for: competitionId)
          }
      }
     
@@ -434,7 +481,8 @@ struct FinalPreview: View {
                 print("User document not found or boost data unavailable, setting superstar to false")
             }
 
-            let entryData = [
+            // Create entry data with theme information if available
+            var entryData: [String: Any] = [
                 "userId": userId,
                 "imageUrl": imageURL,
                 "timestamp": FieldValue.serverTimestamp(),
@@ -443,6 +491,12 @@ struct FinalPreview: View {
                 "overlayVerticalPosition": self.overlayVerticalPosition,
                 "isFromCamera": self.isFromCamera
             ]
+            
+            // Add theme data if a theme is selected
+            if let theme = self.selectedTheme {
+                entryData["themeId"] = theme.id
+                entryData["themeName"] = theme.name
+            }
             
             var newEntryRef: DocumentReference? = nil
             newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
@@ -462,14 +516,23 @@ struct FinalPreview: View {
                             userId: userId
                         )
                         
+                        // Add theme information to analytics
+                        var properties: [String: Any] = [
+                            "has_text": !self.overlayText.isEmpty,
+                            "is_superstar": superstar,
+                            "from_camera": self.isFromCamera,
+                            "has_theme": self.selectedTheme != nil
+                        ]
+                        
+                        // Add theme name if available
+                        if let themeName = self.selectedTheme?.name {
+                            properties["theme_name"] = themeName
+                        }
+                        
                         Analytics.shared.trackEntry(
                             action: "create",
                             competitionId: self.competitionId,
-                            properties: [
-                                "has_text": !self.overlayText.isEmpty,
-                                "is_superstar": superstar,
-                                "from_camera": self.isFromCamera
-                            ]
+                            properties: properties
                         )
                         
                         if superstar {

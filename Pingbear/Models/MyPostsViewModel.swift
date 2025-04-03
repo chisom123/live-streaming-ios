@@ -56,6 +56,10 @@ class MyPostsViewModel: ObservableObject {
                     
                     let stars = data["stars"] as? Int ?? 0 // Make stars optional and default to 0
                     
+                    // Extract theme information if available
+                    let themeId = data["themeId"] as? String
+                    let themeName = data["themeName"] as? String
+                    
                     return Entry(
                         id: document.documentID,
                         photoUrl: photoUrl,
@@ -67,7 +71,9 @@ class MyPostsViewModel: ObservableObject {
                         creationDate: timestamp.dateValue(),
                         overlayText: data["overlayText"] as? String,
                         overlayVerticalPosition: data["overlayVerticalPosition"] as? CGFloat ?? 0.5,
-                        isFromCamera: data["isFromCamera"] as? Bool ?? true
+                        isFromCamera: data["isFromCamera"] as? Bool ?? true,
+                        themeId: themeId,
+                        themeName: themeName
                     )
                 } ?? []
                 

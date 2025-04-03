@@ -14,6 +14,28 @@ struct Entry: Identifiable {
     let overlayText: String?
     let overlayVerticalPosition: CGFloat
     let isFromCamera: Bool
+    let themeId: String?
+    let themeName: String?
+    
+    // Constructor with optional theme parameters for backward compatibility
+    init(id: String, photoUrl: String, userName: String, stars: Int, userProfilePictureUrl: String?,
+         isCurrentUser: Bool, isSuperstar: Bool, creationDate: Date, overlayText: String?,
+         overlayVerticalPosition: CGFloat, isFromCamera: Bool, themeId: String? = nil, themeName: String? = nil) {
+        
+        self.id = id
+        self.photoUrl = photoUrl
+        self.userName = userName
+        self.stars = stars
+        self.userProfilePictureUrl = userProfilePictureUrl
+        self.isCurrentUser = isCurrentUser
+        self.isSuperstar = isSuperstar
+        self.creationDate = creationDate
+        self.overlayText = overlayText
+        self.overlayVerticalPosition = overlayVerticalPosition
+        self.isFromCamera = isFromCamera
+        self.themeId = themeId
+        self.themeName = themeName
+    }
 }
 
 struct UserEntry: Identifiable {
@@ -265,17 +287,25 @@ class EntryViewModel: ObservableObject {
                 let userName = isCurrentUser ? "Me" : (userNames[userId] ?? "Unknown")
                 let profilePictureUrl = userProfilePictures[userId]
                 
-                let entry = Entry(id: documentId,
-                                  photoUrl: imageUrl,
-                                  userName: userName,
-                                  stars: stars, 
-                                  userProfilePictureUrl: profilePictureUrl,
-                                  isCurrentUser: isCurrentUser,
-                                  isSuperstar: isSuperstar,
-                                  creationDate: creationDate,
-                                  overlayText: overlayText,
-                                  overlayVerticalPosition: overlayVerticalPosition,
-                                  isFromCamera: isFromCamera)
+                // Extract theme information
+                let themeId = document.data()["themeId"] as? String
+                let themeName = document.data()["themeName"] as? String
+                
+                let entry = Entry(
+                    id: documentId,
+                    photoUrl: imageUrl,
+                    userName: userName,
+                    stars: stars,
+                    userProfilePictureUrl: profilePictureUrl,
+                    isCurrentUser: isCurrentUser,
+                    isSuperstar: isSuperstar,
+                    creationDate: creationDate,
+                    overlayText: overlayText,
+                    overlayVerticalPosition: overlayVerticalPosition,
+                    isFromCamera: isFromCamera,
+                    themeId: themeId,
+                    themeName: themeName
+                )
                 
                 localEntries.append(entry)
                 

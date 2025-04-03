@@ -156,6 +156,56 @@ struct EntryView: View {
                 self.isRatingEnabled = true
             }
             
+            // Top navigation bar with username and theme
+            HStack {
+                Button(action: {
+                    cleanupResources()
+                    navigateToCompDetails = true
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                }
+
+                Spacer()
+                
+                // Show username and theme inline
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let entry = viewModel.entries[viewModel.currentIndex]
+                    
+                    HStack(spacing: 10) {
+                        Text(entry.userName)
+                            .foregroundColor(.white)
+                            .font(.system(size: 20, weight: .bold, design: .default))
+                            .shadow(radius: 10)
+                            .truncationMode(.tail)
+                            .lineLimit(1)
+                        
+                        // Only show the theme badge if there is a theme
+                        if let themeName = entry.themeName {
+                            ThemeBadge(themeName: themeName)
+                        }
+                    }
+                    .frame(maxWidth: 250)
+                }
+
+                Spacer()
+
+                Button(action: {
+                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
+                    banner.show()
+                    Analytics.shared.track(event: "photo_reported")
+                }) {
+                    Image(systemName: "flag")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                }
+            }
+            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
+            .padding()
+            
             // Bottom - Star rating, horizontally centered
             VStack {
                 Spacer() // Pushes the content to the bottom
@@ -225,47 +275,6 @@ struct EntryView: View {
                 .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
             }
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-
-            HStack {
-                Button(action: {
-                    cleanupResources()
-                    navigateToCompDetails = true
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(radius: 10)
-                }
-
-                Spacer()
-                
-                // Display the username here
-                if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                    Text(viewModel.entries[viewModel.currentIndex].userName)
-                        .foregroundColor(.white) // Set the text color to white
-                        .font(.system(size: 20, weight: .bold, design: .default))
-                        .shadow(radius: 10)
-                        .truncationMode(.tail) // Adds an ellipsis at the end of the text if it's too long
-                        .lineLimit(1) // Ensures the text is on a single line
-                        .frame(maxWidth: 175)
-                }
-
-                Spacer()
-
-                Button(action: {
-                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
-                    banner.show()
-                    Analytics.shared.track(event: "photo_reported")
-                }) {
-                    Image(systemName: "flag")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(radius: 10)
-                }
-            }
-            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
-            .padding()
-
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs

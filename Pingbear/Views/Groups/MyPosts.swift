@@ -175,11 +175,26 @@ struct PostCard: View {
                     .cornerRadius(20)
                 }
                 
-                Spacer()
-                
-                Text(formatDate(entry.creationDate))
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
+                // Theme badge in stats section
+                if let themeName = entry.themeName {
+                    HStack(spacing: 7) {
+                        Image(systemName: "tag.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 17, height: 17)
+                            .foregroundColor(.white)
+                        
+                        Text("\(themeName)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .truncationMode(.tail)
+                            .lineLimit(1)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: "#FF8C00"))
+                    .cornerRadius(20)
+                }
             }
             .padding(.horizontal)
             .padding(.bottom, 10)

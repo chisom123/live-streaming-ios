@@ -1,0 +1,216 @@
+import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
+
+// MARK: - Theme Model
+struct Theme: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let competitionId: String
+    let createdBy: String
+    let createdAt: Date
+    let isDefault: Bool
+    
+    // For creating new themes
+    static func createNew(name: String, competitionId: String, createdBy: String, isDefault: Bool = false) -> Theme {
+        return Theme(
+            id: UUID().uuidString,
+            name: name,
+            competitionId: competitionId,
+            createdBy: createdBy,
+            createdAt: Date(),
+            isDefault: isDefault
+        )
+    }
+    
+    // Default themes
+    static let defaultThemes = [
+        "Selfie Wars!",
+        "Cheers 🥂",
+        "Caught in 4K"
+    ]
+}
+
+// MARK: - Themes Service
+class ThemesService {
+    private let db = Firestore.firestore()
+    
+    // Fetch themes for a competition
+    func fetchThemes(for competitionId: String, completion: @escaping ([Theme]) -> Void) {
+        // First get the default system themes
+        let defaultThemes = Theme.defaultThemes.map { themeName in
+            return Theme(
+                id: "default-\(themeName.lowercased().replacingOccurrences(of: " ", with: "-"))",
+                name: themeName,
+                competitionId: "system",
+                createdBy: "system",
+                createdAt: Date(timeIntervalSince1970: 0),
+                isDefault: true
+            )
+        }
+        
+        // Then fetch competition-specific themes
+        db.collection("competitions")
+            .document(competitionId)
+            .collection("themes")
+            .order(by: "createdAt", descending: true)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error fetching themes: \(error)")
+                    completion(defaultThemes)
+                    return
+                }
+                
+                let customThemes = snapshot?.documents.compactMap { document -> Theme? in
+                    let data = document.data()
+                    
+                    guard let name = data["name"] as? String,
+                          let createdBy = data["createdBy"] as? String,
+                          let timestamp = data["createdAt"] as? Timestamp else {
+                        return nil
+                    }
+                    
+                    return Theme(
+                        id: document.documentID,
+                        name: name,
+                        competitionId: competitionId,
+                        createdBy: createdBy,
+                        createdAt: timestamp.dateValue(),
+                        isDefault: false
+                    )
+                } ?? []
+                
+                // Combine default and custom themes, with custom at the top
+                let allThemes = customThemes + defaultThemes
+                completion(allThemes)
+            }
+    }
+    
+    // Add a new theme to a competition
+    func addTheme(theme: Theme, completion: @escaping (Bool) -> Void) {
+        // Skip if it's a default theme (these are client-side only)
+        if theme.isDefault {
+            completion(true)
+            return
+        }
+        
+        let themeData: [String: Any] = [
+            "name": theme.name,
+            "competitionId": theme.competitionId,
+            "createdBy": theme.createdBy,
+            "createdAt": Timestamp(date: theme.createdAt)
+        ]
+        
+        db.collection("competitions")
+            .document(theme.competitionId)
+            .collection("themes")
+            .document(theme.id)
+            .setData(themeData) { error in
+                if let error = error {
+                    print("Error adding theme: \(error)")
+                    completion(false)
+                } else {
+                    completion(true)
+                }
+            }
+    }
+}
+
+// MARK: - Themes ViewModel
+class ThemesViewModel: ObservableObject {
+    @Published var themes: [Theme] = []
+    @Published var isLoading: Bool = false
+    private let service = ThemesService()
+    
+    func loadThemes(for competitionId: String) {
+        isLoading = true
+        
+        service.fetchThemes(for: competitionId) { [weak self] themes in
+            DispatchQueue.main.async {
+                self?.themes = themes
+                self?.isLoading = false
+            }
+        }
+    }
+    
+    func addTheme(name: String, competitionId: String, completion: @escaping (Bool) -> Void) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(false)
+            return
+        }
+        
+        let newTheme = Theme.createNew(
+            name: name,
+            competitionId: competitionId,
+            createdBy: userId
+        )
+        
+        service.addTheme(theme: newTheme) { [weak self] success in
+            if success {
+                DispatchQueue.main.async {
+                    self?.themes.insert(newTheme, at: 0)
+                }
+            }
+            completion(success)
+        }
+    }
+}
+
+// MARK: - Entry Extension for Theme
+extension Entry {
+    // Extend the Entry struct to include theme
+    static func withTheme(
+        id: String,
+        photoUrl: String,
+        userName: String,
+        stars: Int,
+        userProfilePictureUrl: String?,
+        isCurrentUser: Bool,
+        isSuperstar: Bool,
+        creationDate: Date,
+        overlayText: String?,
+        overlayVerticalPosition: CGFloat,
+        isFromCamera: Bool,
+        themeId: String?,
+        themeName: String?
+    ) -> Entry {
+        var entry = Entry(
+            id: id,
+            photoUrl: photoUrl,
+            userName: userName,
+            stars: stars,
+            userProfilePictureUrl: userProfilePictureUrl,
+            isCurrentUser: isCurrentUser,
+            isSuperstar: isSuperstar,
+            creationDate: creationDate,
+            overlayText: overlayText,
+            overlayVerticalPosition: overlayVerticalPosition,
+            isFromCamera: isFromCamera
+        )
+        
+        // Add the theme properties using associated object
+        if let themeId = themeId, let themeName = themeName {
+            let theme = ["id": themeId, "name": themeName]
+            objc_setAssociatedObject(
+                entry,
+                &themeAssociationKey,
+                theme,
+                .OBJC_ASSOCIATION_RETAIN
+            )
+        }
+        
+        return entry
+    }
+    
+    // Getter for theme
+    var theme: (id: String, name: String)? {
+        let themeDict = objc_getAssociatedObject(self, &themeAssociationKey) as? [String: String]
+        guard let id = themeDict?["id"], let name = themeDict?["name"] else {
+            return nil
+        }
+        return (id: id, name: name)
+    }
+}
+
+// Key for associated object
+private var themeAssociationKey: UInt8 = 0
