@@ -56,21 +56,28 @@ struct AddFriendsView: View {
             
             VStack {
                 HStack(alignment: .center, spacing: 0) {
-                    TextField("Enter Username", text: $username)
-                        .padding()
-                        .frame(height: 70) // Same fixed height
-                        .background(
-                            Color(hex: "#3B4374")
-                                .clipShape(
-                                    RoundedCorner(
-                                        radius: 10,
-                                        corners: [.topLeft, .bottomLeft]
-                                    )
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(.leading, 15)
+                        
+                        TextField("Enter Username", text: $username)
+                            .padding(.vertical)
+                            .padding(.leading, 5)
+                            .foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .accentColor(.white)
+                    }
+                    .frame(height: 70) // Same fixed height
+                    .background(
+                        Color(hex: "#3B4374")
+                            .clipShape(
+                                RoundedCorner(
+                                    radius: 10,
+                                    corners: [.topLeft, .bottomLeft]
                                 )
-                        )
-                        .foregroundColor(.white)
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .accentColor(.white)
+                            )
+                    )
                     
                     Button(action: {
                         let processedUsername = processUsername(username)
