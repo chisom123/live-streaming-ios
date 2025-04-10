@@ -20,16 +20,25 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let analyticsService = PostHogAnalyticsService(apiKey: POSTHOG_API_KEY, host: POSTHOG_HOST)
         Analytics.shared.configure(with: analyticsService)
         
+        // Setup notification settings check
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized && Auth.auth().currentUser != nil {
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
+                    
+                    // Process any queued token updates if the user is already authorized
+                    if let userId = Auth.auth().currentUser?.uid {
+                        self.pushNotificationManager.queueTokenUpdate(userId: userId)
+                    }
                 }
             }
         }
         
-        // Then setup the notification manager
+        // Setup the notification manager
         pushNotificationManager.setup()
+        
+        // Process any pending tokens that might have been interrupted
+        pushNotificationManager.processAnyPendingTokens()
         
         setupDefaultCameraPosition()
         
@@ -50,6 +59,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         pushNotificationManager.handleDeviceToken(deviceToken)
+        
+        // Once we have the device token, ensure we try to update the FCM token in Firestore
+        if let userId = Auth.auth().currentUser?.uid {
+            self.pushNotificationManager.queueTokenUpdate(userId: userId)
+        }
     }
     
     @objc private func clearNotifications() {

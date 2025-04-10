@@ -261,11 +261,30 @@ struct CompDetails: View {
                 )
             case .notification:
                 return Alert(
-                    title: Text("Turn On Notifications"),
-                    message: Text("Don't miss out when new photos are shared and ready to be rated."),
+                    title: Text("Don't Miss Out!"),
+                    message: Text("Get notified when there are new photos for you to rate."),
                     dismissButton: .default(Text("OK"), action: {
-                        notificationManager.requestNotificationPermission { _ in
-                            print("Permission request completed")
+                        notificationManager.requestNotificationPermission { granted in
+                            if granted {
+                                // Explicitly queue the token update to ensure persistence
+                                if let userId = Auth.auth().currentUser?.uid {
+                                    notificationManager.queueTokenUpdate(userId: userId)
+                                }
+                                
+                                Analytics.shared.trackTap(
+                                    elementId: "notification_permission_granted",
+                                    screenName: "competition_details"
+                                )
+                                
+                                print("Notification permission granted and token queued")
+                            } else {
+                                Analytics.shared.trackTap(
+                                    elementId: "notification_permission_denied",
+                                    screenName: "competition_details"
+                                )
+                                
+                                print("Permission request denied")
+                            }
                         }
                     })
                 )

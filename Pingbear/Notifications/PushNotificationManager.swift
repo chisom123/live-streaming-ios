@@ -21,9 +21,18 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
     @Published var isNotificationsAuthorized = false
     private var isSetup = false
     
+    // Add token queue mechanism
+    private var tokenUpdateQueue: [String: String] = [:]
+    private var isProcessingQueue = false
+    private var retryCount: [String: Int] = [:]
+    private let maxRetries = 5
+    
     override init() {
         super.init()
         // Don't access Firebase services here
+        
+        // Check UserDefaults for any pending tokens from previous app sessions
+        loadQueuedTokensFromUserDefaults()
     }
     
     func setup() {
@@ -41,8 +50,11 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
                 if granted {
                     // Register for remote notifications if permission is granted
                     UIApplication.shared.registerForRemoteNotifications()
-                    // We'll update FCM token in Firestore only if permissions are granted
-                    // The token will be available after registration completes
+                    
+                    // Queue a token update to ensure it happens regardless of view lifecycle
+                    if let userId = Auth.auth().currentUser?.uid {
+                        self.queueTokenUpdate(userId: userId)
+                    }
                 }
                 completion(granted)
             }
@@ -61,13 +73,135 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
         }
     }
     
-    // Handle device token - keeping your existing implementation
+    // Handle device token
     func handleDeviceToken(_ deviceToken: Data) {
         Messaging.messaging().apnsToken = deviceToken
-        updateFCMTokenInFirestore()
+        
+        // If we get a device token, make sure FCM token gets updated
+        if let userId = Auth.auth().currentUser?.uid {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.queueTokenUpdate(userId: userId)
+            }
+        }
     }
     
-    // Update FCM token in Firestore
+    // Load any queued tokens from UserDefaults
+    private func loadQueuedTokensFromUserDefaults() {
+        let defaults = UserDefaults.standard
+        let keys = defaults.dictionaryRepresentation().keys.filter { $0.starts(with: "pendingFCMToken_") }
+        
+        for key in keys {
+            if let token = defaults.string(forKey: key) {
+                let userId = String(key.dropFirst("pendingFCMToken_".count))
+                tokenUpdateQueue[userId] = token
+                print("Loaded queued token for user \(userId) from UserDefaults")
+            }
+        }
+    }
+    
+    // Queue token updates to make them more resilient
+    func queueTokenUpdate(userId: String) {
+        // Get FCM token
+        Messaging.messaging().token { [weak self] token, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error fetching FCM token: \(error)")
+                return
+            }
+            
+            if let token = token {
+                print("Queueing FCM token update for user \(userId)")
+                
+                // Queue the token update
+                self.tokenUpdateQueue[userId] = token
+                
+                // Store in UserDefaults as backup
+                UserDefaults.standard.set(token, forKey: "pendingFCMToken_\(userId)")
+                
+                // Start queue processing if not already running
+                if !self.isProcessingQueue {
+                    self.processTokenUpdateQueue()
+                }
+            }
+        }
+    }
+    
+    // Process token update queue with retry logic
+    func processTokenUpdateQueue() {
+        guard !isProcessingQueue, !tokenUpdateQueue.isEmpty else { return }
+        
+        isProcessingQueue = true
+        
+        let userId = tokenUpdateQueue.keys.first!
+        let token = tokenUpdateQueue[userId]!
+        
+        print("Processing FCM token update for user \(userId)")
+        
+        db.collection("users").document(userId).updateData([
+            "fcmToken": token
+        ]) { [weak self] error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error updating FCM token: \(error)")
+                
+                // Increment retry count
+                let currentRetries = self.retryCount[userId] ?? 0
+                self.retryCount[userId] = currentRetries + 1
+                
+                // Only retry up to max retries
+                if currentRetries < self.maxRetries {
+                    // Exponential backoff for retries
+                    let delay = pow(2.0, Double(currentRetries)) * 1.0
+                    
+                    print("Will retry FCM token update for user \(userId) in \(delay) seconds (attempt \(currentRetries + 1))")
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        self.isProcessingQueue = false
+                        self.processTokenUpdateQueue()
+                    }
+                } else {
+                    print("Max retries reached for FCM token update for user \(userId)")
+                    
+                    // Keep the token in UserDefaults but remove from active queue
+                    self.tokenUpdateQueue.removeValue(forKey: userId)
+                    self.retryCount.removeValue(forKey: userId)
+                    
+                    // Continue with next item
+                    self.isProcessingQueue = false
+                    if !self.tokenUpdateQueue.isEmpty {
+                        self.processTokenUpdateQueue()
+                    }
+                }
+            } else {
+                print("FCM token updated successfully for user \(userId)")
+                
+                // Remove from queue and UserDefaults
+                self.tokenUpdateQueue.removeValue(forKey: userId)
+                self.retryCount.removeValue(forKey: userId)
+                UserDefaults.standard.removeObject(forKey: "pendingFCMToken_\(userId)")
+                
+                // Continue processing if there are more items
+                DispatchQueue.main.async {
+                    self.isProcessingQueue = false
+                    if !self.tokenUpdateQueue.isEmpty {
+                        self.processTokenUpdateQueue()
+                    }
+                }
+            }
+        }
+    }
+    
+    // Method to process any pending tokens at app startup
+    func processAnyPendingTokens() {
+        if !tokenUpdateQueue.isEmpty {
+            print("Processing \(tokenUpdateQueue.count) pending FCM token updates")
+            processTokenUpdateQueue()
+        }
+    }
+    
+    // Update FCM token in Firestore (previous implementation - now uses queue)
     func updateFCMTokenInFirestore() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -79,41 +213,24 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
                 return
             }
             
-            // Check for APNS token
-            if Messaging.messaging().apnsToken == nil {
-                print("APNS token not available yet - will retry when token is received")
-                return
-            }
-            
-            // Get and store FCM token
-            Messaging.messaging().token { token, error in
-                if let error = error {
-                    print("Error fetching FCM token: \(error)")
-                    return
-                }
-                
-                if let token = token {
-                    self.db.collection("users").document(userId).updateData([
-                        "fcmToken": token
-                    ]) { error in
-                        if let error = error {
-                            print("Error updating FCM token: \(error)")
-                        } else {
-                            print("FCM token updated successfully")
-                        }
-                    }
-                }
-            }
+            // Queue token update instead of handling directly
+            self.queueTokenUpdate(userId: userId)
         }
     }
     
     // Keep your existing MessagingDelegate method
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        _ = fcmToken
+        print("Firebase registration token: \(String(describing: fcmToken))")
         
         // Additional code for photo sharing notifications
-        if let token = fcmToken, Auth.auth().currentUser != nil {
-            updateFCMTokenInFirestore()
+        if let token = fcmToken, let userId = Auth.auth().currentUser?.uid {
+            // Use the queue system for token updates
+            tokenUpdateQueue[userId] = token
+            UserDefaults.standard.set(token, forKey: "pendingFCMToken_\(userId)")
+            
+            if !isProcessingQueue {
+                processTokenUpdateQueue()
+            }
         }
     }
 }
