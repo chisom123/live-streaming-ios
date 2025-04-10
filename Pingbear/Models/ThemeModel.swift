@@ -26,7 +26,7 @@ struct Theme: Identifiable, Hashable {
     // Default themes
     static let defaultThemes = [
         "Selfie Wars!",
-        "Cheers 🥂",
+        "Outfit of the Day",
         "Caught in 4K"
     ]
 }
