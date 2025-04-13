@@ -145,7 +145,6 @@ struct FinalPreview: View {
     @State private var overlayVerticalPosition: CGFloat = UIScreen.main.bounds.height / 2
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
-    @StateObject private var notificationSender = PushNotificationSender()
     @StateObject private var themesViewModel = ThemesViewModel()
     @State private var selectedTheme: Theme?
     @State private var showingThemeSelection = false
@@ -300,9 +299,7 @@ struct FinalPreview: View {
                              isUploading = true
                              uploadProgress = 0.0 // Reset progress for new upload
                              // Send dummy notification to warm up the function before submitting the entry
-                             sendDummyNotification {
-                                 submitEntry()
-                             }
+                             submitEntry()
                          }) {
                              Text("Share")
                                  .frame(maxWidth: .infinity, minHeight: 44)
@@ -343,36 +340,6 @@ struct FinalPreview: View {
              themesViewModel.loadThemes(for: competitionId)
          }
      }
-    
-    // Function to send a dummy notification
-    func sendDummyNotification(completion: (() -> Void)? = nil) {
-        // Get the current FCM token
-        if let token = Messaging.messaging().fcmToken {
-            // Send a silent dummy notification that won't be shown to the user
-            notificationSender.sendPushNotification(
-                to: token,
-                title: "warmup",
-                body: "warmup",
-                completion: { result in
-                    switch result {
-                    case .success:
-                        print("Warmup notification sent successfully")
-                    case .failure(let error):
-                        print("Failed to send warmup notification: \(error.localizedDescription)")
-                    }
-                    // Execute the completion handler regardless of success/failure
-                    DispatchQueue.main.async {
-                        completion?()
-                    }
-                }
-            )
-        } else {
-            print("FCM token not available for warmup notification")
-            DispatchQueue.main.async {
-                completion?()
-            }
-        }
-    }
     
     // Updated submitEntry function with optimization
     func submitEntry() {
