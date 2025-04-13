@@ -261,8 +261,8 @@ struct CompDetails: View {
                 )
             case .notification:
                 return Alert(
-                    title: Text("Don't Miss Out!"),
-                    message: Text("Get notified when there are new photos for you to rate."),
+                    title: Text("Get Notified When There Are New Photos for You to Rate"),
+                    message: Text(""),
                     dismissButton: .default(Text("OK"), action: {
                         notificationManager.requestNotificationPermission { granted in
                             if granted {

@@ -9,6 +9,7 @@ struct MyCompsView: View {
     @State private var navigateToSettings = false
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
+    @State private var showDemoCompetition = false
     
     var body: some View {
         VStack {
@@ -59,6 +60,10 @@ struct MyCompsView: View {
                     newCompAction: {
                         viewModel.cleanupListeners()
                         createNewCompetition()
+                    },
+                    demoCompAction: {
+                        viewModel.cleanupListeners()
+                        openDemoCompetition()
                     }
                 )
                 Spacer()
@@ -90,6 +95,9 @@ struct MyCompsView: View {
         .background(Color(hex: "#10183C"))
         .fullScreenCover(item: $selectedCompetition) { comp in
             CompDetails(competition: comp)
+        }
+        .fullScreenCover(isPresented: $showDemoCompetition) {
+            DemoCompDetailsView()
         }
         .fullScreenCover(isPresented: $navigateToSettings) {
             SettingsView()
@@ -125,6 +133,10 @@ struct MyCompsView: View {
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
         }
+    }
+    
+    private func openDemoCompetition() {
+        showDemoCompetition = true
     }
     
     private func leaveCompetition(competitionId: String, userId: String) {
@@ -264,30 +276,54 @@ struct CompetitionCell: View {
 
 struct EmptyCompsView: View {
     var newCompAction: () -> Void
+    var demoCompAction: () -> Void
     
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            // Header
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white) // Changed to white for better contrast
-                .padding(.top, 20)
-                .padding(.bottom, 25)
+                .foregroundColor(.white)
+                .padding(.top, 30)
+                .padding(.bottom, 30)
             
-            Button(action: newCompAction) {
-                Text("New Competition")
-                    .font(.system(size: 17, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
-                    .background(Color(hex: "#FF4081")) // Vibrant magenta from our earlier color palette
+            // Button container - fixed width for consistency
+            VStack(spacing: 16) {
+                Button(action: demoCompAction) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14, weight: .bold))
+                            .padding(.trailing, 4)
+                        
+                        Text("Try Demo Competition")
+                            .font(.system(size: 16, weight: .semibold, design: .default))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color(hex: "#3B4374"))
                     .foregroundColor(.white)
-                    .cornerRadius(200)
+                    .cornerRadius(25)
+                }
+                
+                Button(action: newCompAction) {
+                    HStack {
+                        Text("New Competition")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color(hex: "#FF4081"))
+                    .foregroundColor(.white)
+                    .cornerRadius(25)
+                }
             }
-            .padding(.bottom, 20)
-            
+            .frame(width: 280)
+            .padding(.bottom, 25)
         }
         .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(Color(hex: "#1A2245")) // Slightly lighter than background for contrast
-        .cornerRadius(10) // Increased corner radius for a softer look
+        .padding(.horizontal, 20)
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(14)
         .padding(.horizontal, 20)
     }
 }
