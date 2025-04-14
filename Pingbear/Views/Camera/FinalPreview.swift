@@ -2,7 +2,6 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
-import FirebaseMessaging
 
 // Add this extension to UIImage for image optimization
 extension UIImage {
