@@ -177,6 +177,7 @@ struct AddThemeSheet: View {
     @Binding var isPresented: Bool
     @State private var themeName: String = ""
     @State private var errorMessage: String? = nil
+    @State private var isSaving: Bool = false
     @FocusState private var isThemeNameFocused: Bool
     
     var body: some View {
@@ -202,12 +203,15 @@ struct AddThemeSheet: View {
                     
                     Spacer()
                     
-                    Button(action: createTheme) {
+                    Button(action: {
+                        isSaving = true
+                        createTheme()
+                    }) {
                         Text("Save")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundColor(themeName.isEmpty ? Color.white.opacity(0.5) : Color.white)
                     }
-                    .disabled(themeName.isEmpty)
+                    .disabled(themeName.isEmpty || isSaving)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -253,24 +257,28 @@ struct AddThemeSheet: View {
         // Basic validation
         guard !themeName.isEmpty else {
             errorMessage = "Please enter a theme name"
+            isSaving = false
             return
         }
         
         // Validate theme name length
         if themeName.count > 25 {
             errorMessage = "Theme name must be 25 characters or less"
+            isSaving = false
             return
         }
         
         // Check if theme already exists
         if viewModel.themes.contains(where: { $0.name.lowercased() == themeName.lowercased() }) {
             errorMessage = "This theme already exists"
+            isSaving = false
             return
         }
         
         // Create theme
         viewModel.addTheme(name: themeName, competitionId: competitionId) { success in
             DispatchQueue.main.async {
+                isSaving = false
                 if success {
                     isPresented = false
                 } else {

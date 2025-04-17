@@ -10,6 +10,9 @@ struct CameraView: View {
     @State private var selectedImage: UIImage?
     @State private var imageSource: ImageSource = .camera
     @State private var isViewAppeared = false
+    @State private var selectedTheme: Theme?
+    @StateObject private var themesViewModel = ThemesViewModel()
+    @State private var showingThemeSelection = false
     
     enum ImageSource {
         case camera
@@ -44,8 +47,32 @@ struct CameraView: View {
                     
                     Spacer()
                     
-                    // Flash button
-                    FlashButton(cameraModel: cameraModel)
+                    Button(action: {
+                        showingThemeSelection = true
+                    }) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "tag.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(.white)
+                            
+                            if let theme = selectedTheme {
+                                // Show the selected theme name directly in the button
+                                Text(theme.name)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .truncationMode(.tail)
+                                    .lineLimit(1)
+                            } else {
+                                Text("Add Theme")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(hex: "#FF8C00"))
+                        .cornerRadius(200)
+                    }
                     
                     Spacer()
                     
@@ -61,6 +88,12 @@ struct CameraView: View {
                 }
                 .padding(.top, 5)
                 .padding(20)
+                
+                HStack {
+                    Spacer()
+                    FlashButton(cameraModel: cameraModel)
+                }
+                .padding(.trailing, 20)
                 
                 Spacer()
 
@@ -122,6 +155,7 @@ struct CameraView: View {
                     competition: competition,
                     competitionId: competition.id,
                     resetCameraAction: { self.resetCamera() },
+                    selectedTheme: $selectedTheme,
                     isFromCamera: imageSource == .camera
                 )
             }
@@ -129,12 +163,22 @@ struct CameraView: View {
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition)
         }
+        .sheet(isPresented: $showingThemeSelection) {
+            ThemeSelectionSheet(
+                viewModel: themesViewModel,
+                competitionId: competition.id,
+                selectedTheme: $selectedTheme
+            )
+        }
         .onAppear {
             // Optimization: Mark the view as appeared first, then request camera setup
             // This allows UI to render immediately while camera initializes in background
             DispatchQueue.main.async {
                 self.isViewAppeared = true
                 // Camera permission check will be triggered by CameraInitView
+                
+                // Load themes when view appears
+                themesViewModel.loadThemes(for: competition.id)
             }
         }
         .onDisappear {

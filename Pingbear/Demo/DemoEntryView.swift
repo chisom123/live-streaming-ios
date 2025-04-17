@@ -165,6 +165,7 @@ struct DemoEntryView: View {
                             .font(.system(size: 30))
                             .foregroundColor(.white)
                             .shadow(radius: 10)
+                            .opacity(0)
                     }
                 }
                 .padding(.top, 50)
@@ -259,7 +260,7 @@ struct DemoEntryView: View {
     
     // Preload the first few images for smoother experience
     private func preloadImages() {
-        let entriesToPreload = min(3, viewModel.entries.count)
+        let entriesToPreload = min(5, viewModel.entries.count)
         
         for i in 0..<entriesToPreload {
             if let url = URL(string: viewModel.entries[i].photoUrl) {

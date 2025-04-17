@@ -106,6 +106,8 @@ struct PingbearApp: App {
                            let window = scene.windows.first {
                             window.overrideUserInterfaceStyle = .dark
                         }
+                        
+                        EntryUploadManager.shared.initialize()
                     }
                     .environment(\.didLogOut, didLogOut)
                     .onReceive(didLogOut) { _ in
@@ -119,6 +121,8 @@ struct PingbearApp: App {
                                let window = scene.windows.first {
                                 window.overrideUserInterfaceStyle = .dark
                             }
+                            
+                            EntryUploadManager.shared.initialize()
                         }
                         .environment(\.didLogOut, didLogOut)
                         .onReceive(didLogOut) { _ in

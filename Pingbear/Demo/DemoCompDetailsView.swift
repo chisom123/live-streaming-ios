@@ -47,7 +47,7 @@ struct DemoCompDetailsView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 32, height: 32)
-                            .foregroundColor(Color.white.opacity(0.5))
+                            .foregroundColor(.gray.opacity(0.5))
                     }
                 }
                 .padding(.horizontal, 20)
@@ -61,7 +61,7 @@ struct DemoCompDetailsView: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.gray.opacity(0.5))
                             .clipShape(Circle())
                     }
 
@@ -88,7 +88,7 @@ struct DemoCompDetailsView: View {
                             .font(.system(size: 24, weight: .bold))
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.gray.opacity(0.5))
                             .clipShape(Circle())
                     }
                 }

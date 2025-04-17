@@ -51,7 +51,7 @@ struct DemoEntry: Identifiable {
     
     // Specific theme names for each demo entry - reduced to 5
     static let demoThemeNames = [
-        "Selfie Wars!", "Outfit of the Day", "Out n About", "Out n About", "Selfie Wars!"
+        "Selfie Wars!", "Outfit of the Day", "Caught in 4K", "Out n About", "Selfie Wars!"
     ]
 }
 

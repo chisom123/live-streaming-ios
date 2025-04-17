@@ -145,11 +145,14 @@ struct FinalPreview: View {
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
     @StateObject private var themesViewModel = ThemesViewModel()
-    @State private var selectedTheme: Theme?
+    @Binding var selectedTheme: Theme?
     @State private var showingThemeSelection = false
     let characterLimit = 150
     var isFromCamera: Bool
-
+    
+    // Get access to the shared upload manager
+    @ObservedObject private var uploadManager = EntryUploadManager.shared
+    
     var body: some View {
          GeometryReader { proxy in
              ZStack {
@@ -295,10 +298,7 @@ struct FinalPreview: View {
                      VStack {
                          Spacer()
                          Button(action: {
-                             isUploading = true
-                             uploadProgress = 0.0 // Reset progress for new upload
-                             // Send dummy notification to warm up the function before submitting the entry
-                             submitEntry()
+                             uploadEntryUsingManager()
                          }) {
                              Text("Share")
                                  .frame(maxWidth: .infinity, minHeight: 44)
@@ -335,172 +335,58 @@ struct FinalPreview: View {
              )
          }
          .onAppear {
-             // Load themes when view appears
+             // Initialize the upload manager when view appears
+             EntryUploadManager.shared.initialize()
+             
+             // Load themes on appearance
              themesViewModel.loadThemes(for: competitionId)
          }
      }
     
-    // Updated submitEntry function with optimization
-    func submitEntry() {
-        isUploading = true
-        uploadProgress = 5.0 // Show initial progress
+    // Upload entry using EntryUploadManager
+    private func uploadEntryUsingManager() {
+        guard !isUploading else { return }
         
         guard let userId = Auth.auth().currentUser?.uid else {
             print("User not logged in")
             return
         }
-
-        // Optimize image on background thread
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Update UI to show we're processing the image
-            DispatchQueue.main.async {
-                uploadProgress = 10.0
-            }
-            
-            // Convert image to optimized data
-            guard let imageData = image.optimizedForUpload() else {
-                print("Failed to convert image to data")
-                DispatchQueue.main.async {
-                    self.isUploading = false
-                }
-                return
-            }
-            
-            DispatchQueue.main.async {
-                uploadProgress = 20.0
-            }
-            
-            print("Image optimized for upload. Size: \(Double(imageData.count) / 1024.0) KB")
-            
-            // Upload the image
-            let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
-            let metadata = StorageMetadata()
-            metadata.contentType = "image/jpeg"
-            metadata.customMetadata = [
-                "competitionId": self.competitionId,
-                "userId": userId
-            ]
-            
-            let uploadTask = storageRef.putData(imageData, metadata: metadata)
-            
-            // Add upload progress monitoring
-            uploadTask.observe(.progress) { snapshot in
-                if let progress = snapshot.progress {
-                    let percentComplete = Double(progress.completedUnitCount) / Double(progress.totalUnitCount) * 100.0
-                    print("Upload progress: \(percentComplete)%")
-                    
-                    // Scale the progress from 20-80% range during upload
-                    let scaledProgress = 20.0 + (percentComplete * 0.6) // 20% to 80%
-                    
-                    DispatchQueue.main.async {
-                        self.uploadProgress = scaledProgress
-                    }
-                }
-            }
-            
-            uploadTask.observe(.success) { _ in
-                DispatchQueue.main.async {
-                    self.uploadProgress = 90.0 // Almost done, waiting for URL
-                }
+        
+        // Set local state
+        isUploading = true
+        uploadProgress = 0.0
                 
-                storageRef.downloadURL { result in
-                    switch result {
-                    case .success(let downloadURL):
-                        self.saveEntryToFirestore(userId: userId, imageURL: downloadURL.absoluteString)
-                    case .failure(let error):
-                        print("Error getting download URL: \(error)")
-                        DispatchQueue.main.async {
-                            self.isUploading = false
+        EntryUploadManager.shared.uploadEntry(
+            image: image,
+            competitionId: competitionId,
+            userId: userId,
+            overlayText: overlayText,
+            overlayVerticalPosition: overlayVerticalPosition,
+            isFromCamera: isFromCamera,
+            themeId: selectedTheme?.id,
+            themeName: selectedTheme?.name,
+            competition: competition,
+            onProgress: { progress in
+                // Update local progress
+                self.uploadProgress = progress * 100 // Convert to percentage
+            },
+            onSuccess: { entryId in
+                // Handle success
+                self.newentryDocId = entryId
+                
+                // Check if user is superstar to decide which screen to show
+                let userDocRef = Firestore.firestore().collection("users").document(userId)
+                userDocRef.getDocument { (document, error) in
+                    var superstar = false
+                    if let document = document, document.exists {
+                        if let boostDate = document.data()?["boost"] as? Timestamp {
+                            let now = Timestamp(date: Date())
+                            superstar = boostDate.compare(now) == .orderedDescending
                         }
                     }
-                }
-            }
-            
-            uploadTask.observe(.failure) { snapshot in
-                if let error = snapshot.error {
-                    print("Upload failed: \(error.localizedDescription)")
-                }
-                DispatchQueue.main.async {
-                    self.isUploading = false
-                }
-            }
-        }
-    }
-    
-    func saveEntryToFirestore(userId: String, imageURL: String) {
-        DispatchQueue.main.async {
-            self.uploadProgress = 95.0 // Almost done, saving to Firestore
-        }
-        
-        let db = Firestore.firestore()
-        
-        let userDocRef = Firestore.firestore().collection("users").document(userId)
-        userDocRef.getDocument { (document, error) in
-            var superstar = false // Default value if boost doesn't exist
-            
-            if let document = document, document.exists {
-                if let boostDate = document.data()?["boost"] as? Timestamp {
-                    let now = Timestamp(date: Date())
-                    superstar = boostDate.compare(now) == .orderedDescending // Check if boost is in the future
-                }
-            } else {
-                print("User document not found or boost data unavailable, setting superstar to false")
-            }
-
-            // Create entry data with theme information if available
-            var entryData: [String: Any] = [
-                "userId": userId,
-                "imageUrl": imageURL,
-                "timestamp": FieldValue.serverTimestamp(),
-                "superstar": superstar,
-                "overlayText": self.overlayText,
-                "overlayVerticalPosition": self.overlayVerticalPosition,
-                "isFromCamera": self.isFromCamera
-            ]
-            
-            // Add theme data if a theme is selected
-            if let theme = self.selectedTheme {
-                entryData["themeId"] = theme.id
-                entryData["themeName"] = theme.name
-            }
-            
-            var newEntryRef: DocumentReference? = nil
-            newEntryRef = db.collection("competitions").document(self.competitionId).collection("entries").addDocument(data: entryData) { error in
-                if let error = error {
-                    print("Error saving entry: \(error)")
-                } else {
-                    self.newentryDocId = newEntryRef?.documentID
-                    print("Entry saved successfully")
                     
+                    // Navigate based on superstar status
                     DispatchQueue.main.async {
-                        self.uploadProgress = 100.0 // Complete
-                        
-                        // Queue the notification to be sent later - after UI transitions are complete
-                        NotificationQueueManager.shared.queueNotification(
-                            competitionId: self.competitionId,
-                            competitionDescription: self.competition.description,
-                            userId: userId
-                        )
-                        
-                        // Add theme information to analytics
-                        var properties: [String: Any] = [
-                            "has_text": !self.overlayText.isEmpty,
-                            "is_superstar": superstar,
-                            "from_camera": self.isFromCamera,
-                            "has_theme": self.selectedTheme != nil
-                        ]
-                        
-                        // Add theme name if available
-                        if let themeName = self.selectedTheme?.name {
-                            properties["theme_name"] = themeName
-                        }
-                        
-                        Analytics.shared.trackEntry(
-                            action: "create",
-                            competitionId: self.competitionId,
-                            properties: properties
-                        )
-                        
                         if superstar {
                             self.navigateToCompDetails = true
                         } else {
@@ -508,7 +394,12 @@ struct FinalPreview: View {
                         }
                     }
                 }
+            },
+            onFailure: { error in
+                // Handle failure
+                print("Failed to upload entry: \(error.localizedDescription)")
+                self.isUploading = false
             }
-        }
+        )
     }
 }
