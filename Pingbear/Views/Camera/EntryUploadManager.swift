@@ -234,8 +234,13 @@ class EntryUploadManager: ObservableObject {
             onProgress(0.95)
         }
         
-        let userDocRef = db.collection("users").document(userId)
-        userDocRef.getDocument { [weak self] (document, error) in
+        // Check for competition-specific boost instead of user-level boost
+        let memberRef = db.collection("competitions")
+                         .document(competitionId)
+                         .collection("members")
+                         .document(userId)
+        
+        memberRef.getDocument { [weak self] (document, error) in
             // Handle errors
             if let error = error {
                 DispatchQueue.main.async {
@@ -248,9 +253,9 @@ class EntryUploadManager: ObservableObject {
             var superstar = false
             
             if let document = document, document.exists {
-                if let boostDate = document.data()?["boost"] as? Timestamp {
+                if let boostExpiration = document.data()?["boostExpiration"] as? Timestamp {
                     let now = Timestamp(date: Date())
-                    superstar = boostDate.compare(now) == .orderedDescending
+                    superstar = boostExpiration.compare(now) == .orderedDescending
                 }
             }
             

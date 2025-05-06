@@ -374,14 +374,19 @@ struct FinalPreview: View {
                 // Handle success
                 self.newentryDocId = entryId
                 
-                // Check if user is superstar to decide which screen to show
-                let userDocRef = Firestore.firestore().collection("users").document(userId)
-                userDocRef.getDocument { (document, error) in
+                // Check if user is superstar at the competition level
+                let memberRef = Firestore.firestore()
+                    .collection("competitions")
+                    .document(competitionId)
+                    .collection("members")
+                    .document(userId)
+                
+                memberRef.getDocument { (document, error) in
                     var superstar = false
                     if let document = document, document.exists {
-                        if let boostDate = document.data()?["boost"] as? Timestamp {
+                        if let boostExpiration = document.data()?["boostExpiration"] as? Timestamp {
                             let now = Timestamp(date: Date())
-                            superstar = boostDate.compare(now) == .orderedDescending
+                            superstar = boostExpiration.compare(now) == .orderedDescending
                         }
                     }
                     

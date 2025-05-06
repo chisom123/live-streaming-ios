@@ -46,8 +46,6 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             return
         }
         
-        let userDocRef = Firestore.firestore().collection("users").document(userID)
-        
         let currentDate = Date()
         var expirationDate = currentDate
 
@@ -67,8 +65,15 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             return
         }
         
-        // Updating Firestore with the expiration timestamp for the boost
-        userDocRef.updateData(["boost": expirationDate]) { [weak self] error in
+        // Get reference to the member document in the competition
+        let memberRef = Firestore.firestore()
+            .collection("competitions")
+            .document(competitionId)
+            .collection("members")
+            .document(userID)
+        
+        // Update the member document with the boost expiration date
+        memberRef.updateData(["boostExpiration": expirationDate]) { [weak self] error in
             if let error = error {
                 print("Error updating user boost data: \(error)")
                 Analytics.shared.trackError(
