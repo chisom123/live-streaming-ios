@@ -139,6 +139,9 @@ struct AddFriendsView: View {
                     ForEach(viewModel.matchedUsers.indices, id: \.self) { index in
                         VStack(spacing: 0) {
                             HStack {
+                                ProfilePictureView(url: viewModel.matchedUsers[index].profileImageUrl, size: 40)
+                                    .padding(.leading, 25)
+                                
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text(viewModel.matchedUsers[index].fullName)
                                         .font(.system(size: 16, weight: .bold, design: .default))
@@ -152,7 +155,7 @@ struct AddFriendsView: View {
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
-                                .padding(.leading, 30)
+                                .padding(.leading, 10)
                                 
                                 Spacer()
                                 

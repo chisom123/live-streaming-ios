@@ -4,6 +4,7 @@ import FirebaseAuth
 struct MemberUser: Identifiable {
     let id: String
     let username: String
+    let profileurl: String?
     var isAdded: Bool = false
     var justAdded: Bool = false
 }
@@ -11,6 +12,9 @@ struct MemberUser: Identifiable {
 class MembersViewModel: ObservableObject {
     @Published var members: [MemberUser] = []
     @Published var currentUserId: String = ""
+    @Published var isHost: Bool = false
+    @Published var canAccessEarnings: Bool = false
+    
     private var db = Firestore.firestore()
     private var myFriendsModel = MyFriendsModel()
 
@@ -18,8 +22,50 @@ class MembersViewModel: ObservableObject {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         self.currentUserId = currentUserId
 
+        // Check if current user is the host
+        checkIfUserIsHost(for: competition)
+        checkEarningsAccess()
+        
         myFriendsModel.fetchFriends { [weak self] in
             self?.fetchCompetitionMembers(for: competition)
+        }
+    }
+    
+    func checkIfUserIsHost(for competition: Competition) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("competitions").document(competition.id).getDocument { [weak self] document, error in
+            if let error = error {
+                print("Error checking if user is host: \(error)")
+                return
+            }
+            
+            if let document = document, document.exists,
+               let hostId = document.data()?["hostId"] as? String {
+                DispatchQueue.main.async {
+                    self?.isHost = (hostId == currentUserId)
+                }
+            }
+        }
+    }
+    
+    func checkEarningsAccess() {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        // Access the "earningsEligibleUsers" collection in Firestore
+        db.collection("earningsEligibleUsers").document(currentUserId).getDocument { [weak self] document, error in
+            if let error = error {
+                print("Error checking earnings access: \(error)")
+                DispatchQueue.main.async {
+                    self?.canAccessEarnings = false
+                }
+                return
+            }
+            
+            // User has access if the document exists
+            DispatchQueue.main.async {
+                self?.canAccessEarnings = document?.exists ?? false
+            }
         }
     }
 
@@ -45,9 +91,12 @@ class MembersViewModel: ObservableObject {
             db.collection("users").document(userId).getDocument { [weak self] (document, error) in
                 defer { group.leave() }
                 if let document = document, document.exists,
-                   let username = document.data()?["username"] as? String {
+                   let data = document.data(),
+                   let username = data["username"] as? String {
+                    
+                    let profileurl = data["profilePictureUrl"] as? String
                     let isAdded = self?.myFriendsModel.friends.contains(where: { $0.id == userId }) ?? false
-                    let member = MemberUser(id: userId, username: username, isAdded: isAdded, justAdded: false)
+                    let member = MemberUser(id: userId, username: username, profileurl: profileurl, isAdded: isAdded, justAdded: false)
                     tempMembers.append(member)
                 }
             }

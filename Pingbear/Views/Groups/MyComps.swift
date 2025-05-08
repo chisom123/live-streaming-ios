@@ -171,7 +171,8 @@ struct MyCompsView: View {
          let competitionData: [String: Any] = [
              "id": competitionId,  // Add the ID to the competition document
              "description": defaultName,
-             "timestamp": timestamp
+             "timestamp": timestamp,
+             "hostId": userID
          ]
          
          batch.setData(competitionData, forDocument: competitionRef)

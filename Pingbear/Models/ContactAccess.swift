@@ -9,6 +9,7 @@ struct Contact {
     var lastName: String
     var username: String
     var phoneNumber: String
+    var profileImageUrl: String?
     var isAdded: Bool = false
     
     var fullName: String {
@@ -143,7 +144,17 @@ class ContactViewModel: ObservableObject {
                         let data = doc.data()
                         if let username = data["username"] as? String,
                            !self.currentUserFriends.contains(doc.documentID) {
-                            let newContact = Contact(firstName: firstName, lastName: lastName, username: username, phoneNumber: hashedPhoneNumber)
+                            
+                            let profileImageUrl = data["profilePictureUrl"] as? String
+                            
+                            let newContact = Contact(
+                                firstName: firstName,
+                                lastName: lastName,
+                                username: username,
+                                phoneNumber: hashedPhoneNumber,
+                                profileImageUrl: profileImageUrl
+                            )
+                            
                             if !self.matchedUsers.contains(where: { $0.phoneNumber == hashedPhoneNumber }) {
                                 self.matchedUsers.append(newContact)
                             }

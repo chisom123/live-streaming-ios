@@ -116,6 +116,7 @@ struct JoinSelectView: View {
                                     VStack(spacing: 0) {
                                         SelectableFriendView(
                                             friend: friend.name,
+                                            profileImageUrl: friend.profileImageUrl,
                                             isSelected: self.selectedFriends.contains(friend.id)
                                         ) {
                                             if self.selectedFriends.contains(friend.id) {
@@ -319,27 +320,32 @@ struct ActivityViewController: UIViewControllerRepresentable {
 
 struct SelectableFriendView: View {
     var friend: String
+    var profileImageUrl: String?
     var isSelected: Bool
     var action: () -> Void
     
     var body: some View {
         Button(action: action) {
             HStack {
-                Text(friend)
-                    .font(.system(size: 16, weight: .bold))
-                    .lineLimit(1)
-                    .lineSpacing(9)
-                    .foregroundColor(.white)
-                    .truncationMode(.tail)
-                    .padding(.leading, 30)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 20) {
+                    ProfilePictureView(url: profileImageUrl, size: 40)
+                    
+                    Text(friend)
+                        .font(.system(size: 16, weight: .bold))
+                        .lineLimit(1)
+                        .lineSpacing(9)
+                        .foregroundColor(.white)
+                        .truncationMode(.tail)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(.leading, 30)
                 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
                     .foregroundColor(isSelected ? Color(hex: "#FF4081") : .white)
                     .padding(.trailing, 30)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 25)
+            .padding(.vertical, 20)
             .background(isSelected ? Color(hex: "#FF4081").opacity(0.2) : Color.clear)
         }
     }

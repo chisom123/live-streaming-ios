@@ -52,20 +52,27 @@ struct MyFriendsView: View {
                                     self.showActionSheet = true
                                 }) {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 10) {
+                                        HStack(spacing: 20) {
+                                            ProfilePictureView(url: friend.profileImageUrl, size: 40)
+                                            
                                             Text(friend.name)
-                                                .font(.system(size: 16, weight: .bold, design: .default))
-                                                .foregroundColor(.white)
+                                                .font(.system(size: 16, weight: .bold))
                                                 .lineLimit(1)
+                                                .lineSpacing(9)
+                                                .foregroundColor(.white)
                                                 .truncationMode(.tail)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
                                         }
+                                        .padding(.leading, 5)
+                                        
                                         Spacer()
                                         
                                         Image(systemName: "chevron.right")
                                             .foregroundColor(Color(hex: "#D3D3D3"))
                                             .font(.system(size: 15, weight: .bold))
+                                            .padding(.trailing, 5)
                                     }
-                                    .padding(.vertical, 30)
+                                    .padding(.vertical, 20)
                                     .padding(.horizontal, 20)
                                     .background(Color(hex: "#1A2245"))
                                     .contentShape(Rectangle())

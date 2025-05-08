@@ -11,19 +11,23 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     var entryDocId: String = ""
     
     private var productIdentifiers: Set<String> = ["one_day_boost", "one_hour_boost", "one_week_boost"]
-
+    
+    // Product prices mapping
+    private let productPrices: [String: Double] = [
+        "one_day_boost": 9.99,
+        "one_hour_boost": 4.99,
+        "one_week_boost": 19.99
+    ]
     override init() {
         super.init()
         fetchProducts()
         SKPaymentQueue.default().add(self)
     }
-
     private func fetchProducts() {
         let request = SKProductsRequest(productIdentifiers: productIdentifiers)
         request.delegate = self
         request.start()
     }
-
     func purchase(product: SKProduct) {
         DispatchQueue.main.async {
             self.isLoading = true
@@ -35,7 +39,6 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
     }
-
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
         guard let userID = Auth.auth().currentUser?.uid else {
             print("Validation failed")
@@ -48,8 +51,8 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
         
         let currentDate = Date()
         var expirationDate = currentDate
-
-        switch transaction.payment.productIdentifier {
+        let productId = transaction.payment.productIdentifier
+        switch productId {
         case "one_day_boost":
             expirationDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
         case "one_week_boost":
@@ -60,7 +63,7 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             print("Unknown or unsupported product identifier")
             Analytics.shared.trackError(
                 message: "Unsupported product identifier",
-                properties: ["product_id": transaction.payment.productIdentifier]
+                properties: ["product_id": productId]
             )
             return
         }
@@ -82,14 +85,12 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
                 )
                 return
             }
-
             // Assume `self.competitionId` and `self.entryDocId` are valid IDs you have access to.
             let entriesDocRef = Firestore.firestore()
                                             .collection("competitions")
                                             .document(self?.competitionId ?? "")
                                             .collection("entries")
                                             .document(self?.entryDocId ?? "")
-
             // Check if the entry is already a superstar, if not, update it.
             entriesDocRef.getDocument { (document, error) in
                 if let document = document, document.exists {
@@ -98,7 +99,6 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
                         return
                     }
                 }
-
                 // Update the superstar status in the entries document
                 entriesDocRef.updateData(["superstar": true]) { error in
                     if let error = error {
@@ -125,8 +125,47 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             }
         }
         SKPaymentQueue.default().finishTransaction(transaction)
+        
+        // Log the purchase in the purchases subcollection
+        self.logPurchase(userId: userID, productId: productId)
     }
-
+    
+    // New function to log purchases in Firestore
+    private func logPurchase(userId: String, productId: String) {
+        // Get the actual price from the product
+        let price = self.products.first(where: { $0.productIdentifier == productId })?.price.doubleValue
+                   ?? self.productPrices[productId] ?? 0.0
+        
+        // Calculate host's share (50% after Apple's 30% cut)
+        // Apple takes 30%, leaving 70%. Host gets 50% of that 70%
+        let hostShare = price * 0.70 * 0.50
+        
+        let db = Firestore.firestore()
+        let purchaseRef = db.collection("competitions")
+                             .document(competitionId)
+                             .collection("purchases")
+                             .document()
+        
+        let purchaseData: [String: Any] = [
+            "userId": userId,
+            "productId": productId,
+            "timestamp": Timestamp(),
+            "price": price,
+            "hostShare": hostShare
+        ]
+        
+        purchaseRef.setData(purchaseData) { error in
+            if let error = error {
+                print("Error logging purchase: \(error)")
+                Analytics.shared.trackError(
+                    message: "Purchase logging failed",
+                    properties: ["error": error.localizedDescription]
+                )
+            } else {
+                print("Purchase successfully logged")
+            }
+        }
+    }
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         DispatchQueue.main.async {
             self.products = response.products

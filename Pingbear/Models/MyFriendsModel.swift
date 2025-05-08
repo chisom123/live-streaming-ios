@@ -4,10 +4,12 @@ import FirebaseFirestore
 class AppUser: Identifiable {
     var id: String
     var name: String
+    var profileImageUrl: String?
 
-    init(id: String, name: String) {
+    init(id: String, name: String, profileImageUrl: String? = nil) {
         self.id = id
         self.name = name
+        self.profileImageUrl = profileImageUrl
     }
 }
 
@@ -54,8 +56,11 @@ class MyFriendsModel: ObservableObject {
             usersRef.document(friendID).getDocument { (document, error) in
                 defer { group.leave() }
                 if let document = document, document.exists,
-                   let name = document.data()?["username"] as? String {
-                    let user = AppUser(id: friendID, name: name)
+                   let data = document.data(),
+                   let name = data["username"] as? String {
+
+                    let profileImageUrl = data["profilePictureUrl"] as? String
+                    let user = AppUser(id: friendID, name: name, profileImageUrl: profileImageUrl)
                     users.append(user)
                 } else if let error = error {
                     print("Error fetching user details: \(error)")

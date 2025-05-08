@@ -50,7 +50,7 @@ struct PayView: View {
                         .padding(.horizontal, 20)
                     
                     HStack {
-                        Text("Get an extra star every time your photos are rated")
+                        Text("Get an extra star every time your photos are rated in this competition")
                             .font(.system(size: 18, weight: .bold, design: .default)) // Apply common styling here
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)

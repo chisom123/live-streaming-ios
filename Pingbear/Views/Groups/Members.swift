@@ -8,6 +8,7 @@ struct MembersView: View {
     @ObservedObject private var viewModel: MembersViewModel
     @State private var showingJoinSelectView = false
     @State private var navigateToCompDetails = false
+    @State private var showingHostEarnings = false
     
     init(competition: Competition) {
         self.competition = competition
@@ -45,49 +46,92 @@ struct MembersView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
                 
-                // Add Players Button
-                Button(action: {
-                    showingJoinSelectView = true
-                }) {
-                    HStack {
-                        Text("Add Players to Competition")
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .foregroundColor(Color(hex: "#FFF"))
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 10)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(Color(hex: "#D3D3D3"))
-                            .font(.system(size: 15, weight: .bold))
-                            .padding(.trailing, 10)
+                // Combined Action Buttons Container
+                VStack(spacing: 0) {
+                    // Add Players Button
+                    Button(action: {
+                        showingJoinSelectView = true
+                    }) {
+                        HStack {
+                            Text("Add Players to Competition")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#FFF"))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Color(hex: "#D3D3D3"))
+                                .font(.system(size: 15, weight: .bold))
+                                .padding(.trailing, 10)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(20)
+                        .padding(.vertical, 5)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(20)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#1A2245"))
-                    .cornerRadius(10)
-                    .padding(.bottom, 20)
+                    
+                    // Show divider and Competition Earnings only if user is host
+                    if viewModel.isHost && viewModel.canAccessEarnings {
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+                        
+                        // Competition Earnings Button
+                        Button(action: {
+                            showingHostEarnings = true
+                        }) {
+                            HStack {
+                                Text("Competition Earnings")
+                                    .font(.system(size: 16, weight: .bold, design: .default))
+                                    .foregroundColor(Color(hex: "#FFF"))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.leading, 10)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(Color(hex: "#D3D3D3"))
+                                    .font(.system(size: 15, weight: .bold))
+                                    .padding(.trailing, 10)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(20)
+                            .padding(.vertical, 5)
+                        }
+                    }
                 }
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
                 .padding(.horizontal, 20)
                 
                 // Members List
-                // Replace the existing ScrollView section with this:
-
+                HStack {
+                    Text("Competition Players")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                }
+                .padding(20)
+                .padding(.top, 5)
+                
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.members) { member in
                             VStack(spacing: 0) {
                                 HStack {
-                                    Text(member.username)
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(1)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .lineSpacing(9)
-                                        .foregroundColor(.white)
-                                        .truncationMode(.tail)
-                                        .padding(.leading, 30)
+                                    HStack(spacing: 20) {
+                                        ProfilePictureView(url: member.profileurl, size: 40)
+                                        
+                                        Text(member.username)
+                                            .font(.system(size: 16, weight: .bold))
+                                            .lineLimit(1)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .lineSpacing(9)
+                                            .foregroundColor(.white)
+                                            .truncationMode(.tail)
+                                    }
+                                    .padding(.leading, 30)
 
                                     if member.id != viewModel.currentUserId && !member.isAdded {
                                         Button(action: {
@@ -128,7 +172,7 @@ struct MembersView: View {
                                         .opacity(0)
                                     }
                                 }
-                                .padding(.vertical, 25)
+                                .padding(.vertical, 20)
 
                                 if member.id != viewModel.members.last?.id {
                                     Divider()
@@ -152,6 +196,9 @@ struct MembersView: View {
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition)
+        }
+        .fullScreenCover(isPresented: $showingHostEarnings) {
+            HostEarningsView(competition: competition)
         }
     }
 }
