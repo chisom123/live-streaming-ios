@@ -24,6 +24,10 @@ struct HostEarningsView: View {
                 HStack {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
+                        Analytics.shared.trackTap(
+                            elementId: "back_button",
+                            screenName: "host_earnings"
+                        )
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()
@@ -43,6 +47,10 @@ struct HostEarningsView: View {
                     // Info button that shows earnings explanation
                     Button(action: {
                         showInfoAlert = true
+                        Analytics.shared.trackTap(
+                            elementId: "earnings_info_button",
+                            screenName: "host_earnings"
+                        )
                     }) {
                         Image(systemName: "info.circle")
                             .resizable()
@@ -126,6 +134,15 @@ struct HostEarningsView: View {
                         // Payout button
                         Button(action: {
                             showingPayoutRequestModal = true
+                            Analytics.shared.trackTap(
+                                elementId: "request_payout_button",
+                                screenName: "host_earnings",
+                                properties: [
+                                    "competition_id": competition.id,
+                                    "available_amount": viewModel.availableEarnings,
+                                    "enabled": viewModel.availableEarnings > 0
+                                ]
+                            )
                         }) {
                             Text("Request Payout")
                                 .font(.system(size: 17, weight: .bold))
@@ -149,6 +166,11 @@ struct HostEarningsView: View {
                                 withAnimation {
                                     selectedTab = index
                                 }
+                                Analytics.shared.trackTap(
+                                    elementId: "tab_\(tabType.rawValue.lowercased())",
+                                    screenName: "host_earnings",
+                                    properties: ["competition_id": competition.id]
+                                )
                             }) {
                                 VStack(spacing: 10) {
                                     Text(tabType.rawValue)
@@ -242,6 +264,13 @@ struct HostEarningsView: View {
         }
         .onAppear {
             viewModel.fetchEarnings(for: competition.id)
+            Analytics.shared.trackScreen(
+                name: "host_earnings",
+                properties: [
+                    "competition_id": competition.id,
+                    "competition_name": competition.description
+                ]
+            )
         }
         .sheet(isPresented: $showingPayoutRequestModal) {
             PayoutRequestView(viewModel: viewModel)

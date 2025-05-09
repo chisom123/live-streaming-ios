@@ -21,11 +21,28 @@ struct PayoutRequestView: View {
     private func requestPayout() {
         guard isValidEmail(paypalEmail) else {
             errorMessage = "Please enter a valid PayPal email address"
+            
+            // Track validation error
+            Analytics.shared.trackError(
+                message: "Payout email validation failed",
+                properties: [
+                    "reason": "invalid_email_format"
+                ]
+            )
             return
         }
         
         if viewModel.availableEarnings <= 0 {
             errorMessage = "You don't have any available funds to withdraw"
+            
+            // Track validation error
+            Analytics.shared.trackError(
+                message: "Payout request validation failed",
+                properties: [
+                    "reason": "no_available_funds",
+                    "available_amount": viewModel.availableEarnings
+                ]
+            )
             return
         }
         
@@ -35,8 +52,25 @@ struct PayoutRequestView: View {
                 alertMessage = "Your payout request has been submitted successfully. You will receive an email notification when the payment is processed."
                 isSuccess = true
                 showAlert = true
+                
+                // Track successful payout submission
+                Analytics.shared.track(
+                    event: "payout_submission_success",
+                    properties: [
+                        "amount": viewModel.availableEarnings
+                    ]
+                )
             } else {
                 errorMessage = error ?? "An unknown error occurred. Please try again later."
+                
+                // Track error
+                Analytics.shared.trackError(
+                    message: "Payout submission failed",
+                    properties: [
+                        "error": error ?? "unknown_error",
+                        "amount": viewModel.availableEarnings
+                    ]
+                )
             }
         }
     }
@@ -47,6 +81,12 @@ struct PayoutRequestView: View {
             HStack {
                 Button(action: {
                     presentationMode.wrappedValue.dismiss()
+                    
+                    // Track cancel action
+                    Analytics.shared.trackTap(
+                        elementId: "payout_request_cancel",
+                        screenName: "payout_request_view"
+                    )
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()
@@ -159,6 +199,15 @@ struct PayoutRequestView: View {
                         presentationMode.wrappedValue.dismiss()
                     }
                 }
+            )
+        }
+        .onAppear {
+            // Track screen view
+            Analytics.shared.trackScreen(
+                name: "payout_request",
+                properties: [
+                    "available_amount": viewModel.availableEarnings
+                ]
             )
         }
     }
