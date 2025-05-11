@@ -410,7 +410,7 @@ struct NoPlayersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(Array(["Me", "Player 2", "Player 3"].enumerated()), id: \.element) { index, userName in
+                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4", "Player 5"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         HStack {
                             Text("\(index + 1)")
@@ -464,7 +464,7 @@ struct NoPlayersView: View {
                         .padding(.vertical, 25)
                         .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
                         
-                        if userName != "Player 3" {
+                        if userName != "Player 5" {
                             Divider()
                                 .background(Color.white.opacity(0.2))
                         }

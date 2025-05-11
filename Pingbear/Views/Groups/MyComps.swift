@@ -9,7 +9,6 @@ struct MyCompsView: View {
     @State private var navigateToSettings = false
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
-    @State private var showDemoCompetition = false
     
     var body: some View {
         VStack {
@@ -60,10 +59,6 @@ struct MyCompsView: View {
                     newCompAction: {
                         viewModel.cleanupListeners()
                         createNewCompetition()
-                    },
-                    demoCompAction: {
-                        viewModel.cleanupListeners()
-                        openDemoCompetition()
                     }
                 )
                 Spacer()
@@ -95,9 +90,6 @@ struct MyCompsView: View {
         .background(Color(hex: "#10183C"))
         .fullScreenCover(item: $selectedCompetition) { comp in
             CompDetails(competition: comp)
-        }
-        .fullScreenCover(isPresented: $showDemoCompetition) {
-            DemoCompDetailsView()
         }
         .fullScreenCover(isPresented: $navigateToSettings) {
             SettingsView()
@@ -133,10 +125,6 @@ struct MyCompsView: View {
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
         }
-    }
-    
-    private func openDemoCompetition() {
-        showDemoCompetition = true
     }
     
     private func leaveCompetition(competitionId: String, userId: String) {
@@ -277,7 +265,6 @@ struct CompetitionCell: View {
 
 struct EmptyCompsView: View {
     var newCompAction: () -> Void
-    var demoCompAction: () -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -289,23 +276,7 @@ struct EmptyCompsView: View {
                 .padding(.bottom, 30)
             
             // Button container - fixed width for consistency
-            VStack(spacing: 16) {
-                Button(action: demoCompAction) {
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 14, weight: .bold))
-                            .padding(.trailing, 4)
-                        
-                        Text("Try Demo Competition")
-                            .font(.system(size: 16, weight: .semibold, design: .default))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color(hex: "#3B4374"))
-                    .foregroundColor(.white)
-                    .cornerRadius(25)
-                }
-                
+            VStack() {
                 Button(action: newCompAction) {
                     HStack {
                         Text("New Competition")
@@ -319,7 +290,7 @@ struct EmptyCompsView: View {
                 }
             }
             .frame(width: 280)
-            .padding(.bottom, 25)
+            .padding(.bottom, 30)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
