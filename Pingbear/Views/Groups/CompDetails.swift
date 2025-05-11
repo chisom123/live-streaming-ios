@@ -410,28 +410,38 @@ struct NoPlayersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
-                    VStack(spacing: 0) {
-                        HStack {
-                            Text("\(index + 1)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 30)
-                                .padding(.leading, 20)
-                            
-                            HStack(spacing: 20) {
-                                ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
-                                
-                                Text(userName)
+                // Reordered player list to put "Me" second from bottom
+                let playerNames = ["Friend 1", "Friend 2", "Me", "Friend 3"]
+                
+                ForEach(Array(playerNames.enumerated()), id: \.element) { index, userName in
+                    Button(action: {
+                        if userName != "Me" {
+                            action_player()
+                        } else {
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.warning)
+                        }
+                    }) {
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("\(index + 1)")
                                     .font(.system(size: 16, weight: .bold))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
                                     .foregroundColor(.white)
-                            }
+                                    .frame(width: 30)
+                                    .padding(.leading, 20)
+                                
+                                HStack(spacing: 20) {
+                                    ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
+                                    
+                                    Text(userName)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                        .foregroundColor(.white)
+                                }
 
-                            Spacer()
+                                Spacer()
 
-                            if userName == "Me" {
                                 HStack(spacing: 6.5) {
                                     Text("0")
                                         .font(.system(size: 17, weight: .bold))
@@ -447,28 +457,17 @@ struct NoPlayersView: View {
                                 .background(Color(hex: "#DAA520"))
                                 .cornerRadius(200)
                                 .padding(.trailing, 30)
-                            } else {
-                                Button(action: action_player) {
-                                    HStack(spacing: 8) {
-                                        Text("Add")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                    }
-                                    .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                    .background(Color(hex: "#FF4081"))
-                                    .cornerRadius(200)
-                                }
-                                .padding(.trailing, 30)
+                            }
+                            .padding(.vertical, 25)
+                            .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                            
+                            if userName != "Friend 3" {
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
                             }
                         }
-                        .padding(.vertical, 25)
-                        .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
-                        
-                        if userName != "Player 4" {
-                            Divider()
-                                .background(Color.white.opacity(0.2))
-                        }
                     }
+                    .buttonStyle(PlainButtonStyle()) // This ensures the button doesn't have default styling
                 }
             }
             .background(Color(hex: "#1A2245"))
