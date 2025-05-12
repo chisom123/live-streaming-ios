@@ -422,52 +422,52 @@ struct NoPlayersView: View {
                             generator.notificationOccurred(.warning)
                         }
                     }) {
-                        VStack(spacing: 0) {
-                            HStack {
-                                Text("\(index + 1)")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 30)
-                                    .padding(.leading, 20)
-                                
-                                HStack(spacing: 20) {
-                                    ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
-                                    
-                                    Text(userName)
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                        .foregroundColor(.white)
-                                }
-
-                                Spacer()
-
-                                HStack(spacing: 6.5) {
-                                    Text("0")
-                                        .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(Color(hex: "#FFF"))
-                                    
-                                    Image(systemName: "star.fill")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18)
-                                        .foregroundColor(Color(hex: "#FFF"))
-                                }
-                                .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
-                                .background(Color(hex: "#DAA520"))
-                                .cornerRadius(200)
-                                .padding(.trailing, 30)
-                            }
-                            .padding(.vertical, 25)
-                            .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                        HStack {
+                            Text("\(index + 1)")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 30)
+                                .padding(.leading, 20)
                             
-                            if userName != "Friend 3" {
-                                Divider()
-                                    .background(Color.white.opacity(0.2))
+                            HStack(spacing: 20) {
+                                ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
+                                
+                                Text(userName)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .foregroundColor(.white)
                             }
+
+                            Spacer()
+
+                            HStack(spacing: 6.5) {
+                                Text("0")
+                                    .font(.system(size: 17, weight: .bold))
+                                    .foregroundColor(Color(hex: "#FFF"))
+                                
+                                Image(systemName: "star.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 18, height: 18)
+                                    .foregroundColor(Color(hex: "#FFF"))
+                            }
+                            .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
+                            .background(Color(hex: "#DAA520"))
+                            .cornerRadius(200)
+                            .padding(.trailing, 30)
                         }
+                        .padding(.vertical, 25)
+                        .frame(maxWidth: .infinity) // Make the HStack fill the entire width
+                        .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                        .contentShape(Rectangle()) // Define the tappable area as the full rectangle
                     }
                     .buttonStyle(PlainButtonStyle()) // This ensures the button doesn't have default styling
+                    
+                    if userName != "Friend 3" {
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+                    }
                 }
             }
             .background(Color(hex: "#1A2245"))
