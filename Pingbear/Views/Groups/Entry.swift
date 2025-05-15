@@ -183,8 +183,13 @@ struct EntryView: View {
                             .lineLimit(1)
                         
                         // Only show the theme badge if there is a theme
-                        if let themeName = entry.themeName {
-                            ThemeBadge(themeName: themeName)
+                        if let themeName = entry.themeName, let themeId = entry.themeId {
+                            ThemeBadgeClickable(
+                                themeName: themeName,
+                                themeId: themeId,
+                                competitionId: competition.id,
+                                isInRatingFlow: true  // Add this parameter
+                            )
                         }
                     }
                     .frame(maxWidth: 250)

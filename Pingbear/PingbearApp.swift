@@ -5,6 +5,29 @@ import Combine
 import AVFoundation
 import UserNotifications
 
+// Remove the DeepLinkCoordinator - we'll use the enhanced DeepLinkHandler directly
+
+// Update AppDelegate extension
+extension AppDelegate {
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        print("AppDelegate received URL: \(url)")
+        
+        // Handle Firebase Auth URLs
+        if Auth.auth().canHandle(url) {
+            return true
+        }
+        
+        // Handle custom URL scheme (socialstar://)
+        if url.scheme == "socialstar" {
+            // Use the enhanced DeepLinkHandler directly
+            DeepLinkHandler.shared.handleURL(url)
+            return true
+        }
+        
+        return false
+    }
+}
+
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     
     var pushNotificationManager = PushNotificationManager.shared
@@ -82,54 +105,121 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             completionHandler(.noData)
             return
         }
-        // This notification is not for Firebase Authentication.
-        // Implement any other handling you might have for other notifications.
+        
+        // Handle deep links from push notifications
+        if let deepLink = userInfo["deepLink"] as? String,
+           let url = URL(string: deepLink) {
+            DeepLinkHandler.shared.handleURL(url)
+        }
+        
+        completionHandler(.newData)
     }
 }
 
 @main
 struct PingbearApp: App {
-    // Register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-
-    // Check UserDefaults
     @State private var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn")
+    @StateObject private var deepLinkHandler = DeepLinkHandler.shared
+    @State private var selectedCompetition: Competition?
+    @State private var pendingLoginDeepLink: URL?
     
     let didLogOut = PassthroughSubject<Void, Never>()
     
     var body: some Scene {
         WindowGroup {
-            if isLoggedIn && Auth.auth().currentUser != nil {
-                MyCompsView()
-                    .onAppear {
-                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = scene.windows.first {
-                            window.overrideUserInterfaceStyle = .dark
-                        }
-                        
-                        EntryUploadManager.shared.initialize()
-                    }
-                    .environment(\.didLogOut, didLogOut)
-                    .onReceive(didLogOut) { _ in
-                        isLoggedIn = false
-                    }
-            } else {
-                NavigationView {
-                    WelcomeView()
+            ZStack {
+                if isLoggedIn && Auth.auth().currentUser != nil {
+                    MyCompsView()
                         .onAppear {
-                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let window = scene.windows.first {
-                                window.overrideUserInterfaceStyle = .dark
-                            }
-                            
-                            EntryUploadManager.shared.initialize()
+                            setupApp()
+                            processLoginPendingDeepLink()
                         }
                         .environment(\.didLogOut, didLogOut)
                         .onReceive(didLogOut) { _ in
                             isLoggedIn = false
+                            deepLinkHandler.reset()
                         }
+                        .onOpenURL { url in
+                            handleOpenURL(url)
+                        }
+                } else {
+                    NavigationView {
+                        WelcomeView()
+                            .onAppear {
+                                setupApp()
+                            }
+                            .environment(\.didLogOut, didLogOut)
+                            .onReceive(didLogOut) { _ in
+                                isLoggedIn = false
+                            }
+                    }
+                    .accentColor(.white)
+                    .onOpenURL { url in
+                        handleOpenURL(url)
+                    }
                 }
-                .accentColor(.white)
+            }
+            .fullScreenCover(item: $selectedCompetition) { competition in
+                CompDetails(competition: competition)
+            }
+            .onChange(of: deepLinkHandler.pendingDeepLink) { _ in
+                processPendingDeepLinks()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .authStateDidChange)) { _ in
+                // Simply update the login state when authentication completes
+                isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+            }
+        }
+    }
+    
+    private func setupApp() {
+        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = scene.windows.first {
+            window.overrideUserInterfaceStyle = .dark
+        }
+        EntryUploadManager.shared.initialize()
+    }
+    
+    private func processLoginPendingDeepLink() {
+        if let pendingUrl = pendingLoginDeepLink {
+            deepLinkHandler.handleURL(pendingUrl)
+            pendingLoginDeepLink = nil
+        }
+    }
+    
+    // Enhanced handleOpenURL method
+    private func handleOpenURL(_ url: URL) {
+        print("PingbearApp received URL via onOpenURL: \(url)")
+        
+        // If not logged in, store for later processing
+        if !isLoggedIn || Auth.auth().currentUser == nil {
+            pendingLoginDeepLink = url
+            return
+        }
+        
+        // Dismiss all modals first to ensure clean navigation
+        ModalDismisser.dismissAllModals {
+            // Reset selected competition
+            self.selectedCompetition = nil
+            
+            // Small delay to ensure UI is settled
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.deepLinkHandler.handleURL(url)
+            }
+        }
+    }
+    
+    // Enhanced processPendingDeepLinks
+    private func processPendingDeepLinks() {
+        // Ensure modals are dismissed before processing
+        ModalDismisser.dismissAllModals {
+            self.deepLinkHandler.processPendingDeepLink { competition in
+                if let competition = competition {
+                    DispatchQueue.main.async {
+                        self.selectedCompetition = competition
+                    }
+                }
             }
         }
     }

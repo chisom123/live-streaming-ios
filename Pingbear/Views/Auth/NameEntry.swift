@@ -7,7 +7,6 @@ struct NameEntryView: View {
     let phoneNumber: String
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
-    @State private var navigateToHome = false
     @State private var isLoading: Bool = false
 
     var body: some View {
@@ -77,10 +76,6 @@ struct NameEntryView: View {
             .background(Color(hex: "#1A2245"))
             .cornerRadius(10)
             .padding(.horizontal, 20)
-
-            NavigationLink(destination: MyCompsView(), isActive: $navigateToHome) {
-                EmptyView()
-            }.isDetailLink(false)
             
             Spacer()
         }
@@ -92,7 +87,6 @@ struct NameEntryView: View {
         isLoading = true
         let processedUsername = username.lowercased().replacingOccurrences(of: " ", with: "")
         
-        // Use the new validation function
         let validation = isValidUsername(processedUsername)
         guard validation.isValid else {
             errorMessage = validation.error
@@ -109,7 +103,6 @@ struct NameEntryView: View {
 
         let db = Firestore.firestore()
        
-        // Check if username is already taken
         db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { (querySnapshot, err) in
             if let err = err {
                 isLoading = false
@@ -119,7 +112,6 @@ struct NameEntryView: View {
                     properties: ["error": err.localizedDescription]
                 )
             } else if querySnapshot!.documents.isEmpty {
-                // Username is unique, proceed to save
                 saveUsernameToFirestore(processedUsername: processedUsername)
             } else {
                 isLoading = false
@@ -133,15 +125,11 @@ struct NameEntryView: View {
     }
     
     func hashPhoneNumber(_ phoneNumber: String) -> String {
-        // Normalize phone number (remove non-digit characters)
         let cleanedNumber = phoneNumber
             .components(separatedBy: CharacterSet.decimalDigits.inverted)
             .joined()
         
-        // Use a fixed, app-wide salt
         let salt = "5Ax1HpaMDwxIv15M6t4ZdGuC8"
-        
-        // Hash the normalized number with the consistent salt
         let hashInput = salt + cleanedNumber
         let hash = SHA256.hash(data: Data(hashInput.utf8))
         return hash.compactMap { String(format: "%02x", $0) }.joined()
@@ -155,13 +143,11 @@ struct NameEntryView: View {
         }
        
         let db = Firestore.firestore()
-        
-        // Hash the phone number before storing
         let hashedPhoneNumber = hashPhoneNumber(phoneNumber)
        
         db.collection("users").document(userID).setData([
             "username": processedUsername,
-            "phoneNumberHash": hashedPhoneNumber // Store hashed phone number instead
+            "phoneNumberHash": hashedPhoneNumber
         ], merge: true) { error in
             isLoading = false
             if let error = error {
@@ -171,9 +157,6 @@ struct NameEntryView: View {
                     properties: ["error": error.localizedDescription]
                 )
             } else {
-                self.navigateToHome = true
-                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                UserDefaults.standard.synchronize()
                 Analytics.shared.track(
                     event: "new_user_created",
                     properties: [
@@ -181,6 +164,13 @@ struct NameEntryView: View {
                         "username": processedUsername
                     ]
                 )
+                
+                // Just update UserDefaults
+                UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                UserDefaults.standard.synchronize()
+                
+                // Post notification to trigger UI update
+                NotificationCenter.default.post(name: .authStateDidChange, object: nil)
             }
         }
     }

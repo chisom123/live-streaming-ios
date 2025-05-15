@@ -49,6 +49,17 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             return
         }
         
+        // Add this guard to check if competitionId is not empty
+        guard !competitionId.isEmpty else {
+            print("Competition ID is empty, skipping boost update")
+            SKPaymentQueue.default().finishTransaction(transaction)
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.purchaseCompleted = true // Still mark as completed so user can continue
+            }
+            return
+        }
+        
         let currentDate = Date()
         var expirationDate = currentDate
         let productId = transaction.payment.productIdentifier
@@ -132,6 +143,11 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     
     // New function to log purchases in Firestore
     private func logPurchase(userId: String, productId: String) {
+        guard !competitionId.isEmpty else {
+            print("Cannot log purchase - competition ID is empty")
+            return
+        }
+        
         // Get the actual price from the product
         let price = self.products.first(where: { $0.productIdentifier == productId })?.price.doubleValue
                    ?? self.productPrices[productId] ?? 0.0

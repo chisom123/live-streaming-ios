@@ -9,8 +9,6 @@ struct VerificationView: View {
     
     @State private var verificationCode: String = ""
     @State private var errorMessage: String? = nil
-    // Updated to include navigation to the home view
-    @State private var navigateToHome = false
     @State private var navigateToNameEntry = false
     @State private var isLoading: Bool = false
 
@@ -18,14 +16,13 @@ struct VerificationView: View {
         VStack {
             HStack {
                 Button(action: {
-                    // Dismiss the current view to go back
                     presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.white) // Your desired color
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 27, height: 27)
+                        .foregroundColor(Color.white)
                 }
                 Spacer()
             }
@@ -46,7 +43,6 @@ struct VerificationView: View {
                         Analytics.shared.trackScreen(name: "verification")
                     }
                 
-                // Verification Code TextField
                 TextField("Enter verification code", text: $verificationCode)
                     .keyboardType(.numberPad)
                     .padding()
@@ -93,11 +89,6 @@ struct VerificationView: View {
             .cornerRadius(10)
             .padding(.horizontal, 20)
             
-            // Navigation links
-            NavigationLink(destination: MyCompsView(), isActive: $navigateToHome) {
-                EmptyView()
-            }.isDetailLink(false)
-            
             NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
                 EmptyView()
             }.isDetailLink(false)
@@ -126,7 +117,6 @@ struct VerificationView: View {
                 return
             }
             
-            // After successful authentication, check for an existing username
             guard let userID = Auth.auth().currentUser?.uid else {
                 self.isLoading = false
                 self.errorMessage = "Error fetching user ID"
@@ -140,25 +130,30 @@ struct VerificationView: View {
                 if let document = document, document.exists {
                     if document.data()?["username"] != nil {
                         self.isLoading = false
-                        // User already has a username, navigate directly to home view
-                        self.navigateToHome = true
+                        // User already has a username - just update UserDefaults
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
                         UserDefaults.standard.set(true, forKey: "isFriendActivated")
                         UserDefaults.standard.synchronize()
+                        
+                        // Post notification to trigger UI update
+                        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                        
                         Analytics.shared.track(event: "returning_user_signed_in")
                     } else {
                         self.isLoading = false
-                        // No username found, navigate to NameEntryView
                         self.navigateToNameEntry = true
                         Analytics.shared.track(event: "new_user_registration_started")
                     }
                 } else {
                     self.isLoading = false
-                    // Error or user document does not exist, navigate to NameEntryView
                     self.navigateToNameEntry = true
                     Analytics.shared.track(event: "user_document_not_found")
                 }
             }
         }
     }
+}
+
+extension Notification.Name {
+    static let authStateDidChange = Notification.Name("authStateDidChange")
 }

@@ -3,6 +3,14 @@ import FirebaseFirestore
 import FirebaseAuth
 import AVFoundation
 
+extension CompDetails {
+    struct UserSelection: Identifiable {
+        let id = UUID()
+        let user: UserEntry
+        let competitionId: String
+    }
+}
+
 struct CompDetails: View {
     
     enum AlertType: Identifiable {
@@ -20,14 +28,13 @@ struct CompDetails: View {
     @State private var goToMyComps = false
     @State private var isCameraPresented = false
     @State private var isMembersPresented = false
-    @State private var isMyPostsPresented = false
     @State private var isVotingPresented = false
     @State private var isEditingCompetition = false
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
-    @State private var showingJoinSelectView = false
     @StateObject private var notificationManager = PushNotificationManager.shared
     @State private var activeAlert: AlertType?
+    @State private var selectedUserForPhotos: UserSelection? = nil
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -65,7 +72,7 @@ struct CompDetails: View {
                     Button(action: {
                         isEditingCompetition = true
                     }) {
-                        Text(competition.description == "Unnamed Competition" ? "Add Competition Name" : competition.description)
+                        Text(competition.description)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .lineLimit(1)
                             .foregroundColor(.white)
@@ -131,7 +138,10 @@ struct CompDetails: View {
                     
                     Button(action: {
                         entryViewModel.removeListeners()
-                        isMyPostsPresented = true
+                        selectedUserForPhotos = UserSelection(
+                            user: UserEntry(id: currentUserId, userName: "Me", profilePictureUrl: nil, totalStars: 0),
+                            competitionId: competition.id
+                        )
                     }) {
                         Image(systemName: "photo.stack.fill")
                             .font(.system(size: 24, weight: .bold))
@@ -151,16 +161,23 @@ struct CompDetails: View {
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if entryViewModel.totalMemberCount == 1 {
-                        NoPlayersView(action_player: addPlayer)
+                    if entryViewModel.userLeaderboard.isEmpty {
+                        EmptyLeaderboardView(action: initiateVideoCapture)
+                        Spacer()
                     } else {
-                        if entryViewModel.userLeaderboard.isEmpty {
-                            EmptyLeaderboardView(action: initiateVideoCapture)
-                            Spacer()
-                        } else {
-                            ScrollView {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
+                                    Button(action: {
+                                        selectedUserForPhotos = UserSelection(
+                                            user: userEntry,
+                                            competitionId: competition.id
+                                        )
+                                        Analytics.shared.trackTap(
+                                            elementId: "leaderboard_user_cell",
+                                            screenName: "competition_details"
+                                        )
+                                    }) {
                                         VStack(spacing: 0) {
                                             HStack {
                                                 Text("\(index + 1)")
@@ -205,16 +222,18 @@ struct CompDetails: View {
                                                     .background(Color.white.opacity(0.2))
                                             }
                                         }
+                                        .contentShape(Rectangle())
                                     }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
-                                .background(Color(hex: "#1A2245"))
-                                .cornerRadius(10)
-                                .padding(.horizontal, 20)
                             }
-                            .refreshable {
-                                entryViewModel.fetchEntries(mode: .compDetailsView)
-                                entryViewModel.fetchMemberCount()
-                            }
+                            .background(Color(hex: "#1A2245"))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20)
+                        }
+                        .refreshable {
+                            entryViewModel.fetchEntries(mode: .compDetailsView)
+                            entryViewModel.fetchMemberCount()
                         }
                     }
                 }
@@ -238,14 +257,15 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition)
         }
-        .fullScreenCover(isPresented: $isMyPostsPresented) {
-            MyPostsView(competition: competition)
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
-        }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
+        }
+        .sheet(item: $selectedUserForPhotos) { selection in
+            UserPhotosView(
+                userId: selection.user.userName == "Me" ? currentUserId : selection.user.id,
+                userName: selection.user.userName,
+                competitionId: selection.competitionId
+            )
         }
         .onDisappear {
             entryViewModel.removeListeners()
@@ -360,14 +380,6 @@ struct CompDetails: View {
             UIApplication.shared.open(settingsUrl)
         }
     }
-    func addPlayer() {
-        entryViewModel.removeListeners()
-        showingJoinSelectView = true
-        Analytics.shared.trackTap(
-            elementId: "add_player_prompt",
-            screenName: "competition_details"
-        )
-    }
 }
 
 struct EmptyLeaderboardView: View {
@@ -399,93 +411,5 @@ struct EmptyLeaderboardView: View {
         .background(Color(hex: "#1A2245"))
         .cornerRadius(10)
         .padding(.horizontal, 20)
-    }
-}
-
-struct NoPlayersView: View {
-    var action_player: () -> Void
-    @State private var currentUserProfileUrl: String?
-    private let db = Firestore.firestore()
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                // Reordered player list to put "Me" second from bottom
-                let playerNames = ["Friend 1", "Friend 2", "Me", "Friend 3"]
-                
-                ForEach(Array(playerNames.enumerated()), id: \.element) { index, userName in
-                    Button(action: {
-                        if userName != "Me" {
-                            action_player()
-                        } else {
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.warning)
-                        }
-                    }) {
-                        HStack {
-                            Text("\(index + 1)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 30)
-                                .padding(.leading, 20)
-                            
-                            HStack(spacing: 20) {
-                                ProfilePictureView(url: userName == "Me" ? currentUserProfileUrl : nil, size: 40)
-                                
-                                Text(userName)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                                    .foregroundColor(.white)
-                            }
-
-                            Spacer()
-
-                            HStack(spacing: 6.5) {
-                                Text("0")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(Color(hex: "#FFF"))
-                                
-                                Image(systemName: "star.fill")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 18, height: 18)
-                                    .foregroundColor(Color(hex: "#FFF"))
-                            }
-                            .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
-                            .background(Color(hex: "#DAA520"))
-                            .cornerRadius(200)
-                            .padding(.trailing, 30)
-                        }
-                        .padding(.vertical, 25)
-                        .frame(maxWidth: .infinity) // Make the HStack fill the entire width
-                        .background(userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
-                        .contentShape(Rectangle()) // Define the tappable area as the full rectangle
-                    }
-                    .buttonStyle(PlainButtonStyle()) // This ensures the button doesn't have default styling
-                    
-                    if userName != "Friend 3" {
-                        Divider()
-                            .background(Color.white.opacity(0.2))
-                    }
-                }
-            }
-            .background(Color(hex: "#1A2245"))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-        }
-        .onAppear {
-            fetchCurrentUserProfilePicture()
-        }
-    }
-    
-    private func fetchCurrentUserProfilePicture() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        db.collection("users").document(userId).getDocument { document, error in
-            if let document = document, document.exists {
-                self.currentUserProfileUrl = document.data()?["profilePictureUrl"] as? String
-            }
-        }
     }
 }

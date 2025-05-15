@@ -12,8 +12,6 @@ struct MemberUser: Identifiable {
 class MembersViewModel: ObservableObject {
     @Published var members: [MemberUser] = []
     @Published var currentUserId: String = ""
-    @Published var isHost: Bool = false
-    @Published var canAccessEarnings: Bool = false
     
     private var db = Firestore.firestore()
     private var myFriendsModel = MyFriendsModel()
@@ -21,51 +19,9 @@ class MembersViewModel: ObservableObject {
     func fetchMembersDetails(for competition: Competition) {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         self.currentUserId = currentUserId
-
-        // Check if current user is the host
-        checkIfUserIsHost(for: competition)
-        checkEarningsAccess()
         
         myFriendsModel.fetchFriends { [weak self] in
             self?.fetchCompetitionMembers(for: competition)
-        }
-    }
-    
-    func checkIfUserIsHost(for competition: Competition) {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        
-        db.collection("competitions").document(competition.id).getDocument { [weak self] document, error in
-            if let error = error {
-                print("Error checking if user is host: \(error)")
-                return
-            }
-            
-            if let document = document, document.exists,
-               let hostId = document.data()?["hostId"] as? String {
-                DispatchQueue.main.async {
-                    self?.isHost = (hostId == currentUserId)
-                }
-            }
-        }
-    }
-    
-    func checkEarningsAccess() {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
-        
-        // Access the "earningsEligibleUsers" collection in Firestore
-        db.collection("earningsEligibleUsers").document(currentUserId).getDocument { [weak self] document, error in
-            if let error = error {
-                print("Error checking earnings access: \(error)")
-                DispatchQueue.main.async {
-                    self?.canAccessEarnings = false
-                }
-                return
-            }
-            
-            // User has access if the document exists
-            DispatchQueue.main.async {
-                self?.canAccessEarnings = document?.exists ?? false
-            }
         }
     }
 

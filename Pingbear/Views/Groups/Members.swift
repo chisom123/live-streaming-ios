@@ -1,6 +1,4 @@
 import SwiftUI
-import FirebaseAuth
-import NotificationBannerSwift
 
 struct MembersView: View {
     
@@ -8,7 +6,6 @@ struct MembersView: View {
     @ObservedObject private var viewModel: MembersViewModel
     @State private var showingJoinSelectView = false
     @State private var navigateToCompDetails = false
-    @State private var showingHostEarnings = false
     
     init(competition: Competition) {
         self.competition = competition
@@ -69,35 +66,6 @@ struct MembersView: View {
                         .frame(maxWidth: .infinity)
                         .padding(20)
                         .padding(.vertical, 5)
-                    }
-                    
-                    // Show divider and Competition Earnings only if user is host
-                    if viewModel.isHost && viewModel.canAccessEarnings {
-                        Divider()
-                            .background(Color.white.opacity(0.2))
-                        
-                        // Competition Earnings Button
-                        Button(action: {
-                            showingHostEarnings = true
-                        }) {
-                            HStack {
-                                Text("Competition Earnings")
-                                    .font(.system(size: 16, weight: .bold, design: .default))
-                                    .foregroundColor(Color(hex: "#FFF"))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.leading, 10)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(Color(hex: "#D3D3D3"))
-                                    .font(.system(size: 15, weight: .bold))
-                                    .padding(.trailing, 10)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(20)
-                            .padding(.vertical, 5)
-                        }
                     }
                 }
                 .background(Color(hex: "#1A2245"))
@@ -196,9 +164,6 @@ struct MembersView: View {
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition)
-        }
-        .fullScreenCover(isPresented: $showingHostEarnings) {
-            HostEarningsView(competition: competition)
         }
     }
 }

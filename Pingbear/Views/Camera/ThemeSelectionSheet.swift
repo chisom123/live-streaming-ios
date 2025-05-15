@@ -290,17 +290,62 @@ struct AddThemeSheet: View {
 }
 
 // MARK: - Theme Badge
-struct ThemeBadge: View {
+struct ThemeBadgeClickable: View {
     let themeName: String
+    let themeId: String?
+    let competitionId: String
+    let isInRatingFlow: Bool  // New property to indicate context
+    
+    @State private var isShowingThemeView = false
+    
+    // Add convenience initializer for backward compatibility
+    init(themeName: String, themeId: String?, competitionId: String, isInRatingFlow: Bool = false) {
+        self.themeName = themeName
+        self.themeId = themeId
+        self.competitionId = competitionId
+        self.isInRatingFlow = isInRatingFlow
+    }
     
     var body: some View {
-        Text(themeName)
-            .font(.system(size: 16, weight: .bold))
-            .padding(EdgeInsets(top: 5, leading: 10, bottom: 5, trailing: 10))
+        Button(action: {
+            if themeId != nil {
+                isShowingThemeView = true
+                Analytics.shared.track(
+                    event: "theme_badge_clicked",
+                    properties: [
+                        "theme_name": themeName,
+                        "from_rating_flow": isInRatingFlow
+                    ]
+                )
+            }
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: "tag.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .foregroundColor(.white)
+                
+                Text(themeName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .truncationMode(.tail)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .background(Color(hex: "#FF8C00"))
-            .foregroundColor(.white)
-            .truncationMode(.tail)
-            .lineLimit(1)
-            .cornerRadius(15)
+            .cornerRadius(20)
+        }
+        .fullScreenCover(isPresented: $isShowingThemeView) {
+            if let themeId = themeId {
+                ThemePhotosView(
+                    themeName: themeName,
+                    themeId: themeId,
+                    competitionId: competitionId,
+                    disableAllRating: isInRatingFlow  // Disable all rating when from rating flow
+                )
+            }
+        }
     }
 }

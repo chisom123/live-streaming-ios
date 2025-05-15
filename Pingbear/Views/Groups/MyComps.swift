@@ -9,6 +9,7 @@ struct MyCompsView: View {
     @State private var navigateToSettings = false
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
+    @State private var showCreateCompetition = false
     
     var body: some View {
         VStack {
@@ -94,6 +95,9 @@ struct MyCompsView: View {
         .fullScreenCover(isPresented: $navigateToSettings) {
             SettingsView()
         }
+        .fullScreenCover(isPresented: $showCreateCompetition) {
+            CreateCompetitionNameView()
+        }
         .alert("Leave Competition", isPresented: $showLeaveConfirmation) {
             Button("Cancel", role: .cancel) {
                 competitionToLeave = nil
@@ -143,56 +147,8 @@ struct MyCompsView: View {
     }
     
     private func createNewCompetition() {
-         guard let userID = Auth.auth().currentUser?.uid else {
-             print("Error: User not logged in")
-             return
-         }
-         
-         let db = Firestore.firestore()
-         let batch = db.batch()
-         
-         let competitionRef = db.collection("competitions").document()
-         let competitionId = competitionRef.documentID  // Get the ID early to use in the data
-         let timestamp = Timestamp()
-         let defaultName = "Unnamed Competition"
-         
-         let competitionData: [String: Any] = [
-             "id": competitionId,  // Add the ID to the competition document
-             "description": defaultName,
-             "timestamp": timestamp,
-             "hostId": userID
-         ]
-         
-         batch.setData(competitionData, forDocument: competitionRef)
-         
-         // Set user as member
-         let memberRef = competitionRef.collection("members").document(userID)
-         batch.setData(["userId": userID], forDocument: memberRef)
-         
-         // Add to user's groupMemberships
-         let groupMembershipRef = db.collection("groupMemberships").document(userID)
-                                   .collection("competitions").document(competitionRef.documentID)
-         batch.setData(["competitionId": competitionRef.documentID], forDocument: groupMembershipRef)
-         
-         batch.commit { err in
-             if let err = err {
-                 print("Failed to create competition: \(err.localizedDescription)")
-             } else {
-                 DispatchQueue.main.async {
-                     self.selectedCompetition = Competition( // Changed to use existing selectedCompetition
-                         id: competitionRef.documentID,
-                         description: defaultName,
-                         date: timestamp.dateValue()
-                     )
-                 }
-                 
-                 Analytics.shared.trackCompetition(
-                     action: "create",
-                     competitionId: competitionId
-                 )
-             }
-         }
-     }
+        showCreateCompetition = true
+    }
 }
 
 // New component for the competition cell with swipe and long press actions
