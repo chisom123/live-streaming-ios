@@ -32,7 +32,7 @@ struct UserPhotosView: View {
                     
                     Spacer()
                     
-                    Text(userName == "Me" ? "My Photos" : "\(userName)'s photos")
+                    Text(userName == "Me" ? "Me" : userName)
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.white)
                         .truncationMode(.tail)
