@@ -131,27 +131,21 @@ struct ThemePhotosView: View {
                                     }
                                     
                                     // Stats section - NOT TAPPABLE
-                                    HStack(spacing: 8) {
-                                        HStack(spacing: 6) {
+                                    HStack {
+                                        // Profile picture and username on the left
+                                        HStack(spacing: 12) {
+                                            ProfilePictureView(url: photo.profilePictureUrl, size: 30)
+                                            
                                             Text(photo.userId == Auth.auth().currentUser?.uid ? "Me" : photo.userName)
                                                 .font(.system(size: 16, weight: .bold))
                                                 .foregroundColor(.white)
                                                 .truncationMode(.tail)
                                                 .lineLimit(1)
-                                            
-                                            Image("circle-user-round")
-                                                .resizable()
-                                                .renderingMode(.template)
-                                                .foregroundColor(.white)
-                                                .aspectRatio(contentMode: .fit)
-                                                .frame(width: 19, height: 19)
                                         }
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 5)
-                                        .background(Color(hex: "#4169E1"))
-                                        .cornerRadius(20)
-                                        .layoutPriority(1)
                                         
+                                        Spacer()
+                                        
+                                        // Star count on the right
                                         HStack(spacing: 6) {
                                             Text("\(photo.stars)")
                                                 .font(.system(size: 16, weight: .bold))
@@ -167,8 +161,6 @@ struct ThemePhotosView: View {
                                         .padding(.vertical, 5)
                                         .background(Color(hex: "#DAA520"))
                                         .cornerRadius(20)
-                                        
-                                        Spacer()
                                     }
                                     .padding(.horizontal, 15)
                                     .padding(.vertical, 12)

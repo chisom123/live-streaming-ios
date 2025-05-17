@@ -14,6 +14,7 @@ struct ThemePhoto: Identifiable {
     let overlayText: String?
     let overlayVerticalPosition: CGFloat
     let isFromCamera: Bool
+    let profilePictureUrl: String? // Added profile picture URL
 }
 
 class ThemePhotosViewModel: ObservableObject {
@@ -69,12 +70,13 @@ class ThemePhotosViewModel: ObservableObject {
                             return
                         }
                         
-                        // Create user dictionary
-                        var userDict: [String: String] = [:]
+                        // Create user dictionary with both username and profile picture
+                        var userDict: [String: (username: String, profilePic: String?)] = [:]
                         userSnapshot?.documents.forEach { userDoc in
-                            if let username = userDoc.data()["username"] as? String {
-                                userDict[userDoc.documentID] = username
-                            }
+                            let data = userDoc.data()
+                            let username = data["username"] as? String ?? "Unknown"
+                            let profilePic = data["profilePictureUrl"] as? String
+                            userDict[userDoc.documentID] = (username, profilePic)
                         }
                         
                         // Process photos
@@ -95,7 +97,11 @@ class ThemePhotosViewModel: ObservableObject {
                             let overlayText = data["overlayText"] as? String
                             let overlayVerticalPosition = data["overlayVerticalPosition"] as? CGFloat ?? 0.5
                             let isFromCamera = data["isFromCamera"] as? Bool ?? true
-                            let userName = userDict[userId] ?? "Unknown"
+                            
+                            // Get user data from dictionary
+                            let userData = userDict[userId] ?? ("Unknown", nil)
+                            let userName = userData.username
+                            let profilePictureUrl = userData.profilePic
                             
                             return ThemePhoto(
                                 id: document.documentID,
@@ -109,7 +115,8 @@ class ThemePhotosViewModel: ObservableObject {
                                 themeId: themeId,
                                 overlayText: overlayText,
                                 overlayVerticalPosition: overlayVerticalPosition,
-                                isFromCamera: isFromCamera
+                                isFromCamera: isFromCamera,
+                                profilePictureUrl: profilePictureUrl
                             )
                         } ?? []
                         
