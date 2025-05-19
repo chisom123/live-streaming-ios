@@ -1,12 +1,13 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import MessageUI
 
 struct JoinSelectView: View {
     @State var selectedFriends: Set<String> = []
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isPresentingCompDetails = false
-    @State private var isShareSheetPresented = false
+    @State private var isCustomShareSheetPresented = false
     @State private var showAddFriendsView = false
     @State private var isLoading = true
     @Environment(\.presentationMode) var presentationMode
@@ -57,7 +58,7 @@ struct JoinSelectView: View {
                 VStack {
                     // Invite Friends Button
                     Button(action: {
-                        isShareSheetPresented = true
+                        isCustomShareSheetPresented = true
                         Analytics.shared.trackTap(
                             elementId: "invite_share_sheet",
                             screenName: "add_players"
@@ -84,8 +85,8 @@ struct JoinSelectView: View {
                         .cornerRadius(10)
                         .padding(.bottom, 20)
                     }
-                    .sheet(isPresented: $isShareSheetPresented) {
-                        ActivityViewController(activityItems: [createShareText()])
+                    .sheet(isPresented: $isCustomShareSheetPresented) {
+                        CustomShareSheet(shareText: createShareText(), shareLink: DeepLinkHandler.shared.createShareableLink(for: competition.id))
                     }
                     
                     if isLoading {
@@ -260,22 +261,6 @@ struct JoinSelectView: View {
             }
         }
     }
-}
-
-// Helper Views
-struct ActivityViewController: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    let applicationActivities: [UIActivity]? = nil
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: applicationActivities
-        )
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 struct SelectableFriendView: View {
