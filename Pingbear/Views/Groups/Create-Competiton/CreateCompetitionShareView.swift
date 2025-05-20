@@ -326,7 +326,8 @@ struct CustomShareSheet: View {
                         Spacer()
                         
                         Image(systemName: "chevron.right")
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(Color(hex: "#D3D3D3"))
+                            .font(.system(size: 15, weight: .bold))
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 20)
@@ -365,7 +366,8 @@ struct CustomShareSheet: View {
                         
                         if !linkCopied {
                             Image(systemName: "chevron.right")
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(Color(hex: "#D3D3D3"))
+                                .font(.system(size: 15, weight: .bold))
                         }
                     }
                     .padding(.horizontal, 20)
