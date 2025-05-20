@@ -11,6 +11,7 @@ struct VerificationView: View {
     @State private var errorMessage: String? = nil
     @State private var navigateToNameEntry = false
     @State private var isLoading: Bool = false
+    @State private var isResending: Bool = false
 
     var body: some View {
         VStack {
@@ -82,6 +83,24 @@ struct VerificationView: View {
                     }
                     .padding(.top, 20)
                 }
+                
+                // Resend code button
+                Button(action: {
+                    resendVerificationCode()
+                }) {
+                    HStack(spacing: 4) {
+                        Text("Didn't receive a code?")
+                            .font(.system(size: 16))
+                            .foregroundColor(Color.white.opacity(0.7))
+                        
+                        Text("Resend Code")
+                            .font(.system(size: 16, weight: .semibold, design: .default))
+                            .foregroundColor(Color.white)
+                    }
+                }
+                .disabled(isResending)
+                .padding(.top, 25)
+                .padding(.bottom, 10)
             }
             .frame(maxWidth: .infinity)
             .padding(20)
@@ -150,6 +169,28 @@ struct VerificationView: View {
                     Analytics.shared.track(event: "user_document_not_found")
                 }
             }
+        }
+    }
+    
+    func resendVerificationCode() {
+        isResending = true
+        
+        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { (newVerificationID, error) in
+            self.isResending = false
+            
+            if let error = error {
+                self.errorMessage = "Failed to resend code: \(error.localizedDescription)"
+                Analytics.shared.track(
+                    event: "verification_code_resend_failed",
+                    properties: ["error": error.localizedDescription]
+                )
+                return
+            }
+            
+            Analytics.shared.track(
+                event: "verification_code_resent",
+                properties: ["phone_number": self.phoneNumber]
+            )
         }
     }
 }
