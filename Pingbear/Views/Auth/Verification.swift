@@ -82,25 +82,25 @@ struct VerificationView: View {
                             .cornerRadius(200)
                     }
                     .padding(.top, 20)
-                }
-                
-                // Resend code button
-                Button(action: {
-                    resendVerificationCode()
-                }) {
-                    HStack(spacing: 4) {
-                        Text("Didn't receive a code?")
-                            .font(.system(size: 16))
-                            .foregroundColor(Color.white.opacity(0.7))
-                        
-                        Text("Resend Code")
-                            .font(.system(size: 16, weight: .semibold, design: .default))
-                            .foregroundColor(Color.white)
+                    
+                    // Resend code button
+                    Button(action: {
+                        resendVerificationCode()
+                    }) {
+                        HStack(spacing: 4) {
+                            Text("Didn't receive a code?")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color.white.opacity(0.7))
+                            
+                            Text("Resend Code")
+                                .font(.system(size: 16, weight: .semibold, design: .default))
+                                .foregroundColor(Color.white)
+                        }
                     }
+                    .disabled(isResending)
+                    .padding(.top, 25)
+                    .padding(.bottom, 10)
                 }
-                .disabled(isResending)
-                .padding(.top, 25)
-                .padding(.bottom, 10)
             }
             .frame(maxWidth: .infinity)
             .padding(20)
