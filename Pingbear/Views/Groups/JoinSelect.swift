@@ -65,7 +65,7 @@ struct JoinSelectView: View {
                         )
                     }) {
                         HStack {
-                            Text("Invite Friends to Play")
+                            Text("Share Competition Link")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
                                 .frame(maxWidth: .infinity, alignment: .leading)
