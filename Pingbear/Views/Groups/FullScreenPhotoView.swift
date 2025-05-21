@@ -170,7 +170,7 @@ struct FullScreenPhotoView: View {
                         }
                         .frame(height: 80)
                         .padding(.horizontal, 30)
-                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 40)
+                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
                     }
                     .frame(width: size.width)
                 }
