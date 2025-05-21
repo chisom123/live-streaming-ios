@@ -155,6 +155,7 @@ struct ThemeSelectionSheet: View {
         }
         .onAppear {
             viewModel.loadThemes(for: competitionId)
+            Analytics.shared.trackScreen(name: "theme_selection")
         }
         .accentColor(.white)
         .edgesIgnoringSafeArea(.top)
@@ -178,7 +179,14 @@ struct AddThemeSheet: View {
     @State private var themeName: String = ""
     @State private var errorMessage: String? = nil
     @State private var isSaving: Bool = false
+    @State private var selectedSuggestionIndex: Int? = nil
     @FocusState private var isThemeNameFocused: Bool
+    
+    // Theme suggestions - these could be fetched from an API or stored locally
+    private let themeSuggestions = [
+        "Outfit of the Day", "Mood", "Out n About", "Random",
+        "Caught in 4K", "Strike a Pose"
+    ]
     
     var body: some View {
         NavigationView {
@@ -217,37 +225,99 @@ struct AddThemeSheet: View {
                 .padding(.vertical, 20)
                 .background(Color(hex: "#1A2245"))
                 
-                VStack(alignment: .leading, spacing: 20) {
-                    
-                    TextField("Theme Name", text: $themeName)
-                        .padding()
-                        .frame(height: 60)
-                        .background(Color(hex: "#3B4374"))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .font(.system(size: 16, weight: .bold))
-                        .focused($isThemeNameFocused)
-                    
-                    if let error = errorMessage {
-                        Text(error)
-                            .foregroundColor(Color(hex: "#FF0000"))
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .multilineTextAlignment(.leading)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Theme name input field
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Theme Name")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color.white.opacity(0.8))
+                                .padding(.bottom, 5)
+                            
+                            TextField("Enter theme name", text: $themeName)
+                                .padding()
+                                .frame(height: 60)
+                                .background(Color(hex: "#3B4374"))
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                                .font(.system(size: 16, weight: .bold))
+                                .focused($isThemeNameFocused)
+                                .onChange(of: themeName) { _ in
+                                    // Clear selection when user types manually
+                                    selectedSuggestionIndex = nil
+                                }
+                        }
+                        
+                        if let error = errorMessage {
+                            Text(error)
+                                .foregroundColor(Color(hex: "#FF0000"))
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .multilineTextAlignment(.leading)
+                                .padding(.bottom, 5)
+                        }
+                        
+                        // Only show suggestions if the text field is empty
+                        if themeName.isEmpty {
+                            // Suggestions title
+                            Text("Suggested Themes")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color.white.opacity(0.8))
+                                .padding(.top, 10)
+                            
+                            // Theme suggestions grid
+                            suggestionsGrid
+                                .padding(.top, 5)
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 30)
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 30)
-                
-                Spacer()
+                .background(Color(hex: "#10183C"))
             }
             .background(Color(hex: "#10183C"))
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     isThemeNameFocused = true
                 }
+                Analytics.shared.trackScreen(name: "add_new_theme")
             }
         }
         .accentColor(.white)
+    }
+    
+    // Theme suggestions grid layout
+    private var suggestionsGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ], spacing: 12) {
+            ForEach(0..<themeSuggestions.count, id: \.self) { index in
+                suggestionCell(index: index, theme: themeSuggestions[index])
+            }
+        }
+    }
+    
+    // Individual suggestion cell
+    private func suggestionCell(index: Int, theme: String) -> some View {
+        let isSelected = selectedSuggestionIndex == index
+        
+        return Button(action: {
+            self.selectedSuggestionIndex = index
+            self.themeName = theme
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }) {
+            Text(theme)
+                .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
+                .foregroundColor(Color.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 55)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color(hex: "#2A335A"))
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
     
     private func createTheme() {

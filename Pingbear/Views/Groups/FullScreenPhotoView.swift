@@ -7,6 +7,7 @@ struct FullScreenPhotoView: View {
     let userName: String
     let competitionId: String?
     let disableRating: Bool
+    let userProfilePictureUrl: String?
     @Environment(\.presentationMode) var presentationMode
     
     // Rating state
@@ -18,10 +19,11 @@ struct FullScreenPhotoView: View {
     
     let onDismiss: ((Int) -> Void)?
     
-    init(photo: UserPhoto, userName: String, competitionId: String?, disableRating: Bool = false, onDismiss: ((Int) -> Void)? = nil) {
+    init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, disableRating: Bool = false, onDismiss: ((Int) -> Void)? = nil) {
         self.photo = photo
         self.userName = userName
         self.competitionId = competitionId
+        self.userProfilePictureUrl = userProfilePictureUrl
         self.disableRating = disableRating
         self.onDismiss = onDismiss
         self._currentStarCount = State(initialValue: photo.stars)
@@ -76,17 +78,36 @@ struct FullScreenPhotoView: View {
                             presentationMode.wrappedValue.dismiss()
                         }) {
                             Image(systemName: "arrow.left")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 32, height: 32)
+                                .font(.system(size: 30))
                                 .foregroundColor(.white)
                                 .shadow(radius: 10)
                         }
-                        
+
                         Spacer()
+                        
+                        // Show username and profile picture inline
+                        HStack(spacing: 15) {
+                            ProfilePictureView(url: userProfilePictureUrl, size: 35)
+                            
+                            Text(userName)
+                                .foregroundColor(.white)
+                                .font(.system(size: 20, weight: .bold, design: .default))
+                                .shadow(radius: 10)
+                                .truncationMode(.tail)
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: 250)
+
+                        Spacer()
+
+                        // Placeholder for visual balance
+                        Image(systemName: "flag")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                            .opacity(0)
                     }
                     .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
-                    .padding(.leading, 5)
                     .padding()
                     
                     Spacer()
@@ -94,14 +115,35 @@ struct FullScreenPhotoView: View {
                 
                 // Bottom rating bar (show disabled state when user can't rate)
                 if userName != "Me" && competitionId != nil && !disableRating {
-                    VStack {
+                    VStack(spacing: 0) {
                         Spacer()
+
+                        // Theme container if theme exists
+                        if let themeName = photo.themeName {
+                            // Theme container with only top corners rounded
+                            RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
+                                .fill(hasAlreadyVoted ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
+                                .frame(height: 50)
+                                .overlay(
+                                    Text(themeName)
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 18, weight: .bold))
+                                        .truncationMode(.tail)
+                                        .lineLimit(1)
+                                        .padding(.horizontal)
+                                )
+                                .padding(.horizontal, 30) // Same padding as rating bar
+                        }
                         
                         // Container view for stars with background
                         ZStack {
-                            // Glass-like background for stars
-                            RoundedRectangle(cornerRadius: 200)
-                                .fill(Color(hex: hasAlreadyVoted ? "#A9A9A9" : "#1A2245"))
+                            if photo.themeName != nil {
+                                RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
+                                    .fill(hasAlreadyVoted ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                            } else {
+                                RoundedRectangle(cornerRadius: 200)
+                                    .fill(hasAlreadyVoted ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                            }
                             
                             HStack(alignment: .center, spacing: 12) {
                                 let maxStars = 5

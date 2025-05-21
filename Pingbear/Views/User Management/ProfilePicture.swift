@@ -227,16 +227,10 @@ struct ProfilePictureView: View {
     
     private var whiteCircle: some View {
         ZStack {
-            Circle()
-                .fill(Color(hex: "#10183C"))
-                .frame(width: size, height: size)
-            
-            Image("circle-user-round")
+            Image("user")
                 .resizable()
-                .renderingMode(.template)
-                .foregroundColor(.white)
                 .aspectRatio(contentMode: .fit)
-                .frame(width: size * 0.6, height: size * 0.6)  // Make image slightly smaller than circle
+                .frame(width: size, height: size)  // Make image slightly smaller than circle
         }
     }
 }

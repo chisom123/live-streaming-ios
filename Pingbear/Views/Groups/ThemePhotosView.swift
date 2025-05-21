@@ -207,6 +207,7 @@ struct ThemePhotosView: View {
                 photo: userPhoto,
                 userName: displayUserName,
                 competitionId: competitionId,
+                userProfilePictureUrl: photo.profilePictureUrl,
                 disableRating: disableAllRating,
                 onDismiss: { updatedStarCount in
                     // Update the star count for this specific photo

@@ -174,23 +174,15 @@ struct EntryView: View {
                 if viewModel.entries.indices.contains(viewModel.currentIndex) {
                     let entry = viewModel.entries[viewModel.currentIndex]
                     
-                    HStack(spacing: 10) {
+                    HStack(spacing: 15) {
+                        ProfilePictureView(url: entry.userProfilePictureUrl, size: 35)
+                        
                         Text(entry.userName)
                             .foregroundColor(.white)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .shadow(radius: 10)
                             .truncationMode(.tail)
                             .lineLimit(1)
-                        
-                        // Only show the theme badge if there is a theme
-                        if let themeName = entry.themeName, let themeId = entry.themeId {
-                            ThemeBadgeClickable(
-                                themeName: themeName,
-                                themeId: themeId,
-                                competitionId: competition.id,
-                                isInRatingFlow: true  // Add this parameter
-                            )
-                        }
                     }
                     .frame(maxWidth: 250)
                 }
@@ -211,15 +203,43 @@ struct EntryView: View {
             .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
             .padding()
             
-            // Bottom - Star rating, horizontally centered
-            VStack {
+            // Bottom - Theme and Star rating
+            VStack(spacing: 0) { // Zero spacing is crucial for the seamless blend
                 Spacer() // Pushes the content to the bottom
 
-                // Container view for stars with background
+                // Theme container if theme exists
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let entry = viewModel.entries[viewModel.currentIndex]
+                    if let themeName = entry.themeName {
+                        // Theme container with only top corners rounded
+                        RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
+                            .fill(Color(hex: "#253063").opacity(0.9)) // Slightly lighter than rating bar
+                            .frame(height: 50)
+                            .overlay(
+                                Text(themeName)
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 18, weight: .bold))
+                                    .truncationMode(.tail)
+                                    .lineLimit(1)
+                                    .padding(.horizontal)
+                            )
+                            .padding(.horizontal, 30) // Same padding as rating bar
+                    }
+                }
+                
+                // Container view for stars with only bottom corners rounded
                 ZStack {
-                    // Beautiful glass-like background for stars
-                    RoundedRectangle(cornerRadius: 200)
-                        .fill(Color(hex: "#1A2245"))
+                    if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                        let entry = viewModel.entries[viewModel.currentIndex]
+                        
+                        if entry.themeName != nil {
+                            RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
+                                .fill(Color(hex: "#1A2245"))
+                        } else {
+                            RoundedRectangle(cornerRadius: 200)
+                                .fill(Color(hex: "#1A2245"))
+                        }
+                    }
                     
                     HStack(alignment: .center, spacing: 12) { // Reduced spacing between stars
                         if viewModel.entries.indices.contains(viewModel.currentIndex) {

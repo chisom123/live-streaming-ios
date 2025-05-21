@@ -35,6 +35,7 @@ struct CompDetails: View {
     @StateObject private var notificationManager = PushNotificationManager.shared
     @State private var activeAlert: AlertType?
     @State private var selectedUserForPhotos: UserSelection? = nil
+    @State private var currentUserProfilePictureUrl: String? = nil
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -139,7 +140,7 @@ struct CompDetails: View {
                     Button(action: {
                         entryViewModel.removeListeners()
                         selectedUserForPhotos = UserSelection(
-                            user: UserEntry(id: currentUserId, userName: "Me", profilePictureUrl: nil, totalStars: 0),
+                            user: UserEntry(id: currentUserId, userName: "Me", profilePictureUrl: currentUserProfilePictureUrl, totalStars: 0),
                             competitionId: competition.id
                         )
                     }) {
@@ -244,6 +245,7 @@ struct CompDetails: View {
         .onAppear {
             fetchData()
             NotificationQueueManager.shared.processQueuedNotifications()
+            fetchCurrentUserProfilePictureUrl()
         }
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competition: competition)
@@ -264,7 +266,8 @@ struct CompDetails: View {
             UserPhotosView(
                 userId: selection.user.userName == "Me" ? currentUserId : selection.user.id,
                 userName: selection.user.userName,
-                competitionId: selection.competitionId
+                competitionId: selection.competitionId,
+                userProfilePictureUrl: selection.user.profilePictureUrl
             )
         }
         .onDisappear {
@@ -378,6 +381,23 @@ struct CompDetails: View {
         entryViewModel.removeListeners()
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(settingsUrl)
+        }
+    }
+    
+    private func fetchCurrentUserProfilePictureUrl() {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(currentUserId).getDocument { snapshot, error in
+            if let error = error {
+                print("Error fetching current user profile: \(error)")
+                return
+            }
+            
+            if let data = snapshot?.data(), let profilePictureUrl = data["profilePictureUrl"] as? String {
+                DispatchQueue.main.async {
+                    self.currentUserProfilePictureUrl = profilePictureUrl
+                }
+            }
         }
     }
 }

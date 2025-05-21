@@ -9,26 +9,17 @@ struct Theme: Identifiable, Hashable {
     let competitionId: String
     let createdBy: String
     let createdAt: Date
-    let isDefault: Bool
     
     // For creating new themes
-    static func createNew(name: String, competitionId: String, createdBy: String, isDefault: Bool = false) -> Theme {
+    static func createNew(name: String, competitionId: String, createdBy: String) -> Theme {
         return Theme(
             id: UUID().uuidString,
             name: name,
             competitionId: competitionId,
             createdBy: createdBy,
-            createdAt: Date(),
-            isDefault: isDefault
+            createdAt: Date()
         )
     }
-    
-    // Default themes
-    static let defaultThemes = [
-        "Selfie Wars!",
-        "Outfit of the Day",
-        "Caught in 4K"
-    ]
 }
 
 // MARK: - Themes Service
@@ -37,17 +28,6 @@ class ThemesService {
     
     // Fetch themes for a competition
     func fetchThemes(for competitionId: String, completion: @escaping ([Theme]) -> Void) {
-        // First get the default system themes
-        let defaultThemes = Theme.defaultThemes.map { themeName in
-            return Theme(
-                id: "default-\(themeName.lowercased().replacingOccurrences(of: " ", with: "-"))",
-                name: themeName,
-                competitionId: "system",
-                createdBy: "system",
-                createdAt: Date(timeIntervalSince1970: 0),
-                isDefault: true
-            )
-        }
         
         // Then fetch competition-specific themes
         db.collection("competitions")
@@ -57,7 +37,6 @@ class ThemesService {
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("Error fetching themes: \(error)")
-                    completion(defaultThemes)
                     return
                 }
                 
@@ -75,24 +54,18 @@ class ThemesService {
                         name: name,
                         competitionId: competitionId,
                         createdBy: createdBy,
-                        createdAt: timestamp.dateValue(),
-                        isDefault: false
+                        createdAt: timestamp.dateValue()
                     )
                 } ?? []
                 
                 // Combine default and custom themes, with custom at the top
-                let allThemes = customThemes + defaultThemes
+                let allThemes = customThemes
                 completion(allThemes)
             }
     }
     
     // Add a new theme to a competition
     func addTheme(theme: Theme, completion: @escaping (Bool) -> Void) {
-        // Skip if it's a default theme (these are client-side only)
-        if theme.isDefault {
-            completion(true)
-            return
-        }
         
         let themeData: [String: Any] = [
             "name": theme.name,

@@ -4,15 +4,17 @@ struct UserPhotosView: View {
     let userId: String
     let userName: String
     let competitionId: String
+    let userProfilePictureUrl: String?
     
     @StateObject private var viewModel = UserPhotosViewModel()
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedPhoto: UserPhoto? = nil
     
-    init(userId: String, userName: String, competitionId: String) {
+    init(userId: String, userName: String, competitionId: String, userProfilePictureUrl: String? = nil) {
         self.userId = userId
         self.userName = userName
         self.competitionId = competitionId
+        self.userProfilePictureUrl = userProfilePictureUrl
     }
     
     var body: some View {
@@ -32,11 +34,16 @@ struct UserPhotosView: View {
                     
                     Spacer()
                     
-                    Text(userName == "Me" ? "Me" : userName)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                        .truncationMode(.tail)
-                        .lineLimit(1)
+                    HStack(spacing: 12) {
+                        ProfilePictureView(url: userProfilePictureUrl, size: 30)
+                        
+                        Text(userName == "Me" ? "Me" : userName)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .foregroundColor(.white)
+                            .truncationMode(.tail)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: 250)
                     
                     Spacer()
                     
@@ -212,6 +219,7 @@ struct UserPhotosView: View {
                 photo: photo,
                 userName: userName,
                 competitionId: competitionId,
+                userProfilePictureUrl: userProfilePictureUrl,
                 onDismiss: { updatedStarCount in
                     // Update the star count for this specific photo
                     viewModel.updatePhotoStars(photoId: photo.id, newStarCount: updatedStarCount)
