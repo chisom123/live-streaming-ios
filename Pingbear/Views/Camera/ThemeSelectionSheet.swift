@@ -84,6 +84,18 @@ struct ThemeSelectionSheet: View {
                         .scaleEffect(1.2)
                     Spacer()
                 } else {
+                    // Dynamic text above ScrollView
+                    HStack {
+                        Text(viewModel.themes.isEmpty ? "No Themes Yet" : "Recent Themes")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color.white.opacity(0.8))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .padding(.bottom, 10)
+                        
+                        Spacer()
+                    }
+                    
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(Array(filteredThemes.enumerated()), id: \.element.id) { index, theme in
@@ -141,7 +153,6 @@ struct ThemeSelectionSheet: View {
                         .background(Color(hex: "#1A2245"))
                         .cornerRadius(10)
                         .padding(.horizontal, 20)
-                        .padding(.top, 10)
                     }
                 }
             }
