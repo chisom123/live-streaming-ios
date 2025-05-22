@@ -132,7 +132,6 @@ struct FullScreenPhotoView: View {
                                         .lineLimit(1)
                                         .padding(.horizontal)
                                 )
-                                .padding(.horizontal, 30) // Same padding as rating bar
                         }
                         
                         // Container view for stars with background
@@ -169,10 +168,10 @@ struct FullScreenPhotoView: View {
                             .padding(.vertical, 15)
                         }
                         .frame(height: 80)
-                        .padding(.horizontal, 30)
-                        .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
                     }
-                    .frame(width: size.width)
+                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal)
                 }
             }
         }

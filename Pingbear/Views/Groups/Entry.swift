@@ -223,7 +223,6 @@ struct EntryView: View {
                                     .lineLimit(1)
                                     .padding(.horizontal)
                             )
-                            .padding(.horizontal, 30) // Same padding as rating bar
                     }
                 }
                 
@@ -296,10 +295,10 @@ struct EntryView: View {
                     .padding(.vertical, 15)
                 }
                 .frame(height: 80)
-                .padding(.horizontal, 30) // Increased horizontal padding to make the bar narrower
-                .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
             }
+            .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+            .padding(.horizontal)
         }
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
