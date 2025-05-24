@@ -375,16 +375,14 @@ struct ThemeBadgeClickable: View {
     let themeName: String
     let themeId: String?
     let competitionId: String
-    let isInRatingFlow: Bool  // New property to indicate context
     
     @State private var isShowingThemeView = false
     
     // Add convenience initializer for backward compatibility
-    init(themeName: String, themeId: String?, competitionId: String, isInRatingFlow: Bool = false) {
+    init(themeName: String, themeId: String?, competitionId: String) {
         self.themeName = themeName
         self.themeId = themeId
         self.competitionId = competitionId
-        self.isInRatingFlow = isInRatingFlow
     }
     
     var body: some View {
@@ -394,8 +392,7 @@ struct ThemeBadgeClickable: View {
                 Analytics.shared.track(
                     event: "theme_badge_clicked",
                     properties: [
-                        "theme_name": themeName,
-                        "from_rating_flow": isInRatingFlow
+                        "theme_name": themeName
                     ]
                 )
             }
@@ -423,8 +420,7 @@ struct ThemeBadgeClickable: View {
                 ThemePhotosView(
                     themeName: themeName,
                     themeId: themeId,
-                    competitionId: competitionId,
-                    disableAllRating: isInRatingFlow  // Disable all rating when from rating flow
+                    competitionId: competitionId
                 )
             }
         }

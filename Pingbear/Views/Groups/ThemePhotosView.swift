@@ -5,17 +5,15 @@ struct ThemePhotosView: View {
     let themeName: String
     let themeId: String
     let competitionId: String
-    let disableAllRating: Bool
     
     @StateObject private var viewModel = ThemePhotosViewModel()
     @Environment(\.presentationMode) var presentationMode
     @State private var selectedPhoto: ThemePhoto? = nil
     
-    init(themeName: String, themeId: String, competitionId: String, disableAllRating: Bool = false) {
+    init(themeName: String, themeId: String, competitionId: String) {
         self.themeName = themeName
         self.themeId = themeId
         self.competitionId = competitionId
-        self.disableAllRating = disableAllRating
     }
     
     var body: some View {
@@ -196,7 +194,8 @@ struct ThemePhotosView: View {
                 themeId: photo.themeId,
                 overlayText: photo.overlayText,
                 overlayVerticalPosition: photo.overlayVerticalPosition,
-                isFromCamera: photo.isFromCamera
+                isFromCamera: photo.isFromCamera,
+                userId: photo.userId
             )
             
             // Check if the photo belongs to the current user
@@ -208,7 +207,6 @@ struct ThemePhotosView: View {
                 userName: displayUserName,
                 competitionId: competitionId,
                 userProfilePictureUrl: photo.profilePictureUrl,
-                disableRating: disableAllRating,
                 onDismiss: { updatedStarCount in
                     // Update the star count for this specific photo
                     viewModel.updatePhotoStars(photoId: photo.id, newStarCount: updatedStarCount)

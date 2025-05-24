@@ -58,29 +58,6 @@ struct UserPhotosView: View {
                 .padding(.vertical, 20)
                 .background(Color(hex: "#1A2245"))
                 
-                // Boost privacy notice - only show for user's own photos if they have any boosts
-                if userName == "Me" && viewModel.userPhotos.contains(where: { $0.isSuperstar }) {
-                    HStack {
-                        Image(systemName: "info.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white.opacity(0.8))
-                        
-                        Text("Your boosts are private. Other players cannot see which photos have been boosted")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.leading)
-                            .lineSpacing(2)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(8)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 20)
-                }
-                
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
@@ -169,24 +146,6 @@ struct UserPhotosView: View {
                                         .background(Color(hex: "#DAA520"))
                                         .cornerRadius(20)
                                         
-                                        if photo.isSuperstar && userName == "Me" {
-                                            HStack(spacing: 6) {
-                                                Text("Boost")
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                
-                                                Image(systemName: "arrow.up.square.fill")
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .frame(width: 16, height: 16)
-                                                    .foregroundColor(.white)
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 5)
-                                            .background(Color.green)
-                                            .cornerRadius(20)
-                                        }
-                                        
                                         if let themeName = photo.themeName, let themeId = photo.themeId {
                                             ThemeBadgeClickable(themeName: themeName, themeId: themeId, competitionId: competitionId)
                                                 .layoutPriority(-1)
@@ -202,7 +161,7 @@ struct UserPhotosView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, userName == "Me" && viewModel.userPhotos.contains(where: { $0.isSuperstar }) ? 0 : 20)
+                        .padding(.top, 20)
                     }
                 }
             }

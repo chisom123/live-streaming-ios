@@ -337,6 +337,14 @@ class EntryViewModel: ObservableObject {
                          .collection("competitions").document(competitionId)
                          .collection("votes").document(entryId)
         
+        let interactionRef = db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+            .document(entryId)
+            .collection("interactions")
+            .document(currentUserId)
+
+        
         let batch = db.batch()
 
         // Fetch the entry to determine if it is a superstar
@@ -352,12 +360,12 @@ class EntryViewModel: ObservableObject {
             }
             
             let ownerId = data["userId"] as? String ?? ""
-            let isSuperstar = data["superstar"] as? Bool ?? false
-            let starIncrement = isSuperstar ? stars + 1 : stars
+            let starIncrement = stars
             
             // Add operations to the batch
             batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
             batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
+            batch.setData(["rating": stars, "userId": currentUserId], forDocument: interactionRef, merge: true)
 
             // Commit the batch
             batch.commit { err in

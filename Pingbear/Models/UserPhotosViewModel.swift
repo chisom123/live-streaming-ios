@@ -12,6 +12,7 @@ struct UserPhoto: Identifiable {
     let overlayText: String?
     let overlayVerticalPosition: CGFloat
     let isFromCamera: Bool
+    let userId: String
 }
 
 class UserPhotosViewModel: ObservableObject {
@@ -60,6 +61,7 @@ class UserPhotosViewModel: ObservableObject {
                     let overlayText = data["overlayText"] as? String
                     let overlayVerticalPosition = data["overlayVerticalPosition"] as? CGFloat ?? 0.5
                     let isFromCamera = data["isFromCamera"] as? Bool ?? true
+                    let photoUserId = data["userId"] as? String ?? userId
                     
                     return UserPhoto(
                         id: document.documentID,
@@ -71,7 +73,8 @@ class UserPhotosViewModel: ObservableObject {
                         themeId: themeId,
                         overlayText: overlayText,
                         overlayVerticalPosition: overlayVerticalPosition,
-                        isFromCamera: isFromCamera
+                        isFromCamera: isFromCamera,
+                        userId: photoUserId // ADDED: Pass the userId parameter
                     )
                 } ?? []
                 

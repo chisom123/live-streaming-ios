@@ -7,7 +7,6 @@ struct PayView: View {
     
     @State private var navigateToCompDetails = false
     @State private var selectedBoostIndex = 1 // Pre-select middle option
-    @State private var showAnimation = false
     
     var competition: Competition
     var competitionId: String
@@ -27,13 +26,13 @@ struct PayView: View {
                 headerView
                     .padding(.top, 20)
                 
-                // Star visualization
-                starBoostDemo
+                // Star unlock demonstration
+                starUnlockDemo
                     .padding(.top, 50)
                     .padding(.horizontal, 20)
                 
-                // Boost options with original styling
-                boostOptionsOriginalStyle
+                // Unlock options
+                unlockOptionsStyle
                     .padding(.top, 50)
                     .padding(.horizontal, 20)
                 
@@ -44,7 +43,7 @@ struct PayView: View {
             }
             .background(Color(hex: "#10183C"))
             .fullScreenCover(isPresented: $navigateToCompDetails) {
-                CompDetails(competition: competition) // Adjust according to your needs
+                CompDetails(competition: competition)
             }
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
@@ -55,10 +54,7 @@ struct PayView: View {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
                 NotificationQueueManager.shared.processQueuedNotifications()
-                Analytics.shared.trackScreen(name: "boost_paywall")
-                withAnimation(.easeInOut) {
-                    showAnimation = true
-                }
+                Analytics.shared.trackScreen(name: "unlock_paywall")
             }
         }
     }
@@ -70,12 +66,12 @@ struct PayView: View {
                 Spacer()
                 Button(action: {
                     navigateToCompDetails = true
-                    Analytics.shared.track(event: "boost_skipped")
+                    Analytics.shared.track(event: "unlock_skipped")
                 }) {
                     Image("x")
                         .resizable()
                         .renderingMode(.template)
-                        .foregroundColor(.white) // or any color you want
+                        .foregroundColor(.white)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 30, height: 30)
                 }
@@ -84,69 +80,53 @@ struct PayView: View {
         .padding(.horizontal, 20)
     }
     
-    // MARK: - Star Boost Demo
-    private var starBoostDemo: some View {
-        VStack(alignment: .leading) {
-            Text("Boost Your Ratings")
-                .font(.system(size: 27, weight: .bold, design: .default)) // Apply common styling here
+    // MARK: - Star Unlock Demo with Animation
+    private var starUnlockDemo: some View {
+        VStack(alignment: .center, spacing: 20) {
+            Text("Unlock 5-Star Ratings")
+                .font(.system(size: 27, weight: .bold, design: .default))
                 .lineLimit(1)
                 .foregroundColor(Color(hex: "#FFF"))
                 .padding(.bottom, 20)
             
-            VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .center, spacing: 10) {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(Color(hex: "#FF4081"))
-                        .font(.system(size: 18, weight: .bold))
-                    
-                    Text("Get +1 star on every rating")
-                        .font(.system(size: 17))
-                        .foregroundColor(.white.opacity(0.9))
-                        .fontWeight(.bold)
-                        .lineSpacing(5)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                }
+            // Single animated rating bar
+            ZStack {
+                RoundedRectangle(cornerRadius: 200)
+                    .fill(Color(hex: "#1A2245"))
+                    .frame(height: 80)
                 
-                HStack(alignment: .center, spacing: 10) {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(Color(hex: "#FF4081"))
-                        .font(.system(size: 18, weight: .bold))
-                    
-                    Text("Applies to all photos shared during boost")
-                        .font(.system(size: 17))
-                        .foregroundColor(.white.opacity(0.9))
-                        .fontWeight(.bold)
-                        .lineSpacing(5)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
+                HStack(alignment: .center, spacing: 12) {
+                    ForEach(1...5, id: \.self) { star in
+                        if star == 5 {
+                            // 5th star - locked with nosign overlay and scaled up
+                            ZStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(Color.white)
+                                    .font(.system(size: 34))
+                                
+                                Image(systemName: "nosign")
+                                    .foregroundColor(Color(hex: "#B22222"))
+                                    .font(.system(size: 41, weight: .bold))
+                            }
+                            .scaleEffect(1.2)
+                        } else {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(Color.white)
+                                .font(.system(size: 34))
+                        }
+                    }
                 }
-                
-                HStack(alignment: .center, spacing: 10) {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(Color(hex: "#FF4081"))
-                        .font(.system(size: 18, weight: .bold))
-                    
-                    Text("Boosted photos stay boosted forever")
-                        .font(.system(size: 17))
-                        .foregroundColor(.white.opacity(0.9))
-                        .fontWeight(.bold)
-                        .lineSpacing(5)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 15)
             }
         }
     }
     
-    // MARK: - Boost Options with Original Styling
-    private var boostOptionsOriginalStyle: some View {
+    // MARK: - Unlock Options
+    private var unlockOptionsStyle: some View {
         VStack {
             HStack {
-                Text("Choose Boost Duration")
+                Text("Choose Unlock Duration")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white.opacity(0.9))
                     .padding(.bottom, 20)
@@ -156,8 +136,8 @@ struct PayView: View {
             
             ScrollView {
                 VStack(spacing: 0) {
-                    // Hour Boost
-                    if let hourBoost = viewModel.products.first(where: { $0.productIdentifier == "one_hour_boost" }) {
+                    // Hour Unlock
+                    if let hourUnlock = viewModel.products.first(where: { $0.productIdentifier == "one_hour_boost" }) {
                         Button(action: {
                             withAnimation(.spring()) {
                                 selectedBoostIndex = 0
@@ -179,11 +159,11 @@ struct PayView: View {
                                 .padding(.trailing, 10)
                                 
                                 HStack {
-                                    Text(hourBoost.localizedTitle)
+                                    Text(hourUnlock.localizedTitle)
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(.white)
                                     
-                                    Text(formattedPrice(for: hourBoost))
+                                    Text(formattedPrice(for: hourUnlock))
                                         .font(.system(size: 15, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF").opacity(0.8))
                                 }
@@ -196,8 +176,8 @@ struct PayView: View {
                         Divider().background(Color.white.opacity(0.2))
                     }
                     
-                    // Day Boost (Recommended)
-                    if let dayBoost = viewModel.products.first(where: { $0.productIdentifier == "one_day_boost" }) {
+                    // Day Unlock (Recommended)
+                    if let dayUnlock = viewModel.products.first(where: { $0.productIdentifier == "one_day_boost" }) {
                         Button(action: {
                             withAnimation(.spring()) {
                                 selectedBoostIndex = 1
@@ -220,11 +200,11 @@ struct PayView: View {
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     HStack {
-                                        Text(dayBoost.localizedTitle)
+                                        Text(dayUnlock.localizedTitle)
                                             .font(.system(size: 18, weight: .bold))
                                             .foregroundColor(.white)
                                         
-                                        Text(formattedPrice(for: dayBoost))
+                                        Text(formattedPrice(for: dayUnlock))
                                             .font(.system(size: 15, weight: .bold))
                                             .foregroundColor(Color(hex: "#FFF").opacity(0.8))
                                     }
@@ -247,8 +227,8 @@ struct PayView: View {
                         Divider().background(Color.white.opacity(0.2))
                     }
                     
-                    // Week Boost
-                    if let weekBoost = viewModel.products.first(where: { $0.productIdentifier == "one_week_boost" }) {
+                    // Week Unlock
+                    if let weekUnlock = viewModel.products.first(where: { $0.productIdentifier == "one_week_boost" }) {
                         Button(action: {
                             withAnimation(.spring()) {
                                 selectedBoostIndex = 2
@@ -270,11 +250,11 @@ struct PayView: View {
                                 .padding(.trailing, 10)
                                 
                                 HStack {
-                                    Text(weekBoost.localizedTitle)
+                                    Text(weekUnlock.localizedTitle)
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(.white)
                                     
-                                    Text(formattedPrice(for: weekBoost))
+                                    Text(formattedPrice(for: weekUnlock))
                                         .font(.system(size: 15, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF").opacity(0.8))
                                 }
@@ -299,7 +279,7 @@ struct PayView: View {
                     viewModel.purchase(product: product)
                 }
             }) {
-                Text("Start Boost")
+                Text("Unlock")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)

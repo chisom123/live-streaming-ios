@@ -6,7 +6,6 @@ struct FullScreenPhotoView: View {
     let photo: UserPhoto
     let userName: String
     let competitionId: String?
-    let disableRating: Bool
     let userProfilePictureUrl: String?
     @Environment(\.presentationMode) var presentationMode
     
@@ -17,14 +16,17 @@ struct FullScreenPhotoView: View {
     @State private var animateRating: Bool = false
     @State private var currentStarCount: Int
     
+    // Interaction service
+    @StateObject private var interactionService = PhotoInteractionService()
+    @State private var showInteractions = false
+    
     let onDismiss: ((Int) -> Void)?
     
-    init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, disableRating: Bool = false, onDismiss: ((Int) -> Void)? = nil) {
+    init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, onDismiss: ((Int) -> Void)? = nil) {
         self.photo = photo
         self.userName = userName
         self.competitionId = competitionId
         self.userProfilePictureUrl = userProfilePictureUrl
-        self.disableRating = disableRating
         self.onDismiss = onDismiss
         self._currentStarCount = State(initialValue: photo.stars)
     }
@@ -72,7 +74,7 @@ struct FullScreenPhotoView: View {
                 // Top bar with close button on left
                 VStack {
                     HStack {
-                        // Close button on left
+                        // Left side - Close button
                         Button(action: {
                             onDismiss?(currentStarCount)
                             presentationMode.wrappedValue.dismiss()
@@ -82,10 +84,11 @@ struct FullScreenPhotoView: View {
                                 .foregroundColor(.white)
                                 .shadow(radius: 10)
                         }
-
+                        .frame(width: 80, alignment: .leading) // Fixed width
+                        
                         Spacer()
                         
-                        // Show username and profile picture inline
+                        // Center content - Show username and profile picture inline
                         HStack(spacing: 15) {
                             ProfilePictureView(url: userProfilePictureUrl, size: 35)
                             
@@ -97,15 +100,33 @@ struct FullScreenPhotoView: View {
                                 .lineLimit(1)
                         }
                         .frame(maxWidth: 250)
-
+                        
                         Spacer()
-
-                        // Placeholder for visual balance
-                        Image(systemName: "flag")
-                            .font(.system(size: 30))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                            .opacity(0)
+                        
+                        // Right side - Interactions button with view count
+                        HStack(spacing: 6) {
+                            Button(action: {
+                                guard let competitionId = competitionId else { return }
+                                showInteractions = true
+                                interactionService.fetchInteractions(
+                                    competitionId: competitionId,
+                                    entryId: photo.id
+                                )
+                            }) {
+                                Image(systemName: "eye.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 10)
+                            }
+                            
+                            Text("\(interactionService.viewCount)")
+                                .foregroundColor(.white)
+                                .font(.system(size: 22, weight: .bold))
+                                .truncationMode(.tail)
+                                .lineLimit(1)
+                                .shadow(radius: 10)
+                        }
+                        .frame(width: 80, alignment: .trailing) // Fixed width matching left side
                     }
                     .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
                     .padding()
@@ -114,7 +135,7 @@ struct FullScreenPhotoView: View {
                 }
                 
                 // Bottom rating bar (show disabled state when user can't rate)
-                if userName != "Me" && competitionId != nil && !disableRating {
+                if competitionId != nil {
                     VStack(spacing: 0) {
                         Spacer()
 
@@ -122,7 +143,7 @@ struct FullScreenPhotoView: View {
                         if let themeName = photo.themeName {
                             // Theme container with only top corners rounded
                             RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
-                                .fill(hasAlreadyVoted ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
+                                .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
                                 .frame(height: 50)
                                 .overlay(
                                     Text(themeName)
@@ -138,29 +159,52 @@ struct FullScreenPhotoView: View {
                         ZStack {
                             if photo.themeName != nil {
                                 RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
-                                    .fill(hasAlreadyVoted ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                                    .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
                             } else {
                                 RoundedRectangle(cornerRadius: 200)
-                                    .fill(hasAlreadyVoted ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                                    .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
                             }
                             
                             HStack(alignment: .center, spacing: 12) {
-                                let maxStars = 5
+                                let maxSelectableStars = photo.isSuperstar ? 5 : 4
                                 
-                                ForEach(1...maxStars, id: \.self) { star in
+                                ForEach(1...5, id: \.self) { star in
                                     Button(action: {
-                                        // Check both hasAlreadyVoted AND isRatingEnabled to prevent double-clicks
-                                        if !hasAlreadyVoted && isRatingEnabled {
-                                            submitRating(stars: star)
+                                        // Don't allow rating own posts
+                                        guard userName != "Me" else { return }
+                                        
+                                        // Check if this is the disabled 5th star
+                                        if star == 5 && !photo.isSuperstar {
+                                            // Trigger warning haptic feedback for disabled 5th star
+                                            let generator = UINotificationFeedbackGenerator()
+                                            generator.notificationOccurred(.warning)
+                                            return
                                         }
+                                        
+                                        // Check both hasAlreadyVoted AND isRatingEnabled to prevent double-clicks
+                                        guard !hasAlreadyVoted && isRatingEnabled && star <= maxSelectableStars else { return }
+                                        
+                                        submitRating(stars: star)
                                     }) {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor(hasAlreadyVoted ? Color(hex: "#c2c2c2") : star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                            .font(.system(size: 34))
-                                            .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
-                                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
+                                        if star == 5 && !photo.isSuperstar {
+                                            ZStack {
+                                                Image(systemName: "star.fill")
+                                                    .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : Color.white)
+                                                    .font(.system(size: 34))
+                                                
+                                                Image(systemName: "nosign")
+                                                    .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898") : Color(hex: "#B22222"))
+                                                    .font(.system(size: 41, weight: .bold))
+                                            }
+                                        } else {
+                                            Image(systemName: "star.fill")
+                                                .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : star <= rating ? Color(hex: "#FFD700") : Color.white)
+                                                .font(.system(size: 34))
+                                                .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
+                                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
+                                        }
                                     }
-                                    .disabled(hasAlreadyVoted || !isRatingEnabled) // Disable based on both conditions
+                                    .disabled(hasAlreadyVoted || !isRatingEnabled || userName == "Me") // Disable for own posts
                                     .padding(5)
                                 }
                             }
@@ -179,12 +223,26 @@ struct FullScreenPhotoView: View {
         .onAppear {
             checkVotingStatus()
             
+            if let competitionId = competitionId {
+                interactionService.trackViewAndFetchCount(
+                    competitionId: competitionId,
+                    entryId: photo.id,
+                    source: "fullscreen"
+                )
+            }
+            
             Analytics.shared.trackScreen(
                 name: "fullscreen_photo",
                 properties: [
                     "user_name": userName,
                     "can_rate": userName != "Me" && competitionId != nil
                 ]
+            )
+        }
+        .sheet(isPresented: $showInteractions) {
+            InteractionsListView(
+                interactions: interactionService.interactions,
+                isLoading: interactionService.isLoadingInteractions
             )
         }
     }
@@ -220,7 +278,7 @@ struct FullScreenPhotoView: View {
     private func submitRating(stars: Int) {
         guard let competitionId = competitionId,
               !hasAlreadyVoted,
-              isRatingEnabled else { // Add isRatingEnabled check here too
+              isRatingEnabled else {
             return
         }
         
@@ -270,6 +328,13 @@ struct FullScreenPhotoView: View {
                          .collection("competitions").document(competitionId)
                          .collection("votes").document(entryId)
         
+        let interactionRef = db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+            .document(entryId)
+            .collection("interactions")
+            .document(currentUserId)
+        
         let batch = db.batch()
 
         // Fetch the entry to determine if it is a superstar
@@ -285,12 +350,12 @@ struct FullScreenPhotoView: View {
             }
             
             let ownerId = data["userId"] as? String ?? ""
-            let isSuperstar = data["superstar"] as? Bool ?? false
-            let starIncrement = isSuperstar ? stars + 1 : stars
+            let starIncrement = stars
             
             // Add operations to the batch
             batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
             batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
+            batch.setData(["rating": stars, "userId": currentUserId], forDocument: interactionRef, merge: true)
 
             // Commit the batch
             batch.commit { err in

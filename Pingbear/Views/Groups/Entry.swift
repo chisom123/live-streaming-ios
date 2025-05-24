@@ -19,6 +19,10 @@ struct EntryView: View {
     @State private var isTransitioning: Bool = false
     @State private var slideDirection: SlideDirection = .left
     
+    // Interaction service
+    @StateObject private var interactionService = PhotoInteractionService()
+    @State private var showInteractions = false
+    
     enum SlideDirection {
         case left, right
     }
@@ -77,6 +81,22 @@ struct EntryView: View {
         // After a short delay, update the index and prepare for next view
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             viewModel.currentIndex += 1
+            
+            // Prepare interaction service for new entry
+            interactionService.prepareForNewEntry()
+            
+            // Track view for the new entry after transition completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    let newEntryId = viewModel.entries[viewModel.currentIndex].id
+                    interactionService.trackViewAndFetchCount(
+                        competitionId: competition.id,
+                        entryId: newEntryId,
+                        source: "entry_view"
+                    )
+                }
+            }
+            
             prefetchNextImage()
             
             // Reset the view position and reveal the new image
@@ -138,6 +158,14 @@ struct EntryView: View {
                                 .offset(x: isTransitioning ? (slideDirection == .left ? -size.width : size.width) : 0)
                                 .onAppear {
                                     prefetchNextImage()
+                                    // Track view when image actually appears
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                        interactionService.trackViewAndFetchCount(
+                                            competitionId: competition.id,
+                                            entryId: entry.id,
+                                            source: "entry_view"
+                                        )
+                                    }
                                 }
                         } else {
                             ZStack {
@@ -154,10 +182,22 @@ struct EntryView: View {
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
                 self.isRatingEnabled = true
+                
+                // Prepare interaction service for new entry
+                interactionService.prepareForNewEntry()
+                
+                // Fetch view count for new entry
+                if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                    interactionService.fetchViewCount(
+                        competitionId: competition.id,
+                        entryId: viewModel.entries[viewModel.currentIndex].id
+                    )
+                }
             }
             
             // Top navigation bar with username and theme
             HStack {
+                // Left side - Back button
                 Button(action: {
                     cleanupResources()
                     navigateToCompDetails = true
@@ -167,10 +207,11 @@ struct EntryView: View {
                         .foregroundColor(.white)
                         .shadow(radius: 10)
                 }
-
+                .frame(width: 80, alignment: .leading) // Fixed width
+                
                 Spacer()
                 
-                // Show username and theme inline
+                // Center content
                 if viewModel.entries.indices.contains(viewModel.currentIndex) {
                     let entry = viewModel.entries[viewModel.currentIndex]
                     
@@ -186,19 +227,34 @@ struct EntryView: View {
                     }
                     .frame(maxWidth: 250)
                 }
-
+                
                 Spacer()
-
-                Button(action: {
-                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
-                    banner.show()
-                    Analytics.shared.track(event: "photo_reported")
-                }) {
-                    Image(systemName: "flag")
-                        .font(.system(size: 30))
+                
+                // Right side - Eye button with count
+                HStack(spacing: 6) {
+                    Button(action: {
+                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                            showInteractions = true
+                            interactionService.fetchInteractions(
+                                competitionId: competition.id,
+                                entryId: viewModel.entries[viewModel.currentIndex].id
+                            )
+                        }
+                    }) {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    }
+                    
+                    Text("\(interactionService.viewCount)")
                         .foregroundColor(.white)
+                        .font(.system(size: 22, weight: .bold))
+                        .truncationMode(.tail)
+                        .lineLimit(1)
                         .shadow(radius: 10)
                 }
+                .frame(width: 80, alignment: .trailing) // Fixed width matching left side
             }
             .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
             .padding()
@@ -242,11 +298,22 @@ struct EntryView: View {
                     
                     HStack(alignment: .center, spacing: 12) { // Reduced spacing between stars
                         if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                            let maxStars = 5
+                            let currentEntry = viewModel.entries[viewModel.currentIndex]
+                            let maxSelectableStars = currentEntry.isSuperstar ? 5 : 4
 
-                            ForEach(1...maxStars, id: \.self) { star in
-                                let currentEntry = viewModel.entries[viewModel.currentIndex]
+                            ForEach(1...5, id: \.self) { star in
                                 Button(action: {
+                                    // Check if this is the disabled 5th star
+                                    if star == 5 && !currentEntry.isSuperstar {
+                                        // Trigger warning haptic feedback for disabled 5th star
+                                        let generator = UINotificationFeedbackGenerator()
+                                        generator.notificationOccurred(.warning)
+                                        return
+                                    }
+                                    
+                                    // Only allow rating if within selectable range and rating is enabled
+                                    guard star <= maxSelectableStars && isRatingEnabled else { return }
+                                    
                                     isRatingEnabled = false
                                     Analytics.shared.trackEntry(
                                         action: "rate",
@@ -280,11 +347,24 @@ struct EntryView: View {
                                         }
                                     }
                                 }) {
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                        .font(.system(size: 34)) // Larger initial star size
-                                        .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0) // Reduced animation scale
-                                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
+                                    if star == 5 && !currentEntry.isSuperstar {
+                                        ZStack {
+                                            Image(systemName: "star.fill")
+                                                .foregroundColor(Color.white)
+                                                .font(.system(size: 34))
+                                            
+                                            Image(systemName: "nosign")
+                                                .foregroundColor(Color(hex: "#B22222"))
+                                                .font(.system(size: 41, weight: .bold))
+                                        }
+                                    } else {
+                                        // Regular star for positions 1-4 and position 5 for superstars
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white)
+                                            .font(.system(size: 34))
+                                            .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
+                                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
+                                    }
                                 }
                                 .disabled(!isRatingEnabled)
                                 .padding(5)
@@ -303,9 +383,28 @@ struct EntryView: View {
         .fullScreenCover(isPresented: $navigateToCompDetails) {
             CompDetails(competition: competition) // Adjust according to your needs
         }
+        .sheet(isPresented: $showInteractions) {
+            InteractionsListView(
+                interactions: interactionService.interactions,
+                isLoading: interactionService.isLoadingInteractions
+            )
+        }
         .ignoresSafeArea(edges: .all)
         .onAppear {
-            // Preload first few images when view appears
+            // Track view for the first entry when view appears
+            if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                let entryId = viewModel.entries[viewModel.currentIndex].id
+                // Use a small delay to ensure the view is fully rendered
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    interactionService.trackViewAndFetchCount(
+                        competitionId: competition.id,
+                        entryId: entryId,
+                        source: "entry_view"
+                    )
+                }
+            }
+            
+            // Preload images
             let entriesToLoad = min(3, viewModel.entries.count)
             let currentIdx = viewModel.currentIndex
             
