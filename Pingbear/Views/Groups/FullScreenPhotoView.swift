@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import Kingfisher
 
 struct FullScreenPhotoView: View {
     let photo: UserPhoto
@@ -20,6 +21,14 @@ struct FullScreenPhotoView: View {
     @StateObject private var interactionService = PhotoInteractionService()
     @State private var showInteractions = false
     
+    // Message state
+    @State private var showingMessageComposer = false
+    @State private var messageText = ""
+    @State private var messageSent = false
+    
+    // Chat ViewModel for sending messages
+    @StateObject private var chatViewModel: ChatViewModel
+    
     let onDismiss: ((Int) -> Void)?
     
     init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, onDismiss: ((Int) -> Void)? = nil) {
@@ -29,6 +38,7 @@ struct FullScreenPhotoView: View {
         self.userProfilePictureUrl = userProfilePictureUrl
         self.onDismiss = onDismiss
         self._currentStarCount = State(initialValue: photo.stars)
+        self._chatViewModel = StateObject(wrappedValue: ChatViewModel(competitionId: competitionId ?? ""))
     }
     
     private let db = Firestore.firestore()
@@ -43,183 +53,241 @@ struct FullScreenPhotoView: View {
                     .edgesIgnoringSafeArea(.all)
                 
                 // Photo with text overlay
-                AsyncImage(url: URL(string: photo.photoUrl)) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: photo.isFromCamera ? .fill : .fit)
-                        .frame(width: size.width, height: size.height)
-                        .position(x: size.width/2, y: size.height/2)
-                        .clipped()
-                        .overlay {
-                            if let overlayText = photo.overlayText {
-                                Text(overlayText)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 24, weight: .bold))
-                                    .multilineTextAlignment(.center)
-                                    .frame(width: size.width * 0.8)
-                                    .position(x: size.width / 2, y: photo.overlayVerticalPosition)
-                            }
+                KFImage(URL(string: photo.photoUrl))
+                    .placeholder {
+                        ZStack {
+                            Color(hex: "#10183C")
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
                         }
-                } placeholder: {
-                    ZStack {
-                        Color(hex: "#10183C")
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.5)
-                            .tint(.white)
                     }
+                    .fade(duration: 0.25)
+                    .cacheMemoryOnly()
+                    .resizable()
+                    .aspectRatio(contentMode: photo.isFromCamera ? .fill : .fit)
                     .frame(width: size.width, height: size.height)
-                }
+                    .clipped()
+                    .overlay {
+                        if let overlayText = photo.overlayText {
+                            Text(overlayText)
+                                .foregroundColor(.white)
+                                .font(.system(size: 24, weight: .bold))
+                                .multilineTextAlignment(.center)
+                                .frame(width: size.width * 0.8)
+                                .position(x: size.width / 2, y: photo.overlayVerticalPosition)
+                        }
+                    }
                 
-                // Top bar with close button on left
-                VStack {
-                    HStack {
-                        // Left side - Close button
-                        Button(action: {
-                            onDismiss?(currentStarCount)
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
-                        }
-                        .frame(width: 80, alignment: .leading) // Fixed width
-                        
+                // Success message overlay
+                if messageSent {
+                    VStack {
                         Spacer()
                         
-                        // Center content - Show username and profile picture inline
-                        HStack(spacing: 15) {
-                            ProfilePictureView(url: userProfilePictureUrl, size: 35)
-                            
-                            Text(userName)
-                                .foregroundColor(.white)
-                                .font(.system(size: 20, weight: .bold, design: .default))
-                                .shadow(radius: 10)
-                                .truncationMode(.tail)
-                                .lineLimit(1)
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Message sent!")
                         }
-                        .frame(maxWidth: 250)
-                        
-                        Spacer()
-                        
-                        // Right side - Interactions button with view count
-                        HStack(spacing: 6) {
-                            Button(action: {
-                                guard let competitionId = competitionId else { return }
-                                showInteractions = true
-                                interactionService.fetchInteractions(
-                                    competitionId: competitionId,
-                                    entryId: photo.id
-                                )
-                            }) {
-                                Image(systemName: "eye.fill")
-                                    .font(.system(size: 28))
-                                    .foregroundColor(.white)
-                                    .shadow(radius: 10)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color(hex: "#25D366"))
+                        .cornerRadius(25)
+                        .shadow(radius: 10)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    messageSent = false
+                                }
                             }
+                        }
+                        
+                        Spacer()
+                            .frame(height: 200)
+                    }
+                }
+            }
+            
+            // Top navigation bar with username and theme
+            HStack {
+                // Left side - Back button
+                Button(action: {
+                    onDismiss?(currentStarCount)
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                }
+                .frame(width: 80, alignment: .leading) // Fixed width
+                
+                Spacer()
+                
+                // Center content
+                HStack(spacing: 15) {
+                    ProfilePictureView(url: userProfilePictureUrl, size: 35)
+                    
+                    Text(userName)
+                        .foregroundColor(.white)
+                        .font(.system(size: 20, weight: .bold, design: .default))
+                        .shadow(radius: 10)
+                        .truncationMode(.tail)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: 250)
+                
+                Spacer()
+                
+                // Right side - Eye button with count
+                Button(action: {
+
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 30))
+                        .foregroundColor(.white)
+                        .shadow(radius: 10)
+                        .opacity(0)
+                }
+                .frame(width: 80, alignment: .leading) // Fixed width
+            }
+            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
+            .padding()
+            
+            // Bottom - Theme and Star rating
+            VStack(spacing: 0) { // Zero spacing is crucial for the seamless blend
+                Spacer() // Pushes the content to the bottom
+                
+                // Right-side vertical button stack above rating bar
+                VStack(spacing: 25) {
+                    Button(action: {
+                        showingMessageComposer = true
+                    }) {
+                        Image(systemName: "message.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    }
+
+                    Button(action: {
+                        guard let competitionId = competitionId else { return }
+                        showInteractions = true
+                        interactionService.fetchInteractions(
+                            competitionId: competitionId,
+                            entryId: photo.id
+                        )
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: "eye.fill")
+                                .font(.system(size: 32))
+                                .foregroundColor(.white)
+                                .shadow(radius: 10)
                             
                             Text("\(interactionService.viewCount)")
                                 .foregroundColor(.white)
-                                .font(.system(size: 22, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
+                                .shadow(radius: 5)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 5)
+                .padding(.bottom, 25)
+
+                // Theme container if theme exists
+                if let themeName = photo.themeName {
+                    // Theme container with only top corners rounded
+                    RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
+                        .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
+                        .frame(height: 50)
+                        .overlay(
+                            Text(themeName)
+                                .foregroundColor(.white)
+                                .font(.system(size: 18, weight: .bold))
                                 .truncationMode(.tail)
                                 .lineLimit(1)
-                                .shadow(radius: 10)
-                        }
-                        .frame(width: 80, alignment: .trailing) // Fixed width matching left side
-                    }
-                    .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
-                    .padding()
-                    
-                    Spacer()
+                                .padding(.horizontal)
+                        )
                 }
                 
-                // Bottom rating bar (show disabled state when user can't rate)
-                if competitionId != nil {
-                    VStack(spacing: 0) {
-                        Spacer()
+                // Container view for stars with only bottom corners rounded
+                ZStack {
+                    if photo.themeName != nil {
+                        RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
+                            .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                    } else {
+                        RoundedRectangle(cornerRadius: 200)
+                            .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                    }
+                    
+                    HStack(alignment: .center, spacing: 12) { // Reduced spacing between stars
+                        let maxSelectableStars = photo.isSuperstar ? 5 : 4
 
-                        // Theme container if theme exists
-                        if let themeName = photo.themeName {
-                            // Theme container with only top corners rounded
-                            RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
-                                .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
-                                .frame(height: 50)
-                                .overlay(
-                                    Text(themeName)
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 18, weight: .bold))
-                                        .truncationMode(.tail)
-                                        .lineLimit(1)
-                                        .padding(.horizontal)
-                                )
-                        }
-                        
-                        // Container view for stars with background
-                        ZStack {
-                            if photo.themeName != nil {
-                                RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
-                                    .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
-                            } else {
-                                RoundedRectangle(cornerRadius: 200)
-                                    .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
-                            }
-                            
-                            HStack(alignment: .center, spacing: 12) {
-                                let maxSelectableStars = photo.isSuperstar ? 5 : 4
+                        ForEach(1...5, id: \.self) { star in
+                            Button(action: {
+                                // Check if this is the disabled 5th star
+                                if star == 5 && !photo.isSuperstar {
+                                    // Trigger warning haptic feedback for disabled 5th star
+                                    let generator = UINotificationFeedbackGenerator()
+                                    generator.notificationOccurred(.warning)
+                                    return
+                                }
                                 
-                                ForEach(1...5, id: \.self) { star in
-                                    Button(action: {
-                                        // Don't allow rating own posts
-                                        guard userName != "Me" else { return }
+                                // Only allow rating if within selectable range and rating is enabled
+                                guard star <= maxSelectableStars && isRatingEnabled && !hasAlreadyVoted && userName != "Me" else { return }
+                                
+                                submitRating(stars: star)
+                            }) {
+                                if star == 5 && !photo.isSuperstar {
+                                    ZStack {
+                                        Image(systemName: "star.fill")
+                                            .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : Color.white)
+                                            .font(.system(size: 34))
                                         
-                                        // Check if this is the disabled 5th star
-                                        if star == 5 && !photo.isSuperstar {
-                                            // Trigger warning haptic feedback for disabled 5th star
-                                            let generator = UINotificationFeedbackGenerator()
-                                            generator.notificationOccurred(.warning)
-                                            return
-                                        }
-                                        
-                                        // Check both hasAlreadyVoted AND isRatingEnabled to prevent double-clicks
-                                        guard !hasAlreadyVoted && isRatingEnabled && star <= maxSelectableStars else { return }
-                                        
-                                        submitRating(stars: star)
-                                    }) {
-                                        if star == 5 && !photo.isSuperstar {
-                                            ZStack {
-                                                Image(systemName: "star.fill")
-                                                    .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : Color.white)
-                                                    .font(.system(size: 34))
-                                                
-                                                Image(systemName: "nosign")
-                                                    .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898") : Color(hex: "#B22222"))
-                                                    .font(.system(size: 41, weight: .bold))
-                                            }
-                                        } else {
-                                            Image(systemName: "star.fill")
-                                                .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                                .font(.system(size: 34))
-                                                .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
-                                                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
-                                        }
+                                        Image(systemName: "nosign")
+                                            .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898") : Color(hex: "#B22222"))
+                                            .font(.system(size: 41, weight: .bold))
                                     }
-                                    .disabled(hasAlreadyVoted || !isRatingEnabled || userName == "Me") // Disable for own posts
-                                    .padding(5)
+                                } else {
+                                    // Regular star for positions 1-4 and position 5 for superstars
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : star <= rating ? Color(hex: "#FFD700") : Color.white)
+                                        .font(.system(size: 34))
+                                        .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
                                 }
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 15)
+                            .disabled(hasAlreadyVoted || !isRatingEnabled || userName == "Me")
+                            .padding(5)
                         }
-                        .frame(height: 80)
                     }
-                    .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .center)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 15)
                 }
+                .frame(height: 80)
             }
+            .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
+            .padding(.horizontal)
         }
         .ignoresSafeArea(edges: .all)
+        .sheet(isPresented: $showInteractions) {
+            InteractionsListView(
+                interactions: interactionService.interactions,
+                isLoading: interactionService.isLoadingInteractions
+            )
+        }
+        .sheet(isPresented: $showingMessageComposer) {
+            MessageComposerView(
+                photo: photo,
+                userName: userName,
+                competitionId: competitionId ?? "",
+                onSend: { message in
+                    sendPhotoMessage(text: message)
+                }
+            )
+        }
         .onAppear {
             checkVotingStatus()
             
@@ -239,12 +307,34 @@ struct FullScreenPhotoView: View {
                 ]
             )
         }
-        .sheet(isPresented: $showInteractions) {
-            InteractionsListView(
-                interactions: interactionService.interactions,
-                isLoading: interactionService.isLoadingInteractions
-            )
+    }
+    
+    private func sendPhotoMessage(text: String) {
+        chatViewModel.sendPhotoMessage(photo: photo, text: text)
+        
+        // Show success message
+        withAnimation {
+            messageSent = true
         }
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        if let userId = Auth.auth().currentUser?.uid, let competitionId = competitionId {
+            NotificationQueueManager.shared.queueNotification(
+                competitionId: competitionId,
+                competitionDescription: "",
+                userId: userId,
+                type: .message
+            )
+            NotificationQueueManager.shared.processQueuedNotifications()
+        }
+        
+        Analytics.shared.trackTap(
+            elementId: "message_send_btn_tapped",
+            screenName: "fullscreen_photo_view"
+        )
     }
     
     private func checkVotingStatus() {

@@ -1,17 +1,24 @@
 import FirebaseFirestore
 
+// Enum to define notification types
+enum NotificationType: String, CaseIterable {
+    case message = "message"
+    case photo = "photo"
+}
+
 // A singleton manager to handle queued notifications
 class NotificationQueueManager {
     static let shared = NotificationQueueManager()
     
     private init() {}
     
-    // Add notification to queue
-    func queueNotification(competitionId: String, competitionDescription: String, userId: String) {
+    // Add notification to queue with type
+    func queueNotification(competitionId: String, competitionDescription: String, userId: String, type: NotificationType) {
         let notificationData: [String: Any] = [
             "competitionId": competitionId,
             "competitionDescription": competitionDescription,
             "userId": userId,
+            "type": type.rawValue,
             "timestamp": Date().timeIntervalSince1970
         ]
         
@@ -31,13 +38,16 @@ class NotificationQueueManager {
                 let competitionId = notificationData["competitionId"] as? String ?? ""
                 let competitionDescription = notificationData["competitionDescription"] as? String ?? ""
                 let userId = notificationData["userId"] as? String ?? ""
+                let typeString = notificationData["type"] as? String ?? "message"
+                let notificationType = NotificationType(rawValue: typeString) ?? .message
                 
                 // Now we can safely send notifications without affecting UI
                 DispatchQueue.global(qos: .background).async {
                     self.sendNotificationsToMembers(
                         userId: userId,
                         competitionId: competitionId,
-                        competitionDescription: competitionDescription
+                        competitionDescription: competitionDescription,
+                        type: notificationType
                     )
                     
                     // Remove the pending notification once processed
@@ -50,7 +60,7 @@ class NotificationQueueManager {
     }
     
     // Send notifications to members
-    private func sendNotificationsToMembers(userId: String, competitionId: String, competitionDescription: String) {
+    private func sendNotificationsToMembers(userId: String, competitionId: String, competitionDescription: String, type: NotificationType) {
         let db = Firestore.firestore()
         let pushNotificationSender = PushNotificationSender()
         
@@ -133,7 +143,14 @@ class NotificationQueueManager {
                                         
                                         // Send the notification
                                         let title = "\(competitionDescription)"
-                                        let body = "\(username) shared a photo"
+                                        let body: String
+                                        
+                                        switch type {
+                                        case .message:
+                                            body = "\(username) sent a message"
+                                        case .photo:
+                                            body = "\(username) shared a photo"
+                                        }
                                         
                                         pushNotificationSender.sendPushNotification(
                                             to: fcmToken,

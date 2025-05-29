@@ -3,6 +3,7 @@ import FirebaseStorage
 import FirebaseFirestore
 import PhotosUI
 import FirebaseAuth
+import Kingfisher
 
 // Profile Image Model
 struct ProfileImage: Identifiable {
@@ -198,35 +199,21 @@ struct ProfilePictureSelector: View {
 struct ProfilePictureView: View {
     let url: String?
     let size: CGFloat
-    @State private var imageLoadError = false
-    
+
     var body: some View {
-        if let urlString = url, let url = URL(string: urlString), !imageLoadError {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
+        if let urlString = url, let imageUrl = URL(string: urlString) {
+            KFImage(imageUrl)
+                .placeholder {
                     Circle()
                         .fill(Color(hex: "#10183C"))
                         .frame(width: size, height: size)
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: size, height: size)
-                        .clipShape(Circle())
-                case .failure(_):
-                    whiteCircle
-                @unknown default:
-                    whiteCircle
                 }
-            }
+                .onFailure { _ in }
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: size, height: size)
+                .clipShape(Circle())
         } else {
-            whiteCircle
-        }
-    }
-    
-    private var whiteCircle: some View {
-        ZStack {
             Image("user")
                 .resizable()
                 .aspectRatio(contentMode: .fit)

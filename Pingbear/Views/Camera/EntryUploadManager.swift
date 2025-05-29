@@ -298,7 +298,8 @@ class EntryUploadManager: ObservableObject {
                         NotificationQueueManager.shared.queueNotification(
                             competitionId: competitionId,
                             competitionDescription: competition.description,
-                            userId: userId
+                            userId: userId,
+                            type: .photo
                         )
                         
                         // Track analytics with theme info

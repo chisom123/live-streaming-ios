@@ -9,6 +9,7 @@ struct Entry: Identifiable {
     let stars: Int
     let userProfilePictureUrl: String?
     let isCurrentUser: Bool
+    let userId: String
     let isSuperstar: Bool
     let creationDate: Date
     let overlayText: String?
@@ -17,9 +18,8 @@ struct Entry: Identifiable {
     let themeId: String?
     let themeName: String?
     
-    // Constructor with optional theme parameters for backward compatibility
     init(id: String, photoUrl: String, userName: String, stars: Int, userProfilePictureUrl: String?,
-         isCurrentUser: Bool, isSuperstar: Bool, creationDate: Date, overlayText: String?,
+         isCurrentUser: Bool, userId: String, isSuperstar: Bool, creationDate: Date, overlayText: String?,
          overlayVerticalPosition: CGFloat, isFromCamera: Bool, themeId: String? = nil, themeName: String? = nil) {
         
         self.id = id
@@ -28,6 +28,7 @@ struct Entry: Identifiable {
         self.stars = stars
         self.userProfilePictureUrl = userProfilePictureUrl
         self.isCurrentUser = isCurrentUser
+        self.userId = userId
         self.isSuperstar = isSuperstar
         self.creationDate = creationDate
         self.overlayText = overlayText
@@ -55,6 +56,7 @@ class EntryViewModel: ObservableObject {
     
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
+    private var mode: FetchEntriesMode
     
     private let db = Firestore.firestore()
     
@@ -65,18 +67,29 @@ class EntryViewModel: ObservableObject {
 
     init(competitionId: String, mode: FetchEntriesMode) {
         self.competitionId = competitionId
+        self.mode = mode
         fetchEntries(mode: mode)
-        setupListeners(mode: mode)
+        
+        // Only setup listeners for CompDetails view
         if mode == .compDetailsView {
+            setupListeners()
             fetchMemberCount()
         }
     }
     
     deinit {
-        removeListeners()
+        if mode == .compDetailsView {
+            removeListeners()
+        }
     }
     
-    func setupListeners(mode: FetchEntriesMode) {
+    func setupListeners() {
+        guard mode == .compDetailsView else { return }
+        
+        // Remove existing listeners first to avoid duplicates
+        removeListeners()
+        
+        // Then setup fresh listeners
         setupEntriesListener()
         setupVotesListener()
     }
@@ -84,18 +97,14 @@ class EntryViewModel: ObservableObject {
     private func setupEntriesListener() {
         let entriesPath = "competitions/\(competitionId)/entries"
 
-        // Calculate the time 24 hours ago from now using Calendar
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date()),
-              let currentUserId = Auth.auth().currentUser?.uid else {
-            print("Could not compute the date 24 hours ago or get current user ID.")
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            print("Could not get current user ID.")
             return
         }
         
-        // Create query with server-side filters
         let query = db.collection("competitions")
             .document(competitionId)
             .collection("entries")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
             .whereField("userId", isNotEqualTo: currentUserId)
         
         FirestoreListenerManager.shared.addQueryListener(for: query, path: entriesPath) { [weak self] changes in
@@ -131,13 +140,11 @@ class EntryViewModel: ObservableObject {
     }
 
     func removeListeners() {
-        // Create an array of paths for which listeners need to be removed
         let paths = [
             "competitions/\(competitionId)/entries",
             getVotesPath()
         ]
 
-        // Remove each listener
         paths.forEach { path in
             FirestoreListenerManager.shared.removeListener(for: path)
         }
@@ -151,44 +158,138 @@ class EntryViewModel: ObservableObject {
     }
     
     func fetchEntries(mode: FetchEntriesMode, completion: (() -> Void)? = nil) {
-        guard let twentyFourHoursAgo = Calendar.current.date(byAdding: .hour, value: -24, to: Date()) else {
-            print("Error calculating date 24 hours ago")
-            completion?()
-            return
-        }
-        
-        let collection = db.collection("competitions").document(competitionId).collection("entries")
-        let query = collection.whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
-        
         if mode == .entryView {
-            fetchEntryViewEntries(query: query, completion: completion)
+            fetchFullEntriesForVoting(completion: completion)
         } else {
-            fetchCompDetailsViewEntries(query: query, completion: completion)
+            fetchLeaderboardData(completion: completion)
         }
     }
 
-    private func fetchEntryViewEntries(query: Query, completion: (() -> Void)? = nil) {
+    // Optimized method for CompDetailsView - only fetches what's needed for leaderboard
+    private func fetchLeaderboardData(completion: (() -> Void)? = nil) {
+        let currentUserId = Auth.auth().currentUser?.uid
+        
+        // Only fetch userId and stars fields - no need for full entry data
+        db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+            .getDocuments { [weak self] (snapshot, error) in
+                guard let self = self else {
+                    completion?()
+                    return
+                }
+                
+                if let error = error {
+                    print("Error getting entries: \(error)")
+                    completion?()
+                    return
+                }
+                
+                guard let documents = snapshot?.documents else {
+                    DispatchQueue.main.async {
+                        self.userLeaderboard = []
+                        completion?()
+                    }
+                    return
+                }
+                
+                // Extract unique userIds and aggregate stars
+                var userStarsDict = [String: (stars: Int, isCurrentUser: Bool)]()
+                
+                for document in documents {
+                    let userId = document.data()["userId"] as? String ?? ""
+                    let stars = document.data()["stars"] as? Int ?? 0
+                    let isCurrentUser = userId == currentUserId
+                    
+                    if let existing = userStarsDict[userId] {
+                        userStarsDict[userId] = (stars: existing.stars + stars, isCurrentUser: isCurrentUser)
+                    } else {
+                        userStarsDict[userId] = (stars: stars, isCurrentUser: isCurrentUser)
+                    }
+                }
+                
+                // Fetch user data only for userIds we need
+                let uniqueUserIds = Array(userStarsDict.keys)
+                
+                if uniqueUserIds.isEmpty {
+                    DispatchQueue.main.async {
+                        self.userLeaderboard = []
+                        completion?()
+                    }
+                    return
+                }
+                
+                // Batch fetch user data
+                self.db.collection("users")
+                    .whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
+                    .getDocuments { (userSnapshot, error) in
+                        if let error = error {
+                            print("Error fetching user documents: \(error)")
+                            completion?()
+                            return
+                        }
+                        
+                        var userEntries = [UserEntry]()
+                        
+                        userSnapshot?.documents.forEach { document in
+                            let userId = document.documentID
+                            let data = document.data()
+                            let username = data["username"] as? String ?? "Unknown"
+                            let profilePictureUrl = data["profilePictureUrl"] as? String
+                            
+                            if let userStats = userStarsDict[userId] {
+                                let displayName = userStats.isCurrentUser ? "Me" : username
+                                userEntries.append(UserEntry(
+                                    id: userId,
+                                    userName: displayName,
+                                    profilePictureUrl: profilePictureUrl,
+                                    totalStars: userStats.stars
+                                ))
+                            }
+                        }
+                        
+                        DispatchQueue.main.async {
+                            self.userLeaderboard = userEntries.sorted { $0.totalStars > $1.totalStars }
+                            // Don't populate entries array for CompDetails
+                            if self.mode == .compDetailsView {
+                                self.entries = []
+                            }
+                            completion?()
+                        }
+                    }
+            }
+    }
+
+    // Full fetch for EntryView - gets all entry details needed for voting
+    private func fetchFullEntriesForVoting(completion: (() -> Void)? = nil) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No current user ID found.")
             completion?()
             return
         }
         
+        let query = db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+        
         query.getDocuments { [weak self] (snapshot, error) in
             guard let self = self else {
                 completion?()
                 return
             }
+            
             if let error = error {
                 print("Error getting entries: \(error)")
                 completion?()
                 return
             }
 
-            // Fetch the list of voted entries
-            let votesCollection = db.collection("groupMemberships").document(currentUserId)
-                                   .collection("competitions").document(self.competitionId)
-                                   .collection("votes")
+            // Fetch voted entries
+            let votesCollection = db.collection("groupMemberships")
+                .document(currentUserId)
+                .collection("competitions")
+                .document(self.competitionId)
+                .collection("votes")
             
             votesCollection.getDocuments { (votesSnapshot, error) in
                 if let error = error {
@@ -196,137 +297,127 @@ class EntryViewModel: ObservableObject {
                     completion?()
                     return
                 }
-                // Collect all entry IDs the current user has voted on
+                
                 let votedEntries = votesSnapshot?.documents.map { $0.documentID } ?? []
-                self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: true, currentUserId: currentUserId, votedEntries: votedEntries, completion: completion)
+                self.processEntriesForVoting(
+                    snapshot: snapshot,
+                    currentUserId: currentUserId,
+                    votedEntries: votedEntries,
+                    completion: completion
+                )
             }
         }
     }
 
-    private func fetchCompDetailsViewEntries(query: Query, completion: (() -> Void)? = nil) {
-        let currentUserId = Auth.auth().currentUser?.uid
-        
-        query.getDocuments { [weak self] (snapshot, error) in
-            guard let self = self else {
-                completion?()
-                return
-            }
-            if let error = error {
-                print("Error getting entries: \(error)")
-                completion?()
-                return
-            }
-            self.processEntries(snapshot: snapshot, excludeCurrentAndVoted: false, currentUserId: currentUserId, completion: completion)
-        }
-    }
-
-    private func processEntries(snapshot: QuerySnapshot?, excludeCurrentAndVoted: Bool, currentUserId: String?, votedEntries: [String] = [], completion: (() -> Void)? = nil) {
+    // Process entries for voting (EntryView)
+    private func processEntriesForVoting(snapshot: QuerySnapshot?, currentUserId: String, votedEntries: [String], completion: (() -> Void)? = nil) {
         guard let documents = snapshot?.documents else {
             DispatchQueue.main.async {
                 self.entries = []
-                self.userLeaderboard = []
                 completion?()
             }
             return
         }
         
-        // Get unique userIds from all entries
-        let uniqueUserIds = Set(documents.compactMap { $0.data()["userId"] as? String })
+        // Filter out current user's entries and voted entries
+        let eligibleDocuments = documents.filter { document in
+            let userId = document.data()["userId"] as? String ?? ""
+            let documentId = document.documentID
+            return userId != currentUserId && !votedEntries.contains(documentId)
+        }
         
-        let group = DispatchGroup()
-        var userNames: [String: String] = [:]
-        var userProfilePictures: [String: String] = [:]
-        var localEntries = [Entry]()
-        var userStarsDict = [String: UserEntry]()
-
-        // Fetch usernames for all unique users in one batch
-        if !uniqueUserIds.isEmpty {
-            group.enter()
-            let userQuery = db.collection("users").whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
-            userQuery.getDocuments { (snapshot, error) in
-                defer { group.leave() }
-                
-                if let error = error {
-                    print("Error fetching user documents: \(error)")
+        // Get unique userIds
+        let uniqueUserIds = Set(eligibleDocuments.compactMap { $0.data()["userId"] as? String })
+        
+        if uniqueUserIds.isEmpty {
+            DispatchQueue.main.async {
+                self.entries = []
+                completion?()
+            }
+            return
+        }
+        
+        // Batch fetch user data
+        db.collection("users")
+            .whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
+            .getDocuments { [weak self] (userSnapshot, error) in
+                guard let self = self else {
+                    completion?()
                     return
                 }
                 
-                snapshot?.documents.forEach { document in
-                    // UPDATED: Get all user data at once
+                if let error = error {
+                    print("Error fetching user documents: \(error)")
+                    completion?()
+                    return
+                }
+                
+                var userNames: [String: String] = [:]
+                var userProfilePictures: [String: String] = [:]
+                
+                userSnapshot?.documents.forEach { document in
                     let data = document.data()
                     if let username = data["username"] as? String {
                         userNames[document.documentID] = username
                     }
-                    // ADDED: Store profile picture URL
                     if let profilePictureUrl = data["profilePictureUrl"] as? String {
                         userProfilePictures[document.documentID] = profilePictureUrl
                     }
                 }
-            }
-        }
-
-        group.notify(queue: .global()) {
-            // Process entries after we have all usernames
-            for document in documents {
-                let userId = document.data()["userId"] as? String ?? ""
-                let documentId = document.documentID
                 
-                if (userId == currentUserId && excludeCurrentAndVoted) || (excludeCurrentAndVoted && votedEntries.contains(documentId)) {
-                    continue
+                // Build entries array with all details needed for voting
+                var localEntries = [Entry]()
+                
+                for document in eligibleDocuments {
+                    let data = document.data()
+                    let userId = data["userId"] as? String ?? ""
+                    let documentId = document.documentID
+                    
+                    let imageUrl = data["imageUrl"] as? String ?? ""
+                    let stars = data["stars"] as? Int ?? 0
+                    let isSuperstar = data["superstar"] as? Bool ?? false
+                    let timestamp = data["timestamp"] as? Timestamp
+                    let creationDate = timestamp?.dateValue() ?? Date()
+                    let overlayText = data["overlayText"] as? String
+                    let overlayVerticalPosition = data["overlayVerticalPosition"] as? CGFloat ?? 0.5
+                    let isFromCamera = data["isFromCamera"] as? Bool ?? true
+                    let userName = userNames[userId] ?? "Unknown"
+                    let profilePictureUrl = userProfilePictures[userId]
+                    let themeId = data["themeId"] as? String
+                    let themeName = data["themeName"] as? String
+                    
+                    let entry = Entry(
+                        id: documentId,
+                        photoUrl: imageUrl,
+                        userName: userName,
+                        stars: stars,
+                        userProfilePictureUrl: profilePictureUrl,
+                        isCurrentUser: false, // Already filtered out current user
+                        userId: userId,
+                        isSuperstar: isSuperstar,
+                        creationDate: creationDate,
+                        overlayText: overlayText,
+                        overlayVerticalPosition: overlayVerticalPosition,
+                        isFromCamera: isFromCamera,
+                        themeId: themeId,
+                        themeName: themeName
+                    )
+                    
+                    localEntries.append(entry)
                 }
                 
-                let imageUrl = document.data()["imageUrl"] as? String ?? ""
-                let stars = document.data()["stars"] as? Int ?? 0
-                let isSuperstar = document.data()["superstar"] as? Bool ?? false
-                let timestamp = document.data()["timestamp"] as? Timestamp
-                let creationDate = timestamp?.dateValue() ?? Date()
-                let overlayText = document.data()["overlayText"] as? String
-                let overlayVerticalPosition = document.data()["overlayVerticalPosition"] as? CGFloat ?? 0.5
-                let isFromCamera = document.data()["isFromCamera"] as? Bool ?? true
-                let isCurrentUser = userId == currentUserId
-                let userName = isCurrentUser ? "Me" : (userNames[userId] ?? "Unknown")
-                let profilePictureUrl = userProfilePictures[userId]
-                
-                // Extract theme information
-                let themeId = document.data()["themeId"] as? String
-                let themeName = document.data()["themeName"] as? String
-                
-                let entry = Entry(
-                    id: documentId,
-                    photoUrl: imageUrl,
-                    userName: userName,
-                    stars: stars,
-                    userProfilePictureUrl: profilePictureUrl,
-                    isCurrentUser: isCurrentUser,
-                    isSuperstar: isSuperstar,
-                    creationDate: creationDate,
-                    overlayText: overlayText,
-                    overlayVerticalPosition: overlayVerticalPosition,
-                    isFromCamera: isFromCamera,
-                    themeId: themeId,
-                    themeName: themeName
-                )
-                
-                localEntries.append(entry)
-                
-                if let userEntry = userStarsDict[userId] {
-                    userStarsDict[userId]?.totalStars += stars
-                } else {
-                    userStarsDict[userId] = UserEntry(id: userId, userName: userName, profilePictureUrl: profilePictureUrl, totalStars: stars)
+                DispatchQueue.main.async {
+                    self.entries = localEntries.sorted { $0.creationDate < $1.creationDate }
+                    // Don't populate userLeaderboard for EntryView
+                    if self.mode == .entryView {
+                        self.userLeaderboard = []
+                    }
+                    completion?()
                 }
             }
-            
-            group.notify(queue: .main) {
-                self.entries = localEntries.sorted { $0.stars > $1.stars }
-                self.userLeaderboard = userStarsDict.values.sorted { $0.totalStars > $1.totalStars }
-                completion?()
-            }
-        }
     }
 
     func updateStarRating(for entryId: String, with stars: Int) {
-
-        // Fetching the current Firebase user's ID
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No authenticated user found.")
             return
@@ -344,10 +435,8 @@ class EntryViewModel: ObservableObject {
             .collection("interactions")
             .document(currentUserId)
 
-        
         let batch = db.batch()
 
-        // Fetch the entry to determine if it is a superstar
         entryRef.getDocument { [weak self] (document, error) in
             if let error = error {
                 print("Error fetching entry: \(error)")
@@ -362,12 +451,10 @@ class EntryViewModel: ObservableObject {
             let ownerId = data["userId"] as? String ?? ""
             let starIncrement = stars
             
-            // Add operations to the batch
             batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
             batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
             batch.setData(["rating": stars, "userId": currentUserId], forDocument: interactionRef, merge: true)
 
-            // Commit the batch
             batch.commit { err in
                 if let err = err {
                     print("Batch commit failed: \(err)")
@@ -393,4 +480,30 @@ class EntryViewModel: ObservableObject {
                 }
             }
     }
+    
+    func refreshVoteStatus() {
+        guard mode == .compDetailsView,
+              let currentUserId = Auth.auth().currentUser?.uid else { return }
+        
+        // Only fetch the votes, not all entries
+        let votesPath = "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
+        
+        db.collection(votesPath)
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self else { return }
+                
+                if let error = error {
+                    print("Error refreshing vote status: \(error)")
+                    return
+                }
+                
+                let votedIds = snapshot?.documents.map { $0.documentID } ?? []
+                
+                DispatchQueue.main.async {
+                    self.votedEntryIds = Set(votedIds)
+                    self.updateVoteStatus()
+                }
+            }
+    }
+
 }

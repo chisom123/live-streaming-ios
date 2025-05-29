@@ -358,7 +358,7 @@ struct CustomShareSheet: View {
                             .background(linkCopied ? Color(hex: "#25D366").opacity(0.2) : Color.gray)
                             .clipShape(Circle())
                         
-                        Text(linkCopied ? "Link Copied!" : "Copy Link")
+                        Text(linkCopied ? "Link Copied" : "Copy Link")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.white)
                         

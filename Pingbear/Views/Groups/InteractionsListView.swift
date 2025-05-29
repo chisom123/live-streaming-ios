@@ -121,17 +121,28 @@ struct InteractionsListView: View {
 
     private func timeAgoString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        let hours = Int(interval / 3600)
-        let minutes = Int((interval.truncatingRemainder(dividingBy: 3600)) / 60)
-
-        if hours >= 24 {
-            return "24h ago"
+        let seconds = Int(interval)
+        let minutes = seconds / 60
+        let hours = minutes / 60
+        let days = hours / 24
+        let weeks = days / 7
+        let months = days / 30
+        let years = days / 365
+        
+        if years > 0 {
+            return years == 1 ? "1 year ago" : "\(years) years ago"
+        } else if months > 0 {
+            return months == 1 ? "1 month ago" : "\(months) months ago"
+        } else if weeks > 0 {
+            return weeks == 1 ? "1 week ago" : "\(weeks) weeks ago"
+        } else if days > 0 {
+            return days == 1 ? "1 day ago" : "\(days) days ago"
         } else if hours > 0 {
-            return "\(hours)h ago"
+            return hours == 1 ? "1h ago" : "\(hours)h ago"
         } else if minutes > 0 {
-            return "\(minutes)m ago"
+            return minutes == 1 ? "1m ago" : "\(minutes)m ago"
         } else {
-            return "just now"
+            return "Just now"
         }
     }
 }

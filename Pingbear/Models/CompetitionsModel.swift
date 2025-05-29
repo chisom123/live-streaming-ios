@@ -101,7 +101,6 @@ class CompetitionsModel: ObservableObject {
         }
         
         let db = Firestore.firestore()
-        let twentyFourHoursAgo = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
         
         let group = DispatchGroup()
         var entryIds: Set<String> = []
@@ -110,7 +109,6 @@ class CompetitionsModel: ObservableObject {
         // Fetch both entries and votes in parallel
         group.enter()
         let entriesRef = db.collection("competitions").document(competitionId).collection("entries")
-            .whereField("timestamp", isGreaterThan: Timestamp(date: twentyFourHoursAgo))
         
         entriesRef.getDocuments { snapshot, error in
             defer { group.leave() }

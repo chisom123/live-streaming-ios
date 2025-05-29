@@ -5,12 +5,14 @@ struct EditCompetitionView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var competitionName: String
     @State private var errorMessage: String? = nil
+    @FocusState private var isNameFocused: Bool
     
     let competition: Competition
     
     init(competition: Competition) {
         self.competition = competition
-        _competitionName = State(initialValue: competition.description)
+        let displayName = competition.description == "Competition" ? "" : competition.description
+        _competitionName = State(initialValue: displayName)
     }
     
     func isValidName(_ name: String) -> Bool {
@@ -85,6 +87,7 @@ struct EditCompetitionView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
                     .font(.system(size: 16, weight: .bold, design: .default))
+                    .focused($isNameFocused)
                 
                 if let error = errorMessage {
                     Text(error)
@@ -102,6 +105,9 @@ struct EditCompetitionView: View {
         .accentColor(.white)
         .ignoresSafeArea()
         .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isNameFocused = true
+            }
             Analytics.shared.trackScreen(name: "edit_competition")
         }
     }

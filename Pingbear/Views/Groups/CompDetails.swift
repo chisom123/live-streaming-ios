@@ -30,12 +30,16 @@ struct CompDetails: View {
     @State private var isMembersPresented = false
     @State private var isVotingPresented = false
     @State private var isEditingCompetition = false
+    @State private var isChatPresented = false
+    @State private var unreadMessageCount = 0
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
     @StateObject private var notificationManager = PushNotificationManager.shared
     @State private var activeAlert: AlertType?
     @State private var selectedUserForPhotos: UserSelection? = nil
     @State private var currentUserProfilePictureUrl: String? = nil
+    @StateObject private var chatIndicator: ChatIndicatorViewModel
+    @State private var showingJoinSelectView = false
     
     @ObservedObject var entryViewModel: EntryViewModel
 
@@ -46,6 +50,7 @@ struct CompDetails: View {
     init(competition: Competition) {
         self.competition = competition
         self.entryViewModel = EntryViewModel(competitionId: competition.id, mode: .compDetailsView)
+        self._chatIndicator = StateObject(wrappedValue: ChatIndicatorViewModel(competitionId: competition.id))
     }
 
     
@@ -72,8 +77,12 @@ struct CompDetails: View {
                     
                     Button(action: {
                         isEditingCompetition = true
+                        Analytics.shared.trackTap(
+                            elementId: "edit_competition_name_button",
+                            screenName: "competition_details"
+                        )
                     }) {
-                        Text(competition.description)
+                        Text(competition.description == "Competition" ? "Add Competition Name" : competition.description)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .lineLimit(1)
                             .foregroundColor(.white)
@@ -120,7 +129,6 @@ struct CompDetails: View {
                     }
 
                     Button(action: {
-                        entryViewModel.removeListeners()
                         vote()
                         Analytics.shared.trackEntry(
                             action: "rate",
@@ -139,17 +147,27 @@ struct CompDetails: View {
                     
                     Button(action: {
                         entryViewModel.removeListeners()
-                        selectedUserForPhotos = UserSelection(
-                            user: UserEntry(id: currentUserId, userName: "Me", profilePictureUrl: currentUserProfilePictureUrl, totalStars: 0),
-                            competitionId: competition.id
-                        )
+                        chatIndicator.markAsRead()
+                        isChatPresented = true
                     }) {
-                        Image(systemName: "photo.stack.fill")
-                            .font(.system(size: 24, weight: .bold))
-                            .frame(width: 45, height: 45)
-                            .padding(6)
-                            .foregroundColor(.white)
-                            .clipShape(Circle())
+                        ZStack {
+                            Image(systemName: "message.fill")
+                                .font(.system(size: 24, weight: .bold))
+                                .frame(width: 45, height: 45)
+                                .padding(6)
+                                .foregroundColor(.white)
+                                .clipShape(Circle())
+                            
+                            if chatIndicator.hasUnreadMessages {
+                                Text(chatIndicator.displayCount)
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(minWidth: 20, minHeight: 20)
+                                    .background(Color.red)
+                                    .clipShape(Circle())
+                                    .offset(x: 12, y: -12)
+                            }
+                        }
                     }
                 }
                 .padding(.vertical, 20)
@@ -162,79 +180,104 @@ struct CompDetails: View {
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    if entryViewModel.userLeaderboard.isEmpty {
-                        EmptyLeaderboardView(action: initiateVideoCapture)
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
-                                    Button(action: {
-                                        selectedUserForPhotos = UserSelection(
-                                            user: userEntry,
-                                            competitionId: competition.id
-                                        )
-                                        Analytics.shared.trackTap(
-                                            elementId: "leaderboard_user_cell",
-                                            screenName: "competition_details"
-                                        )
-                                    }) {
-                                        VStack(spacing: 0) {
-                                            HStack {
-                                                Text("\(index + 1)")
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .frame(width: 30)
-                                                    .padding(.leading, 20)
-                                                
-                                                HStack(spacing: 20) {
-                                                    ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
-                                                    
-                                                    Text(userEntry.userName)
-                                                        .font(.system(size: 16, weight: .bold))
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
-                                                        .foregroundColor(.white)
-                                                }
-                                                
-                                                Spacer()
-                                                
-                                                HStack(spacing: 8) {
-                                                    Text("\(userEntry.totalStars)")
-                                                        .font(.system(size: 17, weight: .bold))
-                                                        .foregroundColor(Color(hex: "#FFF"))
-                                                    
-                                                    Image(systemName: "star.fill")
-                                                        .resizable()
-                                                        .scaledToFit()
-                                                        .frame(width: 18, height: 18)
-                                                        .foregroundColor(Color(hex: "#FFF"))
-                                                }
-                                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                .background(Color(hex: "#DAA520"))
-                                                .cornerRadius(200)
-                                                .padding(.trailing, 30)
-                                            }
-                                            .padding(.vertical, 25)
-                                            .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
-                                            
-                                            if userEntry.id != entryViewModel.userLeaderboard.last?.id {
-                                                Divider()
-                                                    .background(Color.white.opacity(0.2))
-                                            }
-                                        }
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
+                    if entryViewModel.totalMemberCount == 1 {
+                        NoPlayersView(
+                            action_player: addPlayer,
+                            onMeTapped: {
+                                // Create a UserEntry for the current user
+                                let currentUserEntry = UserEntry(
+                                    id: currentUserId,
+                                    userName: "Me",
+                                    profilePictureUrl: currentUserProfilePictureUrl,
+                                    totalStars: 0
+                                )
+                                
+                                selectedUserForPhotos = UserSelection(
+                                    user: currentUserEntry,
+                                    competitionId: competition.id
+                                )
+                                
+                                Analytics.shared.trackTap(
+                                    elementId: "leaderboard_user_cell",
+                                    screenName: "competition_details"
+                                )
                             }
-                            .background(Color(hex: "#1A2245"))
-                            .cornerRadius(10)
-                            .padding(.horizontal, 20)
-                        }
-                        .refreshable {
-                            entryViewModel.fetchEntries(mode: .compDetailsView)
-                            entryViewModel.fetchMemberCount()
+                        )
+                    } else {
+                        if entryViewModel.userLeaderboard.isEmpty {
+                            EmptyLeaderboardView(action: initiateVideoCapture)
+                            Spacer()
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
+                                        Button(action: {
+                                            selectedUserForPhotos = UserSelection(
+                                                user: userEntry,
+                                                competitionId: competition.id
+                                            )
+                                            Analytics.shared.trackTap(
+                                                elementId: "leaderboard_user_cell",
+                                                screenName: "competition_details"
+                                            )
+                                        }) {
+                                            VStack(spacing: 0) {
+                                                HStack {
+                                                    Text("\(index + 1)")
+                                                        .font(.system(size: 16, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                        .frame(width: 30)
+                                                        .padding(.leading, 20)
+                                                    
+                                                    HStack(spacing: 20) {
+                                                        ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
+                                                        
+                                                        Text(userEntry.userName)
+                                                            .font(.system(size: 16, weight: .bold))
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
+                                                            .foregroundColor(.white)
+                                                    }
+                                                    
+                                                    Spacer()
+                                                    
+                                                    HStack(spacing: 8) {
+                                                        Text("\(userEntry.totalStars)")
+                                                            .font(.system(size: 17, weight: .bold))
+                                                            .foregroundColor(Color(hex: "#FFF"))
+                                                        
+                                                        Image(systemName: "star.fill")
+                                                            .resizable()
+                                                            .scaledToFit()
+                                                            .frame(width: 18, height: 18)
+                                                            .foregroundColor(Color(hex: "#FFF"))
+                                                    }
+                                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                                    .background(Color(hex: "#DAA520"))
+                                                    .cornerRadius(200)
+                                                    .padding(.trailing, 30)
+                                                }
+                                                .padding(.vertical, 25)
+                                                .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                                                
+                                                if userEntry.id != entryViewModel.userLeaderboard.last?.id {
+                                                    Divider()
+                                                        .background(Color.white.opacity(0.2))
+                                                }
+                                            }
+                                            .contentShape(Rectangle())
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .background(Color(hex: "#1A2245"))
+                                .cornerRadius(10)
+                                .padding(.horizontal, 20)
+                            }
+                            .refreshable {
+                                entryViewModel.fetchEntries(mode: .compDetailsView)
+                                entryViewModel.fetchMemberCount()
+                            }
                         }
                     }
                 }
@@ -250,7 +293,13 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competition: competition)
         })
-        .fullScreenCover(isPresented: $isVotingPresented, content: {
+        .fullScreenCover(isPresented: $isVotingPresented, onDismiss: {
+            // Re-setup listeners after returning from voting
+            entryViewModel.setupListeners()
+            // Then refresh the vote status immediately
+            entryViewModel.refreshVoteStatus()
+            chatIndicator.refresh()
+        }, content: {
             EntryView(competitionId: competition.id, competition: competition)
         })
         .fullScreenCover(isPresented: $goToMyComps) {
@@ -259,10 +308,18 @@ struct CompDetails: View {
         .fullScreenCover(isPresented: $isMembersPresented) {
             MembersView(competition: competition)
         }
+        .fullScreenCover(isPresented: $isChatPresented) {
+            ChatView(competition: competition)
+        }
+        .fullScreenCover(isPresented: $showingJoinSelectView) {
+            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
+        }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
         }
-        .sheet(item: $selectedUserForPhotos) { selection in
+        .sheet(item: $selectedUserForPhotos, onDismiss: {
+            chatIndicator.refresh()
+        }) { selection in
             UserPhotosView(
                 userId: selection.user.userName == "Me" ? currentUserId : selection.user.id,
                 userName: selection.user.userName,
@@ -383,7 +440,14 @@ struct CompDetails: View {
             UIApplication.shared.open(settingsUrl)
         }
     }
-    
+    func addPlayer() {
+        entryViewModel.removeListeners()
+        showingJoinSelectView = true
+        Analytics.shared.trackTap(
+            elementId: "add_player_prompt",
+            screenName: "competition_details"
+        )
+    }
     private func fetchCurrentUserProfilePictureUrl() {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         
@@ -431,5 +495,124 @@ struct EmptyLeaderboardView: View {
         .background(Color(hex: "#1A2245"))
         .cornerRadius(10)
         .padding(.horizontal, 20)
+    }
+}
+
+struct NoPlayersView: View {
+    var action_player: () -> Void
+    var onMeTapped: () -> Void  // Add this parameter
+    @State private var currentUserProfileUrl: String?
+    private let db = Firestore.firestore()
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
+                    VStack(spacing: 0) {
+                        if userName == "Me" {
+                            // Make the entire "Me" cell tappable
+                            Button(action: {
+                                onMeTapped()
+                            }) {
+                                HStack {
+                                    Text("\(index + 1)")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 30)
+                                        .padding(.leading, 20)
+                                    
+                                    HStack(spacing: 20) {
+                                        ProfilePictureView(url: currentUserProfileUrl, size: 40)
+                                        
+                                        Text(userName)
+                                            .font(.system(size: 16, weight: .bold))
+                                            .lineLimit(1)
+                                            .truncationMode(.tail)
+                                            .foregroundColor(.white)
+                                    }
+
+                                    Spacer()
+
+                                    HStack(spacing: 6.5) {
+                                        Text("0")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                        
+                                        Image(systemName: "star.fill")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 18, height: 18)
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                    }
+                                    .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
+                                    .background(Color(hex: "#DAA520"))
+                                    .cornerRadius(200)
+                                    .padding(.trailing, 30)
+                                }
+                                .padding(.vertical, 25)
+                                .background(Color(hex: "#2A3255"))
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            // For other cells, only the Add button is tappable
+                            HStack {
+                                Text("\(index + 1)")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 30)
+                                    .padding(.leading, 20)
+                                
+                                HStack(spacing: 20) {
+                                    ProfilePictureView(url: nil, size: 40)
+                                    
+                                    Text(userName)
+                                        .font(.system(size: 16, weight: .bold))
+                                        .lineLimit(1)
+                                        .truncationMode(.tail)
+                                        .foregroundColor(.white)
+                                }
+
+                                Spacer()
+
+                                Button(action: action_player) {
+                                    HStack(spacing: 8) {
+                                        Text("Add")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                    }
+                                    .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
+                                    .background(Color(hex: "#FF4081"))
+                                    .cornerRadius(200)
+                                }
+                                .padding(.trailing, 30)
+                            }
+                            .padding(.vertical, 25)
+                            .background(Color.clear)
+                        }
+                        
+                        if userName != "Player 4" {
+                            Divider()
+                                .background(Color.white.opacity(0.2))
+                        }
+                    }
+                }
+            }
+            .background(Color(hex: "#1A2245"))
+            .cornerRadius(10)
+            .padding(.horizontal, 20)
+        }
+        .onAppear {
+            fetchCurrentUserProfilePicture()
+        }
+    }
+    
+    private func fetchCurrentUserProfilePicture() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let document = document, document.exists {
+                self.currentUserProfileUrl = document.data()?["profilePictureUrl"] as? String
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@ struct MyCompsView: View {
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
     @State private var showCreateCompetition = false
+    @State private var isCreatingCompetition = false // New state for creation loading
     
     var body: some View {
         VStack {
@@ -22,7 +23,7 @@ struct MyCompsView: View {
                     Image("settings")
                         .resizable()
                         .renderingMode(.template)
-                        .foregroundColor(.white) // or any color you want
+                        .foregroundColor(.white)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 30, height: 30)
                 }
@@ -31,20 +32,22 @@ struct MyCompsView: View {
                 
                 Text("Competitions")
                     .font(.system(size: 18, weight: .bold, design: .default))
-                    .foregroundColor(.white) // Set the text color as needed
+                    .foregroundColor(.white)
 
-                Spacer() // Pushes the remaining content to the trailing edge
+                Spacer()
                 
                 Button(action: {
-                    viewModel.cleanupListeners()
-                    createNewCompetition()
+                    if !isCreatingCompetition {
+                        createNewCompetition()
+                    }
                 }) {
                     Image(systemName: "plus.circle")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 30, height: 30)
-                        .foregroundColor(Color.white)
+                        .foregroundColor(isCreatingCompetition ? Color.white.opacity(0.5) : Color.white)
                 }
+                .disabled(isCreatingCompetition)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
@@ -58,9 +61,11 @@ struct MyCompsView: View {
             } else if viewModel.competitions.isEmpty {
                 EmptyCompsView(
                     newCompAction: {
-                        viewModel.cleanupListeners()
-                        createNewCompetition()
-                    }
+                        if !isCreatingCompetition {
+                            createNewCompetition()
+                        }
+                    },
+                    isCreating: isCreatingCompetition
                 )
                 Spacer()
             } else {
@@ -147,11 +152,130 @@ struct MyCompsView: View {
     }
     
     private func createNewCompetition() {
-        showCreateCompetition = true
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+        
+        isCreatingCompetition = true
+        
+        let db = Firestore.firestore()
+        
+        // First fetch the user's username
+        db.collection("users").document(userID).getDocument { (document, error) in
+            if let error = error {
+                print("Failed to fetch user data: \(error.localizedDescription)")
+                self.isCreatingCompetition = false
+                return
+            }
+            
+            let competitionName = "Competition"
+            
+            // Now create the competition
+            let competitionRef = db.collection("competitions").document()
+            let newCompetitionId = competitionRef.documentID
+            let timestamp = Timestamp()
+            let creationDate = timestamp.dateValue()
+            
+            // First establish membership
+            let creatorMemberRef = competitionRef.collection("members").document(userID)
+            
+            creatorMemberRef.setData(["userId": userID]) { error in
+                if let error = error {
+                    print("Failed to add creator as member: \(error.localizedDescription)")
+                    self.isCreatingCompetition = false
+                    return
+                }
+                
+                // Create the competition
+                let competitionData: [String: Any] = [
+                    "id": newCompetitionId,
+                    "description": competitionName,
+                    "timestamp": timestamp,
+                    "hostId": userID
+                ]
+                
+                competitionRef.setData(competitionData) { error in
+                    if let error = error {
+                        print("Failed to create competition: \(error.localizedDescription)")
+                        self.isCreatingCompetition = false
+                        return
+                    }
+                    
+                    // Add to creator's groupMemberships
+                    let creatorGroupMembershipRef = db.collection("groupMemberships").document(userID)
+                                                     .collection("competitions").document(newCompetitionId)
+                    creatorGroupMembershipRef.setData(["competitionId": newCompetitionId]) { error in
+                        if let error = error {
+                            print("Failed to add group membership: \(error.localizedDescription)")
+                        }
+                        
+                        self.isCreatingCompetition = false
+                        
+                        // Create Competition object and navigate to it
+                        let newCompetition = Competition(
+                            id: newCompetitionId,
+                            description: competitionName,
+                            date: creationDate
+                        )
+                        
+                        // Navigate to the newly created competition
+                        DispatchQueue.main.async {
+                            self.selectedCompetition = newCompetition
+                        }
+                        
+                        Analytics.shared.trackCompetition(
+                            action: "create",
+                            competitionId: newCompetitionId
+                        )
+                        
+                        // Provide haptic feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                }
+            }
+        }
     }
 }
 
-// New component for the competition cell with swipe and long press actions
+// Updated EmptyCompsView to handle loading state
+struct EmptyCompsView: View {
+    var newCompAction: () -> Void
+    let isCreating: Bool
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            Text("No Competitions Yet")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.white)
+                .padding(.top, 30)
+                .padding(.bottom, 30)
+            
+            // Button container - fixed width for consistency
+            VStack() {
+                Button(action: newCompAction) {
+                    HStack {
+                        Text("New Competition")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(isCreating ? Color(hex: "#FF4081").opacity(0.5) : Color(hex: "#FF4081"))
+                    .foregroundColor(isCreating ? .white.opacity(0.6) : .white)
+                    .cornerRadius(25)
+                }
+                .disabled(isCreating)
+            }
+            .frame(width: 280)
+            .padding(.bottom, 30)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(14)
+        .padding(.horizontal, 20)
+    }
+}
+
 struct CompetitionCell: View {
     let competition: Competition
     let isLast: Bool
@@ -216,42 +340,5 @@ struct CompetitionCell: View {
                     .background(Color.white.opacity(0.2))
             }
         }
-    }
-}
-
-struct EmptyCompsView: View {
-    var newCompAction: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            Text("No Competitions Yet")
-                .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white)
-                .padding(.top, 30)
-                .padding(.bottom, 30)
-            
-            // Button container - fixed width for consistency
-            VStack() {
-                Button(action: newCompAction) {
-                    HStack {
-                        Text("New Competition")
-                            .font(.system(size: 17, weight: .bold, design: .default))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color(hex: "#FF4081"))
-                    .foregroundColor(.white)
-                    .cornerRadius(25)
-                }
-            }
-            .frame(width: 280)
-            .padding(.bottom, 30)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20)
-        .background(Color(hex: "#1A2245"))
-        .cornerRadius(14)
-        .padding(.horizontal, 20)
     }
 }

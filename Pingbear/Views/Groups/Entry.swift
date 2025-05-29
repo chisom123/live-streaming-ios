@@ -8,20 +8,28 @@
 import SwiftUI
 import NotificationBannerSwift
 import Kingfisher
+import FirebaseAuth
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
     @Environment(\.presentationMode) var presentationMode
     @State private var rating: Int = 0
     @State private var isRatingEnabled: Bool = true
-    @State private var navigateToCompDetails = false
     @State private var animateRating: Bool = false
     @State private var isTransitioning: Bool = false
     @State private var slideDirection: SlideDirection = .left
     
+    // Message state
+    @State private var showingMessageComposer = false
+    @State private var messageText = ""
+    @State private var messageSent = false
+    
     // Interaction service
     @StateObject private var interactionService = PhotoInteractionService()
     @State private var showInteractions = false
+    
+    // Chat ViewModel for sending messages
+    @StateObject private var chatViewModel: ChatViewModel
     
     enum SlideDirection {
         case left, right
@@ -32,6 +40,7 @@ struct EntryView: View {
     init(competitionId: String, competition: Competition) {
         _viewModel = StateObject(wrappedValue: EntryViewModel(competitionId: competitionId, mode: .entryView))
         self.competition = competition // Initialize the competition property
+        _chatViewModel = StateObject(wrappedValue: ChatViewModel(competitionId: competitionId))
     }
     
     private func triggerHapticFeedback(for star: Int) {
@@ -68,7 +77,7 @@ struct EntryView: View {
         guard viewModel.currentIndex < viewModel.entries.count - 1 else {
             // Clean up before navigating away
             cleanupResources()
-            navigateToCompDetails = true
+            presentationMode.wrappedValue.dismiss()
             return
         }
         
@@ -112,6 +121,54 @@ struct EntryView: View {
     private func cleanupResources() {
         // Cancel any pending image downloads
         KingfisherManager.shared.downloader.cancelAll()
+    }
+    
+    private func sendPhotoMessage(text: String) {
+        guard viewModel.entries.indices.contains(viewModel.currentIndex) else { return }
+        
+        let currentEntry = viewModel.entries[viewModel.currentIndex]
+        
+        // Create UserPhoto from Entry
+        let photo = UserPhoto(
+            id: currentEntry.id,
+            photoUrl: currentEntry.photoUrl,
+            stars: currentEntry.stars,
+            isSuperstar: currentEntry.isSuperstar,
+            creationDate: currentEntry.creationDate,
+            themeName: currentEntry.themeName,
+            themeId: currentEntry.themeId,
+            overlayText: currentEntry.overlayText,
+            overlayVerticalPosition: currentEntry.overlayVerticalPosition,
+            isFromCamera: currentEntry.isFromCamera,
+            userId: currentEntry.userId
+        )
+        
+        // Much simpler call - no need to pass user info!
+        chatViewModel.sendPhotoMessage(photo: photo, text: text)
+        
+        // Show success message
+        withAnimation {
+            messageSent = true
+        }
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        if let userId = Auth.auth().currentUser?.uid {
+            NotificationQueueManager.shared.queueNotification(
+                competitionId: competition.id,
+                competitionDescription: competition.description,
+                userId: userId,
+                type: .message
+            )
+            NotificationQueueManager.shared.processQueuedNotifications()
+        }
+        
+        Analytics.shared.trackTap(
+            elementId: "message_send_btn_tapped",
+            screenName: "entry_view"
+        )
     }
     
     var body: some View {
@@ -178,6 +235,35 @@ struct EntryView: View {
                     }
                     .animation(.easeInOut(duration: 0.3), value: isTransitioning)
                 }
+                
+                // Success message overlay
+                if messageSent {
+                    VStack {
+                        Spacer()
+                        
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Message sent!")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color(hex: "#25D366"))
+                        .cornerRadius(25)
+                        .shadow(radius: 10)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                withAnimation {
+                                    messageSent = false
+                                }
+                            }
+                        }
+                        
+                        Spacer()
+                            .frame(height: 200)
+                    }
+                }
             }
             .onChange(of: viewModel.currentIndex) { _ in
                 self.rating = 0 // Reset the rating when changing index
@@ -200,7 +286,7 @@ struct EntryView: View {
                 // Left side - Back button
                 Button(action: {
                     cleanupResources()
-                    navigateToCompDetails = true
+                    presentationMode.wrappedValue.dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 30))
@@ -231,28 +317,14 @@ struct EntryView: View {
                 Spacer()
                 
                 // Right side - Eye button with count
-                HStack(spacing: 6) {
-                    Button(action: {
-                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
-                            showInteractions = true
-                            interactionService.fetchInteractions(
-                                competitionId: competition.id,
-                                entryId: viewModel.entries[viewModel.currentIndex].id
-                            )
-                        }
-                    }) {
-                        Image(systemName: "eye.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                    }
-                    
-                    Text("\(interactionService.viewCount)")
+                Button(action: {
+
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 30))
                         .foregroundColor(.white)
-                        .font(.system(size: 22, weight: .bold))
-                        .truncationMode(.tail)
-                        .lineLimit(1)
                         .shadow(radius: 10)
+                        .opacity(0)
                 }
                 .frame(width: 80, alignment: .trailing) // Fixed width matching left side
             }
@@ -262,6 +334,43 @@ struct EntryView: View {
             // Bottom - Theme and Star rating
             VStack(spacing: 0) { // Zero spacing is crucial for the seamless blend
                 Spacer() // Pushes the content to the bottom
+                
+                // Right-side vertical button stack above rating bar
+                VStack(spacing: 25) {
+                    Button(action: {
+                        showingMessageComposer = true
+                    }) {
+                        Image(systemName: "message.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
+                    }
+
+                    Button(action: {
+                        if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                            showInteractions = true
+                            interactionService.fetchInteractions(
+                                competitionId: competition.id,
+                                entryId: viewModel.entries[viewModel.currentIndex].id
+                            )
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: "eye.fill")
+                                .font(.system(size: 32))
+                                .foregroundColor(.white)
+                                .shadow(radius: 10)
+                            
+                            Text("\(interactionService.viewCount)")
+                                .foregroundColor(.white)
+                                .font(.system(size: 18, weight: .bold))
+                                .shadow(radius: 5)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 5)
+                .padding(.bottom, 25)
 
                 // Theme container if theme exists
                 if viewModel.entries.indices.contains(viewModel.currentIndex) {
@@ -338,7 +447,7 @@ struct EntryView: View {
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                                             cleanupResources()
-                                            navigateToCompDetails = true
+                                            presentationMode.wrappedValue.dismiss()
                                         }
                                     } else {
                                         // Use the new transition function
@@ -380,14 +489,38 @@ struct EntryView: View {
             .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
             .padding(.horizontal)
         }
-        .fullScreenCover(isPresented: $navigateToCompDetails) {
-            CompDetails(competition: competition) // Adjust according to your needs
-        }
         .sheet(isPresented: $showInteractions) {
             InteractionsListView(
                 interactions: interactionService.interactions,
                 isLoading: interactionService.isLoadingInteractions
             )
+        }
+        .sheet(isPresented: $showingMessageComposer) {
+            if viewModel.entries.indices.contains(viewModel.currentIndex) {
+                let currentEntry = viewModel.entries[viewModel.currentIndex]
+                let photo = UserPhoto(
+                    id: currentEntry.id,
+                    photoUrl: currentEntry.photoUrl,
+                    stars: currentEntry.stars,
+                    isSuperstar: currentEntry.isSuperstar,
+                    creationDate: currentEntry.creationDate,
+                    themeName: currentEntry.themeName,
+                    themeId: currentEntry.themeId,
+                    overlayText: currentEntry.overlayText,
+                    overlayVerticalPosition: currentEntry.overlayVerticalPosition,
+                    isFromCamera: currentEntry.isFromCamera,
+                    userId: currentEntry.isCurrentUser ? (Auth.auth().currentUser?.uid ?? "") : ""
+                )
+                
+                MessageComposerView(
+                    photo: photo,
+                    userName: currentEntry.userName,
+                    competitionId: competition.id,
+                    onSend: { message in
+                        sendPhotoMessage(text: message)
+                    }
+                )
+            }
         }
         .ignoresSafeArea(edges: .all)
         .onAppear {
@@ -421,6 +554,7 @@ struct EntryView: View {
         .onDisappear {
             // Clean up when the view disappears
             cleanupResources()
+            chatViewModel.cleanup()
         }
     }
 }
