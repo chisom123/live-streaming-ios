@@ -341,7 +341,7 @@ struct CompDetails: View {
                 )
             case .notification:
                 return Alert(
-                    title: Text("Get Notified When There Are New Photos for You to Rate"),
+                    title: Text("Get Notified When Your Friends Post Photos to Rate"),
                     message: Text(""),
                     dismissButton: .default(Text("OK"), action: {
                         notificationManager.requestNotificationPermission { granted in

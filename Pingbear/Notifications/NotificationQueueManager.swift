@@ -149,7 +149,7 @@ class NotificationQueueManager {
                                         case .message:
                                             body = "\(username) sent a message"
                                         case .photo:
-                                            body = "\(username) shared a photo"
+                                            body = "Rate \(username)'s new photo"
                                         }
                                         
                                         pushNotificationSender.sendPushNotification(
