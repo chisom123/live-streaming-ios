@@ -64,11 +64,7 @@ struct ThemePhotosView: View {
                 } else if viewModel.themePhotos.isEmpty && !viewModel.isLoading {
                     Spacer()
                     VStack(spacing: 16) {
-                        Image(systemName: "photo")
-                            .font(.system(size: 50))
-                            .foregroundColor(.white.opacity(0.5))
-                        
-                        Text("No photos for this theme in the last 24 hours")
+                        Text("No Photos Yet")
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)

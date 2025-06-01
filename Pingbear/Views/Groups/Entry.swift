@@ -318,13 +318,14 @@ struct EntryView: View {
                 
                 // Right side - Eye button with count
                 Button(action: {
-
+                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
+                    banner.show()
+                    Analytics.shared.track(event: "photo_reported")
                 }) {
-                    Image(systemName: "arrow.left")
+                    Image(systemName: "flag")
                         .font(.system(size: 30))
                         .foregroundColor(.white)
                         .shadow(radius: 10)
-                        .opacity(0)
                 }
                 .frame(width: 80, alignment: .trailing) // Fixed width matching left side
             }

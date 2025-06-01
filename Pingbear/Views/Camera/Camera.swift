@@ -98,20 +98,7 @@ struct CameraView: View {
                 Spacer()
 
                 // Bottom Controls
-                HStack(spacing: 60) {
-                    PhotosPicker(
-                        selection: $selectedItem,
-                        matching: .images,
-                        photoLibrary: .shared()
-                    ) {
-                        Image(systemName: "photo.on.rectangle")
-                            .font(.system(size: 24))
-                            .foregroundColor(.white)
-                            .frame(width: 60, height: 60)
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
-                    }
-                    
+                HStack(spacing: 0) {
                     // Camera Button
                     Button(action: {
                         imageSource = .camera
@@ -127,11 +114,6 @@ struct CameraView: View {
                             )
                     }
                     .disabled(cameraModel.isTakingPhoto)
-                    
-                    // Spacer to maintain symmetry
-                    Circle()
-                        .fill(Color.clear)
-                        .frame(width: 60, height: 60)
                 }
                 .padding(.bottom, 50)
             }

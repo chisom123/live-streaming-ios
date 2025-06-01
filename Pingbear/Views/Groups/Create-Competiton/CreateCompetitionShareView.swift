@@ -339,6 +339,11 @@ struct CustomShareSheet: View {
                 Button(action: {
                     UIPasteboard.general.string = shareLink
                     linkCopied = true
+                    
+                    // Provide haptic feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    
                     Analytics.shared.trackTap(
                         elementId: "copied_link_from_custom_sheet",
                         screenName: "create_competition_share"

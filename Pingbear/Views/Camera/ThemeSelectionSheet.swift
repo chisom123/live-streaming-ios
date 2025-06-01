@@ -1,7 +1,40 @@
 import SwiftUI
 import FirebaseAuth
 
-// MARK: - Theme Selection Sheet
+// MARK: - Empty State View
+struct ThemeEmptyStateView: View {
+    var action: () -> Void
+    
+    var body: some View {
+        VStack {
+            Text("No Themes Yet")
+                .font(.system(size: 21, weight: .bold, design: .default))
+                .foregroundColor(.white)
+                .padding(.top, 20)
+                .padding(.bottom, 25)
+            
+            Button(action: {
+                action()
+            }) {
+                Text("Add New Theme")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .background(Color(hex: "#FF4081"))
+                    .foregroundColor(.white)
+                    .cornerRadius(200)
+            }
+            .padding(.bottom, 20)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(10)
+        .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Updated Theme Selection Sheet
 struct ThemeSelectionSheet: View {
     @ObservedObject var viewModel: ThemesViewModel
     let competitionId: String
@@ -51,42 +84,52 @@ struct ThemeSelectionSheet: View {
                 .padding(.vertical, 20)
                 .background(Color(hex: "#1A2245"))
                 
-                // Search bar
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    TextField("Search Themes", text: $searchText)
-                        .foregroundColor(.white)
-                        .accentColor(.white)
-                        .font(.system(size: 16, weight: .bold))
-                    
-                    if !searchText.isEmpty {
-                        Button(action: {
-                            searchText = ""
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.white.opacity(0.7))
+                // Only show search bar when there are themes
+                if !viewModel.themes.isEmpty {
+                    // Search bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        TextField("Search Themes", text: $searchText)
+                            .foregroundColor(.white)
+                            .accentColor(.white)
+                            .font(.system(size: 16, weight: .bold))
+                        
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
                         }
                     }
+                    .padding()
+                    .background(Color(hex: "#3B4374"))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical)
                 }
-                .padding()
-                .background(Color(hex: "#3B4374"))
-                .cornerRadius(10)
-                .padding(.horizontal, 20)
-                .padding(.vertical)
                 
-                // Themes list
+                // Content area
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
                         .tint(.white)
                         .scaleEffect(1.2)
                     Spacer()
+                } else if viewModel.themes.isEmpty {
+                    // Empty state
+                    Spacer()
+                    ThemeEmptyStateView {
+                        isAddingNewTheme = true
+                    }
+                    Spacer()
                 } else {
-                    // Dynamic text above ScrollView
+                    // Themes list with header
                     HStack {
-                        Text(viewModel.themes.isEmpty ? "No Themes Yet" : "Recent Themes")
+                        Text("Recent Themes")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(Color.white.opacity(0.8))
                             .padding(.horizontal, 20)
@@ -130,7 +173,7 @@ struct ThemeSelectionSheet: View {
                                 }
                             }
                             
-                            // Original Add New Theme button (kept)
+                            // Add New Theme button at bottom of list
                             Button(action: {
                                 isAddingNewTheme = true
                             }) {
@@ -268,17 +311,17 @@ struct AddThemeSheet: View {
                         }
                         
                         // Only show suggestions if the text field is empty
-                        if themeName.isEmpty {
-                            // Suggestions title
-                            Text("Suggested Themes")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color.white.opacity(0.8))
-                                .padding(.top, 10)
-                            
-                            // Theme suggestions grid
-                            suggestionsGrid
-                                .padding(.top, 5)
-                        }
+//                        if themeName.isEmpty {
+//                            // Suggestions title
+//                            Text("Suggested Themes")
+//                                .font(.system(size: 16, weight: .semibold))
+//                                .foregroundColor(Color.white.opacity(0.8))
+//                                .padding(.top, 10)
+//                            
+//                            // Theme suggestions grid
+//                            suggestionsGrid
+//                                .padding(.top, 5)
+//                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)

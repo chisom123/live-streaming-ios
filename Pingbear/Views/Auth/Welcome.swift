@@ -93,7 +93,11 @@ struct WelcomeView: View {
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(Color.white.opacity(0.8))
                     .padding(.top, 15)
-                    .padding(.bottom, 30)
+                
+                Spacer()
+                
+                // Disclaimer
+                DisclaimerText()
                 
                 // CTA Button
                 Button(action: {
@@ -104,7 +108,7 @@ struct WelcomeView: View {
                     showPhoneEntry = true
                 }) {
                     HStack {
-                        Text("Get Started")
+                        Text("Agree & Continue")
                             .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
@@ -129,11 +133,7 @@ struct WelcomeView: View {
                     .shadow(color: Color(hex: "#FF4081").opacity(0.5), radius: 10, x: 0, y: 5)
                 }
                 .padding(.horizontal, 25)
-                
-                Spacer()
-                
-                // Disclaimer
-                DisclaimerText()
+                .padding(.bottom, 30)
             }
             .padding(.horizontal, 20)
             .onAppear {
@@ -180,27 +180,17 @@ class AnimationController: ObservableObject {
 struct DisclaimerText: View {
     var body: some View {
         VStack {
-            HStack(spacing: 5) {
-                Text("Read our")
-                
-                Text("Privacy Policy")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io/privacy-policy")
-                    }
-                
-                Text("and")
-                    .font(.system(size: 14, weight: .semibold, design: .default))
-                
-                Text("Terms of Use")
-                    .underline()
-                    .onTapGesture {
-                        openURL("https://chay-b6172c.webflow.io")
-                    }
-            }
-            .font(.system(size: 14, weight: .semibold, design: .default))
-            .foregroundColor(.white)
-            .padding(.bottom, 20)
+            let readOurText = Text("Read our ")
+            let privacyText = Text("Privacy Policy").underline()
+            let andText = Text(" and Tap \"Agree & Continue\" to accept the ")
+            let termsText = Text("Terms of Use (EULA)").underline()
+            
+            (readOurText + privacyText + andText + termsText)
+                .font(.system(size: 14, weight: .semibold, design: .default))
+                .foregroundColor(.white)
+                .padding(.bottom, 30)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
         }
     }
 }
