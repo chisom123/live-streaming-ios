@@ -332,6 +332,23 @@ class CameraViewModel: NSObject, ObservableObject {
         }
     }
     
+    func stopSession() {
+        sessionQueue.async {
+            if self.session.isRunning {
+                self.session.stopRunning()
+                print("Camera session stopped")
+            }
+            
+            DispatchQueue.main.async {
+                // Reset flash when stopping session
+                self.resetFlash()
+                
+                // Reset configuration flag so it can be reconfigured when needed again
+                self.isConfigured = false
+            }
+        }
+    }
+    
     // Improved method for capturing photo with flash
     func capturePhotoWithFlash() {
         guard !isTakingPhoto else { return }

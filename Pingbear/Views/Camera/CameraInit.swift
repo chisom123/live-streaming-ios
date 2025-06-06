@@ -21,6 +21,10 @@ struct CameraInitView: View {
             // Request camera permissions right away
             cameraModel.checkPermission()
         }
+        .onDisappear {
+            // Stop the camera session when view disappears
+            cameraModel.stopSession()
+        }
         .alert(isPresented: $cameraModel.alert) {
             Alert(title: Text("Please Enable camera access"))
         }

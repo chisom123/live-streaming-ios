@@ -37,6 +37,7 @@ struct CameraView: View {
                 HStack {
                     Button {
                         navigateToCompDetails = true
+                        cameraModel.stopSession()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 30))
@@ -103,6 +104,7 @@ struct CameraView: View {
                     Button(action: {
                         imageSource = .camera
                         cameraModel.capturePhotoWithFlash()
+                        cameraModel.stopSession()
                     }) {
                         Circle()
                             .fill(Color.clear)
@@ -166,12 +168,14 @@ struct CameraView: View {
         .onDisappear {
             // Clean up resources when view disappears
             cameraModel.resetFlash()
+            cameraModel.stopSession()
         }
     }
     
     private func resetCamera() {
         cameraModel.capturedImage = nil
         cameraModel.resetFlash()
+        cameraModel.checkPermission()
         imageSource = .camera
         selectedItem = nil
         selectedImage = nil
