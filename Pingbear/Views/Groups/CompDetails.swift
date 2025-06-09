@@ -24,13 +24,9 @@ struct CompDetails: View {
         }
     }
     
-    @Environment(\.presentationMode) var presentationMode
-    @State private var goToMyComps = false
+    @Environment(\.dismiss) private var dismiss
     @State private var isCameraPresented = false
-    @State private var isMembersPresented = false
-    @State private var isVotingPresented = false
     @State private var isEditingCompetition = false
-    @State private var isChatPresented = false
     @State private var unreadMessageCount = 0
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
@@ -40,9 +36,10 @@ struct CompDetails: View {
     @State private var currentUserProfilePictureUrl: String? = nil
     @StateObject private var chatIndicator: ChatIndicatorViewModel
     @State private var showingJoinSelectView = false
+    @State private var hasUserPostedFirstEntry = false
+    @StateObject private var myFriendsModel = MyFriendsModel()
     
     @ObservedObject var entryViewModel: EntryViewModel
-
     @ObservedObject var competition: Competition
     
     private let db = Firestore.firestore()
@@ -60,7 +57,7 @@ struct CompDetails: View {
                 HStack {
                     Button(action: {
                         entryViewModel.removeListeners()
-                        goToMyComps = true
+                        dismiss()
                         Analytics.shared.trackTap(
                             elementId: "back_button",
                             screenName: "competition_details"
@@ -97,20 +94,20 @@ struct CompDetails: View {
                     
                     Spacer()
                     
-                    Button(action: {
-                        entryViewModel.removeListeners()
-                        isMembersPresented = true
-                        Analytics.shared.trackTap(
-                            elementId: "view_competitors",
-                            screenName: "competition_details"
-                        )
-                    }) {
+                    NavigationLink(destination: MembersView(competition: competition)) {
                         Image(systemName: "ellipsis")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 32, height: 32)
                             .foregroundColor(Color.white)
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        entryViewModel.removeListeners()
+                        Analytics.shared.trackTap(
+                            elementId: "view_competitors",
+                            screenName: "competition_details"
+                        )
+                    })
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -128,13 +125,7 @@ struct CompDetails: View {
                             .clipShape(Circle())
                     }
 
-                    Button(action: {
-                        vote()
-                        Analytics.shared.trackEntry(
-                            action: "rate",
-                            competitionId: competition.id
-                        )
-                    }) {
+                    NavigationLink(destination: EntryView(competitionId: competition.id, competition: competition)) {
                         Text("Start Rating")
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
@@ -144,12 +135,15 @@ struct CompDetails: View {
                             .cornerRadius(200)
                     }
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
-                    
-                    Button(action: {
+                    .simultaneousGesture(TapGesture().onEnded {
                         entryViewModel.removeListeners()
-                        chatIndicator.markAsRead()
-                        isChatPresented = true
-                    }) {
+                        Analytics.shared.trackEntry(
+                            action: "rate",
+                            competitionId: competition.id
+                        )
+                    })
+                    
+                    NavigationLink(destination: ChatView(competition: competition)) {
                         ZStack {
                             Image(systemName: "message.fill")
                                 .font(.system(size: 24, weight: .bold))
@@ -169,6 +163,10 @@ struct CompDetails: View {
                             }
                         }
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        entryViewModel.removeListeners()
+                        chatIndicator.markAsRead()
+                    })
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
@@ -285,34 +283,42 @@ struct CompDetails: View {
             }
         }
         .background(Color(hex: "#10183C"))
+        .navigationBarHidden(true)
         .onAppear {
             fetchData()
             NotificationQueueManager.shared.processQueuedNotifications()
             fetchCurrentUserProfilePictureUrl()
+            
+            entryViewModel.setupListeners()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .dismissCameraFlow)) { _ in
+            // Dismiss the camera modal immediately
+            isCameraPresented = false
+            
+            // Refresh data immediately for better UX
+            if !hasUserPostedFirstEntry {
+                print("CompDetails: Refreshing data after first entry")
+                fetchData()
+                hasUserPostedFirstEntry = true
+                
+                // Process notifications without delay, but handle potential failures gracefully
+                NotificationQueueManager.shared.processQueuedNotifications()
+            } else {
+                // Process notifications immediately for existing users too
+                NotificationQueueManager.shared.processQueuedNotifications()
+            }
+        }
+        // ✅ KEEP: Only Camera as fullScreenCover (true modal)
         .fullScreenCover(isPresented: $isCameraPresented, content: {
             CameraView(competition: competition)
         })
-        .fullScreenCover(isPresented: $isVotingPresented, onDismiss: {
-            // Re-setup listeners after returning from voting
-            entryViewModel.setupListeners()
-            // Then refresh the vote status immediately
-            entryViewModel.refreshVoteStatus()
-            chatIndicator.refresh()
-        }, content: {
-            EntryView(competitionId: competition.id, competition: competition)
-        })
-        .fullScreenCover(isPresented: $goToMyComps) {
-            MyCompsView()
-        }
-        .fullScreenCover(isPresented: $isMembersPresented) {
-            MembersView(competition: competition)
-        }
-        .fullScreenCover(isPresented: $isChatPresented) {
-            ChatView(competition: competition)
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
+        // ✅ REMOVED: Voting fullScreenCover - now using NavigationLink
+        .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
+            entryViewModel.fetchMemberCount()
+            entryViewModel.fetchEntries(mode: .compDetailsView)
+        }) {
+            // content closure comes last
+            JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
@@ -380,6 +386,14 @@ struct CompDetails: View {
             DispatchQueue.main.async {
                 self.isLoading = false
                 
+                let userIsOnLeaderboard = self.entryViewModel.userLeaderboard.contains { userEntry in
+                    userEntry.userName == "Me" || userEntry.id == self.currentUserId
+                }
+                
+                if userIsOnLeaderboard {
+                    self.hasUserPostedFirstEntry = true
+                }
+                
                 UNUserNotificationCenter.current().getNotificationSettings { settings in
                     DispatchQueue.main.async {
                         if settings.authorizationStatus == .notDetermined {
@@ -430,10 +444,7 @@ struct CompDetails: View {
         entryViewModel.removeListeners()
         self.isCameraPresented = true
     }
-    func vote() {
-        entryViewModel.removeListeners()
-        self.isVotingPresented = true
-    }
+    // ✅ REMOVED: vote() function - no longer needed
     func openSettings() {
         entryViewModel.removeListeners()
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
@@ -500,7 +511,7 @@ struct EmptyLeaderboardView: View {
 
 struct NoPlayersView: View {
     var action_player: () -> Void
-    var onMeTapped: () -> Void  // Add this parameter
+    var onMeTapped: () -> Void
     @State private var currentUserProfileUrl: String?
     private let db = Firestore.firestore()
     

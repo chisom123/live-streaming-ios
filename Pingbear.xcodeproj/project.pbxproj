@@ -13,8 +13,6 @@
 		4F1C03CF2DB0E337001C9CE1 /* ThemeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */; };
 		4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */; };
 		4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */; };
-		4F1E36522DD2CB43003100DA /* CreateCompetitionNameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E36512DD2CB43003100DA /* CreateCompetitionNameView.swift */; };
-		4F1E36542DD2CC21003100DA /* CreateCompetitionShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E36532DD2CC21003100DA /* CreateCompetitionShareView.swift */; };
 		4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */; };
 		4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */; };
 		4F3359582DE5E983003EF5E1 /* ChatMessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */; };
@@ -33,7 +31,6 @@
 		4F39B29D2DD3758100F75004 /* DeepLinkHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B29C2DD3758100F75004 /* DeepLinkHandler.swift */; };
 		4F39B29F2DD3C2DC00F75004 /* FullScreenPhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B29E2DD3C2DC00F75004 /* FullScreenPhotoView.swift */; };
 		4F39B2A12DD3C50100F75004 /* UserPhotosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B2A02DD3C50100F75004 /* UserPhotosViewModel.swift */; };
-		4F39B2A32DD3DDD300F75004 /* CreateCompetitionAddPlayersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B2A22DD3DDD300F75004 /* CreateCompetitionAddPlayersView.swift */; };
 		4F39B2A72DD5447600F75004 /* ThemePhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B2A62DD5447600F75004 /* ThemePhotosView.swift */; };
 		4F39B2A92DD5449B00F75004 /* ThemePhotosViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B2A82DD5449B00F75004 /* ThemePhotosViewModel.swift */; };
 		4F39B2AB2DD5CB6C00F75004 /* ModalDismisser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F39B2AA2DD5CB6C00F75004 /* ModalDismisser.swift */; };
@@ -92,6 +89,7 @@
 		4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
+		4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 		4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */; };
 		4FB27D482DE054B300E10C8F /* PhotoInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */; };
@@ -129,8 +127,6 @@
 		4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeModel.swift; sourceTree = "<group>"; };
 		4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionSheet.swift; sourceTree = "<group>"; };
 		4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosView.swift; sourceTree = "<group>"; };
-		4F1E36512DD2CB43003100DA /* CreateCompetitionNameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCompetitionNameView.swift; sourceTree = "<group>"; };
-		4F1E36532DD2CC21003100DA /* CreateCompetitionShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCompetitionShareView.swift; sourceTree = "<group>"; };
 		4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryUploadManager.swift; sourceTree = "<group>"; };
 		4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPreview.swift; sourceTree = "<group>"; };
 		4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageModel.swift; sourceTree = "<group>"; };
@@ -148,7 +144,6 @@
 		4F39B29C2DD3758100F75004 /* DeepLinkHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkHandler.swift; sourceTree = "<group>"; };
 		4F39B29E2DD3C2DC00F75004 /* FullScreenPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenPhotoView.swift; sourceTree = "<group>"; };
 		4F39B2A02DD3C50100F75004 /* UserPhotosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosViewModel.swift; sourceTree = "<group>"; };
-		4F39B2A22DD3DDD300F75004 /* CreateCompetitionAddPlayersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateCompetitionAddPlayersView.swift; sourceTree = "<group>"; };
 		4F39B2A62DD5447600F75004 /* ThemePhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePhotosView.swift; sourceTree = "<group>"; };
 		4F39B2A82DD5449B00F75004 /* ThemePhotosViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePhotosViewModel.swift; sourceTree = "<group>"; };
 		4F39B2AA2DD5CB6C00F75004 /* ModalDismisser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalDismisser.swift; sourceTree = "<group>"; };
@@ -181,6 +176,7 @@
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCompetitionView.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
+		4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomShareSheet.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
 		4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInteraction.swift; sourceTree = "<group>"; };
 		4FB27D492DE0552F00E10C8F /* InteractionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractionsListView.swift; sourceTree = "<group>"; };
@@ -251,16 +247,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		4F1E36502DD2CB1A003100DA /* Create-Competiton */ = {
-			isa = PBXGroup;
-			children = (
-				4F1E36512DD2CB43003100DA /* CreateCompetitionNameView.swift */,
-				4F1E36532DD2CC21003100DA /* CreateCompetitionShareView.swift */,
-				4F39B2A22DD3DDD300F75004 /* CreateCompetitionAddPlayersView.swift */,
-			);
-			path = "Create-Competiton";
-			sourceTree = "<group>";
-		};
 		4F31B8932BDBAA85007892BC /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -287,7 +273,7 @@
 		4F31B8952BDBAB7D007892BC /* Groups */ = {
 			isa = PBXGroup;
 			children = (
-				4F1E36502DD2CB1A003100DA /* Create-Competiton */,
+				4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */,
 				4F375D082AEBBF990011F541 /* CompDetails.swift */,
 				4F375D0F2B02A1320011F541 /* Entry.swift */,
 				4F382E9F2B07CAA600669A58 /* MyComps.swift */,
@@ -661,7 +647,7 @@
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */,
 				4F39B29F2DD3C2DC00F75004 /* FullScreenPhotoView.swift in Sources */,
-				4F1E36522DD2CB43003100DA /* CreateCompetitionNameView.swift in Sources */,
+				4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4FB27D4A2DE0552F00E10C8F /* InteractionsListView.swift in Sources */,
 				4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */,
@@ -670,7 +656,6 @@
 				4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */,
 				4F9439912D7F90760068AF24 /* Welcome.swift in Sources */,
 				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
-				4F39B2A32DD3DDD300F75004 /* CreateCompetitionAddPlayersView.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
 				4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */,
 				4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */,
@@ -690,7 +675,6 @@
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
-				4F1E36542DD2CC21003100DA /* CreateCompetitionShareView.swift in Sources */,
 				4F33595A2DE5E9A0003EF5E1 /* ChatViewModel.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
 			);
@@ -845,7 +829,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 264;
+				CURRENT_PROJECT_VERSION = 271;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -875,7 +859,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 23.5;
+				MARKETING_VERSION = 24.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -895,7 +879,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 264;
+				CURRENT_PROJECT_VERSION = 271;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -924,7 +908,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 23.5;
+				MARKETING_VERSION = 24.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

@@ -3,14 +3,10 @@ import SwiftUI
 struct MembersView: View {
     
     var competition: Competition
-    @ObservedObject private var viewModel: MembersViewModel
+    @StateObject private var viewModel = MembersViewModel()
+    @StateObject private var myFriendsModel = MyFriendsModel()
     @State private var showingJoinSelectView = false
-    @State private var navigateToCompDetails = false
-    
-    init(competition: Competition) {
-        self.competition = competition
-        self.viewModel = MembersViewModel()
-    }
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -19,7 +15,7 @@ struct MembersView: View {
                 // Header
                 HStack {
                     Button(action: {
-                        navigateToCompDetails = true
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()
@@ -29,7 +25,7 @@ struct MembersView: View {
                     }
                     
                     Button(action: {
-                        navigateToCompDetails = true
+                        dismiss()
                     }) {
                         Text(competition.description)
                             .font(.system(size: 16, weight: .bold, design: .default))
@@ -156,14 +152,16 @@ struct MembersView: View {
             }
         }
         .background(Color(hex: "#10183C"))
+        .navigationBarHidden(true)
         .onAppear {
+            if viewModel.members.isEmpty {
+                viewModel.fetchMembersDetails(for: competition)
+            }
+        }
+        .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
             viewModel.fetchMembersDetails(for: competition)
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView) {
-            JoinSelectView(competition: competition, viewModel: MyFriendsModel())
-        }
-        .fullScreenCover(isPresented: $navigateToCompDetails) {
-            CompDetails(competition: competition)
+        }) {
+            JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
     }
 }

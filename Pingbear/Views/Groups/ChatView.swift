@@ -6,11 +6,11 @@ struct ChatView: View {
     @StateObject private var viewModel: ChatViewModel
     @State private var messageText = ""
     @FocusState private var isTextFieldFocused: Bool
-    @State private var navigateToCompDetails = false
     @StateObject private var chatIndicator: ChatIndicatorViewModel
     @State private var shouldMaintainScrollPosition = false
     @State private var scrollAnchorId: String?
     @State private var isFullScreenPhotoOpen = false
+    @Environment(\.dismiss) private var dismiss // ✅ Modern dismiss
     
     let competition: Competition
     
@@ -31,7 +31,7 @@ struct ChatView: View {
                     title: competition.description,
                     onBack: {
                         viewModel.cleanup()
-                        navigateToCompDetails = true
+                        dismiss() // ✅ UPDATED: Use dismiss instead of fullScreenCover
                     }
                 )
                 
@@ -131,7 +131,7 @@ struct ChatView: View {
                 .background(Color(hex: "#1A2245"))
             }
         }
-        .navigationBarHidden(true)
+        .navigationBarHidden(true) // ✅ Hide default navigation bar
         .accentColor(.white)
         .onAppear {
             chatIndicator.markAsRead()
@@ -140,9 +140,7 @@ struct ChatView: View {
         .onDisappear {
             viewModel.cleanup()
         }
-        .fullScreenCover(isPresented: $navigateToCompDetails) {
-            CompDetails(competition: competition)
-        }
+        // ✅ REMOVED: navigateToCompDetails fullScreenCover - now using dismiss()
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.errorMessage = nil
@@ -236,7 +234,7 @@ struct MessageBubble: View {
                 // Sender name (for other users)
                 if !message.isCurrentUser {
                     Text(message.senderName)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white.opacity(0.7))
                 }
                 

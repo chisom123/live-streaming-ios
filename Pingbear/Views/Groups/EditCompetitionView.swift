@@ -2,7 +2,7 @@ import SwiftUI
 import FirebaseFirestore
 
 struct EditCompetitionView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var competitionName: String
     @State private var errorMessage: String? = nil
     @FocusState private var isNameFocused: Bool
@@ -41,7 +41,7 @@ struct EditCompetitionView: View {
                         competitionId: competition.id,
                         properties: ["new_name": competitionName]
                     )
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
             }
         }
@@ -52,7 +52,7 @@ struct EditCompetitionView: View {
             // Header
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()

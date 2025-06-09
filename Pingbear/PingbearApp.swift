@@ -130,19 +130,23 @@ struct PingbearApp: App {
         WindowGroup {
             ZStack {
                 if isLoggedIn && Auth.auth().currentUser != nil {
-                    MyCompsView()
-                        .onAppear {
-                            setupApp()
-                            processLoginPendingDeepLink()
-                        }
-                        .environment(\.didLogOut, didLogOut)
-                        .onReceive(didLogOut) { _ in
-                            isLoggedIn = false
-                            deepLinkHandler.reset()
-                        }
-                        .onOpenURL { url in
-                            handleOpenURL(url)
-                        }
+                    // ✅ WRAP MyCompsView in NavigationStack
+                    NavigationStack {
+                        MyCompsView()
+                            .navigationBarHidden(true) // Keep your custom UI
+                    }
+                    .onAppear {
+                        setupApp()
+                        processLoginPendingDeepLink()
+                    }
+                    .environment(\.didLogOut, didLogOut)
+                    .onReceive(didLogOut) { _ in
+                        isLoggedIn = false
+                        deepLinkHandler.reset()
+                    }
+                    .onOpenURL { url in
+                        handleOpenURL(url)
+                    }
                 } else {
                     NavigationView {
                         WelcomeView()
@@ -160,8 +164,11 @@ struct PingbearApp: App {
                     }
                 }
             }
+            // ✅ KEEP: fullScreenCover only for deep link navigation
             .fullScreenCover(item: $selectedCompetition) { competition in
-                CompDetails(competition: competition)
+                NavigationStack {
+                    CompDetails(competition: competition)
+                }
             }
             .onChange(of: deepLinkHandler.pendingDeepLink) { _ in
                 processPendingDeepLinks()

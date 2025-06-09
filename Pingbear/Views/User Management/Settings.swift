@@ -3,10 +3,11 @@ import FirebaseAuth
 import Combine
 
 struct SettingsView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var showSignOutAlert = false
     @State private var showDeleteAccountAlert = false
     @State private var activeSheet: ActiveSheet?
+    @StateObject private var myFriendsModel = MyFriendsModel()
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
     
     enum ActiveSheet: Identifiable {
@@ -39,7 +40,7 @@ struct SettingsView: View {
             // Top Navigation Bar
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()
@@ -135,7 +136,7 @@ struct SettingsView: View {
             case .addFriends:
                 AddFriendsView(addFriendsModel: AddFriendsModel())
             case .myFriends:
-                MyFriendsView(viewModel: MyFriendsModel())
+                MyFriendsView(viewModel: myFriendsModel)
             case .myAccount:
                 ChangeNameView()
             }

@@ -4,13 +4,12 @@ import FirebaseFirestore
 
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
-    @State private var selectedCompetition: Competition?
     @State private var isLoading = true
     @State private var navigateToSettings = false
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
-    @State private var showCreateCompetition = false
-    @State private var isCreatingCompetition = false // New state for creation loading
+    @State private var isCreatingCompetition = false
+    @State private var navigateToNewCompetition: Competition?
     
     var body: some View {
         VStack {
@@ -72,18 +71,24 @@ struct MyCompsView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.competitions, id: \.id) { competition in
-                            CompetitionCell(
-                                competition: competition,
-                                isLast: competition.id == viewModel.competitions.last?.id,
-                                onTap: {
-                                    viewModel.cleanupListeners()
-                                    selectedCompetition = competition
-                                },
-                                onLeave: {
-                                    competitionToLeave = competition
-                                    showLeaveConfirmation = true
-                                }
-                            )
+                            NavigationLink(destination: CompDetails(competition: competition)) {
+                                CompetitionCellContent(
+                                    competition: competition,
+                                    isLast: competition.id == viewModel.competitions.last?.id,
+                                    onLeave: {
+                                        competitionToLeave = competition
+                                        showLeaveConfirmation = true
+                                    }
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .simultaneousGesture(TapGesture().onEnded {
+                                viewModel.cleanupListeners()
+                                Analytics.shared.trackTap(
+                                    elementId: "competition_cell",
+                                    screenName: "competitions_list"
+                                )
+                            })
                         }
                     }
                     .background(Color(hex: "#1A2245"))
@@ -94,15 +99,23 @@ struct MyCompsView: View {
         }
         .navigationBarHidden(true)
         .background(Color(hex: "#10183C"))
-        .fullScreenCover(item: $selectedCompetition) { comp in
-            CompDetails(competition: comp)
-        }
         .fullScreenCover(isPresented: $navigateToSettings) {
             SettingsView()
         }
-        .fullScreenCover(isPresented: $showCreateCompetition) {
-            CreateCompetitionNameView()
-        }
+        .background(
+            EmptyView()
+                .navigationDestination(
+                    isPresented: Binding(
+                        get: { navigateToNewCompetition != nil },
+                        set: { if !$0 { navigateToNewCompetition = nil } }
+                    ),
+                    destination: {
+                        if let competition = navigateToNewCompetition {
+                            CompDetails(competition: competition)
+                        }
+                    }
+                )
+        )
         .alert("Leave Competition", isPresented: $showLeaveConfirmation) {
             Button("Cancel", role: .cancel) {
                 competitionToLeave = nil
@@ -124,6 +137,9 @@ struct MyCompsView: View {
         .onDisappear {
             viewModel.cleanupListeners()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshCompetitions"))) { _ in
+            viewModel.refreshCompetitions()
+        }
     }
     
     private func fetchData() {
@@ -137,16 +153,16 @@ struct MyCompsView: View {
     }
     
     private func leaveCompetition(competitionId: String, userId: String) {
+        viewModel.competitions.removeAll { $0.id == competitionId }
+        
         let membersViewModel = MembersViewModel()
         membersViewModel.leaveCompetition(competitionId: competitionId, userId: userId)
         
-        // Track analytics event
         Analytics.shared.trackCompetition(
             action: "leave",
             competitionId: competitionId
         )
         
-        // Optionally provide haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
@@ -218,7 +234,7 @@ struct MyCompsView: View {
                         
                         // Navigate to the newly created competition
                         DispatchQueue.main.async {
-                            self.selectedCompetition = newCompetition
+                            self.navigateToNewCompetition = newCompetition
                         }
                         
                         Analytics.shared.trackCompetition(
@@ -276,10 +292,9 @@ struct EmptyCompsView: View {
     }
 }
 
-struct CompetitionCell: View {
+struct CompetitionCellContent: View {
     let competition: Competition
     let isLast: Bool
-    let onTap: () -> Void
     let onLeave: () -> Void
     
     @State private var isLongPressing = false
@@ -315,9 +330,6 @@ struct CompetitionCell: View {
             }
             .padding(.vertical, 25)
             .contentShape(Rectangle())
-            .onTapGesture {
-                onTap()
-            }
             .contextMenu {
                 Button() {
                     onLeave()
@@ -328,7 +340,6 @@ struct CompetitionCell: View {
                 }
             }
             .onLongPressGesture(minimumDuration: 0.5) {
-                // Provide haptic feedback on long press
                 let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                 impactGenerator.impactOccurred()
             }

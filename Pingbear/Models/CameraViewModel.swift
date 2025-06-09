@@ -476,6 +476,8 @@ extension CameraViewModel: AVCapturePhotoCaptureDelegate {
                 self.capturedImage = image
                 self.isTakingPhoto = false
                 self.showPreview = true
+                
+                self.stopSession()
             }
         }
     }

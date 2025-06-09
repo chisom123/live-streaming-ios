@@ -5,7 +5,7 @@ import FirebaseAuth
 struct VerificationView: View {
     let phoneNumber: String
     let verificationID: String
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     @State private var verificationCode: String = ""
     @State private var errorMessage: String? = nil
@@ -17,7 +17,7 @@ struct VerificationView: View {
         VStack {
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()

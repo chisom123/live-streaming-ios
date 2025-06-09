@@ -8,14 +8,14 @@ struct MessageComposerView: View {
     let onSend: (String) -> Void
 
     @State private var messageText = ""
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()
@@ -95,7 +95,7 @@ struct MessageComposerView: View {
                             Button(action: {
                                 if !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !photo.photoUrl.isEmpty {
                                     onSend(messageText)
-                                    presentationMode.wrappedValue.dismiss()
+                                    dismiss()
                                 }
                             }) {
                                 Image(systemName: "paperplane.fill")

@@ -2,11 +2,9 @@ import SwiftUI
 import StoreKit
 
 struct PayView: View {
-    @Environment(\.presentationMode) var presentationMode
     @ObservedObject var viewModel: PayViewModel
-    
-    @State private var navigateToCompDetails = false
     @State private var selectedBoostIndex = 1 // Pre-select middle option
+    @State private var shouldDismissCameraFlow = false
     
     var competition: Competition
     var competitionId: String
@@ -42,12 +40,16 @@ struct PayView: View {
                 ctaButtons
             }
             .background(Color(hex: "#10183C"))
-            .fullScreenCover(isPresented: $navigateToCompDetails) {
-                CompDetails(competition: competition)
-            }
             .onChange(of: viewModel.purchaseCompleted) { completed in
                 if completed {
-                    navigateToCompDetails = true
+                    // ✅ FIXED: Trigger dismissal of entire camera flow
+                    shouldDismissCameraFlow = true
+                }
+            }
+            .onChange(of: shouldDismissCameraFlow) { shouldDismiss in
+                if shouldDismiss {
+                    // Post notification to dismiss entire camera flow
+                    NotificationCenter.default.post(name: .dismissCameraFlow, object: nil)
                 }
             }
             .onAppear {
@@ -65,7 +67,7 @@ struct PayView: View {
             HStack {
                 Spacer()
                 Button(action: {
-                    navigateToCompDetails = true
+                    shouldDismissCameraFlow = true
                     Analytics.shared.track(event: "unlock_skipped")
                 }) {
                     Image("x")
@@ -316,4 +318,8 @@ struct PayView: View {
         guard selectedBoostIndex < identifiers.count else { return nil }
         return viewModel.products.first { $0.productIdentifier == identifiers[selectedBoostIndex] }
     }
+}
+
+extension Notification.Name {
+    static let dismissCameraFlow = Notification.Name("dismissCameraFlow")
 }

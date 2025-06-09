@@ -4,7 +4,7 @@ import FirebaseFirestore
 
 struct ChangeNameView: View {
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var profileManager = ProfilePictureManager.shared
     @State private var userName: String = ""
     @State private var profilePictureUrl: String = ""
@@ -25,7 +25,7 @@ struct ChangeNameView: View {
             VStack {
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable() // Allows resizing of the image

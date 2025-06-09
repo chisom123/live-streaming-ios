@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MyFriendsView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: MyFriendsModel
     @State private var showActionSheet: Bool = false
     @State private var friendToManage: String? = nil
@@ -11,7 +11,7 @@ struct MyFriendsView: View {
             VStack {
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()

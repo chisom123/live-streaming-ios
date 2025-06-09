@@ -9,7 +9,7 @@ struct FullScreenPhotoView: View {
     let userName: String
     let competitionId: String?
     let userProfilePictureUrl: String?
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     // Rating state
     @State private var rating: Int = 0
@@ -87,14 +87,13 @@ struct FullScreenPhotoView: View {
                         
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
-                            Text("Message sent!")
+                            Text("Sent!")
                         }
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                         .padding()
                         .background(Color(hex: "#25D366"))
                         .cornerRadius(25)
-                        .shadow(radius: 10)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -115,7 +114,7 @@ struct FullScreenPhotoView: View {
                 // Left side - Back button
                 Button(action: {
                     onDismiss?(currentStarCount)
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 30))
@@ -143,14 +142,15 @@ struct FullScreenPhotoView: View {
                 
                 // Right side - Eye button with count
                 Button(action: {
-                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
-                    banner.show()
-                    Analytics.shared.track(event: "photo_reported")
+//                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
+//                    banner.show()
+//                    Analytics.shared.track(event: "photo_reported")
                 }) {
                     Image(systemName: "flag")
                         .font(.system(size: 30))
                         .foregroundColor(.white)
                         .shadow(radius: 10)
+                        .opacity(0)
                 }
                 .frame(width: 80, alignment: .trailing) // Fixed width matching left side
             }
@@ -163,15 +163,6 @@ struct FullScreenPhotoView: View {
                 
                 // Right-side vertical button stack above rating bar
                 VStack(spacing: 25) {
-                    Button(action: {
-                        showingMessageComposer = true
-                    }) {
-                        Image(systemName: "message.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                    }
-
                     Button(action: {
                         guard let competitionId = competitionId else { return }
                         showInteractions = true
@@ -189,8 +180,17 @@ struct FullScreenPhotoView: View {
                             Text("\(interactionService.viewCount)")
                                 .foregroundColor(.white)
                                 .font(.system(size: 18, weight: .bold))
-                                .shadow(radius: 5)
+                                .shadow(radius: 10)
                         }
+                    }
+                    
+                    Button(action: {
+                        showingMessageComposer = true
+                    }) {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)

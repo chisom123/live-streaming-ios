@@ -8,7 +8,7 @@ struct ThemePhotosView: View {
     let competitionId: String
     
     @StateObject private var viewModel = ThemePhotosViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: ThemePhoto? = nil
     
     init(themeName: String, themeId: String, competitionId: String) {
@@ -23,7 +23,7 @@ struct ThemePhotosView: View {
                 // Header
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()

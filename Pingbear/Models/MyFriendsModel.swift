@@ -41,6 +41,9 @@ class MyFriendsModel: ObservableObject {
 
     private func fetchUserDetails(friendIDs: [String], completion: @escaping () -> Void) {
         guard !friendIDs.isEmpty else {
+            DispatchQueue.main.async { [weak self] in
+                self?.friends = []
+            }
             completion()
             return
         }

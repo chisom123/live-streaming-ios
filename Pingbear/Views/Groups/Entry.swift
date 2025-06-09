@@ -12,7 +12,7 @@ import FirebaseAuth
 
 struct EntryView: View {
     @StateObject private var viewModel: EntryViewModel // Initialize with a competition ID
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var rating: Int = 0
     @State private var isRatingEnabled: Bool = true
     @State private var animateRating: Bool = false
@@ -77,7 +77,7 @@ struct EntryView: View {
         guard viewModel.currentIndex < viewModel.entries.count - 1 else {
             // Clean up before navigating away
             cleanupResources()
-            presentationMode.wrappedValue.dismiss()
+            dismiss()
             return
         }
         
@@ -243,14 +243,13 @@ struct EntryView: View {
                         
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
-                            Text("Message sent!")
+                            Text("Sent!")
                         }
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                         .padding()
                         .background(Color(hex: "#25D366"))
                         .cornerRadius(25)
-                        .shadow(radius: 10)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .onAppear {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -286,7 +285,7 @@ struct EntryView: View {
                 // Left side - Back button
                 Button(action: {
                     cleanupResources()
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 30))
@@ -318,14 +317,15 @@ struct EntryView: View {
                 
                 // Right side - Eye button with count
                 Button(action: {
-                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
-                    banner.show()
-                    Analytics.shared.track(event: "photo_reported")
+//                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
+//                    banner.show()
+//                    Analytics.shared.track(event: "photo_reported")
                 }) {
                     Image(systemName: "flag")
                         .font(.system(size: 30))
                         .foregroundColor(.white)
                         .shadow(radius: 10)
+                        .opacity(0)
                 }
                 .frame(width: 80, alignment: .trailing) // Fixed width matching left side
             }
@@ -338,15 +338,6 @@ struct EntryView: View {
                 
                 // Right-side vertical button stack above rating bar
                 VStack(spacing: 25) {
-                    Button(action: {
-                        showingMessageComposer = true
-                    }) {
-                        Image(systemName: "message.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
-                    }
-
                     Button(action: {
                         if viewModel.entries.indices.contains(viewModel.currentIndex) {
                             showInteractions = true
@@ -365,8 +356,17 @@ struct EntryView: View {
                             Text("\(interactionService.viewCount)")
                                 .foregroundColor(.white)
                                 .font(.system(size: 18, weight: .bold))
-                                .shadow(radius: 5)
+                                .shadow(radius: 10)
                         }
+                    }
+                    
+                    Button(action: {
+                        showingMessageComposer = true
+                    }) {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .shadow(radius: 10)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
@@ -448,7 +448,7 @@ struct EntryView: View {
                                     if viewModel.currentIndex == viewModel.entries.count - 1 {
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                                             cleanupResources()
-                                            presentationMode.wrappedValue.dismiss()
+                                            dismiss()
                                         }
                                     } else {
                                         // Use the new transition function
@@ -524,6 +524,7 @@ struct EntryView: View {
             }
         }
         .ignoresSafeArea(edges: .all)
+        .navigationBarHidden(true)
         .onAppear {
             // Track view for the first entry when view appears
             if viewModel.entries.indices.contains(viewModel.currentIndex) {

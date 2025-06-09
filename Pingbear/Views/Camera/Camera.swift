@@ -5,7 +5,7 @@ struct CameraView: View {
     // Use StateObject for view-owned objects, ObservedObject for parent-injected
     @StateObject private var cameraModel = CameraViewModel()
     var competition: Competition
-    @State private var navigateToCompDetails = false
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var imageSource: ImageSource = .camera
@@ -36,8 +36,8 @@ struct CameraView: View {
             VStack {
                 HStack {
                     Button {
-                        navigateToCompDetails = true
                         cameraModel.stopSession()
+                        dismiss()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 30))
@@ -104,7 +104,6 @@ struct CameraView: View {
                     Button(action: {
                         imageSource = .camera
                         cameraModel.capturePhotoWithFlash()
-                        cameraModel.stopSession()
                     }) {
                         Circle()
                             .fill(Color.clear)
@@ -144,9 +143,6 @@ struct CameraView: View {
                 )
             }
         })
-        .fullScreenCover(isPresented: $navigateToCompDetails) {
-            CompDetails(competition: competition)
-        }
         .sheet(isPresented: $showingThemeSelection) {
             ThemeSelectionSheet(
                 viewModel: themesViewModel,

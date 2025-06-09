@@ -6,11 +6,10 @@ import MessageUI
 struct JoinSelectView: View {
     @State var selectedFriends: Set<String> = []
     @State var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
-    @State private var isPresentingCompDetails = false
     @State private var isCustomShareSheetPresented = false
     @State private var showAddFriendsView = false
     @State private var isLoading = true
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     
     var competition: Competition
     @ObservedObject var viewModel: MyFriendsModel
@@ -22,7 +21,7 @@ struct JoinSelectView: View {
                 // Header
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()
@@ -139,7 +138,7 @@ struct JoinSelectView: View {
                     
                     Button(action: {
                         updateCompetitionAllowJoin()
-                        isPresentingCompDetails = true
+                        dismiss()
                     }) {
                         Text("Continue")
                             .frame(maxWidth: .infinity, minHeight: 44)
@@ -162,9 +161,6 @@ struct JoinSelectView: View {
                 isLoading = false
             }
             Analytics.shared.trackScreen(name: "add_players")
-        }
-        .fullScreenCover(isPresented: $isPresentingCompDetails) {
-            CompDetails(competition: competition)
         }
         .fullScreenCover(isPresented: $showAddFriendsView, onDismiss: {
             viewModel.fetchFriends {
@@ -251,13 +247,6 @@ struct JoinSelectView: View {
                     }
                     dispatchGroup.leave()
                 }
-            }
-        }
-
-        // Wait for all operations to complete before continuing
-        dispatchGroup.notify(queue: .main) {
-            DispatchQueue.main.async {
-                self.isPresentingCompDetails = true
             }
         }
     }

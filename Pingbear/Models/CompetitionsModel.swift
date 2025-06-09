@@ -163,4 +163,14 @@ class CompetitionsModel: ObservableObject {
         let membershipsPath = "groupMemberships/\(Auth.auth().currentUser?.uid ?? "")/competitions"
         FirestoreListenerManager.shared.removeListener(for: membershipsPath)
     }
+    
+    func refreshCompetitions() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        // Clean up existing listeners to avoid duplicates
+        cleanupListeners()
+        
+        // Re-setup listeners which will automatically refresh the data
+        setupCompetitionListeners(userId: userId)
+    }
 }

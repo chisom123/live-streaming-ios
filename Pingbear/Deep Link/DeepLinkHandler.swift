@@ -269,6 +269,12 @@ class DeepLinkHandler: ObservableObject {
                         action: "joined_via_deeplink",
                         competitionId: competitionId
                     )
+                    
+                    // Trigger refresh of competitions list
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: NSNotification.Name("RefreshCompetitions"), object: nil)
+                    }
+                    
                     completion(true)
                 }
             }

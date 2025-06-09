@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AddFriendsView: View {
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var username: String = ""
     @StateObject var viewModel = ContactViewModel() // Using ContactViewModel for fetching contacts
     @ObservedObject var addFriendsModel: AddFriendsModel
@@ -20,7 +20,7 @@ struct AddFriendsView: View {
         VStack {
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable() // Allows resizing of the image

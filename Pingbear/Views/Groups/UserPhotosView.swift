@@ -8,7 +8,7 @@ struct UserPhotosView: View {
     let userProfilePictureUrl: String?
     
     @StateObject private var viewModel = UserPhotosViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: UserPhoto? = nil
     
     init(userId: String, userName: String, competitionId: String, userProfilePictureUrl: String? = nil) {
@@ -24,7 +24,7 @@ struct UserPhotosView: View {
                 // Header
                 HStack {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Image(systemName: "arrow.left")
                             .resizable()

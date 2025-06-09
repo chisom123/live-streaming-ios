@@ -3,14 +3,14 @@ import SwiftUI
 struct InteractionsListView: View {
     let interactions: [PhotoInteraction]
     let isLoading: Bool
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }) {
                     Image(systemName: "arrow.left")
                         .resizable()

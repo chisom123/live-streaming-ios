@@ -136,7 +136,6 @@ struct FinalPreview: View {
     var competitionId: String
     var resetCameraAction: () -> Void
     @State private var entrySaved = false
-    @State private var navigateToCompDetails = false // State to control navigation
     @State private var isUploading = false
     @State private var uploadProgress: Double = 0.0 // Added to track upload progress
     @State private var newentryDocId: String? // Add this line to hold the entries document ID
@@ -145,6 +144,8 @@ struct FinalPreview: View {
     @State private var isDragging: Bool = false
     @State private var isEditingText: Bool = false
     @StateObject private var themesViewModel = ThemesViewModel()
+    @StateObject private var payViewModel = PayViewModel()
+    @State private var shouldDismissCameraFlow = false
     @Binding var selectedTheme: Theme?
     @State private var showingThemeSelection = false
     let characterLimit = 150
@@ -319,12 +320,7 @@ struct FinalPreview: View {
          .ignoresSafeArea(edges: .all)
          .fullScreenCover(isPresented: $entrySaved) {
              if let entryDocId = newentryDocId {
-                 PayView(viewModel: PayViewModel(), competition: competition, competitionId: competitionId, entryDocId: entryDocId)
-             }
-         }
-         .fullScreenCover(isPresented: $navigateToCompDetails) {
-             if let entryDocId = newentryDocId {
-                 CompDetails(competition: competition)
+                 PayView(viewModel: payViewModel, competition: competition, competitionId: competitionId, entryDocId: entryDocId)
              }
          }
          .sheet(isPresented: $showingThemeSelection) {
@@ -340,6 +336,12 @@ struct FinalPreview: View {
              
              // Load themes on appearance
              themesViewModel.loadThemes(for: competitionId)
+         }
+         .onChange(of: shouldDismissCameraFlow) { shouldDismiss in
+             if shouldDismiss {
+                 // Post notification to dismiss entire camera flow
+                 NotificationCenter.default.post(name: .dismissCameraFlow, object: nil)
+             }
          }
      }
     
@@ -393,7 +395,7 @@ struct FinalPreview: View {
                     // Navigate based on superstar status
                     DispatchQueue.main.async {
                         if superstar {
-                            self.navigateToCompDetails = true
+                            shouldDismissCameraFlow = true
                         } else {
                             self.entrySaved = true
                         }
