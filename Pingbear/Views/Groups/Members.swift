@@ -113,7 +113,7 @@ struct MembersView: View {
                                                     .foregroundColor(Color(hex: "#FFF"))
                                             }
                                             .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                            .background(Color(hex: "#32CD32"))
+                                            .background(Color(hex: "#4169E1"))
                                             .cornerRadius(200)
                                         }
                                         .padding(.trailing, 30)

@@ -20,7 +20,7 @@ struct ThemeEmptyStateView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#32CD32"))
+                    .background(Color(hex: "#4169E1"))
                     .foregroundColor(.white)
                     .cornerRadius(200)
             }
@@ -159,7 +159,7 @@ struct ThemeSelectionSheet: View {
                                             
                                             if selectedTheme?.id == theme.id {
                                                 Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundColor(Color(hex: "#32CD32"))
+                                                    .foregroundColor(Color(hex: "#4169E1"))
                                                     .padding(.trailing, 10)
                                             }
                                         }
@@ -181,7 +181,7 @@ struct ThemeSelectionSheet: View {
                                     Spacer()
                                     
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(Color(hex: "#32CD32"))
+                                        .foregroundColor(Color(hex: "#4169E1"))
                                         .font(.system(size: 20))
                                     
                                     Text("Add New Theme")

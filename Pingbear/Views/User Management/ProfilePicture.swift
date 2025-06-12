@@ -148,9 +148,9 @@ struct ProfilePictureSelector: View {
                 ProgressView(value: uploadManager.uploadProgress) {
                     Text("\(Int(uploadManager.uploadProgress * 100))%")
                         .font(.caption)
-                        .foregroundColor(Color(hex: "#32CD32"))
+                        .foregroundColor(Color(hex: "#4169E1"))
                 }
-                .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: "#32CD32")))
+                .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: "#4169E1")))
                 .padding()
             } else {
                 
@@ -162,7 +162,7 @@ struct ProfilePictureSelector: View {
                     Text("Edit Picture")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .padding(EdgeInsets(top: 8, leading: 15, bottom: 8, trailing: 15))
-                        .background(Color(hex: "#32CD32"))
+                        .background(Color(hex: "#4169E1"))
                         .foregroundColor(Color(hex: "#fff"))
                         .cornerRadius(200)
                 }

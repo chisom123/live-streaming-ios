@@ -103,7 +103,7 @@ struct MessageComposerView: View {
                                     .frame(width: 60, height: 70)
                                     .foregroundColor(.white)
                                     .background(
-                                        Color(hex: "#32CD32")
+                                        Color(hex: "#4169E1")
                                             .clipShape(
                                                 RoundedCorner(
                                                     radius: 10,
