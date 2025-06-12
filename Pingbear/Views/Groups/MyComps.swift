@@ -275,7 +275,7 @@ struct EmptyCompsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(isCreating ? Color(hex: "#FF4081").opacity(0.5) : Color(hex: "#FF4081"))
+                    .background(isCreating ? Color(hex: "#32CD32").opacity(0.5) : Color(hex: "#32CD32"))
                     .foregroundColor(isCreating ? .white.opacity(0.6) : .white)
                     .cornerRadius(25)
                 }

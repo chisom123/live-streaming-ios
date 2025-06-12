@@ -114,7 +114,7 @@ struct ChangeNameView: View {
                                 .frame(width: 60, height: 70)
                                 .foregroundColor(.white)
                                 .background(
-                                    Color(hex: updatedName.isEmpty ? "#323862" : "#FF4081")
+                                    Color(hex: updatedName.isEmpty ? "#323862" : "#32CD32")
                                         .clipShape(
                                             RoundedCorner(
                                                 radius: 10,

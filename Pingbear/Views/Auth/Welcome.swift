@@ -19,7 +19,7 @@ struct WelcomeView: View {
                         .fill(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color(hex: "#FF4081").opacity(0.3),
+                                    Color(hex: "#32CD32").opacity(0.3),
                                     Color(hex: "#3B4374").opacity(0.1)
                                 ]),
                                 startPoint: .topLeading,
@@ -37,7 +37,7 @@ struct WelcomeView: View {
                     .fill(
                         RadialGradient(
                             gradient: Gradient(colors: [
-                                Color(hex: "#FF4081").opacity(0.4),
+                                Color(hex: "#32CD32").opacity(0.4),
                                 Color(hex: "#10183C").opacity(0)
                             ]),
                             center: .center,
@@ -81,7 +81,7 @@ struct WelcomeView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 70, height: 70)
-                    .shadow(color: Color(hex: "#FF4081").opacity(0.5), radius: 15, x: 0, y: 0)
+                    .shadow(color: Color(hex: "#32CD32").opacity(0.5), radius: 15, x: 0, y: 0)
                 
                 // Title and tagline
                 Text("Welcome to SocialStar")
@@ -107,30 +107,13 @@ struct WelcomeView: View {
                     )
                     showPhoneEntry = true
                 }) {
-                    HStack {
-                        Text("Agree & Continue")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color(hex: "#FF4081"), Color(hex: "#FF6A9B")]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(30)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 30)
-                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                    )
-                    .shadow(color: Color(hex: "#FF4081").opacity(0.5), radius: 10, x: 0, y: 5)
+                    Text("Agree & Continue")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color(hex: "#32CD32"))
+                        .cornerRadius(200)
                 }
                 .padding(.horizontal, 25)
                 .padding(.bottom, 30)

@@ -149,12 +149,12 @@ struct PayView: View {
                                 // Radio button
                                 ZStack {
                                     Circle()
-                                        .stroke(selectedBoostIndex == 0 ? Color(hex: "#FF4081") : Color.white.opacity(0.3), lineWidth: 2)
+                                        .stroke(selectedBoostIndex == 0 ? Color(hex: "#32CD32") : Color.white.opacity(0.3), lineWidth: 2)
                                         .frame(width: 20, height: 20)
                                     
                                     if selectedBoostIndex == 0 {
                                         Circle()
-                                            .fill(Color(hex: "#FF4081"))
+                                            .fill(Color(hex: "#32CD32"))
                                             .frame(width: 12, height: 12)
                                     }
                                 }
@@ -189,12 +189,12 @@ struct PayView: View {
                                 // Radio button
                                 ZStack {
                                     Circle()
-                                        .stroke(selectedBoostIndex == 1 ? Color(hex: "#FF4081") : Color.white.opacity(0.3), lineWidth: 2)
+                                        .stroke(selectedBoostIndex == 1 ? Color(hex: "#32CD32") : Color.white.opacity(0.3), lineWidth: 2)
                                         .frame(width: 20, height: 20)
                                     
                                     if selectedBoostIndex == 1 {
                                         Circle()
-                                            .fill(Color(hex: "#FF4081"))
+                                            .fill(Color(hex: "#32CD32"))
                                             .frame(width: 12, height: 12)
                                     }
                                 }
@@ -217,7 +217,7 @@ struct PayView: View {
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(Color(hex: "#FF4081"))
+                                        .background(Color(hex: "#32CD32"))
                                         .cornerRadius(6)
                                 }
                                 
@@ -240,12 +240,12 @@ struct PayView: View {
                                 // Radio button
                                 ZStack {
                                     Circle()
-                                        .stroke(selectedBoostIndex == 2 ? Color(hex: "#FF4081") : Color.white.opacity(0.3), lineWidth: 2)
+                                        .stroke(selectedBoostIndex == 2 ? Color(hex: "#32CD32") : Color.white.opacity(0.3), lineWidth: 2)
                                         .frame(width: 20, height: 20)
                                     
                                     if selectedBoostIndex == 2 {
                                         Circle()
-                                            .fill(Color(hex: "#FF4081"))
+                                            .fill(Color(hex: "#32CD32"))
                                             .frame(width: 12, height: 12)
                                     }
                                 }
@@ -286,7 +286,7 @@ struct PayView: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(Color(hex: "#FF4081"))
+                    .background(Color(hex: "#32CD32"))
                     .cornerRadius(200)
             }
             .padding(.horizontal, 20)

@@ -96,7 +96,7 @@ struct AddFriendsView: View {
                             .frame(width: 60, height: 70)
                             .foregroundColor(.white)
                             .background(
-                                Color(hex: username.isEmpty ? "#323862" : "#FF4081")
+                                Color(hex: username.isEmpty ? "#323862" : "#32CD32")
                                     .clipShape(
                                         RoundedCorner(
                                             radius: 10,
@@ -181,7 +181,7 @@ struct AddFriendsView: View {
                                                 .foregroundColor(Color(hex: "#FFF"))
                                         }
                                         .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                        .background(Color(hex: "#FF4081"))
+                                        .background(Color(hex: "#32CD32"))
                                         .cornerRadius(200)
                                     }
                                     .padding(.trailing, 30)
@@ -198,7 +198,7 @@ struct AddFriendsView: View {
                                             .foregroundColor(Color(hex: "#DAA520"))
                                     }
                                     .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#FF4081"))
+                                    .background(Color(hex: "#32CD32"))
                                     .cornerRadius(200)
                                     .padding(.trailing, 30)
                                     .opacity(0)

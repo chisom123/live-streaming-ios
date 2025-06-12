@@ -130,7 +130,7 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#FF4081") : Color(hex: "#D3D3D3").opacity(0.2))
+                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#32CD32") : Color(hex: "#D3D3D3").opacity(0.2))
                             .foregroundColor(entryViewModel.hasEntriesToVoteOn ? Color.white : Color(hex: "#D3D3D3").opacity(0.2))
                             .cornerRadius(200)
                     }
@@ -495,7 +495,7 @@ struct EmptyLeaderboardView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(Color(hex: "#FF4081"))
+                    .background(Color(hex: "#32CD32"))
                     .foregroundColor(.white)
                     .cornerRadius(200)
             }
@@ -592,7 +592,7 @@ struct NoPlayersView: View {
                                             .foregroundColor(Color(hex: "#FFF"))
                                     }
                                     .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                    .background(Color(hex: "#FF4081"))
+                                    .background(Color(hex: "#32CD32"))
                                     .cornerRadius(200)
                                 }
                                 .padding(.trailing, 30)

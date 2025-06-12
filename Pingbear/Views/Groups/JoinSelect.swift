@@ -103,7 +103,7 @@ struct JoinSelectView: View {
                         }) {
                             Text("Add Friends")
                                 .font(.system(size: 18, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#FF4081"))
+                                .foregroundColor(Color(hex: "#32CD32"))
                         }
                         
                         Spacer()
@@ -144,7 +144,7 @@ struct JoinSelectView: View {
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(!self.selectedFriends.isEmpty ? Color(hex: "#FF4081") : Color(hex: "#D3D3D3").opacity(0.2))
+                            .background(!self.selectedFriends.isEmpty ? Color(hex: "#32CD32") : Color(hex: "#D3D3D3").opacity(0.2))
                             .foregroundColor(!self.selectedFriends.isEmpty ? Color(hex: "#FFF") : Color(hex: "#D3D3D3").opacity(0.2))
                             .cornerRadius(200)
                     }
@@ -275,12 +275,12 @@ struct SelectableFriendView: View {
                 .padding(.leading, 30)
                 
                 Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(isSelected ? Color(hex: "#FF4081") : .white)
+                    .foregroundColor(isSelected ? Color(hex: "#32CD32") : .white)
                     .padding(.trailing, 30)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 20)
-            .background(isSelected ? Color(hex: "#FF4081").opacity(0.2) : Color.clear)
+            .background(isSelected ? Color(hex: "#32CD32").opacity(0.2) : Color.clear)
         }
     }
 }
@@ -309,7 +309,7 @@ struct RadioButtonField: View {
         }) {
             HStack(alignment: .center, spacing: 20) {
                 Image(systemName: self.isMarked ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(self.isMarked ? Color(hex: "#FF4081") : .white)
+                    .foregroundColor(self.isMarked ? Color(hex: "#32CD32") : .white)
                 Text(self.label)
                     .foregroundColor(.white)
                     .font(.system(size: 16, weight: .bold))
