@@ -127,18 +127,6 @@ struct ThemeSelectionSheet: View {
                     }
                     Spacer()
                 } else {
-                    // Themes list with header
-                    HStack {
-                        Text("Recent Themes")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color.white.opacity(0.8))
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 10)
-                            .padding(.bottom, 10)
-                        
-                        Spacer()
-                    }
-                    
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(Array(filteredThemes.enumerated()), id: \.element.id) { index, theme in
@@ -181,7 +169,7 @@ struct ThemeSelectionSheet: View {
                                     Spacer()
                                     
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(Color(hex: "#4169E1"))
+                                        .foregroundColor(Color(hex: "#FFF"))
                                         .font(.system(size: 20))
                                     
                                     Text("Add New Theme")
