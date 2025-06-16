@@ -147,7 +147,7 @@ struct ThemeSelectionSheet: View {
                                             
                                             if selectedTheme?.id == theme.id {
                                                 Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundColor(Color(hex: "#4169E1"))
+                                                    .foregroundColor(Color(hex: "#FFF"))
                                                     .padding(.trailing, 10)
                                             }
                                         }
@@ -443,7 +443,7 @@ struct ThemeBadgeClickable: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color(hex: "#FF8C00"))
+            .background(Color(hex: "#4169E1"))
             .cornerRadius(20)
         }
         .fullScreenCover(isPresented: $isShowingThemeView) {
