@@ -142,7 +142,7 @@ struct InteractionsListView: View {
         } else if minutes > 0 {
             return minutes == 1 ? "1m ago" : "\(minutes)m ago"
         } else {
-            return "Just now"
+            return "Just Now"
         }
     }
 }
