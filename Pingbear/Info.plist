@@ -12,16 +12,16 @@
 				<string>app-1-958676880670-ios-c064e3782fcbe8be4a0d0f</string>
 			</array>
 		</dict>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>com.pordio.Chay</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>socialstar</string>
-            </array>
-        </dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.pordio.Chay</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>socialstar</string>
+			</array>
+		</dict>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>

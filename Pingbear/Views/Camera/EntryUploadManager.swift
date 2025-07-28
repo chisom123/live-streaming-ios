@@ -25,8 +25,8 @@ class EntryUploadManager: ObservableObject {
         }
     }
     
-    // Upload an entry with the image
-    func uploadEntry(
+    // Upload a parlay entry with predictions
+    func uploadParlayEntry(
         image: UIImage,
         competitionId: String,
         userId: String,
@@ -36,6 +36,9 @@ class EntryUploadManager: ObservableObject {
         themeId: String?,
         themeName: String?,
         competition: Competition,
+        entryCost: Int,
+        predictions: [String: Int],
+        potentialPayout: Int,
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
@@ -48,7 +51,7 @@ class EntryUploadManager: ObservableObject {
         uploadProgress = 0.0
         onProgress(0.0)
         
-        print("EntryUploadManager: Starting upload process")
+        print("EntryUploadManager: Starting parlay entry upload process")
         
         // Process the image optimization on a background thread
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -75,8 +78,8 @@ class EntryUploadManager: ObservableObject {
                 self.uploadProgress = 0.2
                 onProgress(0.2)
                 
-                // Continue with upload on main thread like ProfilePictureManager does
-                self.performUpload(
+                // Continue with upload on main thread
+                self.performParlayUpload(
                     imageData: imageData,
                     competitionId: competitionId,
                     userId: userId,
@@ -86,6 +89,9 @@ class EntryUploadManager: ObservableObject {
                     themeId: themeId,
                     themeName: themeName,
                     competition: competition,
+                    entryCost: entryCost,
+                    predictions: predictions,
+                    potentialPayout: potentialPayout,
                     onProgress: onProgress,
                     onSuccess: onSuccess,
                     onFailure: onFailure
@@ -94,8 +100,8 @@ class EntryUploadManager: ObservableObject {
         }
     }
     
-    // Perform the actual upload on the main thread
-    private func performUpload(
+    // Perform the actual parlay upload on the main thread
+    private func performParlayUpload(
         imageData: Data,
         competitionId: String,
         userId: String,
@@ -105,11 +111,14 @@ class EntryUploadManager: ObservableObject {
         themeId: String?,
         themeName: String?,
         competition: Competition,
+        entryCost: Int,
+        predictions: [String: Int],
+        potentialPayout: Int,
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
     ) {
-        print("EntryUploadManager: Starting Firebase Storage upload")
+        print("EntryUploadManager: Starting Firebase Storage upload for parlay entry")
         
         let storageRef = storage.reference().child("images/\(UUID().uuidString).jpg")
         let metadata = StorageMetadata()
@@ -176,10 +185,10 @@ class EntryUploadManager: ObservableObject {
                     return
                 }
                 
-                print("EntryUploadManager: Got download URL, saving to Firestore")
+                print("EntryUploadManager: Got download URL, saving parlay entry to Firestore")
                 
-                // Save the entry to Firestore
-                self?.saveEntryToFirestore(
+                // Save the parlay entry to Firestore
+                self?.saveParlayEntryToFirestore(
                     userId: userId,
                     imageURL: downloadURL,
                     competitionId: competitionId,
@@ -189,6 +198,9 @@ class EntryUploadManager: ObservableObject {
                     themeId: themeId,
                     themeName: themeName,
                     competition: competition,
+                    entryCost: entryCost,
+                    predictions: predictions,
+                    potentialPayout: potentialPayout,
                     onProgress: onProgress,
                     onSuccess: onSuccess,
                     onFailure: onFailure
@@ -214,8 +226,8 @@ class EntryUploadManager: ObservableObject {
         }
     }
     
-    // Save entry data to Firestore
-    private func saveEntryToFirestore(
+    // Save parlay entry data to Firestore
+    private func saveParlayEntryToFirestore(
         userId: String,
         imageURL: String,
         competitionId: String,
@@ -225,6 +237,9 @@ class EntryUploadManager: ObservableObject {
         themeId: String?,
         themeName: String?,
         competition: Competition,
+        entryCost: Int,
+        predictions: [String: Int],
+        potentialPayout: Int,
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
@@ -234,92 +249,87 @@ class EntryUploadManager: ObservableObject {
             onProgress(0.95)
         }
         
-        // Check for competition-specific boost instead of user-level boost
-        let memberRef = db.collection("competitions")
-                         .document(competitionId)
-                         .collection("members")
-                         .document(userId)
-        
-        memberRef.getDocument { [weak self] (document, error) in
-            // Handle errors
-            if let error = error {
-                DispatchQueue.main.async {
-                    self?.isUploading = false
-                    onFailure(error)
-                }
-                return
-            }
-            
-            var superstar = false
-            
-            if let document = document, document.exists {
-                if let boostExpiration = document.data()?["boostExpiration"] as? Timestamp {
-                    let now = Timestamp(date: Date())
-                    superstar = boostExpiration.compare(now) == .orderedDescending
-                }
-            }
-            
-            // Create entry data
-            var entryData: [String: Any] = [
-                "userId": userId,
-                "imageUrl": imageURL,
-                "timestamp": FieldValue.serverTimestamp(),
-                "superstar": superstar,
-                "overlayText": overlayText,
-                "overlayVerticalPosition": overlayVerticalPosition,
-                "isFromCamera": isFromCamera
-            ]
-            
-            // Add theme information if available
-            if let themeId = themeId, let themeName = themeName {
-                entryData["themeId"] = themeId
-                entryData["themeName"] = themeName
-            }
-            
-            print("EntryUploadManager: Adding document to Firestore")
-            
-            // Add the document to Firestore
-            let entriesRef = self?.db.collection("competitions").document(competitionId).collection("entries")
-            
-            var newEntryRef: DocumentReference? = nil
-            newEntryRef = entriesRef?.addDocument(data: entryData) { error in
-                DispatchQueue.main.async {
-                    self?.uploadProgress = 1.0
-                    self?.isUploading = false
-                    onProgress(1.0)
+        // Get the current group size
+        self.db.collection("competitions").document(competitionId).collection("members")
+            .getDocuments { snapshot, error in
+                    let groupSize = snapshot?.documents.count ?? 0
                     
-                    if let error = error {
-                        print("EntryUploadManager: Error saving entry: \(error)")
-                        onFailure(error)
-                    } else if let entryId = newEntryRef?.documentID {
-                        print("EntryUploadManager: Entry saved successfully with ID: \(entryId)")
-                        
-                        // Queue the notification
-                        NotificationQueueManager.shared.queueNotification(
-                            competitionId: competitionId,
-                            competitionDescription: competition.description,
-                            userId: userId,
-                            type: .photo
-                        )
-                        
-                        // Track analytics with theme info
-                        Analytics.shared.trackEntry(
-                            action: "create",
-                            competitionId: competitionId,
-                            properties: [
-                                "has_text": !overlayText.isEmpty,
-                                "is_superstar": superstar,
-                                "from_camera": isFromCamera,
-                                "has_theme": themeId != nil && themeName != nil
-                            ]
-                        )
-                        
-                        onSuccess(entryId)
-                    } else {
-                        onFailure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get entry ID"]))
+                    // Convert predictions to new structure for Firestore
+                    let predictionsForFirestore = predictions.reduce(into: [String: [String: Any]]()) { result, prediction in
+                        result[prediction.key] = [
+                            "predictedRating": prediction.value
+                        ]
+                    }
+                    
+                    // Create parlay entry data with new structure
+                    var entryData: [String: Any] = [
+                        "userId": userId,
+                        "imageUrl": imageURL,
+                        "timestamp": FieldValue.serverTimestamp(),
+                        "overlayText": overlayText,
+                        "overlayVerticalPosition": overlayVerticalPosition,
+                        "isFromCamera": isFromCamera,
+                        "stars": 0, // Initialize with 0 stars
+                        // Parlay-specific data
+                        "entryCost": entryCost,
+                        "predictions": predictionsForFirestore,
+                        "potentialPayout": potentialPayout,
+                        "groupSizeAtEntry": groupSize,
+                        "parlayStatus": "pending"
+                    ]
+                    
+                    // Add theme information if available
+                    if let themeId = themeId, let themeName = themeName {
+                        entryData["themeId"] = themeId
+                        entryData["themeName"] = themeName
+                    }
+                    
+                    print("EntryUploadManager: Adding parlay entry document to Firestore with new structure")
+                    
+                    // Add the document to Firestore
+                    let entriesRef = self.db.collection("competitions").document(competitionId).collection("entries")
+                    
+                    var newEntryRef: DocumentReference? = nil
+                    newEntryRef = entriesRef.addDocument(data: entryData) { error in
+                        DispatchQueue.main.async {
+                            self.uploadProgress = 1.0
+                            self.isUploading = false
+                            onProgress(1.0)
+                            
+                            if let error = error {
+                                print("EntryUploadManager: Error saving parlay entry: \(error)")
+                                onFailure(error)
+                            } else if let entryId = newEntryRef?.documentID {
+                                print("EntryUploadManager: Parlay entry saved successfully with ID: \(entryId)")
+                                
+                                // Queue the notification
+                                NotificationQueueManager.shared.queueNotification(
+                                    competitionId: competitionId,
+                                    competitionDescription: competition.description,
+                                    userId: userId,
+                                    type: .photo
+                                )
+                                
+                                // Track analytics for parlay entry
+                                Analytics.shared.trackEntry(
+                                    action: "create_parlay",
+                                    competitionId: competitionId,
+                                    properties: [
+                                        "has_text": !overlayText.isEmpty,
+                                        "from_camera": isFromCamera,
+                                        "has_theme": themeId != nil && themeName != nil,
+                                        "entry_cost": entryCost,
+                                        "predictions_count": predictions.count,
+                                        "potential_payout": potentialPayout
+                                    ]
+                                )
+                                
+                                onSuccess(entryId)
+                            } else {
+                                onFailure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to get entry ID"]))
+                            }
+                        }
                     }
                 }
-            }
         }
-    }
 }

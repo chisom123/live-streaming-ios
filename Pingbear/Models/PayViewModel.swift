@@ -12,22 +12,32 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
     
     private var productIdentifiers: Set<String> = ["one_day_boost", "one_hour_boost", "one_week_boost"]
     
-    // Product prices mapping
+    // Product coin amounts mapping
+    private let productCoins: [String: Int] = [
+        "one_hour_boost": 100,      // Small bag
+        "one_day_boost": 600,      // Medium bag
+        "one_week_boost": 1500      // Large bag
+    ]
+    
+    // Product prices mapping (fallback if StoreKit price unavailable)
     private let productPrices: [String: Double] = [
-        "one_day_boost": 9.99,
         "one_hour_boost": 4.99,
+        "one_day_boost": 9.99,
         "one_week_boost": 19.99
     ]
+    
     override init() {
         super.init()
         fetchProducts()
         SKPaymentQueue.default().add(self)
     }
+    
     private func fetchProducts() {
         let request = SKProductsRequest(productIdentifiers: productIdentifiers)
         request.delegate = self
         request.start()
     }
+    
     func purchase(product: SKProduct) {
         DispatchQueue.main.async {
             self.isLoading = true
@@ -39,112 +49,127 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
     }
+    
     private func handleCompletedPayment(transaction: SKPaymentTransaction) {
         guard let userID = Auth.auth().currentUser?.uid else {
-            print("Validation failed")
+            print("Validation failed - user not authenticated")
             Analytics.shared.trackError(
                 message: "User not authenticated during purchase validation",
                 properties: ["product_id": transaction.payment.productIdentifier]
             )
-            return
-        }
-        
-        // Add this guard to check if competitionId is not empty
-        guard !competitionId.isEmpty else {
-            print("Competition ID is empty, skipping boost update")
-            SKPaymentQueue.default().finishTransaction(transaction)
             DispatchQueue.main.async {
                 self.isLoading = false
-                self.purchaseCompleted = true // Still mark as completed so user can continue
             }
             return
         }
         
-        let currentDate = Date()
-        var expirationDate = currentDate
         let productId = transaction.payment.productIdentifier
-        switch productId {
-        case "one_day_boost":
-            expirationDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
-        case "one_week_boost":
-            expirationDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: currentDate)!
-        case "one_hour_boost":
-            expirationDate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
-        default:
-            print("Unknown or unsupported product identifier")
+        
+        // Get the coin amount for this product
+        guard let coinAmount = productCoins[productId] else {
+            print("Unknown product identifier: \(productId)")
             Analytics.shared.trackError(
-                message: "Unsupported product identifier",
+                message: "Unknown product identifier",
                 properties: ["product_id": productId]
             )
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
             return
         }
         
-        // Get reference to the member document in the competition
-        let memberRef = Firestore.firestore()
-            .collection("competitions")
-            .document(competitionId)
-            .collection("members")
-            .document(userID)
-        
-        // Update the member document with the boost expiration date
-        memberRef.updateData(["boostExpiration": expirationDate]) { [weak self] error in
-            if let error = error {
-                print("Error updating user boost data: \(error)")
-                Analytics.shared.trackError(
-                    message: "Boost data update failed",
-                    properties: ["error": error.localizedDescription]
-                )
-                return
-            }
-            // Assume `self.competitionId` and `self.entryDocId` are valid IDs you have access to.
-            let entriesDocRef = Firestore.firestore()
-                                            .collection("competitions")
-                                            .document(self?.competitionId ?? "")
-                                            .collection("entries")
-                                            .document(self?.entryDocId ?? "")
-            // Check if the entry is already a superstar, if not, update it.
-            entriesDocRef.getDocument { (document, error) in
-                if let document = document, document.exists {
-                    if let data = document.data(), data["superstar"] as? Bool == true {
-                        print("Already a superstar, no need to update.")
-                        return
-                    }
-                }
-                // Update the superstar status in the entries document
-                entriesDocRef.updateData(["superstar": true]) { error in
-                    if let error = error {
-                        print("Error updating entry to superstar: \(error)")
-                        Analytics.shared.trackError(
-                            message: "Superstar status update failed",
-                            properties: ["error": error.localizedDescription]
-                        )
-                        return
-                    }
-                    
-                    guard let self = self else { return }
-                    self.purchaseCompleted = true
-                    Analytics.shared.trackPurchase(
-                        action: "completed",
-                        productId: transaction.payment.productIdentifier,
-                        properties: ["status": "superstar_set"]
-                    )
-                    
-                    DispatchQueue.main.async {
-                        self.isLoading = false
-                    }
-                }
-            }
-        }
-        SKPaymentQueue.default().finishTransaction(transaction)
-        
-        // Log the purchase in the purchases subcollection
-        self.logPurchase(userId: userID, productId: productId)
+        // Add coins to user's member document in the competition
+        addCoinsToMember(userId: userID, coinAmount: coinAmount, productId: productId, transaction: transaction)
     }
     
-    // New function to log purchases in Firestore
-    private func logPurchase(userId: String, productId: String) {
+    private func addCoinsToMember(userId: String, coinAmount: Int, productId: String, transaction: SKPaymentTransaction) {
         guard !competitionId.isEmpty else {
-            print("Cannot log purchase - competition ID is empty")
+            print("Competition ID is required for member coin updates")
+            Analytics.shared.trackError(
+                message: "Competition ID missing for coin purchase",
+                properties: ["product_id": productId]
+            )
+            DispatchQueue.main.async {
+                self.isLoading = false
+            }
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let memberRef = db.collection("competitions").document(competitionId).collection("members").document(userId)
+        
+        // Use a transaction to safely increment the coin count
+        db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let memberDocument: DocumentSnapshot
+            do {
+                try memberDocument = transaction.getDocument(memberRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+            
+            // Check if member document exists
+            if !memberDocument.exists {
+                // Create member document with initial coin amount if it doesn't exist
+                let memberData: [String: Any] = [
+                    "coins": coinAmount,
+                    "joinedAt": Timestamp(),
+                    "userId": userId
+                ]
+                transaction.setData(memberData, forDocument: memberRef)
+                return coinAmount
+            } else {
+                // Get current coin count or default to 0
+                let currentCoins = memberDocument.data()?["coins"] as? Int ?? 0
+                let newCoinTotal = currentCoins + coinAmount
+                
+                // Update the coin count
+                transaction.updateData(["coins": newCoinTotal], forDocument: memberRef)
+                return newCoinTotal
+            }
+        }) { [weak self] (result, error) in
+            if let error = error {
+                print("Error adding coins to member: \(error)")
+                Analytics.shared.trackError(
+                    message: "Member coin addition failed",
+                    properties: ["error": error.localizedDescription, "product_id": productId]
+                )
+                DispatchQueue.main.async {
+                    self?.isLoading = false
+                }
+                return
+            }
+            
+            guard let self = self else { return }
+            
+            // Log the successful purchase
+            self.logPurchase(userId: userId, productId: productId, coinAmount: coinAmount)
+            
+            // Mark purchase as completed
+            DispatchQueue.main.async {
+                self.purchaseCompleted = true
+                self.isLoading = false
+                
+                Analytics.shared.trackPurchase(
+                    action: "completed",
+                    productId: productId,
+                    properties: [
+                        "coins_added": coinAmount,
+                        "new_total": result as? Int ?? 0,
+                        "competition_id": self.competitionId
+                    ]
+                )
+            }
+        }
+        
+        SKPaymentQueue.default().finishTransaction(transaction)
+    }
+    
+    // Log purchase in Firestore purchases collection
+    private func logPurchase(userId: String, productId: String, coinAmount: Int) {
+        // Only log if we have a competition context
+        guard !competitionId.isEmpty else {
+            print("Skipping purchase log - no competition context")
             return
         }
         
@@ -167,7 +192,9 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             "productId": productId,
             "timestamp": Timestamp(),
             "price": price,
-            "hostShare": hostShare
+            "hostShare": hostShare,
+            "coinsAdded": coinAmount,
+            "memberLevel": true  // Flag to indicate this was a member-level coin purchase
         ]
         
         purchaseRef.setData(purchaseData) { error in
@@ -178,10 +205,11 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
                     properties: ["error": error.localizedDescription]
                 )
             } else {
-                print("Purchase successfully logged")
+                print("Purchase successfully logged with \(coinAmount) coins added to member")
             }
         }
     }
+    
     func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         DispatchQueue.main.async {
             self.products = response.products
@@ -197,10 +225,6 @@ class PayViewModel: NSObject, ObservableObject, SKProductsRequestDelegate, SKPay
             switch transaction.transactionState {
             case .purchased:
                 handleCompletedPayment(transaction: transaction)
-                DispatchQueue.main.async {
-                    self.isLoading = false
-                }
-                SKPaymentQueue.default().finishTransaction(transaction)
             case .failed:
                 // Handle failed transaction
                 DispatchQueue.main.async {

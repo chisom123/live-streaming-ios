@@ -7,58 +7,72 @@ struct PhotoInteraction: Identifiable {
     let userId: String
     let userName: String
     let profilePictureUrl: String?
-    let viewedAt: Date
-    let rating: Int?
+    let ratedAt: Date
+    let rating: Int
 }
 
 class PhotoInteractionService: ObservableObject {
-    @Published var viewCount: Int = 0
+    @Published var ratingCount: Int = 0
     @Published var interactions: [PhotoInteraction] = []
     @Published var isLoadingInteractions: Bool = false
     
     private let db = Firestore.firestore()
     
-    // MARK: - View Count Management
+    // MARK: - Rating Count Management
     
-    /// Fetches the view count for a specific photo entry
-    func fetchViewCount(competitionId: String, entryId: String) {
+    /// Fetches the rating count for a specific photo entry
+    func fetchRatingCount(competitionId: String, entryId: String) {
         let interactionsRef = db.collection("competitions")
             .document(competitionId)
             .collection("entries")
             .document(entryId)
             .collection("interactions")
+            .whereField("rating", isGreaterThan: 0) // Only count interactions with ratings
         
         interactionsRef.getDocuments { [weak self] snapshot, error in
             if let error = error {
-                print("Error fetching view count: \(error)")
+                print("Error fetching rating count: \(error)")
                 return
             }
             
             DispatchQueue.main.async {
-                self?.viewCount = snapshot?.documents.count ?? 0
+                self?.ratingCount = snapshot?.documents.count ?? 0
             }
         }
     }
     
-    /// Updates view count locally (for immediate UI feedback)
-    func incrementViewCount() {
+    /// Updates rating count locally (for immediate UI feedback)
+    func incrementRatingCount() {
         DispatchQueue.main.async {
-            self.viewCount += 1
+            self.ratingCount += 1
         }
     }
     
-    /// Resets view count (useful when switching between entries)
-    func resetViewCount() {
+    /// Decrements rating count locally (when rating is removed)
+    func decrementRatingCount() {
         DispatchQueue.main.async {
-            self.viewCount = 0
+            self.ratingCount = max(0, self.ratingCount - 1)
         }
     }
     
-    // MARK: - View Tracking
+    /// Resets rating count (useful when switching between entries)
+    func resetRatingCount() {
+        DispatchQueue.main.async {
+            self.ratingCount = 0
+        }
+    }
     
-    /// Tracks when a user views a photo entry
-    func trackView(competitionId: String, entryId: String, source: String, completion: ((Bool) -> Void)? = nil) {
+    // MARK: - Rating Tracking
+    
+    /// Tracks when a user rates a photo entry
+    func submitRating(competitionId: String, entryId: String, rating: Int, completion: ((Bool) -> Void)? = nil) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
+            completion?(false)
+            return
+        }
+        
+        guard rating > 0 else {
+            print("Invalid rating value")
             completion?(false)
             return
         }
@@ -84,13 +98,14 @@ class PhotoInteractionService: ObservableObject {
                 return
             }
             
-            // Don't track views for the photo owner
+            // Don't allow users to rate their own photos
             if photoOwnerId == currentUserId {
-                completion?(true) // Return success but don't track
+                print("Users cannot rate their own photos")
+                completion?(false)
                 return
             }
             
-            // Proceed with tracking for non-owners
+            // Submit or update the rating
             let interactionRef = self?.db.collection("competitions")
                 .document(competitionId)
                 .collection("entries")
@@ -98,38 +113,58 @@ class PhotoInteractionService: ObservableObject {
                 .collection("interactions")
                 .document(currentUserId)
             
-            // Check if document exists
+            // Check if user has already rated this photo
             interactionRef?.getDocument { [weak self] document, error in
                 if let error = error {
-                    print("Error checking interaction document: \(error)")
+                    print("Error checking existing rating: \(error)")
                     completion?(false)
                     return
                 }
                 
-                // If document doesn't exist or doesn't have viewedAt, set it
-                if document?.exists == false || document?.data()?["viewedAt"] == nil {
-                    interactionRef?.setData([
-                        "viewedAt": FieldValue.serverTimestamp(),
-                        "userId": currentUserId,
-                        "source": source
-                    ], merge: true) { error in
-                        let success = error == nil
-                        if success {
-                            // Update view count after successfully tracking the view
-                            self?.incrementViewCount()
-                        }
-                        completion?(success)
+                let isNewRating = document?.exists == false || document?.data()?["rating"] == nil
+                
+                interactionRef?.setData([
+                    "rating": rating,
+                    "ratedAt": FieldValue.serverTimestamp(),
+                    "userId": currentUserId
+                ], merge: true) { error in
+                    let success = error == nil
+                    if success && isNewRating {
+                        // Only increment count for new ratings
+                        self?.incrementRatingCount()
                     }
-                } else {
-                    completion?(true) // Already tracked
+                    completion?(success)
                 }
             }
         }
     }
     
+    /// Removes a user's rating from a photo entry
+    func removeRating(competitionId: String, entryId: String, completion: ((Bool) -> Void)? = nil) {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            completion?(false)
+            return
+        }
+        
+        let interactionRef = db.collection("competitions")
+            .document(competitionId)
+            .collection("entries")
+            .document(entryId)
+            .collection("interactions")
+            .document(currentUserId)
+        
+        interactionRef.delete { [weak self] error in
+            let success = error == nil
+            if success {
+                self?.decrementRatingCount()
+            }
+            completion?(success)
+        }
+    }
+    
     // MARK: - Detailed Interactions
     
-    /// Fetches detailed interaction data for a photo entry
+    /// Fetches detailed interaction data for a photo entry (only users who have rated)
     func fetchInteractions(competitionId: String, entryId: String) {
         isLoadingInteractions = true
         
@@ -138,6 +173,7 @@ class PhotoInteractionService: ObservableObject {
             .collection("entries")
             .document(entryId)
             .collection("interactions")
+            .whereField("rating", isGreaterThan: 0) // Only fetch interactions with ratings
         
         interactionsRef.getDocuments { [weak self] snapshot, error in
             if let error = error {
@@ -153,14 +189,14 @@ class PhotoInteractionService: ObservableObject {
                 DispatchQueue.main.async {
                     self?.interactions = []
                     self?.isLoadingInteractions = false
-                    self?.viewCount = 0
+                    self?.ratingCount = 0
                 }
                 return
             }
             
-            // Update view count when fetching interactions
+            // Update rating count when fetching interactions
             DispatchQueue.main.async {
-                self?.viewCount = userIds.count
+                self?.ratingCount = userIds.count
             }
             
             // Fetch user details
@@ -189,18 +225,22 @@ class PhotoInteractionService: ObservableObject {
                         let userId = doc.documentID
                         let (userName, profileUrl) = userMap[userId] ?? ("Unknown", nil)
                         
+                        guard let rating = data["rating"] as? Int, rating > 0 else {
+                            return nil // Skip interactions without valid ratings
+                        }
+                        
                         return PhotoInteraction(
                             userId: userId,
                             userName: userName,
                             profilePictureUrl: profileUrl,
-                            viewedAt: (data["viewedAt"] as? Timestamp)?.dateValue() ?? Date(),
-                            rating: data["rating"] as? Int
+                            ratedAt: (data["ratedAt"] as? Timestamp)?.dateValue() ?? Date(),
+                            rating: rating
                         )
                     } ?? []
                     
                     DispatchQueue.main.async {
                         self?.interactions = interactions.sorted { interaction1, interaction2 in
-                            return interaction1.viewedAt > interaction2.viewedAt
+                            return interaction1.ratedAt > interaction2.ratedAt
                         }
                         self?.isLoadingInteractions = false
                     }
@@ -210,18 +250,15 @@ class PhotoInteractionService: ObservableObject {
     
     // MARK: - Convenience Methods
     
-    /// Tracks view and fetches count in one call (useful for onAppear)
-    func trackViewAndFetchCount(competitionId: String, entryId: String, source: String) {
-        trackView(competitionId: competitionId, entryId: entryId, source: source) { [weak self] success in
-            // Always fetch the current count regardless of tracking success
-            self?.fetchViewCount(competitionId: competitionId, entryId: entryId)
-        }
+    /// Fetches the current rating count for display
+    func loadRatingData(competitionId: String, entryId: String) {
+        fetchRatingCount(competitionId: competitionId, entryId: entryId)
     }
     
     /// Prepares for a new entry by resetting state
     func prepareForNewEntry() {
         DispatchQueue.main.async {
-            self.viewCount = 0
+            self.ratingCount = 0
             self.interactions = []
             self.isLoadingInteractions = false
         }

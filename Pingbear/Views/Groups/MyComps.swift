@@ -193,7 +193,10 @@ struct MyCompsView: View {
             // First establish membership
             let creatorMemberRef = competitionRef.collection("members").document(userID)
             
-            creatorMemberRef.setData(["userId": userID]) { error in
+            creatorMemberRef.setData([
+                "userId": userID,
+                "coins": 150
+            ]) { error in
                 if let error = error {
                     print("Failed to add creator as member: \(error.localizedDescription)")
                     self.isCreatingCompetition = false
@@ -324,7 +327,7 @@ struct CompetitionCellContent: View {
                         .foregroundColor(Color(hex: "#FFF"))
                 }
                 .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                .background(Color(hex: "#3B4374"))
+                .background(Color.white.opacity(0.15))
                 .cornerRadius(200)
                 .padding(.trailing, 30)
             }

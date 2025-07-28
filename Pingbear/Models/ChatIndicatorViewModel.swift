@@ -58,7 +58,7 @@ class ChatIndicatorViewModel: ObservableObject {
             // If no last read timestamp, count all messages from other users
             let unreadCount = documents.filter { document in
                 let data = document.data()
-                let messageUserId = data["userId"] as? String ?? ""
+                let messageUserId = data["senderId"] as? String ?? ""
                 return messageUserId != currentUserId
             }.count
             
@@ -72,7 +72,7 @@ class ChatIndicatorViewModel: ObservableObject {
         // Count messages from other users that are newer than last read
         let unreadCount = documents.filter { document in
             let data = document.data()
-            let messageUserId = data["userId"] as? String ?? ""
+            let messageUserId = data["senderId"] as? String ?? ""
             let timestamp = (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
             
             return messageUserId != currentUserId && timestamp > lastReadTimestamp

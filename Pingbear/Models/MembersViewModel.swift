@@ -12,6 +12,8 @@ struct MemberUser: Identifiable {
 class MembersViewModel: ObservableObject {
     @Published var members: [MemberUser] = []
     @Published var currentUserId: String = ""
+    @Published var isLoading = false
+    @Published var error: Error?
     
     private var db = Firestore.firestore()
     private var myFriendsModel = MyFriendsModel()
@@ -19,6 +21,8 @@ class MembersViewModel: ObservableObject {
     func fetchMembersDetails(for competition: Competition) {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         self.currentUserId = currentUserId
+        self.isLoading = true
+        self.error = nil
         
         myFriendsModel.fetchFriends { [weak self] in
             self?.fetchCompetitionMembers(for: competition)
@@ -29,7 +33,7 @@ class MembersViewModel: ObservableObject {
         db.collection("competitions").document(competition.id).collection("members")
             .getDocuments { [weak self] (snapshot, error) in
                 if let error = error {
-                    print("Error fetching member details: \(error)")
+                    self?.handleError(error)
                     return
                 }
 
@@ -46,6 +50,12 @@ class MembersViewModel: ObservableObject {
             group.enter()
             db.collection("users").document(userId).getDocument { [weak self] (document, error) in
                 defer { group.leave() }
+                
+                if let error = error {
+                    self?.handleError(error)
+                    return
+                }
+                
                 if let document = document, document.exists,
                    let data = document.data(),
                    let username = data["username"] as? String {
@@ -59,7 +69,16 @@ class MembersViewModel: ObservableObject {
         }
 
         group.notify(queue: .main) { [weak self] in
+            self?.isLoading = false
             self?.members = tempMembers.sorted(by: { $0.username < $1.username })
+        }
+    }
+
+    private func handleError(_ error: Error) {
+        DispatchQueue.main.async {
+            self.isLoading = false
+            self.error = error
+            print("Error: \(error.localizedDescription)")
         }
     }
 
@@ -69,7 +88,7 @@ class MembersViewModel: ObservableObject {
             if success {
                 if let index = self?.members.firstIndex(where: { $0.id == member.id }) {
                     self?.members[index].isAdded = true
-                    self?.members[index].justAdded = true  // Set justAdded to true
+                    self?.members[index].justAdded = true
                 }
                 self?.myFriendsModel.fetchFriends()
                 completion(true, nil)

@@ -211,7 +211,10 @@ struct JoinSelectView: View {
                 .collection("members")
                 .document(userId)
             
-            memberRef.setData(["userId": userId]) { error in
+            memberRef.setData([
+                "userId": userId,
+                "coins": 150
+            ]) { error in
                 if let error = error {
                     print("Error adding member: \(error)")
                     dispatchGroup.leave()

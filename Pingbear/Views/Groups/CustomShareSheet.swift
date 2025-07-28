@@ -115,20 +115,6 @@ struct CustomShareSheet: View {
                     .cornerRadius(10)
                     .animation(.easeInOut(duration: 0.2), value: linkCopied)
                 }
-                
-                // Show copied notification
-                if linkCopied {
-                    HStack {
-                        Spacer()
-                        Text("Link copied to clipboard")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.8))
-                        Spacer()
-                    }
-                    .padding(.top, 10)
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.2), value: linkCopied)
-                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 30)

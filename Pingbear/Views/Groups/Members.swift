@@ -70,7 +70,7 @@ struct MembersView: View {
                 
                 // Members List
                 HStack {
-                    Text("Competition Players")
+                    Text("Players")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
                     

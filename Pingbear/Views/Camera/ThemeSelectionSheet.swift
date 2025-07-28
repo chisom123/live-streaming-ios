@@ -146,7 +146,8 @@ struct ThemeSelectionSheet: View {
                                             Spacer()
                                             
                                             if selectedTheme?.id == theme.id {
-                                                Image(systemName: "checkmark.circle.fill")
+                                                Image(systemName: "checkmark")
+                                                    .bold()
                                                     .foregroundColor(Color(hex: "#FFF"))
                                                     .padding(.trailing, 10)
                                             }

@@ -18,14 +18,24 @@ struct FullScreenPhotoView: View {
     @State private var animateRating: Bool = false
     @State private var currentStarCount: Int
     
+    @State private var isEntryCreator = false
+    
+    // Parlay state
+    @State private var parlayStatus: String? = nil
+    @State private var parlayPredictions: [String: Any] = [:]
+    @State private var parlayPayout: Int = 0
+    @State private var parlayStake: Int = 0
+    @State private var isLoadingParlayStatus = false
+    @State private var pendingUsernamesCache: [String: String] = [:]
+    @State private var pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)] = [:]
+    
+    @State private var showingPredictionsView = false
+    
     // Interaction service
     @StateObject private var interactionService = PhotoInteractionService()
-    @State private var showInteractions = false
     
     // Message state
     @State private var showingMessageComposer = false
-    @State private var messageText = ""
-    @State private var messageSent = false
     
     // Chat ViewModel for sending messages
     @StateObject private var chatViewModel: ChatViewModel
@@ -45,239 +55,179 @@ struct FullScreenPhotoView: View {
     private let db = Firestore.firestore()
     
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
-            
-            ZStack {
-                // Background
-                Color(hex: "#10183C")
-                    .edgesIgnoringSafeArea(.all)
+        ZStack {
+            GeometryReader { geometry in
+                let screenWidth = geometry.size.width
                 
-                // Photo with text overlay
-                KFImage(URL(string: photo.photoUrl))
-                    .placeholder {
-                        ZStack {
-                            Color(hex: "#10183C")
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                        }
-                    }
-                    .fade(duration: 0.25)
-                    .cacheMemoryOnly()
-                    .resizable()
-                    .aspectRatio(contentMode: photo.isFromCamera ? .fill : .fit)
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-                    .overlay {
-                        if let overlayText = photo.overlayText {
-                            Text(overlayText)
-                                .foregroundColor(.white)
-                                .font(.system(size: 24, weight: .bold))
-                                .multilineTextAlignment(.center)
-                                .frame(width: size.width * 0.8)
-                                .position(x: size.width / 2, y: photo.overlayVerticalPosition)
-                        }
-                    }
-                
-                // Success message overlay
-                if messageSent {
-                    VStack {
-                        Spacer()
-                        
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Sent!")
-                        }
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .padding()
-                        .background(Color(hex: "#25D366"))
-                        .cornerRadius(25)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .onAppear {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                                withAnimation {
-                                    messageSent = false
-                                }
-                            }
-                        }
-                        
-                        Spacer()
-                            .frame(height: 200)
-                    }
-                }
+                // Photo with text overlay using shared component
+                PhotoMainImageView(
+                    photoUrl: photo.photoUrl,
+                    overlayText: photo.overlayText,
+                    overlayVerticalPosition: photo.overlayVerticalPosition,
+                    isTransitioning: false, // No transitions in FullScreenPhotoView
+                    slideDirection: .left,   // Not used but required
+                    screenWidth: screenWidth
+                )
             }
             
-            // Top navigation bar with username and theme
-            HStack {
-                // Left side - Back button
-                Button(action: {
-                    onDismiss?(currentStarCount)
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(radius: 10)
-                }
-                .frame(width: 80, alignment: .leading) // Fixed width
-                
-                Spacer()
-                
-                // Center content
-                HStack(spacing: 15) {
-                    ProfilePictureView(url: userProfilePictureUrl, size: 35)
-                    
-                    Text(userName)
-                        .foregroundColor(.white)
-                        .font(.system(size: 20, weight: .bold, design: .default))
-                        .shadow(radius: 10)
-                        .truncationMode(.tail)
-                        .lineLimit(1)
-                }
-                .frame(maxWidth: 250)
-                
-                Spacer()
-                
-                // Right side - Eye button with count
-                Button(action: {
-//                    let banner = NotificationBanner(title: "Photo Successfully Reported", style: .success)
-//                    banner.show()
-//                    Analytics.shared.track(event: "photo_reported")
-                }) {
-                    Image(systemName: "flag")
-                        .font(.system(size: 30))
-                        .foregroundColor(.white)
-                        .shadow(radius: 10)
-                        .opacity(0)
-                }
-                .frame(width: 80, alignment: .trailing) // Fixed width matching left side
-            }
-            .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 5)
-            .padding()
-            
-            // Bottom - Theme and Star rating
-            VStack(spacing: 0) { // Zero spacing is crucial for the seamless blend
-                Spacer() // Pushes the content to the bottom
-                
-                // Right-side vertical button stack above rating bar
-                VStack(spacing: 25) {
-                    Button(action: {
-                        guard let competitionId = competitionId else { return }
-                        showInteractions = true
-                        interactionService.fetchInteractions(
-                            competitionId: competitionId,
-                            entryId: photo.id
-                        )
-                    }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: "eye.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(.white)
-                                .shadow(radius: 10)
-                            
-                            Text("\(interactionService.viewCount)")
-                                .foregroundColor(.white)
-                                .font(.system(size: 18, weight: .bold))
-                                .shadow(radius: 10)
-                        }
-                    }
-                    
-                    Button(action: {
+            // TOP NAVIGATION using shared component
+            VStack {
+                PhotoNavigationBar(
+                    onBack: {
+                        onDismiss?(currentStarCount)
+                        dismiss()
+                    },
+                    userName: userName,
+                    userProfilePictureUrl: userProfilePictureUrl,
+                    themeName: photo.themeName,
+                    themeId: photo.themeId,
+                    competitionId: competitionId ?? "",
+                    onMessage: {
                         showingMessageComposer = true
-                    }) {
-                        Image(systemName: "paperplane.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                            .shadow(radius: 10)
                     }
-                }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, 5)
-                .padding(.bottom, 25)
-
-                // Theme container if theme exists
-                if let themeName = photo.themeName {
-                    // Theme container with only top corners rounded
-                    RoundedCorner(radius: 200, corners: [.topLeft, .topRight])
-                        .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898").opacity(0.9) : Color(hex: "#253063").opacity(0.9))
-                        .frame(height: 50)
-                        .overlay(
-                            Text(themeName)
-                                .foregroundColor(.white)
-                                .font(.system(size: 18, weight: .bold))
-                                .truncationMode(.tail)
-                                .lineLimit(1)
-                                .padding(.horizontal)
-                        )
-                }
+                )
                 
-                // Container view for stars with only bottom corners rounded
-                ZStack {
-                    if photo.themeName != nil {
-                        RoundedCorner(radius: 200, corners: [.bottomLeft, .bottomRight])
-                            .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
-                    } else {
+                Spacer()
+            }
+            
+            UltraSmoothBottomSheet(
+                minHeight: PhotoViewConstants.minHeight,
+                midHeight: PhotoViewConstants.midHeight(withFooter: true),
+                maxHeight: PhotoViewConstants.maxHeight(withFooter: true),
+                bottomPadding: PhotoViewConstants.starFooterHeight
+            ) {
+                VStack(spacing: 0) {
+                    // Centered handle
+                    VStack {
                         RoundedRectangle(cornerRadius: 200)
-                            .fill((hasAlreadyVoted || userName == "Me") ? Color(hex: "#A9A9A9") : Color(hex: "#1A2245"))
+                            .fill(Color.white.opacity(0.3))
+                            .frame(width: 40, height: 5)
                     }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical)
                     
-                    HStack(alignment: .center, spacing: 12) { // Reduced spacing between stars
-                        let maxSelectableStars = photo.isSuperstar ? 5 : 4
-
-                        ForEach(1...5, id: \.self) { star in
+                    HStack {
+                        Text("Ratings (\(interactionService.interactions.count))")
+                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 15, weight: .bold))
+                            .padding(.bottom, 10)
+                        
+                        Spacer()
+                        
+                        // Predictions Button (Only for entry creator)
+                        if isEntryCreator && parlayStatus != nil {
                             Button(action: {
-                                // Check if this is the disabled 5th star
-                                if star == 5 && !photo.isSuperstar {
-                                    // Trigger warning haptic feedback for disabled 5th star
-                                    let generator = UINotificationFeedbackGenerator()
-                                    generator.notificationOccurred(.warning)
-                                    return
-                                }
-                                
-                                // Only allow rating if within selectable range and rating is enabled
-                                guard star <= maxSelectableStars && isRatingEnabled && !hasAlreadyVoted && userName != "Me" else { return }
-                                
-                                submitRating(stars: star)
+                                showingPredictionsView = true
+                                Analytics.shared.track(event: "my_predictions_button_tapped")
                             }) {
-                                if star == 5 && !photo.isSuperstar {
-                                    ZStack {
-                                        Image(systemName: "star.fill")
-                                            .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : Color.white)
-                                            .font(.system(size: 34))
-                                        
-                                        Image(systemName: "nosign")
-                                            .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#989898") : Color(hex: "#B22222"))
-                                            .font(.system(size: 41, weight: .bold))
-                                    }
-                                } else {
-                                    // Regular star for positions 1-4 and position 5 for superstars
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor((hasAlreadyVoted || userName == "Me") ? Color(hex: "#c2c2c2") : star <= rating ? Color(hex: "#FFD700") : Color.white)
-                                        .font(.system(size: 34))
-                                        .scaleEffect(animateRating && star <= rating ? 1.3 : 1.0)
-                                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: animateRating && star <= rating)
+                                HStack(spacing: 8) {
+                                    Text("My Predictions")
+                                        .font(.system(size: 15, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    parlayStatusBadge
                                 }
                             }
-                            .disabled(hasAlreadyVoted || !isRatingEnabled || userName == "Me")
-                            .padding(5)
+                            .padding(.bottom, 10)
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 15)
+                    
+                    // Content
+                    if interactionService.isLoadingInteractions {
+                        EmptyView()
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                ForEach(interactionService.interactions) { interaction in
+                                    VStack(spacing: 0) {
+                                        HStack {
+                                            ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
+                                            
+                                            Text(interaction.userName)
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .lineLimit(1)
+                                                .padding(.leading, 10)
+                                            
+                                            Spacer()
+                                            
+                                            HStack(spacing: 6) {
+                                                Text("\(interaction.rating)")
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                
+                                                Image(systemName: "star.fill")
+                                                    .resizable()
+                                                    .frame(width: 16, height: 16)
+                                                    .foregroundColor(.white)
+                                            }
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 5)
+                                            .background(Color(hex: "#DAA520"))
+                                            .cornerRadius(20)
+                                        }
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 15)
+                                        
+                                        if interaction.id != interactionService.interactions.last?.id {
+                                            Divider()
+                                                .background(Color.white.opacity(0.2))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Spacer()
                 }
-                .frame(height: 80)
             }
-            .padding(.bottom, (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0) + 60)
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .center) // Ensures the ZStack is as wide as possible and centered
-            .padding(.horizontal)
+            
+            PhotoStarRatingFooter(
+                rating: $rating,
+                hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
+                isRatingEnabled: isRatingEnabled && userName != "Me",
+                animateRating: animateRating,
+                onRatingSubmit: { stars in
+                    submitRating(stars: stars)
+                },
+                height: PhotoViewConstants.starFooterHeight
+            )
+            
         }
-        .ignoresSafeArea(edges: .all)
-        .sheet(isPresented: $showInteractions) {
-            InteractionsListView(
-                interactions: interactionService.interactions,
-                isLoading: interactionService.isLoadingInteractions
+        .background(Color(hex: "#10183C"))
+        .onAppear {
+            checkVotingStatus()
+            
+            // Check if current user is the entry creator
+            if let currentUserId = Auth.auth().currentUser?.uid {
+                isEntryCreator = (photo.userId == currentUserId)
+            }
+            
+            if let competitionId = competitionId {
+                interactionService.loadRatingData(
+                    competitionId: competitionId,
+                    entryId: photo.id
+                )
+                
+                interactionService.fetchInteractions(
+                    competitionId: competitionId,
+                    entryId: photo.id
+                )
+            }
+            
+            // Load parlay status if user is entry creator
+            if isEntryCreator {
+                loadParlayStatus()
+            }
+            
+            Analytics.shared.trackScreen(
+                name: "fullscreen_photo",
+                properties: [
+                    "user_name": userName,
+                    "can_rate": userName != "Me" && competitionId != nil
+                ]
             )
         }
         .sheet(isPresented: $showingMessageComposer) {
@@ -290,36 +240,593 @@ struct FullScreenPhotoView: View {
                 }
             )
         }
-        .onAppear {
-            checkVotingStatus()
-            
-            if let competitionId = competitionId {
-                interactionService.trackViewAndFetchCount(
-                    competitionId: competitionId,
-                    entryId: photo.id,
-                    source: "fullscreen"
-                )
-            }
-            
-            Analytics.shared.trackScreen(
-                name: "fullscreen_photo",
-                properties: [
-                    "user_name": userName,
-                    "can_rate": userName != "Me" && competitionId != nil
-                ]
+        .sheet(isPresented: $showingPredictionsView) {
+            PredictionsDetailView(
+                parlayStatus: parlayStatus ?? "",
+                parlayPredictions: parlayPredictions,
+                parlayPayout: parlayPayout,
+                parlayStake: parlayStake,
+                pendingUserProfiles: pendingUserProfiles,
+                interactionService: interactionService,
+                onDismiss: { showingPredictionsView = false }
             )
         }
     }
     
+    // MARK: - Parlay Status Views
+    
+    private var parlayStatusView: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("My Predictions")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                parlayStatusBadge
+            }
+            
+            if parlayStatus == "pending" {
+                parlayProgressView
+            } else if parlayStatus == "won" {
+                parlayWonView
+            } else if parlayStatus == "lost" {
+                parlayLostView
+            }
+        }
+        .padding()
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
+        .padding(.horizontal, 20)
+    }
+    
+    private var parlayStatusBadge: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(parlayStatusColor)
+                .frame(width: 8, height: 8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(parlayStatusColor.opacity(0.15))
+        .cornerRadius(200)
+    }
+    
+    private var parlayStatusColor: Color {
+        switch parlayStatus {
+        case "won": return Color(hex: "#00FF00")
+        case "lost": return Color(hex: "#FF4444")
+        default: return Color(hex: "#FFD700")
+        }
+    }
+    
+    private var parlayStatusText: String {
+        switch parlayStatus {
+        case "won": return "Win"
+        case "lost": return "Lost"
+        default: return "In Progress"
+        }
+    }
+    
+    private var parlayProgressView: some View {
+        VStack(spacing: 8) {
+            VStack(spacing: 8) {
+                let totalPredictions = parlayPredictions.count
+                let completedPredictions = parlayPredictions.values.compactMap { predictionData in
+                    (predictionData as? [String: Any])?["actualRating"]
+                }.count
+                
+                HStack {
+                    Text("Correct")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    let (correct, total) = getCorrectPredictionsCount()
+                    Text("\(correct)/\(total)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                HStack {
+                    Text("Entry")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayStake)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                HStack {
+                    Text("To Win")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayPayout)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                let profit = parlayPayout - parlayStake
+                HStack {
+                    Text("Profit")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    Text("+\(profit)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color(hex: "#00FF00"))
+                }
+            }
+            
+            predictionsList
+        }
+    }
+    
+    private var parlayWonView: some View {
+        VStack(spacing: 8) {
+            VStack(spacing: 8) {
+                HStack {
+                    Text("Correct")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    let (correct, total) = getCorrectPredictionsCount()
+                    Text("\(correct)/\(total)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                HStack {
+                    Text("Entry")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayStake)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                HStack {
+                    Text("Win")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayPayout)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                let profit = parlayPayout - parlayStake
+                HStack {
+                    Text("Profit")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    Text("+\(profit)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color(hex: "#00FF00"))
+                }
+            }
+            
+            predictionsList
+        }
+    }
+    
+    private var parlayLostView: some View {
+        VStack(spacing: 8) {
+            // Parlay summary
+            VStack(spacing: 8) {
+                HStack {
+                    Text("Correct")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    let (correct, total) = getCorrectPredictionsCount()
+                    Text("\(correct)/\(total)")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                
+                HStack {
+                    Text("Entry")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayStake)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                HStack {
+                    Text("Win")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("0")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+            }
+            
+            predictionsList
+        }
+    }
+    
+    private var predictionsList: some View {
+        VStack(spacing: 0) {
+            if !parlayPredictions.isEmpty {
+                Divider()
+                    .background(Color.white.opacity(0.2))
+                    .padding(.vertical, 8)
+                
+                VStack(spacing: 0) {
+                    ForEach(Array(parlayPredictions.keys.sorted()), id: \.self) { userId in
+                        predictionRow(for: userId)
+                        
+                        if userId != Array(parlayPredictions.keys.sorted()).last {
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.leading, 50)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func predictionRow(for userId: String) -> some View {
+        guard let predictionData = parlayPredictions[userId] as? [String: Any],
+              let predictedRating = predictionData["predictedRating"] as? Int else {
+            return AnyView(EmptyView())
+        }
+        
+        let actualRating = predictionData["actualRating"] as? Int
+        let isCorrect = predictionData["correct"] as? Bool ?? false
+        
+        // Get user info - try interaction first, then pending cache, then fetch
+        let interaction = interactionService.interactions.first { $0.userId == userId }
+        let userName: String
+        let profilePictureUrl: String?
+        
+        if let interaction = interaction {
+            // User has rated - use interaction data
+            userName = interaction.userName
+            profilePictureUrl = interaction.profilePictureUrl
+        } else if let cachedProfile = pendingUserProfiles[userId] {
+            // User hasn't rated but we have cached profile
+            userName = cachedProfile.username
+            profilePictureUrl = cachedProfile.profilePictureUrl
+        } else {
+            // Need to fetch user profile
+            userName = "Friend"
+            profilePictureUrl = nil
+            fetchUserProfileForPendingUser(userId: userId)
+        }
+        
+        return AnyView(
+            HStack(spacing: 12) {
+                // Profile Picture
+                ProfilePictureView(url: profilePictureUrl, size: 35)
+                
+                // User Info
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(userName)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    // Visual comparison of predicted vs actual
+                    if let actualRating = actualRating {
+                        HStack(alignment: .center, spacing: 0) {
+                           // Main tab
+                           HStack(spacing: 3) {
+                               Image(systemName: "star.fill")
+                                   .font(.system(size: 11))
+                                   .foregroundColor(.white)
+                               
+                               Text("\(predictedRating)")
+                                   .font(.system(size: 13, weight: .bold))
+                                   .foregroundColor(.white)
+                           }
+                           .frame(height: 28) // Same fixed height
+                           .padding(.horizontal, 8)
+                           .background(
+                            (isCorrect ? Color(hex: "#00FF00").opacity(0.6) : Color(hex: "#FF4444"))
+                                   .clipShape(
+                                       RoundedCorner(
+                                           radius: 6,
+                                           corners: isCorrect ? [.topLeft, .bottomLeft, .topRight, .bottomRight] : [.topLeft, .bottomLeft]
+                                       )
+                                   )
+                           )
+                           
+                           // Connected side tab (only show if incorrect)
+                           if !isCorrect {
+                               HStack(spacing: 4) {
+                                   Text("\(actualRating)")
+                                       .font(.system(size: 13, weight: .bold)) // Same size as main
+                                       .foregroundColor(.white.opacity(0.8))
+                               }
+                               .frame(height: 28) // Same fixed height
+                               .padding(.horizontal, 8)
+                               .background(
+                                    Color.gray.opacity(0.6) // Dark grey/black background
+                                       .clipShape(
+                                           RoundedCorner(
+                                               radius: 6,
+                                               corners: [.topRight, .bottomRight]
+                                           )
+                                       )
+                               )
+                           }
+                        }
+                    } else {
+                        HStack(spacing: 3) {
+                           Image(systemName: "star.fill")
+                               .font(.system(size: 11))
+                               .foregroundColor(.white)
+                           
+                           Text("\(predictedRating)")
+                               .font(.system(size: 13, weight: .bold))
+                               .foregroundColor(.white.opacity(0.8))
+                        }
+                        .frame(height: 28)
+                        .padding(.horizontal, 8)
+                        .background(
+                            Color.gray.opacity(0.6)
+                               .clipShape(
+                                   RoundedCorner(
+                                       radius: 6,
+                                       corners: [.topLeft, .bottomLeft, .topRight, .bottomRight]
+                                   )
+                               )
+                           )
+                    }
+                }
+                
+                Spacer()
+                
+                // Status indicator with icon
+                if actualRating != nil {
+                    Text(isCorrect ? "✓" : "✗")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(isCorrect ? Color(hex: "#00FF00") : Color(hex: "#FF4444"))
+                } else {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color(hex: "#FFD700"))
+                }
+            }
+            .padding(.vertical, 8)
+        )
+    }
+    
+    // MARK: - Parlay Helper Methods
+    
+    private func isPredictedUser(userId: String) -> Bool {
+        return parlayPredictions[userId] != nil
+    }
+    
+    private func predictionIndicator(for userId: String, actualRating: Int) -> some View {
+        guard let predictionData = parlayPredictions[userId] as? [String: Any],
+              let predictedRating = predictionData["predictedRating"] as? Int else {
+            return AnyView(EmptyView())
+        }
+        
+        let isCorrect = actualRating == predictedRating
+        let hasActualRating = predictionData["actualRating"] != nil
+        
+        if hasActualRating {
+            return AnyView(
+                HStack(spacing: 6) {
+                    Text("\(predictedRating)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Image(systemName: "star.fill")
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(isCorrect ? Color(hex: "#00FF00").opacity(0.5) : Color(hex: "#FF4444"))
+                .cornerRadius(20)
+            )
+        } else {
+            return AnyView(
+                HStack(spacing: 6) {
+                    Text("\(predictedRating)")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Image(systemName: "star.fill")
+                        .resizable()
+                        .frame(width: 16, height: 16)
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(isCorrect ? Color(hex: "#00FF00").opacity(0.5) : Color(hex: "#FF4444"))
+                .cornerRadius(20)
+            )
+        }
+    }
+    
+    private func getPendingUsers() -> [String] {
+        var pendingUsernames: [String] = []
+        
+        for (userId, predictionData) in parlayPredictions {
+            if let prediction = predictionData as? [String: Any],
+               prediction["actualRating"] == nil {
+                
+                // Try to find username from interactions first (most reliable)
+                if let interaction = interactionService.interactions.first(where: { $0.userId == userId }) {
+                    pendingUsernames.append(interaction.userName)
+                }
+                // Check if we have cached username in pendingUsernames state
+                else if let cachedUsername = pendingUsernamesCache[userId] {
+                    pendingUsernames.append(cachedUsername)
+                }
+                // Fallback to "Friend" if username not found
+                else {
+                    pendingUsernames.append("Friend")
+                    // Fetch username asynchronously and cache it
+                    fetchUsernameForPendingUser(userId: userId)
+                }
+            }
+        }
+        
+        return pendingUsernames
+    }
+    
+    private func fetchUsernameForPendingUser(userId: String) {
+        // Don't fetch if already cached or currently fetching
+        guard pendingUsernamesCache[userId] == nil else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let data = document?.data(),
+               let username = data["username"] as? String {
+                DispatchQueue.main.async {
+                    self.pendingUsernamesCache[userId] = username
+                }
+            }
+        }
+    }
+    
+    private func fetchUserProfileForPendingUser(userId: String) {
+        // Don't fetch if already cached
+        guard pendingUserProfiles[userId] == nil else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let data = document?.data(),
+               let username = data["username"] as? String {
+                let profilePictureUrl = data["profilePictureUrl"] as? String
+                DispatchQueue.main.async {
+                    self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)
+                }
+            }
+        }
+    }
+    
+    private func getCorrectPredictionsCount() -> (correct: Int, total: Int) {
+        var correctCount = 0
+        let totalCount = parlayPredictions.count
+        
+        for (_, predictionData) in parlayPredictions {
+            if let prediction = predictionData as? [String: Any],
+               let isCorrect = prediction["correct"] as? Bool,
+               isCorrect {
+                correctCount += 1
+            }
+        }
+        
+        return (correctCount, totalCount)
+    }
+    
+    private func loadParlayStatus() {
+        guard let competitionId = competitionId else { return }
+        
+        isLoadingParlayStatus = true
+        
+        let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(photo.id)
+        
+        entryRef.getDocument { document, error in
+            DispatchQueue.main.async {
+                self.isLoadingParlayStatus = false
+                
+                if let error = error {
+                    print("Error loading parlay status: \(error)")
+                    return
+                }
+                
+                guard let data = document?.data() else { return }
+                
+                self.parlayStatus = data["parlayStatus"] as? String
+                self.parlayPredictions = data["predictions"] as? [String: Any] ?? [:]
+                self.parlayPayout = data["potentialPayout"] as? Int ?? 0
+                self.parlayStake = data["entryCost"] as? Int ?? 0
+                
+                for userId in self.parlayPredictions.keys {
+                    if !self.interactionService.interactions.contains(where: { $0.userId == userId }) {
+                        self.fetchUserProfileForPendingUser(userId: userId)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Private Methods
+    
     private func sendPhotoMessage(text: String) {
         chatViewModel.sendPhotoMessage(photo: photo, text: text)
         
-        // Show success message
-        withAnimation {
-            messageSent = true
-        }
-        
-        // Haptic feedback
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         
@@ -346,7 +853,6 @@ struct FullScreenPhotoView: View {
             return
         }
         
-        // Check if the user has already voted on this photo
         let voteRef = db.collection("groupMemberships")
             .document(currentUserId)
             .collection("competitions")
@@ -369,25 +875,20 @@ struct FullScreenPhotoView: View {
     
     private func submitRating(stars: Int) {
         guard let competitionId = competitionId,
+              let currentUserId = Auth.auth().currentUser?.uid,
               !hasAlreadyVoted,
               isRatingEnabled else {
             return
         }
         
-        // Immediately disable rating to prevent double-clicks
         isRatingEnabled = false
         rating = stars
         
-        let starIncrement = photo.isSuperstar ? stars + 1 : stars
-        currentStarCount += starIncrement
-        
-        // Animate the rating
         animateRating = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            animateRating = false
+            self.animateRating = false
         }
         
-        // Track analytics
         Analytics.shared.trackEntry(
             action: "rate",
             entryId: photo.id,
@@ -395,79 +896,65 @@ struct FullScreenPhotoView: View {
             properties: ["rating": stars, "location": "fullscreen_view"]
         )
         
-        // Trigger haptic feedback
         triggerHapticFeedback(for: stars)
         
-        // Update the star rating using identical logic to EntryViewModel
-        updateStarRating(for: photo.id, with: stars, competitionId: competitionId)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
-            // Mark as voted
-            hasAlreadyVoted = true
-        }
-    }
-    
-    // Identical implementation to EntryViewModel's updateStarRating function
-    private func updateStarRating(for entryId: String, with stars: Int, competitionId: String) {
-        // Fetching the current Firebase user's ID
-        guard let currentUserId = Auth.auth().currentUser?.uid else {
-            print("Error: No authenticated user found.")
-            return
-        }
-        
-        let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
-        let voteRef = db.collection("groupMemberships").document(currentUserId)
-                         .collection("competitions").document(competitionId)
-                         .collection("votes").document(entryId)
-        
-        let interactionRef = db.collection("competitions")
-            .document(competitionId)
-            .collection("entries")
-            .document(entryId)
-            .collection("interactions")
-            .document(currentUserId)
-        
-        let batch = db.batch()
-
-        // Fetch the entry to determine if it is a superstar
-        entryRef.getDocument { (document, error) in
-            if let error = error {
-                print("Error fetching entry: \(error)")
-                return
-            }
-            
-            guard let document = document, let data = document.data() else {
-                print("Entry data not found")
-                return
-            }
-            
-            let ownerId = data["userId"] as? String ?? ""
-            let starIncrement = stars
-            
-            // Add operations to the batch
-            batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
-            batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
-            batch.setData(["rating": stars, "userId": currentUserId], forDocument: interactionRef, merge: true)
-
-            // Commit the batch
-            batch.commit { err in
-                if let err = err {
-                    print("Batch commit failed: \(err)")
+        // Use ParlayManager to handle the rating
+        ParlayManager.shared.handleRating(
+            competitionId: competitionId,
+            entryId: photo.id,
+            userId: currentUserId,
+            rating: stars
+        ) { success in
+            DispatchQueue.main.async {
+                if success {
+                    print("Rating processed successfully by ParlayManager")
+                    
+                    // Update local star count
+                    self.currentStarCount += stars
+                    
+                    // Reload parlay status if user is entry creator
+                    if self.isEntryCreator {
+                        self.loadParlayStatus()
+                    }
+                    
+                    // Submit to interaction service
+                    self.interactionService.submitRating(
+                        competitionId: competitionId,
+                        entryId: self.photo.id,
+                        rating: stars
+                    ) { interactionSuccess in
+                        if interactionSuccess {
+                            print("Rating submitted successfully to interaction service")
+                            
+                            // Refresh the interactions to show the new rating at the top
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                self.interactionService.fetchInteractions(
+                                    competitionId: competitionId,
+                                    entryId: self.photo.id
+                                )
+                            }
+                        }
+                    }
                 } else {
-                    print("Batch commit succeeded!")
+                    print("Failed to process rating with ParlayManager")
+                    // Re-enable rating on failure
+                    self.isRatingEnabled = true
+                    self.rating = 0
                 }
             }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+            self.hasAlreadyVoted = true
         }
     }
     
     private func triggerHapticFeedback(for star: Int) {
-        // Enhanced haptic feedback based on star value
         let intensity = Float(star) / 5.0
         let generator = UIImpactFeedbackGenerator(style: .rigid)
         generator.prepare()
         generator.impactOccurred(intensity: CGFloat(intensity))
         
-        // Add a short vibration pattern for casino-like feel
         let heavyGenerator = UIImpactFeedbackGenerator(style: .heavy)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             heavyGenerator.impactOccurred()
