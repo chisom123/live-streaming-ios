@@ -1,13 +1,27 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct PredictionsDetailView: View {
     let parlayStatus: String
     let parlayPredictions: [String: Any]
     let parlayPayout: Int
     let parlayStake: Int
-    let pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)]
+    @State private var pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)]
     let interactionService: PhotoInteractionService
     let onDismiss: () -> Void
+    
+    private let db = Firestore.firestore()
+    
+    // Initialize with the passed in profiles
+    init(parlayStatus: String, parlayPredictions: [String: Any], parlayPayout: Int, parlayStake: Int, pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)], interactionService: PhotoInteractionService, onDismiss: @escaping () -> Void) {
+        self.parlayStatus = parlayStatus
+        self.parlayPredictions = parlayPredictions
+        self.parlayPayout = parlayPayout
+        self.parlayStake = parlayStake
+        self._pendingUserProfiles = State(initialValue: pendingUserProfiles)
+        self.interactionService = interactionService
+        self.onDismiss = onDismiss
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -369,9 +383,9 @@ struct PredictionsDetailView: View {
             userName = cachedProfile.username
             profilePictureUrl = cachedProfile.profilePictureUrl
         } else {
-            // Need to fetch user profile
             userName = "Friend"
             profilePictureUrl = nil
+            fetchUserProfileForPendingUser(userId: userId)
         }
         
         return AnyView(
@@ -470,6 +484,21 @@ struct PredictionsDetailView: View {
             }
             .padding(.vertical, 8)
         )
+    }
+    
+    private func fetchUserProfileForPendingUser(userId: String) {
+        // Don't fetch if already cached
+        guard pendingUserProfiles[userId] == nil else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let data = document?.data(),
+               let username = data["username"] as? String {
+                let profilePictureUrl = data["profilePictureUrl"] as? String
+                DispatchQueue.main.async {
+                    self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)
+                }
+            }
+        }
     }
     
     private func getCorrectPredictionsCount() -> (correct: Int, total: Int) {
