@@ -75,6 +75,7 @@ exports.getAccessToken = onRequest({
 exports.createPurchaseToken = onCall({
   cors: ["*"],
   maxInstances: 10,
+  minInstances: 1
 }, async (request) => {
   try {
     // Verify user is authenticated
@@ -126,6 +127,7 @@ exports.createPurchaseToken = onCall({
 exports.createCheckoutSession = onRequest({
   cors: ["*"],
   maxInstances: 10,
+  minInstances: 1,
   secrets: ["STRIPE_SECRET_KEY"],
 }, async (req, res) => {
   cors(req, res, async () => {
@@ -231,6 +233,7 @@ exports.createCheckoutSession = onRequest({
 exports.stripeWebhook = onRequest({
   cors: ["*"],
   maxInstances: 10,
+  minInstances: 1,
   secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
 }, async (req, res) => {
   // Initialize Stripe with secret
@@ -320,6 +323,7 @@ async function logWebPurchase(userId, competitionId, coinAmount, session) {
 exports.checkPurchaseStatus = onCall({
   cors: ["*"],
   maxInstances: 10,
+  minInstances: 1
 }, async (request) => {
   if (!request.auth) {
     throw new Error('User must be authenticated');
