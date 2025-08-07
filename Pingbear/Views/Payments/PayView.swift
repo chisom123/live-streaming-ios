@@ -20,7 +20,7 @@ struct PayView: View {
     
     // Check if user is in GB region (for showing web option)
     private var shouldShowWebPurchase: Bool {
-        return Locale.current.region?.identifier == "GB"
+        return Locale.current.region?.identifier == "US"
     }
     
     var body: some View {
