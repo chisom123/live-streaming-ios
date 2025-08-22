@@ -16,6 +16,7 @@ struct UnlockView: View {
     @State private var customStakeAmount: String = "" // Changed: Start with empty string
     @State private var showStakeEditor: Bool = false
     @StateObject private var membersViewModel = MembersViewModel()
+    @ObservedObject private var pricingCalculator = CompetitionPricingCalculator.shared
     
     // Parlay betting state
     @State private var selectedPredictions: [String: Int] = [:]

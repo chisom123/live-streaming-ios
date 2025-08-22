@@ -144,6 +144,9 @@ struct PingbearApp: App {
                         isLoggedIn = false
                         deepLinkHandler.reset()
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                        CompetitionPricingCalculator.shared.reconnect()
+                    }
                     .onOpenURL { url in
                         handleOpenURL(url)
                     }
