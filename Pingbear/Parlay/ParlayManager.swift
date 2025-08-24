@@ -108,6 +108,17 @@ class ParlayManager {
             "ratedAt": FieldValue.serverTimestamp()
         ]
         
+        // Write to predictions collection for analytics
+        self.writePredictionRecord(
+            competitionId: competitionId,
+            entryId: entryId,
+            predictorUserId: userId,
+            entryOwnerId: entryData["userId"] as? String ?? "",
+            predictedRating: predictedRating,
+            actualRating: rating,
+            correct: isCorrect
+        )
+        
         // Check parlay status with new early failure detection
         let (allComplete, allCorrect, hasFailure) = checkParlayStatus(predictions: updatedPredictions)
         
@@ -154,6 +165,37 @@ class ParlayManager {
                 parlayStatus: "pending",
                 completion: completion
             )
+        }
+    }
+    
+    // Write prediction record to dedicated collection for analytics
+    private func writePredictionRecord(
+        competitionId: String,
+        entryId: String,
+        predictorUserId: String,
+        entryOwnerId: String,
+        predictedRating: Int,
+        actualRating: Int,
+        correct: Bool
+    ) {
+        let predictionData: [String: Any] = [
+            "competitionId": competitionId,
+            "entryId": entryId,
+            "predictorUserId": predictorUserId,
+            "entryOwnerId": entryOwnerId,
+            "predictedRating": predictedRating,
+            "actualRating": actualRating,
+            "correct": correct,
+            "createdAt": FieldValue.serverTimestamp(),
+            "ratedAt": FieldValue.serverTimestamp()
+        ]
+        
+        db.collection("predictions").addDocument(data: predictionData) { error in
+            if let error = error {
+                print("ParlayManager: Error writing prediction record: \(error)")
+            } else {
+                print("ParlayManager: Prediction record written successfully")
+            }
         }
     }
     

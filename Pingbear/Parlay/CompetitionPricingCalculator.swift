@@ -8,8 +8,8 @@ class CompetitionPricingCalculator: ObservableObject {
     @Published var isOffline: Bool = false
     
     // MARK: - Private Properties
-    private var cachedHouseEdge: Double = 0.30 // Default fallback
-    private var cachedAccuracyRate: Double = 0.50 // Default fallback
+    private var cachedHouseEdge: Double = 0.20 // Default fallback
+    private var cachedAccuracyRate: Double = 0.60 // Default fallback
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
     private let db = Firestore.firestore()
