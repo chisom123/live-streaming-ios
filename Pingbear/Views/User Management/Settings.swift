@@ -102,7 +102,7 @@ struct SettingsView: View {
                                 Button(action: {
                                     switch text {
                                     case "Contact Us":
-                                        if let url = URL(string: "mailto:pingbearapp@gmail.com") {
+                                        if let url = URL(string: "mailto:info@socialstarapp.com") {
                                             UIApplication.shared.open(url)
                                             Analytics.shared.trackTap(
                                                 elementId: "contact_us_button",
