@@ -11,8 +11,7 @@ struct PayView: View {
     @State private var userCoins: Int = 0
     @State private var isLoadingCoins = true
     @State private var isGeneratingToken = false
-    @State private var customCoinAmount: String = ""
-    @FocusState private var isInputFocused: Bool
+    @State private var selectedPackage: Int? = nil
     
     var competition: Competition
     var competitionId: String
@@ -24,7 +23,8 @@ struct PayView: View {
     }
     
     var body: some View {
-        if viewModel.isLoading {
+        // Show loading for both IAP and web purchases
+        if viewModel.isLoading || isGeneratingToken {
             ProgressView()
                 .padding()
                 .tint(.white)
@@ -67,13 +67,6 @@ struct PayView: View {
                 fetchUserCoins()
                 NotificationQueueManager.shared.processQueuedNotifications()
                 Analytics.shared.trackScreen(name: "coins_view")
-                
-                // Focus the input field automatically for web purchases
-                if shouldShowWebPurchase {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        isInputFocused = true
-                    }
-                }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 // Refresh when user returns to app (possibly from web purchase)
@@ -132,107 +125,56 @@ struct PayView: View {
         .background(Color(hex: "#1A2245"))
     }
     
-    // MARK: - Custom Coin Input View (only for web purchase users)
+    // MARK: - Custom Coin View (only for web purchase users)
     private var customCoinInputView: some View {
         VStack(spacing: 0) {
-            // Text field with coin icon
-            HStack {
-                Image("coin")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .padding(.leading, 15)
-                
-                TextField("Enter Amount", text: $customCoinAmount)
-                    .padding(.vertical)
-                    .padding(.leading, 5)
-                    .foregroundColor(.white)
-                    .font(.system(size: 16, weight: .bold, design: .default))
-                    .accentColor(.white)
-                    .keyboardType(.numberPad)
-                    .focused($isInputFocused)
-                    .onChange(of: customCoinAmount) { newValue in
-                        // Filter non-numeric characters
-                        let filtered = newValue.filter { "0123456789".contains($0) }
-                        if filtered != newValue {
-                            customCoinAmount = filtered
-                        }
-                    }
-            }
-            .frame(height: 60)
-            .background(
-                Color(hex: "#3B4374")
-                    .clipShape(
-                        RoundedCorner(
-                            radius: 10,
-                            corners: [.topLeft, .topRight]
-                        )
-                    )
+            // Small Package - 100 coins for $0.99
+            CoinPackageCell(
+                coinAmount: "100",
+                image: "coin-2",
+                price: "$0.99",
+                popular: false,
+                isLoading: selectedPackage == 100 && isGeneratingToken,
+                iapAction: {
+                    selectedPackage = 100
+                    openWebPurchase(coinAmount: 100)
+                }
             )
             
-            // Dollar amount conversion
-            if !customCoinAmount.isEmpty, let coins = Int(customCoinAmount), coins > 0 {
-                let dollars = Double(coins) * 0.01
-                Text("$\(String(format: "%.2f", dollars))")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color(hex: "#3B4374"))
-            }
+            Divider()
+                .background(Color.white.opacity(0.2))
             
-            // Error message for invalid range
-            if !customCoinAmount.isEmpty, let coins = Int(customCoinAmount), (coins < 100 || coins > 10000) {
-                let errorMessage = coins < 100 ? "100 coins minimum" : "10,000 coins maximum"
-                Text(errorMessage)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color(hex: "#FFF"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Color(hex: "#DC143C"))
-            }
+            // Medium Package (Most Popular) - 600 coins for $4.99
+            CoinPackageCell(
+                coinAmount: "600",
+                image: "coin-3",
+                price: "$4.99",
+                popular: true,
+                isLoading: selectedPackage == 600 && isGeneratingToken,
+                iapAction: {
+                    selectedPackage = 600
+                    openWebPurchase(coinAmount: 600)
+                }
+            )
             
-            // Purchase button
-            Button(action: {
-                if let amount = Int(customCoinAmount), amount >= 100 && amount <= 10000 {
-                    openWebPurchase(coinAmount: amount)
+            Divider()
+                .background(Color.white.opacity(0.2))
+            
+            // Large Package - 1,500 coins for $9.99
+            CoinPackageCell(
+                coinAmount: "1,500",
+                image: "coin-bag",
+                price: "$9.99",
+                popular: false,
+                isLoading: selectedPackage == 1500 && isGeneratingToken,
+                iapAction: {
+                    selectedPackage = 1500
+                    openWebPurchase(coinAmount: 1500)
                 }
-            }) {
-                HStack {
-                    if isGeneratingToken {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    }
-                    
-                    Text("Purchase")
-                        .font(.system(size: 18, weight: .bold))
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .foregroundColor((isValidCoinAmount && !isGeneratingToken) ? .white : .white.opacity(0.5))
-                .background(
-                    Color(hex: (isValidCoinAmount && !isGeneratingToken) ? "#4169E1" : "#323862")
-                        .clipShape(
-                            RoundedCorner(
-                                radius: 10,
-                                corners: [.bottomLeft, .bottomRight]
-                            )
-                        )
-                )
-            }
-            .disabled(!isValidCoinAmount || isGeneratingToken)
+            )
         }
         .cornerRadius(10)
-    }
-
-    // Helper computed property to check if coin amount is valid
-    private var isValidCoinAmount: Bool {
-        guard !customCoinAmount.isEmpty,
-              let coins = Int(customCoinAmount) else {
-            return false
-        }
-        return coins >= 100 && coins <= 10000
+        .disabled(isGeneratingToken)
     }
     
     // MARK: - Coin Packages (only for non-web purchase users)
@@ -245,6 +187,7 @@ struct PayView: View {
                     image: "coin-2",
                     price: formattedPrice(for: hourUnlock),
                     popular: false,
+                    isLoading: false, // IAP loading is handled by viewModel.isLoading
                     iapAction: {
                         viewModel.purchase(product: hourUnlock)
                     }
@@ -261,6 +204,7 @@ struct PayView: View {
                     image: "coin-3",
                     price: formattedPrice(for: dayUnlock),
                     popular: true,
+                    isLoading: false,
                     iapAction: {
                         viewModel.purchase(product: dayUnlock)
                     }
@@ -277,6 +221,7 @@ struct PayView: View {
                     image: "coin-bag",
                     price: formattedPrice(for: weekUnlock),
                     popular: false,
+                    isLoading: false,
                     iapAction: {
                         viewModel.purchase(product: weekUnlock)
                     }
@@ -320,6 +265,7 @@ struct PayView: View {
         ]) { result, error in
             DispatchQueue.main.async {
                 isGeneratingToken = false
+                selectedPackage = nil // Reset selected package
                 
                 if let error = error {
                     print("Error generating purchase token: \(error)")
@@ -364,8 +310,6 @@ struct PayView: View {
                         "coin_amount": coinAmount,
                         "competition_id": competitionId
                     ])
-                    
-                    customCoinAmount = ""
                 }
             }
         }
@@ -451,6 +395,7 @@ struct CoinPackageCell: View {
     let image: String
     let price: String
     let popular: Bool
+    let isLoading: Bool
     let iapAction: () -> Void
     
     var body: some View {
@@ -480,14 +425,21 @@ struct CoinPackageCell: View {
                 
                 Spacer()
                 
-                // Price
-                Text(price)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Color(hex: "#FFF"))
-                    .background(Color(hex: "#4169E1"))
-                    .cornerRadius(200)
+                if isLoading {
+                    // Show progress indicator instead of price
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else {
+                    // Price
+                    Text(price)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color(hex: "#FFF"))
+                        .background(Color(hex: "#4169E1"))
+                        .cornerRadius(200)
+                }
             }
             .padding(20)
             .padding(.vertical, 10)
@@ -497,6 +449,7 @@ struct CoinPackageCell: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+        .disabled(isLoading)
     }
 }
 

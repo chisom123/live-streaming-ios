@@ -16,10 +16,12 @@ const auth = new google.auth.GoogleAuth({
 // Create auth client outside function scope
 const authClientPromise = auth.getClient();
 
-// Coin pricing configuration
-const COIN_PRICE = 0.01; // $0.01 per coin
-const MIN_COINS = 100;    // Minimum purchase
-const MAX_COINS = 10000; // Maximum purchase
+// Coin pricing configuration - PACKAGE BASED
+const COIN_PACKAGES = {
+  '100': 99,    // 100 coins for $0.99 (in cents)
+  '600': 499,   // 600 coins for $4.99 (in cents)
+  '1500': 999   // 1,500 coins for $9.99 (in cents)
+};
 
 // Your existing function
 exports.getAccessToken = onRequest({
@@ -93,9 +95,11 @@ exports.createPurchaseToken = onCall({
       throw new Error('Competition ID is required');
     }
 
-    if (!coinAmount || coinAmount < MIN_COINS || coinAmount > MAX_COINS) {
+    // Validate coin amount against allowed packages
+    const allowedAmounts = Object.keys(COIN_PACKAGES).map(Number);
+    if (!allowedAmounts.includes(coinAmount)) {
       logger.error('Invalid coin amount:', coinAmount);
-      throw new Error(`Coin amount must be between ${MIN_COINS} and ${MAX_COINS}`);
+      throw new Error(`Coin amount must be one of: ${allowedAmounts.join(', ')}`);
     }
 
     // Store the purchase session data in Firestore
@@ -105,12 +109,13 @@ exports.createPurchaseToken = onCall({
       userId: request.auth.uid,
       competitionId: competitionId,
       coinAmount: coinAmount,
+      priceInCents: COIN_PACKAGES[coinAmount.toString()], // Store the fixed price
       createdAt: admin.firestore.Timestamp.now(),
       expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + (30 * 60 * 1000)), // 30 minutes
       sessionId: sessionRef.id
     });
 
-    // Create simple secure token (just the session ID + user ID hash)
+    // Create simple secure token
     const crypto = require('crypto');
     const tokenData = `${request.auth.uid}:${sessionRef.id}:${Date.now()}`;
     const token = crypto.createHash('sha256').update(tokenData + 'your-secret-key').digest('hex');
@@ -167,12 +172,13 @@ exports.createCheckoutSession = onRequest({
       }
 
       const coinAmount = sessionData.coinAmount;
+      const priceInCents = sessionData.priceInCents; // Use the stored fixed price
       const userId = sessionData.userId;
       const competitionId = sessionData.competitionId;
-      const priceInCents = Math.round(coinAmount * COIN_PRICE * 100);
 
-      // Validate coin amount
-      if (coinAmount < MIN_COINS || coinAmount > MAX_COINS) {
+      // Validate coin amount against allowed packages
+      const allowedAmounts = Object.keys(COIN_PACKAGES).map(Number);
+      if (!allowedAmounts.includes(coinAmount)) {
         return res.status(400).send('Invalid coin amount');
       }
 
