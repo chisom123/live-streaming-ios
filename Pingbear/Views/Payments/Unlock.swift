@@ -18,6 +18,9 @@ struct UnlockView: View {
     @StateObject private var membersViewModel = MembersViewModel()
     @ObservedObject private var pricingCalculator = CompetitionPricingCalculator.shared
     
+    @State private var showingJoinSelectView = false
+    @StateObject private var myFriendsModel = MyFriendsModel()
+    
     // Parlay betting state
     @State private var selectedPredictions: [String: Int] = [:]
     @State private var showPredictionSelector = false
@@ -93,6 +96,12 @@ struct UnlockView: View {
                     // Always refresh data when sheet appears
                     membersViewModel.fetchMembersDetails(for: competition)
                 }
+        }
+        .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
+            // Refresh the members data when returning from JoinSelectView
+            membersViewModel.fetchMembersDetails(for: competition)
+        }) {
+            JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
         .onChange(of: payViewModel.purchaseCompleted) { completed in
             if completed {
@@ -275,17 +284,56 @@ struct UnlockView: View {
             
             let availableRaters = membersViewModel.members.filter { $0.id != membersViewModel.currentUserId }
             
-            if availableRaters.isEmpty {
-                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                HStack {
-                    Text("Make Your Predictions")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Spacer()
-                }
+            HStack {
+                Text("Make Your Predictions")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
                 
+                Spacer()
+            }
+            
+            if membersViewModel.isLoading {
+                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if availableRaters.isEmpty {
+                // No other members available
+                VStack(spacing: 16) {
+                    
+                    VStack(spacing: 8) {
+                        Text("No Other Players")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        Text("Add players to this competition so you can make predictions on their ratings")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(2)
+                            .padding(.horizontal)
+                    }
+                    
+                    Button(action: {
+                        showingJoinSelectView = true
+                        Analytics.shared.trackTap(
+                            elementId: "add_player_from_predictions",
+                            screenName: "parlay_betting_paywall"
+                        )
+                    }) {
+                        Text("Add Players")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(Color(hex: "#4169E1"))
+                            .cornerRadius(200)
+                    }
+                    .padding(.horizontal)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.vertical, 40)
+                .background(Color.white.opacity(0.05))
+                .cornerRadius(8)
+            } else {
+                // Show available members for predictions
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVGrid(columns: [
                         GridItem(.flexible()),
