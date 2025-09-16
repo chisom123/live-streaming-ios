@@ -71,7 +71,7 @@ struct CameraView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(Color(hex: "#1F1F1F").opacity(0.7))
+                        .background(Color(hex: "#4169E1"))
                         .cornerRadius(200)
                     }
                     
