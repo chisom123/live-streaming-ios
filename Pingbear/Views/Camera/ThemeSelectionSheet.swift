@@ -225,11 +225,26 @@ struct AddThemeSheet: View {
     @State private var selectedSuggestionIndex: Int? = nil
     @FocusState private var isThemeNameFocused: Bool
     
-    // Theme suggestions - these could be fetched from an API or stored locally
-    private let themeSuggestions = [
-        "Outfit of the Day", "Mood", "Out n About", "Random",
-        "Caught in 4K", "Strike a Pose"
-    ]
+    // Dynamic theme suggestions based on user's current day
+    private var themeSuggestions: [String] {
+        let currentDayName = getCurrentDayName()
+        return [
+            "Outfit of the Day",
+            "WTF",
+            "\(currentDayName) Mood",
+            "Caught in 4K",
+            "Another Late Night",
+            "Mirror Check"
+        ]
+    }
+    
+    // Get current day name in user's local timezone
+    private func getCurrentDayName() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE" // Full day name (e.g., "Tuesday", "Wednesday")
+        formatter.timeZone = TimeZone.current // Uses user's local timezone
+        return formatter.string(from: Date())
+    }
     
     var body: some View {
         NavigationView {
@@ -300,17 +315,17 @@ struct AddThemeSheet: View {
                         }
                         
                         // Only show suggestions if the text field is empty
-//                        if themeName.isEmpty {
-//                            // Suggestions title
-//                            Text("Suggested Themes")
-//                                .font(.system(size: 16, weight: .semibold))
-//                                .foregroundColor(Color.white.opacity(0.8))
-//                                .padding(.top, 10)
-//                            
-//                            // Theme suggestions grid
-//                            suggestionsGrid
-//                                .padding(.top, 5)
-//                        }
+                        if themeName.isEmpty {
+                            // Suggestions title
+                            Text("Suggested Themes")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color.white.opacity(0.8))
+                                .padding(.top, 10)
+                            
+                            // Theme suggestions grid
+                            suggestionsGrid
+                                .padding(.top, 5)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
