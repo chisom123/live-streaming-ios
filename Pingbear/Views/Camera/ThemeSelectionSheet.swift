@@ -369,6 +369,8 @@ struct AddThemeSheet: View {
                 .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
                 .foregroundColor(Color.white)
                 .frame(maxWidth: .infinity)
+                .lineLimit(1)
+                .padding(.horizontal, 10)
                 .frame(height: 55)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
