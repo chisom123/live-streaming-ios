@@ -26,7 +26,7 @@ const COIN_PACKAGES = {
 // Your existing function
 exports.getAccessToken = onRequest({
   cors: ["*"],
-  maxInstances: 10,
+  maxInstances: 20,
   minInstances: 1, // Keep at least one instance warm
 }, async (request, response) => {
   try {
@@ -76,7 +76,7 @@ exports.getAccessToken = onRequest({
 // Generate secure purchase token
 exports.createPurchaseToken = onCall({
   cors: ["*"],
-  maxInstances: 10,
+  maxInstances: 20,
   minInstances: 1
 }, async (request) => {
   try {
@@ -131,7 +131,7 @@ exports.createPurchaseToken = onCall({
 // Create Stripe checkout session
 exports.createCheckoutSession = onRequest({
   cors: ["*"],
-  maxInstances: 10,
+  maxInstances: 20,
   minInstances: 1,
   secrets: ["STRIPE_SECRET_KEY"],
 }, async (req, res) => {
@@ -238,8 +238,7 @@ exports.createCheckoutSession = onRequest({
 // Handle Stripe webhooks
 exports.stripeWebhook = onRequest({
   cors: ["*"],
-  maxInstances: 10,
-  minInstances: 1,
+  maxInstances: 20,
   secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
 }, async (req, res) => {
   // Initialize Stripe with secret
@@ -328,8 +327,7 @@ async function logWebPurchase(userId, competitionId, coinAmount, session) {
 // Check purchase status (for app to poll)
 exports.checkPurchaseStatus = onCall({
   cors: ["*"],
-  maxInstances: 10,
-  minInstances: 1
+  maxInstances: 20
 }, async (request) => {
   if (!request.auth) {
     throw new Error('User must be authenticated');
