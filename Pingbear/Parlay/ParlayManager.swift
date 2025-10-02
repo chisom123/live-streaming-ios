@@ -408,7 +408,7 @@ class ParlayManager {
         predictionCount: Int
     ) {
         let systemUserId = "zxBo4ecEp1hzXhpVIfQ1vFpclkz1"
-        let staticProfilePicUrl = "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c.appspot.com/o/success-bot-logo%2Fbb.png?alt=media&token=208272e2-3c73-41a8-bde7-0e8186bce441"
+        let staticProfilePicUrl = "https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/success-bot-logo%2Fbb.png?alt=media&token=c8bbc569-b5b1-412a-bd8a-786105162bce"
         
         // Fetch winner's username
         db.collection("users").document(winnerUserId).getDocument { [weak self] userDoc, userError in

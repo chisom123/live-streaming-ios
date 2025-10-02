@@ -7,7 +7,7 @@ import FirebaseAuth
 class EntryUploadManager: ObservableObject {
     static let shared = EntryUploadManager()
     
-    private let storage = Storage.storage()
+    private let storage = Storage.storage(url: "gs://pingbear-96b4c-us")
     private let db = Firestore.firestore()
     
     @Published var isUploading = false
@@ -19,7 +19,7 @@ class EntryUploadManager: ObservableObject {
     func initialize() {
         if !isInitialized {
             // Force Firebase Storage to initialize by creating a reference
-            _ = Storage.storage().reference()
+            _ = Storage.storage(url: "gs://pingbear-96b4c-us").reference()
             isInitialized = true
             print("EntryUploadManager: Firebase Storage initialized")
         }

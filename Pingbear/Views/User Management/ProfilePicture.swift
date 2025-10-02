@@ -14,7 +14,7 @@ struct ProfileImage: Identifiable {
 // Profile Picture Upload Manager
 class ProfilePictureManager: ObservableObject {
     static let shared = ProfilePictureManager()
-    private let storage = Storage.storage()
+    private let storage = Storage.storage(url: "gs://pingbear-96b4c-us")
     private let db = Firestore.firestore()
     
     @Published var isUploading = false
