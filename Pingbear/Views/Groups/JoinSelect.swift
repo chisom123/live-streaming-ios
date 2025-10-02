@@ -83,6 +83,7 @@ struct JoinSelectView: View {
                         .background(Color(hex: "#1A2245"))
                         .cornerRadius(10)
                         .padding(.bottom, 20)
+                        .padding(.horizontal)
                     }
                     .sheet(isPresented: $isCustomShareSheetPresented) {
                         CustomShareSheet(shareText: createShareText(), shareLink: DeepLinkHandler.shared.createShareableLink(for: competition.id))
@@ -124,6 +125,7 @@ struct JoinSelectView: View {
                             }
                             .background(Color(hex: "#1A2245"))
                             .cornerRadius(10)
+                            .padding(.horizontal)
                         }
                     }
                     
@@ -142,8 +144,8 @@ struct JoinSelectView: View {
                     .padding(.top, 10)
                     .padding(.bottom, 10)
                     .disabled(self.selectedFriends.isEmpty)
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
         }
         .background(Color(hex: "#10183C"))
