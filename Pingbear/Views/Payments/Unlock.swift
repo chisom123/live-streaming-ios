@@ -293,22 +293,22 @@ struct UnlockView: View {
             }
             
             if membersViewModel.isLoading {
-                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                Spacer()
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
+                Spacer()
             } else if availableRaters.isEmpty {
                 // No other members available
                 VStack(spacing: 16) {
                     
                     VStack(spacing: 8) {
-                        Text("No Other Players")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white)
-                        
                         Text("Add players to this competition so you can make predictions on their ratings")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)
                             .lineSpacing(2)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 30)
                     }
                     
                     Button(action: {
