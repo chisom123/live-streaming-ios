@@ -286,30 +286,35 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Parlay won! Paid out \(potentialPayout) coins to user \(entryOwnerId)")
                 
-                // Fetch competition name for notification
+                // Fetch competition name and winner's username for notifications
                 self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
                     let competitionName = compDoc?.data()?["description"] as? String ?? "Game"
                     let predictionText = updatedPredictions.count == 1 ? "prediction" : "predictions"
                     let systemUserId = "zxBo4ecEp1hzXhpVIfQ1vFpclkz1"
                     
-                    // Send individual notification to winner
-                    NotificationQueueManager.shared.queueIndividualNotification(
-                        to: entryOwnerId,
-                        title: competitionName,
-                        body: "Congratulations! You won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)",
-                        senderId: userId
-                    )
-                    
-                    // Send group notification
-                    NotificationQueueManager.shared.queueGroupNotification(
-                        competitionId: competitionId,
-                        title: competitionName,
-                        body: "SocialStar sent a message",
-                        senderId: systemUserId,
-                        excludeUsers: [entryOwnerId]
-                    )
-                    
-                    NotificationQueueManager.shared.processQueuedNotifications()
+                    // Fetch winner's username
+                    self.db.collection("users").document(entryOwnerId).getDocument { userDoc, _ in
+                        let winnerUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        
+                        // Send individual notification to winner
+                        NotificationQueueManager.shared.queueIndividualNotification(
+                            to: entryOwnerId,
+                            title: competitionName,
+                            body: "Congratulations! You won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)",
+                            senderId: systemUserId
+                        )
+                        
+                        // Send group notification
+                        NotificationQueueManager.shared.queueGroupNotification(
+                            competitionId: competitionId,
+                            title: competitionName,
+                            body: "\(winnerUsername) just won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)!",
+                            senderId: systemUserId,
+                            excludeUsers: [entryOwnerId]
+                        )
+                        
+                        NotificationQueueManager.shared.processQueuedNotifications()
+                    }
                 }
                 
                 self.sendParlayWinMessage(
