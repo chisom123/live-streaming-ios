@@ -286,6 +286,32 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Parlay won! Paid out \(potentialPayout) coins to user \(entryOwnerId)")
                 
+                // Fetch competition name for notification
+                self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
+                    let competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                    let predictionText = updatedPredictions.count == 1 ? "prediction" : "predictions"
+                    let systemUserId = "zxBo4ecEp1hzXhpVIfQ1vFpclkz1"
+                    
+                    // Send individual notification to winner
+                    NotificationQueueManager.shared.queueIndividualNotification(
+                        to: entryOwnerId,
+                        title: competitionName,
+                        body: "Congratulations! You won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)",
+                        senderId: userId
+                    )
+                    
+                    // Send group notification
+                    NotificationQueueManager.shared.queueGroupNotification(
+                        competitionId: competitionId,
+                        title: competitionName,
+                        body: "SocialStar sent a message",
+                        senderId: systemUserId,
+                        excludeUsers: [entryOwnerId]
+                    )
+                    
+                    NotificationQueueManager.shared.processQueuedNotifications()
+                }
+                
                 self.sendParlayWinMessage(
                     competitionId: competitionId,
                     entryId: entryId,
@@ -293,17 +319,6 @@ class ParlayManager {
                     payout: potentialPayout,
                     predictionCount: updatedPredictions.count
                 )
-                
-                let systemUserId = "zxBo4ecEp1hzXhpVIfQ1vFpclkz1"
-                
-                NotificationQueueManager.shared.queueNotification(
-                    competitionId: competitionId,
-                    competitionDescription: "",
-                    userId: systemUserId,
-                    type: .message
-                )
-                
-                NotificationQueueManager.shared.processQueuedNotifications()
                 
                 // Track analytics for parlay win
                 Analytics.shared.track(
@@ -358,6 +373,56 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Parlay entry updated successfully - Status: \(parlayStatus)")
                 
+                // Send notification to photo owner about the rating
+                entryRef.getDocument { entryDoc, _ in
+                    guard let entryData = entryDoc?.data(),
+                          let entryOwnerId = entryData["userId"] as? String else {
+                        completion(true)
+                        return
+                    }
+                    
+                    // Don't notify if user rated their own entry
+                    guard entryOwnerId != userId else {
+                        completion(true)
+                        return
+                    }
+                    
+                    // Get competition ID from path
+                    let pathComponents = entryRef.path.components(separatedBy: "/")
+                    let competitionId = pathComponents.count > 1 ? pathComponents[1] : ""
+                    
+                    // Fetch rater username and competition name
+                    let group = DispatchGroup()
+                    var raterUsername = "Someone"
+                    var competitionName = "Game"
+                    
+                    group.enter()
+                    self.db.collection("users").document(userId).getDocument { userDoc, _ in
+                        raterUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        group.leave()
+                    }
+                    
+                    group.enter()
+                    self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
+                        competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                        group.leave()
+                    }
+                    
+                    group.notify(queue: .main) {
+                        let starText = rating == 1 ? "star" : "stars"
+                        
+                        NotificationQueueManager.shared.queueIndividualNotification(
+                            to: entryOwnerId,
+                            title: competitionName,
+                            body: "\(raterUsername) rated your photo \(rating) \(starText)",
+                            senderId: userId,
+                            competitionId: competitionId
+                        )
+                        
+                        NotificationQueueManager.shared.processQueuedNotifications()
+                    }
+                }
+                
                 if parlayStatus == "lost" {
                     Analytics.shared.track(
                         event: "parlay_lost",
@@ -395,6 +460,67 @@ class ParlayManager {
                 completion(false)
             } else {
                 print("ParlayManager: Regular entry rating updated successfully!")
+                
+                // Fetch entry owner ID and competition ID
+                entryRef.getDocument { entryDoc, _ in
+                    guard let entryData = entryDoc?.data(),
+                          let entryOwnerId = entryData["userId"] as? String else {
+                        completion(true)
+                        return
+                    }
+                    
+                    // Don't notify if user rated their own entry
+                    guard entryOwnerId != userId else {
+                        completion(true)
+                        return
+                    }
+                    
+                    // Fetch rater's username and competition name in parallel
+                    let raterRef = self.db.collection("users").document(userId)
+                    
+                    let group = DispatchGroup()
+                    var raterUsername = "Someone"
+                    var competitionId = ""
+                    var competitionName = "Game"
+                    
+                    // Get competition ID from entry data
+                    if let compId = entryData["competitionId"] as? String {
+                        competitionId = compId
+                    } else {
+                        // If not stored in entry, we need to extract from entryRef path
+                        let pathComponents = entryRef.path.components(separatedBy: "/")
+                        if pathComponents.count > 1 {
+                            competitionId = pathComponents[1]
+                        }
+                    }
+                    
+                    group.enter()
+                    raterRef.getDocument { userDoc, _ in
+                        raterUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        group.leave()
+                    }
+                    
+                    group.enter()
+                    self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
+                        competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                        group.leave()
+                    }
+                    
+                    group.notify(queue: .main) {
+                        let starText = rating == 1 ? "star" : "stars"
+                        
+                        NotificationQueueManager.shared.queueIndividualNotification(
+                            to: entryOwnerId,
+                            title: competitionName,
+                            body: "\(raterUsername) rated your photo \(rating) \(starText)",
+                            senderId: userId,
+                            competitionId: competitionId
+                        )
+                        
+                        NotificationQueueManager.shared.processQueuedNotifications()
+                    }
+                }
+                
                 completion(true)
             }
         }

@@ -831,13 +831,36 @@ struct FullScreenPhotoView: View {
         generator.notificationOccurred(.success)
         
         if let userId = Auth.auth().currentUser?.uid, let competitionId = competitionId {
-            NotificationQueueManager.shared.queueNotification(
-                competitionId: competitionId,
-                competitionDescription: "",
-                userId: userId,
-                type: .message
-            )
-            NotificationQueueManager.shared.processQueuedNotifications()
+            // Fetch both competition description and sender's username
+            let competitionRef = db.collection("competitions").document(competitionId)
+            let userRef = db.collection("users").document(userId)
+            
+            let group = DispatchGroup()
+            var competitionDescription = "Game"
+            var username = "Someone"
+            
+            group.enter()
+            competitionRef.getDocument { compDoc, _ in
+                competitionDescription = compDoc?.data()?["description"] as? String ?? "Game"
+                group.leave()
+            }
+            
+            group.enter()
+            userRef.getDocument { userDoc, _ in
+                username = userDoc?.data()?["username"] as? String ?? "Someone"
+                group.leave()
+            }
+            
+            group.notify(queue: .main) {
+                NotificationQueueManager.shared.queueGroupNotification(
+                    competitionId: competitionId,
+                    title: competitionDescription,
+                    body: "\(username) sent a message",
+                    senderId: userId,
+                    excludeUsers: [userId]
+                )
+                NotificationQueueManager.shared.processQueuedNotifications()
+            }
         }
         
         Analytics.shared.trackTap(

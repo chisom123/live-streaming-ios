@@ -273,6 +273,28 @@ class DeepLinkHandler: ObservableObject {
                         competitionId: competitionId
                     )
                     
+                    // Fetch the new member's username and competition description for notifications
+                    self?.db.collection("users").document(userId).getDocument { userDoc, userError in
+                        let newMemberName = userDoc?.data()?["username"] as? String ?? "Someone"
+                        
+                        // Fetch competition description
+                        self?.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
+                            let competitionDescription = compDoc?.data()?["description"] as? String ?? "Game"
+                            
+                            // Notify all existing members about the new member
+                            NotificationQueueManager.shared.queueGroupNotification(
+                                competitionId: competitionId,
+                                title: competitionDescription,
+                                body: "\(newMemberName) joined the competition",
+                                senderId: userId,
+                                excludeUsers: [userId] // Don't notify the person who just joined
+                            )
+                            
+                            // Process the notification
+                            NotificationQueueManager.shared.processQueuedNotifications()
+                        }
+                    }
+                    
                     // Trigger refresh of competitions list
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: NSNotification.Name("RefreshCompetitions"), object: nil)

@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 import Kingfisher
 
 struct ChatView: View {
@@ -161,13 +162,19 @@ struct ChatView: View {
         generator.impactOccurred()
         
         if let userId = Auth.auth().currentUser?.uid {
-            NotificationQueueManager.shared.queueNotification(
-                competitionId: competition.id,
-                competitionDescription: competition.description,
-                userId: userId,
-                type: .message
-            )
-            NotificationQueueManager.shared.processQueuedNotifications()
+            // Fetch sender's username
+            FirebaseFirestore.Firestore.firestore().collection("users").document(userId).getDocument { userDoc, _ in
+                let username = userDoc?.data()?["username"] as? String ?? "Someone"
+                
+                NotificationQueueManager.shared.queueGroupNotification(
+                    competitionId: competition.id,
+                    title: competition.description,
+                    body: "\(username) sent a message",
+                    senderId: userId,
+                    excludeUsers: [userId]
+                )
+                NotificationQueueManager.shared.processQueuedNotifications()
+            }
         }
         
         Analytics.shared.trackTap(

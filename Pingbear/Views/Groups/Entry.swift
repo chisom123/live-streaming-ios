@@ -313,15 +313,22 @@ private extension EntryView {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         
-        // Queue notification
+        // Queue notification with sender's username
         if let userId = Auth.auth().currentUser?.uid {
-            NotificationQueueManager.shared.queueNotification(
-                competitionId: competition.id,
-                competitionDescription: competition.description,
-                userId: userId,
-                type: .message
-            )
-            NotificationQueueManager.shared.processQueuedNotifications()
+            // Fetch sender's username
+            db.collection("users").document(userId).getDocument { userDoc, _ in
+                let username = userDoc?.data()?["username"] as? String ?? "Someone"
+                
+                NotificationQueueManager.shared.queueGroupNotification(
+                    competitionId: competition.id,
+                    title: competition.description,
+                    body: "\(username) sent a message",
+                    senderId: userId,
+                    excludeUsers: [userId]
+                )
+                
+                NotificationQueueManager.shared.processQueuedNotifications()
+            }
         }
         
         Analytics.shared.trackTap(

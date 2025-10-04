@@ -202,12 +202,10 @@ struct JoinSelectView: View {
         let db = Firestore.firestore()
         let dispatchGroup = DispatchGroup()
         
-        // Changed from batch write to sequential operations
         for userId in selectedFriends {
             dispatchGroup.enter()
             
             // STEP 1: First add to competition members collection
-            // This establishes membership which is required by security rules
             let memberRef = db.collection("competitions")
                 .document(competition.id)
                 .collection("members")
@@ -223,8 +221,7 @@ struct JoinSelectView: View {
                     return
                 }
                 
-                // STEP 2: Now that membership is established, we can add to groupMemberships
-                // This should now work because the security rules can verify membership
+                // STEP 2: Now that membership is established, add to groupMemberships
                 let membershipRef = db.collection("groupMemberships")
                     .document(userId)
                     .collection("competitions")
@@ -233,17 +230,47 @@ struct JoinSelectView: View {
                 membershipRef.setData(["competitionId": competition.id]) { error in
                     if let error = error {
                         print("Error adding to groupMemberships: \(error)")
-                    } else {
-                        // Analytics event only tracked on successful addition
-                        Analytics.shared.trackCompetition(
-                            action: "join",
-                            competitionId: competition.id,
-                            properties: ["user_id": userId]
-                        )
+                        dispatchGroup.leave()
+                        return
                     }
-                    dispatchGroup.leave()
+                    
+                    // Analytics event
+                    Analytics.shared.trackCompetition(
+                        action: "join",
+                        competitionId: competition.id,
+                        properties: ["user_id": userId]
+                    )
+                    
+                    // STEP 3: Fetch the new member's username and send notifications
+                    db.collection("users").document(userId).getDocument { userDoc, userError in
+                        let newMemberName = userDoc?.data()?["username"] as? String ?? "Someone"
+                        
+                        // Notify the new member
+                        NotificationQueueManager.shared.queueIndividualNotification(
+                            to: userId,
+                            title: self.competition.description,
+                            body: "\(username) added you to the competition",
+                            senderId: self.currentUserId
+                        )
+                        
+                        // Notify all existing members (except the person who added them and the new member)
+                        NotificationQueueManager.shared.queueGroupNotification(
+                            competitionId: self.competition.id,
+                            title: self.competition.description,
+                            body: "\(newMemberName) joined the competition",
+                            senderId: self.currentUserId,
+                            excludeUsers: [self.currentUserId, userId]
+                        )
+                        
+                        dispatchGroup.leave()
+                    }
                 }
             }
+        }
+        
+        // Process all queued notifications after all operations complete
+        dispatchGroup.notify(queue: .main) {
+            NotificationQueueManager.shared.processQueuedNotifications()
         }
     }
 }

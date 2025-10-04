@@ -302,13 +302,20 @@ class EntryUploadManager: ObservableObject {
                             } else if let entryId = newEntryRef?.documentID {
                                 print("EntryUploadManager: Parlay entry saved successfully with ID: \(entryId)")
                                 
-                                // Queue the notification
-                                NotificationQueueManager.shared.queueNotification(
-                                    competitionId: competitionId,
-                                    competitionDescription: competition.description,
-                                    userId: userId,
-                                    type: .photo
-                                )
+                                // Fetch sender's username for notification
+                                self.db.collection("users").document(userId).getDocument { userDoc, _ in
+                                    let username = userDoc?.data()?["username"] as? String ?? "Someone"
+                                    
+                                    NotificationQueueManager.shared.queueGroupNotification(
+                                        competitionId: competitionId,
+                                        title: competition.description,
+                                        body: "Rate \(username)'s new photo",
+                                        senderId: userId,
+                                        excludeUsers: [userId]
+                                    )
+                                    
+                                    NotificationQueueManager.shared.processQueuedNotifications()
+                                }
                                 
                                 // Track analytics for parlay entry
                                 Analytics.shared.trackEntry(
