@@ -46,7 +46,7 @@ struct MembersView: View {
                         showingJoinSelectView = true
                     }) {
                         HStack {
-                            Text("Add Players to Competition")
+                            Text("Add Players to Game")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
                                 .frame(maxWidth: .infinity, alignment: .leading)

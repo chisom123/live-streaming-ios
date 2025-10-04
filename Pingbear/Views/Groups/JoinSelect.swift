@@ -32,7 +32,7 @@ struct JoinSelectView: View {
                     
                     Spacer()
                     
-                    Text("Add Players to Competition")
+                    Text("Add Players to Game")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
@@ -166,7 +166,7 @@ struct JoinSelectView: View {
     
     private func createShareText() -> String {
         let shareLink = DeepLinkHandler.shared.createShareableLink(for: competition.id)
-        return "Join my competition \(competition.description) on SocialStar! \(shareLink)"
+        return "Join my game on SocialStar! \(shareLink)"
     }
     
     private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
@@ -249,7 +249,7 @@ struct JoinSelectView: View {
                         NotificationQueueManager.shared.queueIndividualNotification(
                             to: userId,
                             title: self.competition.description,
-                            body: "\(username) added you to the competition",
+                            body: "\(username) added you to the game",
                             senderId: self.currentUserId
                         )
                         
@@ -257,7 +257,7 @@ struct JoinSelectView: View {
                         NotificationQueueManager.shared.queueGroupNotification(
                             competitionId: self.competition.id,
                             title: self.competition.description,
-                            body: "\(newMemberName) joined the competition",
+                            body: "\(newMemberName) joined the game",
                             senderId: self.currentUserId,
                             excludeUsers: [self.currentUserId, userId]
                         )

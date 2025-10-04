@@ -29,7 +29,7 @@ struct MyCompsView: View {
                 
                 Spacer()
                 
-                Text("Competitions")
+                Text("Games")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
 
@@ -116,7 +116,7 @@ struct MyCompsView: View {
                     }
                 )
         )
-        .alert("Leave Competition", isPresented: $showLeaveConfirmation) {
+        .alert("Leave Game", isPresented: $showLeaveConfirmation) {
             Button("Cancel", role: .cancel) {
                 competitionToLeave = nil
             }
@@ -128,7 +128,7 @@ struct MyCompsView: View {
                 competitionToLeave = nil
             }
         } message: {
-            Text("Are you sure you want to leave this competition?")
+            Text("Are you sure you want to leave this game?")
         }
         .onAppear {
             fetchData()
@@ -182,7 +182,7 @@ struct MyCompsView: View {
                 return
             }
             
-            let competitionName = "Competition"
+            let competitionName = "Game"
             
             // Now create the competition
             let competitionRef = db.collection("competitions").document()
@@ -263,7 +263,7 @@ struct EmptyCompsView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            Text("No Competitions Yet")
+            Text("No Games Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 30)
@@ -273,7 +273,7 @@ struct EmptyCompsView: View {
             VStack() {
                 Button(action: newCompAction) {
                     HStack {
-                        Text("New Competition")
+                        Text("New Game")
                             .font(.system(size: 17, weight: .bold, design: .default))
                     }
                     .frame(maxWidth: .infinity)
@@ -337,7 +337,7 @@ struct CompetitionCellContent: View {
                 Button() {
                     onLeave()
                 } label: {
-                    Label("Leave Competition", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label("Leave Game", systemImage: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                 }

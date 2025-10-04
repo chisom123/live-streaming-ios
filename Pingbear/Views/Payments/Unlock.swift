@@ -303,7 +303,7 @@ struct UnlockView: View {
                 VStack(spacing: 16) {
                     
                     VStack(spacing: 8) {
-                        Text("Add players to this competition so you can make predictions on their ratings")
+                        Text("Add players to this game so you can make predictions on their ratings")
                             .font(.system(size: 15, weight: .medium))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)

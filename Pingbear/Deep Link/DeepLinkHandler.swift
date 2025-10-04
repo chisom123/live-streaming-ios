@@ -210,7 +210,7 @@ class DeepLinkHandler: ObservableObject {
             // Create competition object
             let competition = Competition(
                 id: competitionId,
-                description: data["description"] as? String ?? "Competition",
+                description: data["description"] as? String ?? "Game",
                 date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
             )
             

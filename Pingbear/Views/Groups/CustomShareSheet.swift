@@ -24,7 +24,7 @@ struct CustomShareSheet: View {
                 
                 Spacer()
                 
-                Text("Share Competition Link")
+                Text("Share Game Link")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 

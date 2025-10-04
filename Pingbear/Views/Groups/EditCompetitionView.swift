@@ -11,7 +11,7 @@ struct EditCompetitionView: View {
     
     init(competition: Competition) {
         self.competition = competition
-        let displayName = competition.description == "Competition" ? "" : competition.description
+        let displayName = competition.description == "Game" ? "" : competition.description
         _competitionName = State(initialValue: displayName)
     }
     
@@ -80,7 +80,7 @@ struct EditCompetitionView: View {
             .background(Color(hex: "#1A2245"))
             
             VStack(alignment: .leading, spacing: 20) {
-                TextField("Competition name", text: $competitionName)
+                TextField("Game name", text: $competitionName)
                     .padding()
                     .frame(height: 60)
                     .background(Color(hex: "#3B4374"))
