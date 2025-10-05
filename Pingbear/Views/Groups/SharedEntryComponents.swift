@@ -71,7 +71,7 @@ struct PhotoNavigationBar: View {
             // Back button
             Button(action: onBack) {
                 Image(systemName: "arrow.left")
-                    .font(.system(size: 30))
+                    .font(.system(size: 32))
                     .foregroundColor(.white)
                     .shadow(radius: 10)
             }
