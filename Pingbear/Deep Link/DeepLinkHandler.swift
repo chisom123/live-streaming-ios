@@ -285,7 +285,7 @@ class DeepLinkHandler: ObservableObject {
                             NotificationQueueManager.shared.queueGroupNotification(
                                 competitionId: competitionId,
                                 title: competitionDescription,
-                                body: "\(newMemberName) joined the competition",
+                                body: "\(newMemberName) joined the game",
                                 senderId: userId,
                                 excludeUsers: [userId] // Don't notify the person who just joined
                             )
