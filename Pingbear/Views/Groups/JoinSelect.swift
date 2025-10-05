@@ -9,7 +9,9 @@ struct JoinSelectView: View {
     @State private var isCustomShareSheetPresented = false
     @State private var showAddFriendsView = false
     @State private var isLoading = true
+    @State private var showNotificationAlert = false
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var notificationManager = PushNotificationManager.shared
     
     var competition: Competition
     @ObservedObject var viewModel: MyFriendsModel
@@ -153,6 +155,16 @@ struct JoinSelectView: View {
             viewModel.fetchFriends {
                 isLoading = false
             }
+            
+            // Check if we should prompt for notifications
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                DispatchQueue.main.async {
+                    if settings.authorizationStatus == .notDetermined {
+                        self.showNotificationAlert = true
+                    }
+                }
+            }
+            
             Analytics.shared.trackScreen(name: "add_players")
         }
         .fullScreenCover(isPresented: $showAddFriendsView, onDismiss: {
@@ -161,6 +173,27 @@ struct JoinSelectView: View {
             }
         }) {
             AddFriendsView(addFriendsModel: AddFriendsModel())
+        }
+        .alert("Get Notified When Your Friends Join the Game", isPresented: $showNotificationAlert) {
+            Button("OK") {
+                notificationManager.requestNotificationPermission { granted in
+                    if granted {
+                        if let userId = Auth.auth().currentUser?.uid {
+                            notificationManager.queueTokenUpdate(userId: userId)
+                        }
+                        
+                        Analytics.shared.trackTap(
+                            elementId: "notification_permission_granted",
+                            screenName: "add_players"
+                        )
+                    } else {
+                        Analytics.shared.trackTap(
+                            elementId: "notification_permission_denied",
+                            screenName: "add_players"
+                        )
+                    }
+                }
+            }
         }
     }
     
