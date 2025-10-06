@@ -182,6 +182,7 @@
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCompetitionView.swift; sourceTree = "<group>"; };
+		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionPricingCalculator.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomShareSheet.swift; sourceTree = "<group>"; };
@@ -323,6 +324,7 @@
 				4F3E0CEB2A846CE80068F901 /* Pingbear */,
 				4F3E0CFD2A846CE90068F901 /* PingbearTests */,
 				4F3E0D072A846CE90068F901 /* PingbearUITests */,
+				4F80A1B42E93C82B00F09EFB /* Frameworks */,
 				4F3E0CEA2A846CE80068F901 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -434,6 +436,14 @@
 				4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */,
 			);
 			path = Parlay;
+			sourceTree = "<group>";
+		};
+		4F80A1B42E93C82B00F09EFB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4F80A1B52E93C82B00F09EFB /* AdServices.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		4F8FEE572BE22A920087479A /* Notifications */ = {
