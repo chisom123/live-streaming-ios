@@ -199,7 +199,7 @@ struct JoinSelectView: View {
     
     private func createShareText() -> String {
         let shareLink = DeepLinkHandler.shared.createShareableLink(for: competition.id)
-        return "Join my game on SocialStar! \(shareLink)"
+        return "Hey i started a game on SocialStar. Join it! \(shareLink)"
     }
     
     private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
