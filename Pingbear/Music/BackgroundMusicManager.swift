@@ -146,6 +146,15 @@ class BackgroundMusicManager: ObservableObject {
     
     @objc private func handleAppWillEnterForeground() {
         if isMusicEnabled {
+            // Reactivate audio session
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("Failed to reactivate audio session: \(error)")
+            }
+            
+            // Ensure player is ready and play
+            audioPlayer?.prepareToPlay()
             play()
         }
     }
