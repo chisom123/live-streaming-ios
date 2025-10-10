@@ -164,27 +164,22 @@ class BackgroundMusicManager: ObservableObject {
     // MARK: - Notification Handlers
     
     @objc private func handleAppDidEnterBackground() {
-        print("🎵 App entered background")
         pauseMusic()
     }
     
     @objc private func handleAppWillEnterForeground() {
-        print("🎵 App will enter foreground")
         resumeMusic()
     }
     
     @objc private func handleAppDidBecomeActive() {
-        print("🎵 App became active")
         resumeMusic()
     }
     
     @objc private func handleAppWillResignActive() {
-        print("🎵 App will resign active")
         pauseMusic()
     }
     
     @objc private func handleAppWillTerminate() {
-        print("🎵 App will terminate")
         stop()
     }
     
@@ -197,10 +192,8 @@ class BackgroundMusicManager: ObservableObject {
         
         switch type {
         case .began:
-            print("🎵 Audio session interruption began")
             pauseMusic()
         case .ended:
-            print("🎵 Audio session interruption ended")
             if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                 if options.contains(.shouldResume) {

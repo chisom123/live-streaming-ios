@@ -98,7 +98,7 @@
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
 		4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */; };
 		4FAE0D4F2E99890D0006D260 /* BackgroundMusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAE0D4E2E99890D0006D260 /* BackgroundMusicManager.swift */; };
-		4FAE0D522E998A5C0006D260 /* background_music.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4FAE0D512E998A5C0006D260 /* background_music.mp3 */; };
+		4FAE0D542E99A2A80006D260 /* background_music.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4FAE0D532E99A2A80006D260 /* background_music.mp3 */; };
 		4FB27D482DE054B300E10C8F /* PhotoInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */; };
 		4FB27D502DE50DB400E10C8F /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB27D4F2DE50DB400E10C8F /* ChatView.swift */; };
 		4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05562D993FCD002C592B /* AnalyticsService.swift */; };
@@ -191,7 +191,7 @@
 		4FA5EE3E2E03D7E600355376 /* Unlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Unlock.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
 		4FAE0D4E2E99890D0006D260 /* BackgroundMusicManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundMusicManager.swift; sourceTree = "<group>"; };
-		4FAE0D512E998A5C0006D260 /* background_music.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = background_music.mp3; sourceTree = "<group>"; };
+		4FAE0D532E99A2A80006D260 /* background_music.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = background_music.mp3; sourceTree = "<group>"; };
 		4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInteraction.swift; sourceTree = "<group>"; };
 		4FB27D4F2DE50DB400E10C8F /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		4FDE05562D993FCD002C592B /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
@@ -465,7 +465,7 @@
 			isa = PBXGroup;
 			children = (
 				4FAE0D4E2E99890D0006D260 /* BackgroundMusicManager.swift */,
-				4FAE0D512E998A5C0006D260 /* background_music.mp3 */,
+				4FAE0D532E99A2A80006D260 /* background_music.mp3 */,
 			);
 			path = Music;
 			sourceTree = "<group>";
@@ -640,9 +640,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				4F3E0CF52A846CE90068F901 /* Preview Assets.xcassets in Resources */,
-				4FAE0D522E998A5C0006D260 /* background_music.mp3 in Resources */,
 				4F3E0CF12A846CE90068F901 /* Assets.xcassets in Resources */,
 				4F33E4692B98F5D9003098E8 /* GoogleService-Info.plist in Resources */,
+				4FAE0D542E99A2A80006D260 /* background_music.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
