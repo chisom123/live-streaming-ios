@@ -547,7 +547,7 @@ class ParlayManager {
             
             let winnerName = userDoc?.data()?["username"] as? String ?? "Someone"
             let predictionText = predictionCount == 1 ? "prediction" : "predictions"
-            let messageText = "\(winnerName) just won \(payout) coins on \(predictionCount) \(predictionText)! 🎉"
+            let messageText = "\(winnerName) just won \(payout) coins on \(predictionCount) \(predictionText)!"
             
             let messageId = UUID().uuidString
             
