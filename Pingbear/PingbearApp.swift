@@ -70,8 +70,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         NotificationCenter.default.addObserver(self, selector: #selector(clearNotifications), name: UIApplication.willEnterForegroundNotification, object: nil)
         
-        BackgroundMusicManager.shared.setupMusic(fileName: "background_music", fileExtension: "mp3")
-        
         return true
     }
     
