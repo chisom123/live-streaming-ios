@@ -137,6 +137,8 @@ struct CompDetails: View {
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
                     .simultaneousGesture(TapGesture().onEnded {
                         entryViewModel.removeListeners()
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
                         Analytics.shared.trackEntry(
                             action: "rate",
                             competitionId: competition.id
