@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var showDeleteAccountAlert = false
     @State private var activeSheet: ActiveSheet?
     @StateObject private var myFriendsModel = MyFriendsModel()
+    @StateObject private var musicManager = BackgroundMusicManager.shared
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
     
     enum ActiveSheet: Identifiable {
@@ -91,6 +92,23 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                    }
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(10)
+                    
+                    // App Settings Section
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Background Music")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(.white)
+                            Spacer()
+                            Toggle("", isOn: $musicManager.isMusicEnabled)
+                                .labelsHidden()
+                                .tint(Color(hex: "#4169E1"))
+                        }
+                        .padding([.top, .bottom], 30)
+                        .padding([.leading, .trailing], 20)
                     }
                     .background(Color(hex: "#1A2245"))
                     .cornerRadius(10)
