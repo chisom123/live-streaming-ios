@@ -120,13 +120,19 @@ struct FullScreenPhotoView: View {
                                 showingPredictionsView = true
                                 Analytics.shared.track(event: "my_predictions_button_tapped")
                             }) {
-                                HStack(spacing: 8) {
-                                    Text("My Predictions")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundColor(.white)
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(parlayStatusColor)
+                                        .frame(width: 8, height: 8)
                                     
-                                    parlayStatusBadge
+                                    Text("My Predictions")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
                                 }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(parlayStatusColor.opacity(0.15))
+                                .cornerRadius(20)
                             }
                             .padding(.bottom, 10)
                         }
