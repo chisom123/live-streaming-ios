@@ -38,6 +38,7 @@ class BackgroundMusicManager: ObservableObject {
     }
     
     private func setupNotificationObservers() {
+        // Background/Foreground transitions
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleAppDidEnterBackground),
@@ -52,11 +53,35 @@ class BackgroundMusicManager: ObservableObject {
             object: nil
         )
         
+        // Active/Inactive transitions (handles screen lock, control center, etc.)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppWillResignActive),
+            name: UIApplication.willResignActiveNotification,
+            object: nil
+        )
+        
+        // Termination
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleAppWillTerminate),
             name: UIApplication.willTerminateNotification,
             object: nil
+        )
+        
+        // Audio session interruption (handles phone calls, Siri, etc.)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAudioSessionInterruption),
+            name: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance()
         )
     }
     
@@ -136,31 +161,86 @@ class BackgroundMusicManager: ObservableObject {
         }
     }
     
+    // MARK: - Notification Handlers
+    
     @objc private func handleAppDidEnterBackground() {
-        if isMusicEnabled {
-            fadeVolume(to: 0, duration: 0.8) { [weak self] in
-                self?.audioPlayer?.pause()
-            }
-        }
+        print("🎵 App entered background")
+        pauseMusic()
     }
     
     @objc private func handleAppWillEnterForeground() {
-        if isMusicEnabled {
-            // Reactivate audio session
-            do {
-                try AVAudioSession.sharedInstance().setActive(true)
-            } catch {
-                print("Failed to reactivate audio session: \(error)")
-            }
-            
-            // Ensure player is ready and play
-            audioPlayer?.prepareToPlay()
-            play()
-        }
+        print("🎵 App will enter foreground")
+        resumeMusic()
+    }
+    
+    @objc private func handleAppDidBecomeActive() {
+        print("🎵 App became active")
+        resumeMusic()
+    }
+    
+    @objc private func handleAppWillResignActive() {
+        print("🎵 App will resign active")
+        pauseMusic()
     }
     
     @objc private func handleAppWillTerminate() {
+        print("🎵 App will terminate")
         stop()
+    }
+    
+    @objc private func handleAudioSessionInterruption(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+        
+        switch type {
+        case .began:
+            print("🎵 Audio session interruption began")
+            pauseMusic()
+        case .ended:
+            print("🎵 Audio session interruption ended")
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume) {
+                    resumeMusic()
+                }
+            }
+        @unknown default:
+            break
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func pauseMusic() {
+        guard let player = audioPlayer, player.isPlaying else { return }
+        
+        fadeVolume(to: 0, duration: 0.8) { [weak self] in
+            self?.audioPlayer?.pause()
+            // Deactivate audio session to be a good citizen
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
+    }
+    
+    private func resumeMusic() {
+        guard isMusicEnabled else { return }
+        
+        // Reactivate audio session
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to reactivate audio session: \(error)")
+        }
+        
+        // Ensure player is ready and play
+        audioPlayer?.prepareToPlay()
+        
+        // Small delay to ensure audio session is fully active
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.play()
+        }
     }
     
     deinit {
