@@ -14,7 +14,7 @@ struct MyCompsView: View {
     var body: some View {
         VStack {
             // Top Bar with Title
-            HStack {
+            HStack(alignment: .center) {  // Add this
                 Button(action: {
                     viewModel.cleanupListeners()
                     navigateToSettings = true
@@ -29,9 +29,10 @@ struct MyCompsView: View {
                 
                 Spacer()
                 
-                Text("Games")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .foregroundColor(.white)
+                Image("Logo-T")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 30, height: 30)
 
                 Spacer()
                 
