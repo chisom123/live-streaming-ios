@@ -6,6 +6,7 @@ struct MembersView: View {
     @StateObject private var viewModel = MembersViewModel()
     @StateObject private var myFriendsModel = MyFriendsModel()
     @State private var showingJoinSelectView = false
+    @State private var isEditingCompetition = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -47,6 +48,32 @@ struct MembersView: View {
                     }) {
                         HStack {
                             Text("Add Players to Game")
+                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .foregroundColor(Color(hex: "#FFF"))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(Color(hex: "#D3D3D3"))
+                                .font(.system(size: 15, weight: .bold))
+                                .padding(.trailing, 10)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(20)
+                        .padding(.vertical, 5)
+                    }
+                    
+                    Divider()
+                        .background(Color.white.opacity(0.2))
+                    
+                    // Edit Game Name Button (NEW)
+                    Button(action: {
+                        isEditingCompetition = true
+                    }) {
+                        HStack {
+                            Text("Edit Game Name")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -157,6 +184,9 @@ struct MembersView: View {
             if viewModel.members.isEmpty {
                 viewModel.fetchMembersDetails(for: competition)
             }
+        }
+        .sheet(isPresented: $isEditingCompetition) {
+            EditCompetitionView(competition: competition)
         }
         .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
             viewModel.fetchMembersDetails(for: competition)

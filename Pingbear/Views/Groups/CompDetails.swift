@@ -39,6 +39,11 @@ struct CompDetails: View {
     @State private var hasUserPostedFirstEntry = false
     @StateObject private var myFriendsModel = MyFriendsModel()
     
+    @State private var userCoins: Int = 0
+    @State private var isLoadingCoins = true
+    @State private var showPayView = false
+    @StateObject private var payViewModel = PayViewModel()
+    
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
     
@@ -72,25 +77,60 @@ struct CompDetails: View {
                     
                     Spacer()
                     
-                    Button(action: {
-                        isEditingCompetition = true
-                        Analytics.shared.trackTap(
-                            elementId: "edit_competition_name_button",
-                            screenName: "competition_details"
-                        )
-                    }) {
-                        Text(competition.description == "Game" ? "Add Game Name" : competition.description)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .lineLimit(1)
-                            .foregroundColor(.white)
-                            .padding(.horizontal)
-                            .onAppear {
-                                Analytics.shared.trackCompetition(
-                                    action: "view",
-                                    competitionId: competition.id
-                                )
+                    HStack(alignment: .center, spacing: 0) {
+                        HStack {
+                            Image("coin")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 19, height: 19)
+                                .padding(.leading, 15)
+                            
+                            if isLoadingCoins {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("\(userCoins)")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
                             }
+                            
+                            Spacer()
+                        }
+                        .frame(height: 45)
+                        .background(
+                            Color(hex: "#2A3255")
+                                .clipShape(
+                                    RoundedCorner(
+                                        radius: 10,
+                                        corners: [.topLeft, .bottomLeft]
+                                    )
+                                )
+                        )
+                        
+                        Button(action: {
+                            showPayView = true
+                            Analytics.shared.trackTap(
+                                elementId: "coins_button_header",
+                                screenName: "competition_details"
+                            )
+                        }) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold))
+                                .frame(width: 45, height: 45)
+                                .foregroundColor(.white)
+                                .background(
+                                    Color(hex: "#3B4374")
+                                        .clipShape(
+                                            RoundedCorner(
+                                                radius: 10,
+                                                corners: [.topRight, .bottomRight]
+                                            )
+                                        )
+                                )
+                        }
                     }
+                    .padding(.horizontal, 40)
                     
                     Spacer()
                     
@@ -292,6 +332,7 @@ struct CompDetails: View {
             fetchData()
             NotificationQueueManager.shared.processQueuedNotifications()
             fetchCurrentUserProfilePictureUrl()
+            fetchUserCoins()
             
             entryViewModel.setupListeners()
         }
@@ -311,6 +352,8 @@ struct CompDetails: View {
                 // Process notifications immediately for existing users too
                 NotificationQueueManager.shared.processQueuedNotifications()
             }
+            
+            fetchUserCoins()
         }
         // ✅ KEEP: Only Camera as fullScreenCover (true modal)
         .fullScreenCover(isPresented: $isCameraPresented, content: {
@@ -329,6 +372,7 @@ struct CompDetails: View {
         }
         .sheet(item: $selectedUserForPhotos, onDismiss: {
             chatIndicator.refresh()
+            fetchUserCoins()
         }) { selection in
             UserPhotosView(
                 userId: selection.user.userName == "Me" ? currentUserId : selection.user.id,
@@ -336,6 +380,9 @@ struct CompDetails: View {
                 competitionId: selection.competitionId,
                 userProfilePictureUrl: selection.user.profilePictureUrl
             )
+        }
+        .sheet(isPresented: $showPayView, onDismiss: fetchUserCoins) {
+            PayView(viewModel: payViewModel, competition: competition, competitionId: competition.id, entryDocId: "")
         }
         .onDisappear {
             entryViewModel.removeListeners()
@@ -378,6 +425,12 @@ struct CompDetails: View {
                         }
                     })
                 )
+            }
+        }
+        .onChange(of: payViewModel.purchaseCompleted) { completed in
+            if completed {
+                fetchUserCoins()
+                payViewModel.purchaseCompleted = false
             }
         }
     }
@@ -462,6 +515,39 @@ struct CompDetails: View {
             elementId: "add_player_prompt",
             screenName: "competition_details"
         )
+    }
+    private func fetchUserCoins() {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("No authenticated user found")
+            isLoadingCoins = false
+            return
+        }
+        
+        let db = Firestore.firestore()
+        
+        // Fetch coins from the member document in the competition
+        db.collection("competitions").document(competition.id).collection("members").document(currentUser.uid).getDocument { document, error in
+            DispatchQueue.main.async {
+                isLoadingCoins = false
+                
+                if let error = error {
+                    print("Error fetching member coins: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let document = document, document.exists else {
+                    print("Member document does not exist")
+                    return
+                }
+                
+                if let coins = document.data()?["coins"] as? Int {
+                    self.userCoins = coins
+                } else {
+                    print("Coins field not found or invalid type, defaulting to 0")
+                    self.userCoins = 0
+                }
+            }
+        }
     }
     private func fetchCurrentUserProfilePictureUrl() {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
