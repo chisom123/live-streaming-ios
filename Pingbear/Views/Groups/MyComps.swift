@@ -33,6 +33,7 @@ struct MyCompsView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 30, height: 30)
+                    .offset(y: -3)
 
                 Spacer()
                 
