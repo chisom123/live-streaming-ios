@@ -250,7 +250,7 @@ struct UnlockView: View {
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 16, height: 16)
+                            .frame(width: 18, height: 18)
                         
                         // Changed: Show placeholder text when no amount is set
                         if entryCost > 0 {
