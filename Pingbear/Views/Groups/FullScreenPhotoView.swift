@@ -20,6 +20,10 @@ struct FullScreenPhotoView: View {
     
     @State private var isEntryCreator = false
     
+    // Bonus notification state
+    @State private var showBonusNotification = false
+    @State private var bonusAmount = 0
+    
     // Parlay state
     @State private var parlayStatus: String? = nil
     @State private var parlayPredictions: [String: Any] = [:]
@@ -200,6 +204,15 @@ struct FullScreenPhotoView: View {
                 },
                 height: PhotoViewConstants.starFooterHeight
             )
+            
+            // Bonus notification
+            if showBonusNotification {
+                BonusNotificationView(
+                    bonusAmount: bonusAmount,
+                    isShowing: $showBonusNotification
+                )
+                .zIndex(1000)
+            }
             
         }
         .background(Color(hex: "#10183C"))
@@ -902,6 +915,45 @@ struct FullScreenPhotoView: View {
         }
     }
     
+    private func checkForBonusEligibility(userId: String, rating: Int, completion: @escaping (Int) -> Void) {
+        guard let competitionId = competitionId else {
+            completion(0)
+            return
+        }
+        
+        // Fetch the entry to check predictions
+        db.collection("competitions").document(competitionId).collection("entries").document(photo.id)
+            .getDocument { document, error in
+                guard let data = document?.data(),
+                      let predictions = data["predictions"] as? [String: Any],
+                      let userPrediction = predictions[userId] as? [String: Any],
+                      let predictedRating = userPrediction["predictedRating"] as? Int else {
+                    completion(0)
+                    return
+                }
+                
+                // Check if the rating is different from prediction (user earns bonus)
+                if rating != predictedRating {
+                    // Calculate the bonus
+                    guard let entryCost = data["entryCost"] as? Int else {
+                        completion(0)
+                        return
+                    }
+                    
+                    let totalPredictions = predictions.count
+                    let bonusPool = CompetitionPricingCalculator.shared.calculateBonusPool(lostStake: entryCost)
+                    let bonus = CompetitionPricingCalculator.shared.calculateRaterBonus(
+                        bonusPool: bonusPool,
+                        totalPredictions: totalPredictions
+                    )
+                    
+                    completion(bonus)
+                } else {
+                    completion(0)
+                }
+            }
+    }
+    
     private func submitRating(stars: Int) {
         guard let competitionId = competitionId,
               let currentUserId = Auth.auth().currentUser?.uid,
@@ -927,48 +979,59 @@ struct FullScreenPhotoView: View {
         
         triggerHapticFeedback(for: stars)
         
-        // Use ParlayManager to handle the rating
-        ParlayManager.shared.handleRating(
-            competitionId: competitionId,
-            entryId: photo.id,
-            userId: currentUserId,
-            rating: stars
-        ) { success in
-            DispatchQueue.main.async {
-                if success {
-                    print("Rating processed successfully by ParlayManager")
-                    
-                    // Update local star count
-                    self.currentStarCount += stars
-                    
-                    // Reload parlay status if user is entry creator
-                    if self.isEntryCreator {
-                        self.loadParlayStatus()
-                    }
-                    
-                    // Submit to interaction service
-                    self.interactionService.submitRating(
-                        competitionId: competitionId,
-                        entryId: self.photo.id,
-                        rating: stars
-                    ) { interactionSuccess in
-                        if interactionSuccess {
-                            print("Rating submitted successfully to interaction service")
-                            
-                            // Refresh the interactions to show the new rating at the top
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                self.interactionService.fetchInteractions(
-                                    competitionId: competitionId,
-                                    entryId: self.photo.id
-                                )
+        // Check for bonus eligibility before submitting
+        checkForBonusEligibility(userId: currentUserId, rating: stars) { potentialBonus in
+            // Use ParlayManager to handle the rating
+            ParlayManager.shared.handleRating(
+                competitionId: competitionId,
+                entryId: self.photo.id,
+                userId: currentUserId,
+                rating: stars
+            ) { success in
+                DispatchQueue.main.async {
+                    if success {
+                        print("Rating processed successfully by ParlayManager")
+                        
+                        // Update local star count
+                        self.currentStarCount += stars
+                        
+                        // Show bonus notification if earned
+                        if potentialBonus > 0 {
+                            self.bonusAmount = potentialBonus
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                self.showBonusNotification = true
                             }
                         }
+                        
+                        // Reload parlay status if user is entry creator
+                        if self.isEntryCreator {
+                            self.loadParlayStatus()
+                        }
+                        
+                        // Submit to interaction service
+                        self.interactionService.submitRating(
+                            competitionId: competitionId,
+                            entryId: self.photo.id,
+                            rating: stars
+                        ) { interactionSuccess in
+                            if interactionSuccess {
+                                print("Rating submitted successfully to interaction service")
+                                
+                                // Refresh the interactions to show the new rating at the top
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    self.interactionService.fetchInteractions(
+                                        competitionId: competitionId,
+                                        entryId: self.photo.id
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        print("Failed to process rating with ParlayManager")
+                        // Re-enable rating on failure
+                        self.isRatingEnabled = true
+                        self.rating = 0
                     }
-                } else {
-                    print("Failed to process rating with ParlayManager")
-                    // Re-enable rating on failure
-                    self.isRatingEnabled = true
-                    self.rating = 0
                 }
             }
         }

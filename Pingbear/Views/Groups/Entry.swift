@@ -15,6 +15,10 @@ struct EntryView: View {
     @State private var currentEntryState = EntryState()
     @State private var showingMessageComposer = false
     
+    // Bonus notification state
+    @State private var showBonusNotification = false
+    @State private var bonusAmount = 0
+    
     // Services
     @StateObject private var interactionService = PhotoInteractionService()
     @StateObject private var chatViewModel: ChatViewModel
@@ -78,6 +82,15 @@ struct EntryView: View {
                 onRatingSubmit: handleRatingSubmission,
                 height: PhotoViewConstants.starFooterHeight
             )
+            
+            // Bonus notification
+            if showBonusNotification {
+                BonusNotificationView(
+                    bonusAmount: bonusAmount,
+                    isShowing: $showBonusNotification
+                )
+                .zIndex(1000)
+            }
         }
         .background(Color(hex: "#10183C"))
         .sheet(isPresented: $showingMessageComposer) {
@@ -236,18 +249,21 @@ private extension EntryView {
         currentEntryState.startRatingAnimation()
         triggerHapticFeedback(for: stars)
         
-        // Submit rating
-        ParlayManager.shared.handleRating(
-            competitionId: competition.id,
-            entryId: entry.id,
-            userId: currentUserId,
-            rating: stars
-        ) { [self] success in
-            DispatchQueue.main.async {
-                if success {
-                    self.completeRatingSubmission(entry: entry, stars: stars)
-                } else {
-                    self.handleRatingFailure()
+        // Check if this user is in the predictions to calculate potential bonus
+        checkForBonusEligibility(entry: entry, userId: currentUserId, rating: stars) { potentialBonus in
+            // Submit rating
+            ParlayManager.shared.handleRating(
+                competitionId: self.competition.id,
+                entryId: entry.id,
+                userId: currentUserId,
+                rating: stars
+            ) { [self] success in
+                DispatchQueue.main.async {
+                    if success {
+                        self.completeRatingSubmission(entry: entry, stars: stars, bonusEarned: potentialBonus)
+                    } else {
+                        self.handleRatingFailure()
+                    }
                 }
             }
         }
@@ -260,8 +276,50 @@ private extension EntryView {
         )
     }
     
-    func completeRatingSubmission(entry: Entry, stars: Int) {
+    func checkForBonusEligibility(entry: Entry, userId: String, rating: Int, completion: @escaping (Int) -> Void) {
+        // Fetch the entry to check predictions
+        db.collection("competitions").document(competition.id).collection("entries").document(entry.id)
+            .getDocument { document, error in
+                guard let data = document?.data(),
+                      let predictions = data["predictions"] as? [String: Any],
+                      let userPrediction = predictions[userId] as? [String: Any],
+                      let predictedRating = userPrediction["predictedRating"] as? Int else {
+                    completion(0)
+                    return
+                }
+                
+                // Check if the rating is different from prediction (user earns bonus)
+                if rating != predictedRating {
+                    // Calculate the bonus
+                    guard let entryCost = data["entryCost"] as? Int else {
+                        completion(0)
+                        return
+                    }
+                    
+                    let totalPredictions = predictions.count
+                    let bonusPool = CompetitionPricingCalculator.shared.calculateBonusPool(lostStake: entryCost)
+                    let bonus = CompetitionPricingCalculator.shared.calculateRaterBonus(
+                        bonusPool: bonusPool,
+                        totalPredictions: totalPredictions
+                    )
+                    
+                    completion(bonus)
+                } else {
+                    completion(0)
+                }
+            }
+    }
+    
+    func completeRatingSubmission(entry: Entry, stars: Int, bonusEarned: Int) {
         currentEntryState.completeRating()
+        
+        // Show bonus notification if earned
+        if bonusEarned > 0 {
+            bonusAmount = bonusEarned
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                showBonusNotification = true
+            }
+        }
         
         // Submit to interaction service
         interactionService.submitRating(
@@ -278,8 +336,9 @@ private extension EntryView {
             }
         }
         
-        // Auto-advance after short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        // Auto-advance with longer delay if bonus was earned (so user can see the notification)
+        let advanceDelay = bonusEarned > 0 ? 2.8 : 0.8
+        DispatchQueue.main.asyncAfter(deadline: .now() + advanceDelay) {
             self.advanceToNextEntry()
         }
     }

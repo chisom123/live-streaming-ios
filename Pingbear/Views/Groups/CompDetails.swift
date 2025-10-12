@@ -93,6 +93,7 @@ struct CompDetails: View {
                                 Text("\(userCoins)")
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
+                                    .lineLimit(1)
                             }
                             
                             Spacer()

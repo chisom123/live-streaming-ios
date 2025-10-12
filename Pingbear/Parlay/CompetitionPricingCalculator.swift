@@ -10,6 +10,7 @@ class CompetitionPricingCalculator: ObservableObject {
     // MARK: - Private Properties
     private var cachedHouseEdge: Double = 0.20 // Default fallback
     private var cachedAccuracyRate: Double = 0.60 // Default fallback
+    private var cachedBonusPoolPercentage: Double = 0.50 // Default 50% of lost stake goes to bonus pool
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
     private let db = Firestore.firestore()
@@ -112,8 +113,19 @@ class CompetitionPricingCalculator: ObservableObject {
             }
         }
         
+        if let bonusPoolPercentage = data["bonus_pool_percentage"] as? Double {
+            let clampedValue = max(0.0, min(1.0, bonusPoolPercentage))
+            if bonusPoolPercentage != clampedValue {
+                print("⚠️ Bonus pool percentage value \(bonusPoolPercentage) was clamped to \(clampedValue)")
+            }
+            if self.cachedBonusPoolPercentage != clampedValue {
+                self.cachedBonusPoolPercentage = clampedValue
+                hasChanges = true
+            }
+        }
+        
         if hasChanges {
-            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Accuracy Rate: \(self.cachedAccuracyRate)")
+            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Accuracy Rate: \(self.cachedAccuracyRate), Bonus Pool: \(self.cachedBonusPoolPercentage)")
             
             // Trigger UI updates only if values actually changed
             self.objectWillChange.send()
@@ -129,6 +141,10 @@ class CompetitionPricingCalculator: ObservableObject {
     
     private func getAssumedAccuracyRate() -> Double {
         return cachedAccuracyRate
+    }
+    
+    private func getBonusPoolPercentage() -> Double {
+        return cachedBonusPoolPercentage
     }
     
     // MARK: - Public Methods
@@ -153,6 +169,22 @@ class CompetitionPricingCalculator: ObservableObject {
         let finalPayout = Double(entryCost) * multiplier
         
         return Int(round(finalPayout))
+    }
+    
+    // MARK: - Bonus Pool Calculation
+    
+    /// Calculate the total bonus pool from a lost stake
+    func calculateBonusPool(lostStake: Int) -> Int {
+        let bonusPoolPercentage = getBonusPoolPercentage()
+        let bonusPool = Double(lostStake) * bonusPoolPercentage
+        return Int(floor(bonusPool)) // Always round down
+    }
+    
+    /// Calculate individual rater's share of the bonus pool
+    func calculateRaterBonus(bonusPool: Int, totalPredictions: Int) -> Int {
+        guard totalPredictions > 0 else { return 0 }
+        let share = Double(bonusPool) / Double(totalPredictions)
+        return Int(floor(share)) // Always round down
     }
     
     // MARK: - Manual Refresh (optional)
@@ -186,8 +218,8 @@ class CompetitionPricingCalculator: ObservableObject {
     // MARK: - Utility Methods
     
     /// Get current configuration for debugging/admin purposes
-    func getCurrentConfig() -> (houseEdge: Double, accuracyRate: Double, isOnline: Bool, lastUpdate: Date?) {
-        return (cachedHouseEdge, cachedAccuracyRate, !isOffline, lastFetchTime)
+    func getCurrentConfig() -> (houseEdge: Double, accuracyRate: Double, bonusPoolPercentage: Double, isOnline: Bool, lastUpdate: Date?) {
+        return (cachedHouseEdge, cachedAccuracyRate, cachedBonusPoolPercentage, !isOffline, lastFetchTime)
     }
     
     /// Force reconnection (useful for handling app foreground events)
