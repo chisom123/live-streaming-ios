@@ -152,6 +152,27 @@ struct CompDetails: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
                 
+                Button(action: {
+                    isEditingCompetition = true
+                    Analytics.shared.trackTap(
+                        elementId: "edit_competition_name_button",
+                        screenName: "competition_details"
+                    )
+                }) {
+                    Text(competition.description == "Game" ? "Add Game Name" : competition.description)
+                        .font(.system(size: 22, weight: .bold, design: .default))
+                        .lineLimit(1)
+                        .foregroundColor(.white)
+                        .onAppear {
+                            Analytics.shared.trackCompetition(
+                                action: "view",
+                                competitionId: competition.id
+                            )
+                        }
+                }
+                .padding(.vertical)
+                .padding(.horizontal, 20)
+                
                 HStack(spacing: 10) {
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -216,7 +237,7 @@ struct CompDetails: View {
                 .padding(.horizontal, 10)
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
-                .padding(.vertical, 20)
+                .padding(.bottom, 20)
                 .padding(.horizontal, 20)
                 
                 if isLoading {
