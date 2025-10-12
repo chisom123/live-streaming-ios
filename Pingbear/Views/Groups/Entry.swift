@@ -335,9 +335,15 @@ private extension EntryView {
                 )
             }
         }
+        let isLastEntry = viewModel.currentIndex >= viewModel.entries.count - 1
         
-        // Auto-advance with longer delay if bonus was earned (so user can see the notification)
-        let advanceDelay = bonusEarned > 0 ? 2.8 : 0.8
+        let advanceDelay: Double
+        if bonusEarned > 0 && isLastEntry {
+            advanceDelay = 3.8
+        } else {
+            advanceDelay = 0.8
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + advanceDelay) {
             self.advanceToNextEntry()
         }

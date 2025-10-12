@@ -86,7 +86,7 @@ struct BonusNotificationView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
         .onAppear {
             // Auto-dismiss after 2.5 seconds with smooth animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     isShowing = false
                 }
