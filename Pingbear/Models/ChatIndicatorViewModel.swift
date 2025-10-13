@@ -108,7 +108,7 @@ class ChatIndicatorViewModel: ObservableObject {
         if unreadMessageCount <= 9 {
             return "\(unreadMessageCount)"
         } else {
-            return "9+"
+            return "9"
         }
     }
 }
