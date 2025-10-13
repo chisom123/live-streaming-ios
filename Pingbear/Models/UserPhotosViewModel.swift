@@ -13,6 +13,12 @@ struct UserPhoto: Identifiable {
     let overlayVerticalPosition: CGFloat
     let isFromCamera: Bool
     let userId: String
+    
+    // Parlay fields
+    let parlayStatus: String?
+    let parlayPredictions: [String: Any]?
+    let parlayPayout: Int?
+    let parlayStake: Int?
 }
 
 class UserPhotosViewModel: ObservableObject {
@@ -110,6 +116,12 @@ class UserPhotosViewModel: ObservableObject {
                 let isFromCamera = data["isFromCamera"] as? Bool ?? true
                 let photoUserId = data["userId"] as? String ?? userId
                 
+                // Fetch parlay data
+                let parlayStatus = data["parlayStatus"] as? String
+                let parlayPredictions = data["predictions"] as? [String: Any]
+                let parlayPayout = data["potentialPayout"] as? Int
+                let parlayStake = data["entryCost"] as? Int
+                
                 return UserPhoto(
                     id: document.documentID,
                     photoUrl: photoUrl,
@@ -121,7 +133,11 @@ class UserPhotosViewModel: ObservableObject {
                     overlayText: overlayText,
                     overlayVerticalPosition: overlayVerticalPosition,
                     isFromCamera: isFromCamera,
-                    userId: photoUserId
+                    userId: photoUserId,
+                    parlayStatus: parlayStatus,
+                    parlayPredictions: parlayPredictions,
+                    parlayPayout: parlayPayout,
+                    parlayStake: parlayStake
                 )
             }
             

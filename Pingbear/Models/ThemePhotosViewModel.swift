@@ -15,6 +15,12 @@ struct ThemePhoto: Identifiable {
     let overlayVerticalPosition: CGFloat
     let isFromCamera: Bool
     let profilePictureUrl: String?
+    
+    // Parlay properties
+    let parlayStatus: String?
+    let parlayPredictions: [String: Any]?
+    let parlayPayout: Int?
+    let parlayStake: Int?
 }
 
 class ThemePhotosViewModel: ObservableObject {
@@ -163,6 +169,12 @@ class ThemePhotosViewModel: ObservableObject {
             let userName = userData.username
             let profilePictureUrl = userData.profilePic
             
+            // Fetch parlay data
+            let parlayStatus = data["parlayStatus"] as? String
+            let parlayPredictions = data["predictions"] as? [String: Any]
+            let parlayPayout = data["potentialPayout"] as? Int
+            let parlayStake = data["entryCost"] as? Int
+            
             return ThemePhoto(
                 id: document.documentID,
                 photoUrl: photoUrl,
@@ -176,7 +188,11 @@ class ThemePhotosViewModel: ObservableObject {
                 overlayText: overlayText,
                 overlayVerticalPosition: overlayVerticalPosition,
                 isFromCamera: isFromCamera,
-                profilePictureUrl: profilePictureUrl
+                profilePictureUrl: profilePictureUrl,
+                parlayStatus: parlayStatus,
+                parlayPredictions: parlayPredictions,
+                parlayPayout: parlayPayout,
+                parlayStake: parlayStake
             )
         }
         

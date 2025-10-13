@@ -80,7 +80,11 @@ class ChatViewModel: ObservableObject {
                     overlayText: data["overlayText"] as? String,
                     overlayVerticalPosition: data["overlayVerticalPosition"] as? CGFloat ?? 0.5,
                     isFromCamera: data["isFromCamera"] as? Bool ?? true,
-                    userId: data["userId"] as? String ?? ""
+                    userId: data["userId"] as? String ?? "",
+                    parlayStatus: data["parlayStatus"] as? String,
+                    parlayPredictions: data["predictions"] as? [String: Any],
+                    parlayPayout: data["potentialPayout"] as? Int,
+                    parlayStake: data["entryCost"] as? Int
                 )
                 
                 let userId = data["userId"] as? String ?? ""

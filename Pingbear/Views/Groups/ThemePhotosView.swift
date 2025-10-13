@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 import Kingfisher
 
 struct ThemePhotosView: View {
@@ -10,6 +11,18 @@ struct ThemePhotosView: View {
     @StateObject private var viewModel = ThemePhotosViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: ThemePhoto? = nil
+    
+    // Predictions sheet state
+    @State private var showingPredictionsView = false
+    @State private var selectedPhotoForPredictions: ThemePhoto? = nil
+    
+    // Interaction service for predictions view
+    @StateObject private var interactionService = PhotoInteractionService()
+    
+    // Cache for pending user profiles
+    @State private var pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)] = [:]
+    
+    private let db = Firestore.firestore()
     
     init(themeName: String, themeId: String, competitionId: String) {
         self.themeName = themeName
@@ -77,8 +90,16 @@ struct ThemePhotosView: View {
                             ForEach(viewModel.themePhotos) { photo in
                                 ThemePhotoCard(
                                     photo: photo,
+                                    competitionId: competitionId,
+                                    isEntryCreator: isEntryCreator(photo: photo),
                                     onTap: {
                                         selectedPhoto = photo
+                                    },
+                                    onPredictionsTap: {
+                                        selectedPhotoForPredictions = photo
+                                        loadPredictionsData(for: photo)
+                                        showingPredictionsView = true
+                                        Analytics.shared.track(event: "my_predictions_button_tapped_from_theme")
                                     }
                                 )
                                 .transition(.asymmetric(
@@ -142,7 +163,11 @@ struct ThemePhotosView: View {
                 overlayText: photo.overlayText,
                 overlayVerticalPosition: photo.overlayVerticalPosition,
                 isFromCamera: photo.isFromCamera,
-                userId: photo.userId
+                userId: photo.userId,
+                parlayStatus: photo.parlayStatus,
+                parlayPredictions: photo.parlayPredictions,
+                parlayPayout: photo.parlayPayout,
+                parlayStake: photo.parlayStake
             )
             
             // Check if the photo belongs to the current user
@@ -160,13 +185,80 @@ struct ThemePhotosView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingPredictionsView) {
+            if let photo = selectedPhotoForPredictions {
+                PredictionsDetailView(
+                    parlayStatus: photo.parlayStatus ?? "",
+                    parlayPredictions: photo.parlayPredictions ?? [:],
+                    parlayPayout: photo.parlayPayout ?? 0,
+                    parlayStake: photo.parlayStake ?? 0,
+                    pendingUserProfiles: pendingUserProfiles,
+                    interactionService: interactionService,
+                    onDismiss: { showingPredictionsView = false }
+                )
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func isEntryCreator(photo: ThemePhoto) -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        return photo.userId == currentUserId
+    }
+    
+    private func loadPredictionsData(for photo: ThemePhoto) {
+        // Load interaction data for the selected photo
+        interactionService.loadRatingData(
+            competitionId: competitionId,
+            entryId: photo.id
+        )
+        
+        interactionService.fetchInteractions(
+            competitionId: competitionId,
+            entryId: photo.id
+        )
+        
+        // Load user profiles for pending predictions
+        if let predictions = photo.parlayPredictions {
+            for userId in predictions.keys {
+                if !interactionService.interactions.contains(where: { $0.userId == userId }) {
+                    fetchUserProfileForPendingUser(userId: userId)
+                }
+            }
+        }
+    }
+    
+    private func fetchUserProfileForPendingUser(userId: String) {
+        guard pendingUserProfiles[userId] == nil else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let data = document?.data(),
+               let username = data["username"] as? String {
+                let profilePictureUrl = data["profilePictureUrl"] as? String
+                DispatchQueue.main.async {
+                    self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)
+                }
+            }
+        }
     }
 }
 
 // MARK: - Theme Photo Card Component
 struct ThemePhotoCard: View {
     let photo: ThemePhoto
+    let competitionId: String
+    let isEntryCreator: Bool
     let onTap: () -> Void
+    let onPredictionsTap: () -> Void
+    
+    private var parlayStatusColor: Color {
+        switch photo.parlayStatus {
+        case "won": return Color(hex: "#00FF00")
+        case "lost": return Color(hex: "#FF4444")
+        default: return Color(hex: "#FFD700")
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -209,7 +301,7 @@ struct ThemePhotoCard: View {
 
             
             // Stats section - NOT TAPPABLE
-            HStack {
+            HStack(spacing: 8) {
                 // Profile picture and username on the left
                 HStack(spacing: 12) {
                     ProfilePictureView(url: photo.profilePictureUrl, size: 30)
@@ -223,7 +315,7 @@ struct ThemePhotoCard: View {
                 
                 Spacer()
                 
-                // Star count on the right
+                // Star count
                 HStack(spacing: 6) {
                     Text("\(photo.stars)")
                         .font(.system(size: 16, weight: .bold))
@@ -239,6 +331,27 @@ struct ThemePhotoCard: View {
                 .padding(.vertical, 5)
                 .background(Color(hex: "#DAA520"))
                 .cornerRadius(20)
+                
+                // My Predictions Button (Only for entry creator with parlay)
+                if isEntryCreator && photo.parlayStatus != nil {
+                    Button(action: onPredictionsTap) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(parlayStatusColor)
+                                .frame(width: 10, height: 10)
+                            
+                            Text("My Predictions")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .truncationMode(.tail)
+                                .lineLimit(1)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(parlayStatusColor.opacity(0.15))
+                        .cornerRadius(20)
+                    }
+                }
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)

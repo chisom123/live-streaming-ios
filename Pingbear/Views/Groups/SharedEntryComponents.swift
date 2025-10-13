@@ -51,7 +51,11 @@ extension Entry {
             overlayText: self.overlayText,
             overlayVerticalPosition: self.overlayVerticalPosition,
             isFromCamera: self.isFromCamera,
-            userId: self.userId
+            userId: self.userId,
+            parlayStatus: self.parlayStatus,
+            parlayPredictions: self.parlayPredictions,
+            parlayPayout: self.parlayPayout,
+            parlayStake: self.parlayStake
         )
     }
 }

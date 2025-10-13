@@ -18,9 +18,17 @@ struct Entry: Identifiable {
     let themeId: String?
     let themeName: String?
     
+    // Add these parlay properties
+    let parlayStatus: String?
+    let parlayPredictions: [String: Any]?
+    let parlayPayout: Int?
+    let parlayStake: Int?
+    
     init(id: String, photoUrl: String, userName: String, stars: Int, userProfilePictureUrl: String?,
          isCurrentUser: Bool, userId: String, isSuperstar: Bool, creationDate: Date, overlayText: String?,
-         overlayVerticalPosition: CGFloat, isFromCamera: Bool, themeId: String? = nil, themeName: String? = nil) {
+         overlayVerticalPosition: CGFloat, isFromCamera: Bool, themeId: String? = nil, themeName: String? = nil,
+         parlayStatus: String? = nil, parlayPredictions: [String: Any]? = nil,
+         parlayPayout: Int? = nil, parlayStake: Int? = nil) {
         
         self.id = id
         self.photoUrl = photoUrl
@@ -36,6 +44,10 @@ struct Entry: Identifiable {
         self.isFromCamera = isFromCamera
         self.themeId = themeId
         self.themeName = themeName
+        self.parlayStatus = parlayStatus
+        self.parlayPredictions = parlayPredictions
+        self.parlayPayout = parlayPayout
+        self.parlayStake = parlayStake
     }
 }
 
@@ -385,6 +397,10 @@ class EntryViewModel: ObservableObject {
                     let profilePictureUrl = userProfilePictures[userId]
                     let themeId = data["themeId"] as? String
                     let themeName = data["themeName"] as? String
+                    let parlayStatus = data["parlayStatus"] as? String
+                    let parlayPredictions = data["predictions"] as? [String: Any]
+                    let parlayPayout = data["potentialPayout"] as? Int
+                    let parlayStake = data["entryCost"] as? Int
                     
                     let entry = Entry(
                         id: documentId,
@@ -400,7 +416,11 @@ class EntryViewModel: ObservableObject {
                         overlayVerticalPosition: overlayVerticalPosition,
                         isFromCamera: isFromCamera,
                         themeId: themeId,
-                        themeName: themeName
+                        themeName: themeName,
+                        parlayStatus: parlayStatus,
+                        parlayPredictions: parlayPredictions,
+                        parlayPayout: parlayPayout,
+                        parlayStake: parlayStake
                     )
                     
                     localEntries.append(entry)
