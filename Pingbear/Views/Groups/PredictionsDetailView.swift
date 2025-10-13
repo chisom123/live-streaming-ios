@@ -95,7 +95,6 @@ struct PredictionsDetailView: View {
             .background(Color(hex: "#10183C"))
         }
         .background(Color(hex: "#10183C"))
-        .ignoresSafeArea()
     }
     
     private var parlayStatusBadge: some View {
