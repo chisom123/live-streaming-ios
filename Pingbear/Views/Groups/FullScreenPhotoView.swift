@@ -194,6 +194,20 @@ struct FullScreenPhotoView: View {
                 }
             }
             
+            // Bonus notification - positioned above footer
+            if showBonusNotification {
+                VStack {
+                    Spacer()
+                    
+                    BonusNotificationView(
+                        bonusAmount: bonusAmount,
+                        isShowing: $showBonusNotification
+                    )
+                    .padding(.bottom, PhotoViewConstants.starFooterHeight + 20)
+                }
+                .zIndex(1000)
+            }
+            
             PhotoStarRatingFooter(
                 rating: $rating,
                 hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
@@ -204,16 +218,6 @@ struct FullScreenPhotoView: View {
                 },
                 height: PhotoViewConstants.starFooterHeight
             )
-            
-            // Bonus notification
-            if showBonusNotification {
-                BonusNotificationView(
-                    bonusAmount: bonusAmount,
-                    isShowing: $showBonusNotification
-                )
-                .zIndex(1000)
-            }
-            
         }
         .background(Color(hex: "#10183C"))
         .onAppear {

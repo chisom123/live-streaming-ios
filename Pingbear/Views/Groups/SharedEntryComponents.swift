@@ -62,30 +62,25 @@ struct BonusNotificationView: View {
     @Binding var isShowing: Bool
     
     var body: some View {
-        VStack {
-            HStack(spacing: 8) {
-                Image("coin")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 24, height: 24)
-                
-                Text("+\(bonusAmount) Bonus!")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(
-                Capsule()
-                    .fill(Color(hex: "#00A651"))
-            )
+        HStack(spacing: 8) {
+            Image("coin")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 24, height: 24)
             
-            Spacer()
+            Text("+\(bonusAmount) Bonus!")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(.white)
         }
-        .padding(.top, 20)
-        .transition(.move(edge: .top).combined(with: .opacity))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            Capsule()
+                .fill(Color(hex: "#00A651"))
+        )
+        .transition(.move(edge: .bottom).combined(with: .opacity))
         .onAppear {
-            // Auto-dismiss after 2.5 seconds with smooth animation
+            // Auto-dismiss after 3.5 seconds with smooth animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                     isShowing = false
