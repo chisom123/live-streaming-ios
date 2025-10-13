@@ -161,7 +161,7 @@ struct CompDetails: View {
                     )
                 }) {
                     Text(competition.description == "Game" ? "Add Game Name" : competition.description)
-                        .font(.system(size: 22, weight: .bold, design: .default))
+                        .font(.system(size: 20, weight: .bold, design: .default))
                         .lineLimit(1)
                         .foregroundColor(.white)
                         .onAppear {
