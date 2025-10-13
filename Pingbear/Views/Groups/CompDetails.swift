@@ -163,7 +163,7 @@ struct CompDetails: View {
                     Text(competition.description == "Game" ? "Add Game Name" : competition.description)
                         .font(.system(size: 20, weight: .bold, design: .default))
                         .lineLimit(1)
-                        .foregroundColor(.white)
+                        .foregroundColor(.white.opacity(0.9))
                         .onAppear {
                             Analytics.shared.trackCompetition(
                                 action: "view",
