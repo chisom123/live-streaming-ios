@@ -262,13 +262,6 @@ struct UnlockView: View {
                                 .font(.system(size: 15, weight: .semibold))
                                 .foregroundColor(!selectedPredictions.isEmpty ? .white : .white.opacity(0.7))
                         }
-                        
-                        Image("pencil")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(!selectedPredictions.isEmpty ? .white : .white.opacity(0.7))
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 15, height: 15)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
