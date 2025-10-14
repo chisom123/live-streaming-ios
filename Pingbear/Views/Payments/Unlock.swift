@@ -273,11 +273,11 @@ struct UnlockView: View {
                         // Changed: Show placeholder text when no amount is set
                         if entryCost > 0 {
                             Text("\(entryCost)")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.white)
                         } else {
                             Text("Set Amount")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(!selectedPredictions.isEmpty ? .white : .white.opacity(0.7))
                         }
                     }
