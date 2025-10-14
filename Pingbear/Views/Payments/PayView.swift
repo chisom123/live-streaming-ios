@@ -102,7 +102,7 @@ struct PayView: View {
                     Image("coin")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
+                        .frame(width: 19, height: 19)
                     
                     if isLoadingCoins {
                         ProgressView()
@@ -112,12 +112,13 @@ struct PayView: View {
                         Text("\(userCoins)")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
+                            .lineLimit(1)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
+                .padding(.horizontal, 15)
+                .frame(height: 45)
                 .background(Color(hex: "#2A3255"))
-                .cornerRadius(200)
+                .cornerRadius(10)
             }
         }
         .padding(.horizontal, 20)

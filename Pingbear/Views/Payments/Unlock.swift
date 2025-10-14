@@ -164,15 +164,12 @@ struct UnlockView: View {
                     .foregroundColor(.white.opacity(0.7))
                     .padding(.trailing, 5)
                 
-                Button(action: {
-                    showPayView = true
-                    Analytics.shared.track(event: "coins_button_tapped")
-                }) {
+                HStack(alignment: .center, spacing: 0) {
                     HStack(spacing: 5) {
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
+                            .frame(width: 19, height: 19)
                         
                         if isLoadingCoins {
                             ProgressView()
@@ -182,20 +179,41 @@ struct UnlockView: View {
                             Text("\(userCoins)")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
+                                .lineLimit(1)
                         }
-                        
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 15)
+                    .frame(height: 45)
                     .background(
                         (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
                             ? Color(hex: "#F85149").opacity(0.3)
                             : Color(hex: "#2A3255")
                     )
-                    .cornerRadius(200)
+                    .clipShape(
+                        RoundedCorner(
+                            radius: 10,
+                            corners: [.topLeft, .bottomLeft]
+                        )
+                    )
+                    
+                    Button(action: {
+                        showPayView = true
+                        Analytics.shared.track(event: "coins_button_tapped")
+                    }) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .frame(width: 45, height: 45)
+                            .foregroundColor(.white)
+                            .background(
+                                Color(hex: "#3B4374")
+                                    .clipShape(
+                                        RoundedCorner(
+                                            radius: 10,
+                                            corners: [.topRight, .bottomRight]
+                                        )
+                                    )
+                            )
+                    }
                 }
             }
         }
