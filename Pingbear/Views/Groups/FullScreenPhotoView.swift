@@ -129,8 +129,8 @@ struct FullScreenPhotoView: View {
                                         .fill(parlayStatusColor)
                                         .frame(width: 8, height: 8)
                                     
-                                    Text("My Predictions")
-                                        .font(.system(size: 14, weight: .bold))
+                                    Text("Predictions")
+                                        .font(.system(size: 15, weight: .bold))
                                         .foregroundColor(.white)
                                 }
                                 .padding(.horizontal, 12)
@@ -281,7 +281,7 @@ struct FullScreenPhotoView: View {
     private var parlayStatusView: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("My Predictions")
+                Text("Predictions")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                 

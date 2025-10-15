@@ -308,7 +308,7 @@ struct PhotoCard: View {
                                 .fill(parlayStatusColor)
                                 .frame(width: 10, height: 10)
                             
-                            Text("My Predictions")
+                            Text("Predictions")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .truncationMode(.tail)

@@ -39,7 +39,7 @@ struct PredictionsDetailView: View {
                 
                 Spacer()
                 
-                Text("My Predictions")
+                Text("Predictions")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 
