@@ -44,7 +44,7 @@ struct UnlockView: View {
     private var parlayMultiplier: Double {
         guard !selectedPredictions.isEmpty else { return 0 }
         return CompetitionPricingCalculator.shared.getParlayMultiplier(
-            numberOfPredictions: selectedPredictions.count
+            predictions: selectedPredictions
         )
     }
     
@@ -390,18 +390,38 @@ struct UnlockView: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
-                if let rating = selectedRating {
-                    HStack(spacing: 2) {
-                        ForEach(1...5, id: \.self) { star in
-                            Image(systemName: star <= rating ? "star.fill" : "star")
-                                .font(.system(size: 15))
-                                .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white.opacity(0.3))
-                        }
+                // Always show stars, but make empty ones gray for unselected
+                HStack(spacing: 2) {
+                    ForEach(1...5, id: \.self) { star in
+                        Image(systemName: star <= (selectedRating ?? 0) ? "star.fill" : "star.fill")
+                            .font(.system(size: 15))
+                            .foregroundColor(
+                                star <= (selectedRating ?? 0) ?
+                                Color(hex: "#FFD700") :
+                                Color.white.opacity(0.1) // Very faint for unselected
+                            )
                     }
+                }
+                
+                // Always show multiplier area
+                if let rating = selectedRating {
+                    // Show actual multiplier when selected
+                    let multiplier = CompetitionPricingCalculator.shared.getSingleStarMultiplier(starRating: rating)
+                    Text("\(String(format: "%.1fx", multiplier))")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: "#4169E1").opacity(0.3))
+                        .cornerRadius(8)
                 } else {
                     Text("Tap to predict")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(8)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -430,7 +450,7 @@ struct UnlockView: View {
             
             // Multiplier Display
             HStack {
-                Text("Multiplier")
+                Text("Total Multiplier")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.7))
                 
@@ -826,6 +846,7 @@ struct UnlockView: View {
                     VStack(spacing: 16) {
                         ForEach((1...5).reversed(), id: \.self) { rating in
                             let isSelected = selectedPredictions[selectedRaterId] == rating
+                            let multiplier = CompetitionPricingCalculator.shared.getSingleStarMultiplier(starRating: rating)
                             
                             Button(action: {
                                 selectedPredictions[selectedRaterId] = rating
@@ -839,17 +860,29 @@ struct UnlockView: View {
                                 HStack {
                                     HStack(spacing: 4) {
                                         ForEach(1...5, id: \.self) { star in
-                                            Image(systemName: star <= rating ? "star.fill" : "star")
+                                            Image(systemName: star <= rating ? "star.fill" : "star.fill")
                                                 .font(.system(size: 20))
-                                                .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white.opacity(0.3))
+                                                .foregroundColor(star <= rating ? Color(hex: "#FFD700") : Color.white.opacity(0.1))
                                         }
                                     }
                                     
                                     Spacer()
                                     
-                                    Text("\(rating) Star\(rating == 1 ? "" : "s")")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white)
+                                    // Rating text and multiplier horizontally aligned
+                                    HStack(spacing: 12) {
+                                        Text("\(rating) Star\(rating == 1 ? "" : "s")")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        
+                                        // Multiplier in a box
+                                        Text("\(String(format: "%.1fx", multiplier))")
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(Color(hex: "#4169E1").opacity(0.3))
+                                            .cornerRadius(8)
+                                    }
                                 }
                                 .padding()
                                 .background(

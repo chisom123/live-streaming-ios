@@ -9,10 +9,16 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Private Properties
     private var cachedHouseEdge: Double = 0.20 // Default fallback
-    private var cachedAccuracyRate: Double = 0.60 // Default fallback
     private var cachedBonusPoolPercentage: Double = 0.50 // Default 50% of lost stake goes to bonus pool
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
+    private var cachedStarAccuracyRates: [Int: Double] = [
+        1: 0.50,  // 1-star: 50% accurate (lowest accuracy)
+        2: 0.55,  // 2-star: 55% accurate
+        3: 0.60,  // 3-star: 60% accurate
+        4: 0.70,  // 4-star: 70% accurate
+        5: 0.85   // 5-star: 85% accurate (highest accuracy)
+    ]
     private let db = Firestore.firestore()
     
     // Real-time listener and error handling
@@ -90,7 +96,21 @@ class CompetitionPricingCalculator: ObservableObject {
         let data = document.data() ?? [:]
         var hasChanges = false
         
-        // Update cached values if available with validation logging
+        // NEW: Update star accuracy rates
+        if let starRates = data["star_accuracy_rates"] as? [String: Double] {
+            for (starStr, rate) in starRates {
+                if let star = Int(starStr), (1...5).contains(star) {
+                    let clampedValue = max(0.01, min(0.99, rate)) // Prevent 0% or 100%
+                    if self.cachedStarAccuracyRates[star] != clampedValue {
+                        self.cachedStarAccuracyRates[star] = clampedValue
+                        hasChanges = true
+                        print("⭐️ Updated star \(star) accuracy: \(clampedValue)")
+                    }
+                }
+            }
+        }
+        
+        // Keep house edge and bonus pool logic
         if let houseEdge = data["house_edge"] as? Double {
             let clampedValue = max(0.0, min(1.0, houseEdge))
             if houseEdge != clampedValue {
@@ -98,17 +118,6 @@ class CompetitionPricingCalculator: ObservableObject {
             }
             if self.cachedHouseEdge != clampedValue {
                 self.cachedHouseEdge = clampedValue
-                hasChanges = true
-            }
-        }
-        
-        if let accuracyRate = data["accuracy_rate"] as? Double {
-            let clampedValue = max(0.0, min(1.0, accuracyRate))
-            if accuracyRate != clampedValue {
-                print("⚠️ Accuracy rate value \(accuracyRate) was clamped to \(clampedValue)")
-            }
-            if self.cachedAccuracyRate != clampedValue {
-                self.cachedAccuracyRate = clampedValue
                 hasChanges = true
             }
         }
@@ -125,9 +134,7 @@ class CompetitionPricingCalculator: ObservableObject {
         }
         
         if hasChanges {
-            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Accuracy Rate: \(self.cachedAccuracyRate), Bonus Pool: \(self.cachedBonusPoolPercentage)")
-            
-            // Trigger UI updates only if values actually changed
+            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Bonus Pool: \(self.cachedBonusPoolPercentage)")
             self.objectWillChange.send()
         }
         
@@ -139,33 +146,45 @@ class CompetitionPricingCalculator: ObservableObject {
         return cachedHouseEdge
     }
     
-    private func getAssumedAccuracyRate() -> Double {
-        return cachedAccuracyRate
-    }
-    
     private func getBonusPoolPercentage() -> Double {
         return cachedBonusPoolPercentage
     }
     
+    // MARK: - NEW: Star Rating Methods
+    
+    func getAccuracyRate(for starRating: Int) -> Double {
+        return cachedStarAccuracyRates[starRating] ?? 0.5 // Fallback to 50%
+    }
+    
+    func getSingleStarMultiplier(starRating: Int) -> Double {
+        let starAccuracy = getAccuracyRate(for: starRating)
+        let fairMultiplier = 1.0 / starAccuracy
+        let houseEdge = getHouseEdge()
+        let multiplier = fairMultiplier * (1.0 - houseEdge)
+        let rounded = floor(multiplier * 10) / 10.0
+        return max(rounded, 1.1)
+    }
+    
     // MARK: - Public Methods
     
-    func getParlayMultiplier(numberOfPredictions: Int) -> Double {
-        guard numberOfPredictions > 0 else { return 1.0 }
+    func getParlayMultiplier(predictions: [String: Int]) -> Double {
+        guard !predictions.isEmpty else { return 1.0 }
         
-        let accuracyRate = getAssumedAccuracyRate()
-        let winProbability = pow(accuracyRate, Double(numberOfPredictions))
-        let fairMultiplier = 1.0 / winProbability
+        var finalMultiplier = 1.0
         
-        let houseEdge = getHouseEdge()
-        let calculatedMultiplier = fairMultiplier * (1.0 - houseEdge)
+        // Simply multiply all the individual star multipliers (house edge already applied)
+        for (_, starRating) in predictions {
+            let starMultiplier = getSingleStarMultiplier(starRating: starRating)
+            finalMultiplier *= starMultiplier
+        }
         
-        return min(calculatedMultiplier, 100.0)
+        return min(floor(finalMultiplier * 10) / 10.0, 100.0)
     }
 
     func calculateParlayPayout(entryCost: Int, predictions: [String: Int]) -> Int {
         guard !predictions.isEmpty else { return 0 }
         
-        let multiplier = getParlayMultiplier(numberOfPredictions: predictions.count)
+        let multiplier = getParlayMultiplier(predictions: predictions)
         let finalPayout = Double(entryCost) * multiplier
         
         return Int(round(finalPayout))
@@ -217,9 +236,8 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Utility Methods
     
-    /// Get current configuration for debugging/admin purposes
-    func getCurrentConfig() -> (houseEdge: Double, accuracyRate: Double, bonusPoolPercentage: Double, isOnline: Bool, lastUpdate: Date?) {
-        return (cachedHouseEdge, cachedAccuracyRate, cachedBonusPoolPercentage, !isOffline, lastFetchTime)
+    func getCurrentConfig() -> (houseEdge: Double, starAccuracyRates: [Int: Double], bonusPoolPercentage: Double, isOnline: Bool, lastUpdate: Date?) {
+        return (cachedHouseEdge, cachedStarAccuracyRates, cachedBonusPoolPercentage, !isOffline, lastFetchTime)
     }
     
     /// Force reconnection (useful for handling app foreground events)
