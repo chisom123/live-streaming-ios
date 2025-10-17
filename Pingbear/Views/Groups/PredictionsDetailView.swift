@@ -137,18 +137,7 @@ struct PredictionsDetailView: View {
                     (predictionData as? [String: Any])?["actualRating"]
                 }.count
                 
-                HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
+                predictionsList
                 
                 HStack {
                     Text("Entry")
@@ -197,70 +186,17 @@ struct PredictionsDetailView: View {
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
-            
-            predictionsList
         }
     }
     
     private var parlayWonView: some View {
         VStack(spacing: 8) {
             VStack(spacing: 8) {
-                // Win - Biggest emphasis
-                HStack {
-                    Text("Win")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    HStack(spacing: 6) {
-                        Text("\(parlayPayout)")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Image("coin")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 26, height: 26)
-                    }
-                }
-                
-                // Profit - Second biggest emphasis
-                let profit = parlayPayout - parlayStake
-                HStack {
-                    Text("Profit")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    Text("+\(profit)")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundColor(Color(hex: "#00FF00"))
-                }
-                
-                // Divider
-                Divider()
-                    .background(Color.white.opacity(0.2))
-                    .padding(.vertical, 4)
-                
-                // Correct - Smaller, supporting info
-                HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
+                predictionsList
                 
                 // Entry - Smaller, supporting info
                 HStack {
@@ -281,27 +217,49 @@ struct PredictionsDetailView: View {
                             .frame(width: 19, height: 19)
                     }
                 }
+                
+                // Win - Biggest emphasis
+                HStack {
+                    Text("Win")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 6) {
+                        Text("\(parlayPayout)")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image("coin")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 19, height: 19)
+                    }
+                }
+                
+                // Profit - Second biggest emphasis
+                let profit = parlayPayout - parlayStake
+                HStack {
+                    Text("Profit")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                    
+                    Spacer()
+                    
+                    Text("+\(profit)")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(hex: "#00FF00"))
+                }
             }
-            
-            predictionsList
         }
     }
     
     private var parlayLostView: some View {
         VStack(spacing: 8) {
             VStack(spacing: 8) {
-                HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
+                
+                predictionsList
                 
                 HStack {
                     Text("Entry")
@@ -341,18 +299,12 @@ struct PredictionsDetailView: View {
                     }
                 }
             }
-            
-            predictionsList
         }
     }
     
     private var predictionsList: some View {
         VStack(spacing: 0) {
             if !parlayPredictions.isEmpty {
-                Divider()
-                    .background(Color.white.opacity(0.2))
-                    .padding(.vertical, 8)
-                
                 VStack(spacing: 0) {
                     ForEach(Array(parlayPredictions.keys.sorted()), id: \.self) { userId in
                         predictionRow(for: userId)
@@ -364,6 +316,10 @@ struct PredictionsDetailView: View {
                         }
                     }
                 }
+                
+                Divider()
+                    .background(Color.white.opacity(0.2))
+                    .padding(.vertical, 5)
             }
         }
     }
