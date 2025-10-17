@@ -254,7 +254,7 @@ struct UnlockView: View {
                 .background(Color.white.opacity(0.1))
             
             HStack {
-                Text("Entry")
+                Text("Bet")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.7))
                 
@@ -591,7 +591,7 @@ struct UnlockView: View {
                 
                 Spacer()
                 
-                Text("Set Entry Amount")
+                Text("Set Bet Amount")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 
