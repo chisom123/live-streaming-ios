@@ -141,52 +141,52 @@ struct PredictionsDetailView: View {
                 
                 HStack {
                     Text("Bet")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 HStack {
                     Text("To Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayPayout)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 let profit = parlayPayout - parlayStake
                 HStack {
                     Text("Profit")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
@@ -201,40 +201,40 @@ struct PredictionsDetailView: View {
                 // Entry - Smaller, supporting info
                 HStack {
                     Text("Bet")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 // Win - Biggest emphasis
                 HStack {
                     Text("Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayPayout)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
@@ -242,13 +242,13 @@ struct PredictionsDetailView: View {
                 let profit = parlayPayout - parlayStake
                 HStack {
                     Text("Profit")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
@@ -263,39 +263,39 @@ struct PredictionsDetailView: View {
                 
                 HStack {
                     Text("Bet")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 HStack {
                     Text("Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("0")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
             }
@@ -355,12 +355,12 @@ struct PredictionsDetailView: View {
         return AnyView(
             HStack(spacing: 12) {
                 // Profile Picture
-                ProfilePictureView(url: profilePictureUrl, size: 35)
+                ProfilePictureView(url: profilePictureUrl, size: 36)
                 
                 // User Info
                 VStack(alignment: .leading, spacing: 5) {
                     Text(userName)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                         .lineLimit(1)
                     
@@ -370,11 +370,11 @@ struct PredictionsDetailView: View {
                            // Main tab
                            HStack(spacing: 3) {
                                Image(systemName: "star.fill")
-                                   .font(.system(size: 11))
+                                   .font(.system(size: 12))
                                    .foregroundColor(.white)
                                
                                Text("\(predictedRating)")
-                                   .font(.system(size: 13, weight: .bold))
+                                   .font(.system(size: 14, weight: .bold))
                                    .foregroundColor(.white)
                            }
                            .frame(height: 28) // Same fixed height
@@ -393,7 +393,7 @@ struct PredictionsDetailView: View {
                            if !isCorrect {
                                HStack(spacing: 4) {
                                    Text("\(actualRating)")
-                                       .font(.system(size: 13, weight: .bold)) // Same size as main
+                                       .font(.system(size: 14, weight: .bold)) // Same size as main
                                        .foregroundColor(.white.opacity(0.8))
                                }
                                .frame(height: 28) // Same fixed height
@@ -412,11 +412,11 @@ struct PredictionsDetailView: View {
                     } else {
                         HStack(spacing: 3) {
                            Image(systemName: "star.fill")
-                               .font(.system(size: 11))
+                               .font(.system(size: 12))
                                .foregroundColor(.white)
                            
                            Text("\(predictedRating)")
-                               .font(.system(size: 13, weight: .bold))
+                               .font(.system(size: 14, weight: .bold))
                                .foregroundColor(.white.opacity(0.8))
                         }
                         .frame(height: 28)
@@ -438,11 +438,11 @@ struct PredictionsDetailView: View {
                 // Status indicator with icon
                 if actualRating != nil {
                     Text(isCorrect ? "✓" : "✗")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundColor(isCorrect ? Color(hex: "#00FF00") : Color(hex: "#FF4444"))
                 } else {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 17))
                         .foregroundColor(Color(hex: "#FFD700"))
                 }
             }
