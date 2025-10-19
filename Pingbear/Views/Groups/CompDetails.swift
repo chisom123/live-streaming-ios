@@ -103,7 +103,7 @@ struct CompDetails: View {
                             Color(hex: "#2A3255")
                                 .clipShape(
                                     RoundedCorner(
-                                        radius: 10,
+                                        radius: 200,
                                         corners: [.topLeft, .bottomLeft]
                                     )
                                 )
@@ -124,7 +124,7 @@ struct CompDetails: View {
                                     Color(hex: "#3B4374")
                                         .clipShape(
                                             RoundedCorner(
-                                                radius: 10,
+                                                radius: 200,
                                                 corners: [.topRight, .bottomRight]
                                             )
                                         )

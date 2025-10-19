@@ -116,9 +116,9 @@ struct PayView: View {
                     }
                 }
                 .padding(.horizontal, 15)
-                .frame(height: 45)
+                .frame(height: 40)
                 .background(Color(hex: "#2A3255"))
-                .cornerRadius(10)
+                .cornerRadius(200)
             }
         }
         .padding(.horizontal, 20)
