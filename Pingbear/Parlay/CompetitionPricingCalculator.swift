@@ -9,7 +9,6 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Private Properties
     private var cachedHouseEdge: Double = 0.20 // Default fallback
-    private var cachedBonusPoolPercentage: Double = 0.50 // Default 50% of lost stake goes to bonus pool
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
     private var cachedStarAccuracyRates: [Int: Double] = [
@@ -110,7 +109,6 @@ class CompetitionPricingCalculator: ObservableObject {
             }
         }
         
-        // Keep house edge and bonus pool logic
         if let houseEdge = data["house_edge"] as? Double {
             let clampedValue = max(0.0, min(1.0, houseEdge))
             if houseEdge != clampedValue {
@@ -122,19 +120,8 @@ class CompetitionPricingCalculator: ObservableObject {
             }
         }
         
-        if let bonusPoolPercentage = data["bonus_pool_percentage"] as? Double {
-            let clampedValue = max(0.0, min(1.0, bonusPoolPercentage))
-            if bonusPoolPercentage != clampedValue {
-                print("⚠️ Bonus pool percentage value \(bonusPoolPercentage) was clamped to \(clampedValue)")
-            }
-            if self.cachedBonusPoolPercentage != clampedValue {
-                self.cachedBonusPoolPercentage = clampedValue
-                hasChanges = true
-            }
-        }
-        
         if hasChanges {
-            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Bonus Pool: \(self.cachedBonusPoolPercentage)")
+            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge)")
             self.objectWillChange.send()
         }
         
@@ -144,10 +131,6 @@ class CompetitionPricingCalculator: ObservableObject {
     // MARK: - Private Methods
     private func getHouseEdge() -> Double {
         return cachedHouseEdge
-    }
-    
-    private func getBonusPoolPercentage() -> Double {
-        return cachedBonusPoolPercentage
     }
     
     // MARK: - NEW: Star Rating Methods
@@ -190,22 +173,6 @@ class CompetitionPricingCalculator: ObservableObject {
         return Int(round(finalPayout))
     }
     
-    // MARK: - Bonus Pool Calculation
-    
-    /// Calculate the total bonus pool from a lost stake
-    func calculateBonusPool(lostStake: Int) -> Int {
-        let bonusPoolPercentage = getBonusPoolPercentage()
-        let bonusPool = Double(lostStake) * bonusPoolPercentage
-        return Int(floor(bonusPool)) // Always round down
-    }
-    
-    /// Calculate individual rater's share of the bonus pool
-    func calculateRaterBonus(bonusPool: Int, totalPredictions: Int) -> Int {
-        guard totalPredictions > 0 else { return 0 }
-        let share = Double(bonusPool) / Double(totalPredictions)
-        return Int(floor(share)) // Always round down
-    }
-    
     // MARK: - Manual Refresh (optional)
     func refreshConfig() async -> Bool {
         await MainActor.run {
@@ -236,8 +203,8 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Utility Methods
     
-    func getCurrentConfig() -> (houseEdge: Double, starAccuracyRates: [Int: Double], bonusPoolPercentage: Double, isOnline: Bool, lastUpdate: Date?) {
-        return (cachedHouseEdge, cachedStarAccuracyRates, cachedBonusPoolPercentage, !isOffline, lastFetchTime)
+    func getCurrentConfig() -> (houseEdge: Double, starAccuracyRates: [Int: Double], isOnline: Bool, lastUpdate: Date?) {
+        return (cachedHouseEdge, cachedStarAccuracyRates, !isOffline, lastFetchTime)
     }
     
     /// Force reconnection (useful for handling app foreground events)

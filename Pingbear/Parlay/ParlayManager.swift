@@ -122,13 +122,6 @@ class ParlayManager {
         // Check parlay status with new early failure detection
         let (allComplete, allCorrect, hasFailure) = checkParlayStatus(predictions: updatedPredictions)
         
-        // Calculate and award bonus if prediction was incorrect
-        let bonusAwarded = !isCorrect ? calculateAndAwardBonus(
-            competitionId: competitionId,
-            entryData: entryData,
-            raterUserId: userId
-        ) : 0
-        
         if hasFailure {
             // Parlay lost - mark as lost immediately even if not all ratings are in
             updateParlayEntry(
@@ -141,7 +134,6 @@ class ParlayManager {
                 rating: rating,
                 updatedPredictions: updatedPredictions,
                 parlayStatus: "lost",
-                bonusAwarded: bonusAwarded,
                 completion: completion
             )
         } else if allComplete && allCorrect {
@@ -157,7 +149,6 @@ class ParlayManager {
                 rating: rating,
                 updatedPredictions: updatedPredictions,
                 entryData: entryData,
-                bonusAwarded: bonusAwarded,
                 completion: completion
             )
         } else {
@@ -172,55 +163,9 @@ class ParlayManager {
                 rating: rating,
                 updatedPredictions: updatedPredictions,
                 parlayStatus: "pending",
-                bonusAwarded: bonusAwarded,
                 completion: completion
             )
         }
-    }
-    
-    // Calculate and award bonus to rater
-    private func calculateAndAwardBonus(
-        competitionId: String,
-        entryData: [String: Any],
-        raterUserId: String
-    ) -> Int {
-        guard let entryCost = entryData["entryCost"] as? Int,
-              let predictions = entryData["predictions"] as? [String: Any] else {
-            print("ParlayManager: Missing entryCost or predictions for bonus calculation")
-            return 0
-        }
-        
-        let totalPredictions = predictions.count
-        
-        // Calculate bonus pool and individual share
-        let bonusPool = CompetitionPricingCalculator.shared.calculateBonusPool(lostStake: entryCost)
-        let raterBonus = CompetitionPricingCalculator.shared.calculateRaterBonus(
-            bonusPool: bonusPool,
-            totalPredictions: totalPredictions
-        )
-        
-        guard raterBonus > 0 else {
-            print("ParlayManager: Calculated bonus is 0, skipping award")
-            return 0
-        }
-        
-        // Award bonus to rater immediately
-        let memberRef = db.collection("competitions")
-            .document(competitionId)
-            .collection("members")
-            .document(raterUserId)
-        
-        memberRef.updateData([
-            "coins": FieldValue.increment(Int64(raterBonus))
-        ]) { error in
-            if let error = error {
-                print("ParlayManager: Error awarding bonus to rater: \(error)")
-            } else {
-                print("ParlayManager: Awarded \(raterBonus) coin bonus to rater \(raterUserId)")
-            }
-        }
-        
-        return raterBonus
     }
     
     // Write prediction record to dedicated collection for analytics
@@ -290,7 +235,6 @@ class ParlayManager {
         rating: Int,
         updatedPredictions: [String: Any],
         entryData: [String: Any],
-        bonusAwarded: Int,
         completion: @escaping (Bool) -> Void
     ) {
         guard let potentialPayout = entryData["potentialPayout"] as? Int,
@@ -407,7 +351,6 @@ class ParlayManager {
         rating: Int,
         updatedPredictions: [String: Any],
         parlayStatus: String,
-        bonusAwarded: Int,
         completion: @escaping (Bool) -> Void
     ) {
         let batch = db.batch()
@@ -494,18 +437,6 @@ class ParlayManager {
                         ]
                     )
                 }
-                
-                if bonusAwarded > 0 {
-                    Analytics.shared.track(
-                        event: "rater_bonus_awarded",
-                        properties: [
-                            "entry_id": entryId,
-                            "rater_user_id": userId,
-                            "bonus_amount": bonusAwarded
-                        ]
-                    )
-                }
-                
                 completion(true)
             }
         }
