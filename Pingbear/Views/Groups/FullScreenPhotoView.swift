@@ -841,12 +841,12 @@ struct FullScreenPhotoView: View {
             let userRef = db.collection("users").document(userId)
             
             let group = DispatchGroup()
-            var competitionDescription = "Game"
+            var competitionDescription = "Competition"
             var username = "Someone"
             
             group.enter()
             competitionRef.getDocument { compDoc, _ in
-                competitionDescription = compDoc?.data()?["description"] as? String ?? "Game"
+                competitionDescription = compDoc?.data()?["description"] as? String ?? "Competition"
                 group.leave()
             }
             

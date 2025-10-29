@@ -160,7 +160,7 @@ struct CompDetails: View {
                         screenName: "competition_details"
                     )
                 }) {
-                    Text(competition.description == "Game" ? "Add Game Name" : competition.description)
+                    Text(competition.description == "Competition" ? "Add Competition Name" : competition.description)
                         .font(.system(size: 20, weight: .bold, design: .default))
                         .lineLimit(1)
                         .foregroundColor(.white.opacity(0.9))

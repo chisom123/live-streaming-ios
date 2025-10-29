@@ -288,7 +288,7 @@ class ParlayManager {
                 
                 // Fetch competition name and winner's username for notifications
                 self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
-                    let competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                    let competitionName = compDoc?.data()?["description"] as? String ?? "Competition"
                     let predictionText = updatedPredictions.count == 1 ? "prediction" : "predictions"
                     let systemUserId = "zxBo4ecEp1hzXhpVIfQ1vFpclkz1"
                     
@@ -399,7 +399,7 @@ class ParlayManager {
                     // Fetch rater username and competition name
                     let group = DispatchGroup()
                     var raterUsername = "Someone"
-                    var competitionName = "Game"
+                    var competitionName = "Competition"
                     
                     group.enter()
                     self.db.collection("users").document(userId).getDocument { userDoc, _ in
@@ -409,7 +409,7 @@ class ParlayManager {
                     
                     group.enter()
                     self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
-                        competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                        competitionName = compDoc?.data()?["description"] as? String ?? "Competition"
                         group.leave()
                     }
                     
@@ -486,7 +486,7 @@ class ParlayManager {
                     let group = DispatchGroup()
                     var raterUsername = "Someone"
                     var competitionId = ""
-                    var competitionName = "Game"
+                    var competitionName = "Competition"
                     
                     // Get competition ID from entry data
                     if let compId = entryData["competitionId"] as? String {
@@ -507,7 +507,7 @@ class ParlayManager {
                     
                     group.enter()
                     self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
-                        competitionName = compDoc?.data()?["description"] as? String ?? "Game"
+                        competitionName = compDoc?.data()?["description"] as? String ?? "Competition"
                         group.leave()
                     }
                     

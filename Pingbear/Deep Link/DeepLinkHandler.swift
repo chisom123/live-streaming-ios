@@ -210,7 +210,7 @@ class DeepLinkHandler: ObservableObject {
             // Create competition object
             let competition = Competition(
                 id: competitionId,
-                description: data["description"] as? String ?? "Game",
+                description: data["description"] as? String ?? "Competition",
                 date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
             )
             
@@ -279,13 +279,13 @@ class DeepLinkHandler: ObservableObject {
                         
                         // Fetch competition description
                         self?.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
-                            let competitionDescription = compDoc?.data()?["description"] as? String ?? "Game"
+                            let competitionDescription = compDoc?.data()?["description"] as? String ?? "Competition"
                             
                             // Notify all existing members about the new member
                             NotificationQueueManager.shared.queueGroupNotification(
                                 competitionId: competitionId,
                                 title: competitionDescription,
-                                body: "\(newMemberName) joined the game",
+                                body: "\(newMemberName) joined the competition",
                                 senderId: userId,
                                 excludeUsers: [userId] // Don't notify the person who just joined
                             )

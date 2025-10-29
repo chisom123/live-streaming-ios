@@ -34,7 +34,7 @@ struct JoinSelectView: View {
                     
                     Spacer()
                     
-                    Text("Add Players to Game")
+                    Text("Add Players to Competition")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
@@ -174,7 +174,7 @@ struct JoinSelectView: View {
         }) {
             AddFriendsView(addFriendsModel: AddFriendsModel())
         }
-        .alert("Get Notified When Your Friends Join the Game", isPresented: $showNotificationAlert) {
+        .alert("Get Notified When Your Friends Join the Competition", isPresented: $showNotificationAlert) {
             Button("OK") {
                 notificationManager.requestNotificationPermission { granted in
                     if granted {
@@ -199,7 +199,7 @@ struct JoinSelectView: View {
     
     private func createShareText() -> String {
         let shareLink = DeepLinkHandler.shared.createShareableLink(for: competition.id)
-        return "Hey i started a game on SocialStar. Join it! \(shareLink)"
+        return "Hey i started a photo competition on SocialStar. Join it! \(shareLink)"
     }
     
     private func isUserAlreadyMember(userId: String, completion: @escaping (Bool) -> Void) {
@@ -282,7 +282,7 @@ struct JoinSelectView: View {
                         NotificationQueueManager.shared.queueIndividualNotification(
                             to: userId,
                             title: self.competition.description,
-                            body: "\(username) added you to the game",
+                            body: "\(username) added you to the competition",
                             senderId: self.currentUserId
                         )
                         
@@ -290,7 +290,7 @@ struct JoinSelectView: View {
                         NotificationQueueManager.shared.queueGroupNotification(
                             competitionId: self.competition.id,
                             title: self.competition.description,
-                            body: "\(newMemberName) joined the game",
+                            body: "\(newMemberName) joined the competition",
                             senderId: self.currentUserId,
                             excludeUsers: [self.currentUserId, userId]
                         )

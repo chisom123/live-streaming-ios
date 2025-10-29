@@ -118,7 +118,7 @@ struct MyCompsView: View {
                     }
                 )
         )
-        .alert("Leave Game", isPresented: $showLeaveConfirmation) {
+        .alert("Leave Competition", isPresented: $showLeaveConfirmation) {
             Button("Cancel", role: .cancel) {
                 competitionToLeave = nil
             }
@@ -130,7 +130,7 @@ struct MyCompsView: View {
                 competitionToLeave = nil
             }
         } message: {
-            Text("Are you sure you want to leave this game?")
+            Text("Are you sure you want to leave this competition?")
         }
         .onAppear {
             fetchData()
@@ -184,7 +184,7 @@ struct MyCompsView: View {
                 return
             }
             
-            let competitionName = "Game"
+            let competitionName = "Competition"
             
             // Now create the competition
             let competitionRef = db.collection("competitions").document()
@@ -265,7 +265,7 @@ struct EmptyCompsView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            Text("No Games Yet")
+            Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 30)
@@ -275,7 +275,7 @@ struct EmptyCompsView: View {
             VStack() {
                 Button(action: newCompAction) {
                     HStack {
-                        Text("New Game")
+                        Text("New Competition")
                             .font(.system(size: 17, weight: .bold, design: .default))
                     }
                     .frame(maxWidth: .infinity)
@@ -339,7 +339,7 @@ struct CompetitionCellContent: View {
                 Button() {
                     onLeave()
                 } label: {
-                    Label("Leave Game", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label("Leave Competition", systemImage: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                 }

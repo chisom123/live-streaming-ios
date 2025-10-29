@@ -47,7 +47,7 @@ struct MembersView: View {
                         showingJoinSelectView = true
                     }) {
                         HStack {
-                            Text("Add Players to Game")
+                            Text("Add Players to Competition")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,12 +68,12 @@ struct MembersView: View {
                     Divider()
                         .background(Color.white.opacity(0.2))
                     
-                    // Edit Game Name Button (NEW)
+                    // Edit Competition Name Button (NEW)
                     Button(action: {
                         isEditingCompetition = true
                     }) {
                         HStack {
-                            Text("Edit Game Name")
+                            Text("Edit Competition Name")
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .foregroundColor(Color(hex: "#FFF"))
                                 .frame(maxWidth: .infinity, alignment: .leading)
