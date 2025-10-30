@@ -11,19 +11,22 @@ struct ThemeEmptyStateView: View {
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 20)
-                .padding(.bottom, 25)
+                .padding(.bottom, 20)
             
-            Button(action: {
-                action()
-            }) {
-                Text("Add New Theme")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            VStack() {
+                Button(action: action) {
+                    HStack {
+                        Text("New Theme")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
                     .background(Color(hex: "#4169E1"))
                     .foregroundColor(.white)
                     .cornerRadius(200)
+                }
             }
+            .frame(width: 280)
             .padding(.bottom, 20)
         }
         .frame(maxWidth: .infinity)
