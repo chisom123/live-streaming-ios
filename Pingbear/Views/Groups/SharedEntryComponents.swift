@@ -79,7 +79,6 @@ struct PhotoNavigationBar: View {
                     .foregroundColor(.white)
                     .shadow(radius: 10)
             }
-            .frame(width: 80, alignment: .leading)
             
             Spacer()
             
@@ -103,7 +102,7 @@ struct PhotoNavigationBar: View {
                     .layoutPriority(-1)
                 }
             }
-            .frame(maxWidth: 250)
+            .padding(.horizontal, 5)
             
             Spacer()
             
@@ -115,7 +114,6 @@ struct PhotoNavigationBar: View {
                     .shadow(radius: 10)
                     .frame(width: 33, height: 33)
             }
-            .frame(width: 80, alignment: .trailing)
         }
         .padding(.horizontal)
         .padding(.top, 10)
