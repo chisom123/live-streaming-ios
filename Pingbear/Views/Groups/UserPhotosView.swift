@@ -225,6 +225,8 @@ struct PhotoCard: View {
     let onTap: () -> Void
     let onPredictionsTap: () -> Void
     
+    @State private var hasDragged = false
+    
     private var parlayStatusColor: Color {
         switch photo.parlayStatus {
         case "won": return Color(hex: "#00FF00")
@@ -235,41 +237,59 @@ struct PhotoCard: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Button(action: onTap) {
-                KFImage(URL(string: photo.photoUrl))
-                    .placeholder {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 180)
-                            .overlay(
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            )
-                    }
-                    .onFailure { _ in }
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 180)
-                    .clipped()
-                    .overlay(
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Text(timeAgoString(from: photo.creationDate))
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color.black.opacity(0.6))
-                                    .cornerRadius(15)
-                            }
-                            .padding(10)
+            KFImage(URL(string: photo.photoUrl))
+                .placeholder {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 180)
+                        .overlay(
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        )
+                }
+                .onFailure { _ in }
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(maxWidth: .infinity)
+                .frame(height: 180)
+                .clipped()
+                .overlay(
+                    VStack {
+                        HStack {
                             Spacer()
-                        },
-                        alignment: .bottomLeading
-                    )
-            }
+                            Text(timeAgoString(from: photo.creationDate))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.black.opacity(0.6))
+                                .cornerRadius(15)
+                        }
+                        .padding(10)
+                        Spacer()
+                    },
+                    alignment: .bottomLeading
+                )
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let dragDistance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                            if dragDistance > 10 {
+                                hasDragged = true
+                            }
+                        }
+                        .onEnded { value in
+                            let dragDistance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
+                            
+                            // Only trigger tap if drag distance is less than 10 points
+                            if dragDistance < 10 && !hasDragged {
+                                onTap()
+                            }
+                            
+                            hasDragged = false
+                        }
+                )
             
             // Stats section
             HStack(spacing: 8) {
