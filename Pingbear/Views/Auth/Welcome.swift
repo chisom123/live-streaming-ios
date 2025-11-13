@@ -163,7 +163,7 @@ struct DisclaimerText: View {
             let readOurText = Text("Read our ")
             let privacyText = Text("Privacy Policy").underline()
             let andText = Text(" and Tap \"Agree & Continue\" to accept the ")
-            let termsText = Text("Terms of Use (EULA)").underline()
+            let termsText = Text("Terms of Use").underline()
             
             (readOurText + privacyText + andText + termsText)
                 .font(.system(size: 14, weight: .semibold, design: .default))
@@ -179,11 +179,11 @@ struct DisclaimerText: View {
                         title: Text("Choose Document"),
                         message: Text("Which document would you like to view?"),
                         buttons: [
-                            .default(Text("Terms of Use (EULA)")) {
-                                openURL("https://chay-b6172c.webflow.io")
+                            .default(Text("Terms of Use")) {
+                                openURL("https://www.notion.so/Terms-of-Use-2aaae3bec803804b83c4fa30721168d8")
                             },
                             .default(Text("Privacy Policy")) {
-                                openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                                openURL("https://www.notion.so/Privacy-Policy-2aaae3bec80380838551eb321015a92f")
                             },
                             .cancel()
                         ]

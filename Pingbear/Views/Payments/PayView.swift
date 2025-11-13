@@ -237,7 +237,7 @@ struct PayView: View {
         HStack(spacing: 5) {
             Text("Privacy Policy")
                 .onTapGesture {
-                    openURL("https://chay-b6172c.webflow.io/privacy-policy")
+                    openURL("https://www.notion.so/Privacy-Policy-2aaae3bec80380838551eb321015a92f")
                 }
             
             Text("•")
@@ -245,7 +245,7 @@ struct PayView: View {
             
             Text("Terms of Use")
                 .onTapGesture {
-                    openURL("https://chay-b6172c.webflow.io")
+                    openURL("https://www.notion.so/Terms-of-Use-2aaae3bec803804b83c4fa30721168d8")
                 }
         }
         .font(.system(size: 14, weight: .semibold, design: .default))
