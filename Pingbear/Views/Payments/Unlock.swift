@@ -510,7 +510,7 @@ struct UnlockView: View {
             if selectedPredictions.isEmpty {
                 return "Make Predictions to Continue"
             } else if entryCost == 0 {
-                return "Set Entry Amount"
+                return "Set Bet Amount"
             } else {
                 return "Place Predictions"
             }
