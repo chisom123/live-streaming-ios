@@ -160,12 +160,14 @@ struct DisclaimerText: View {
     
     var body: some View {
         VStack {
-            let readOurText = Text("Read our ")
-            let privacyText = Text("Privacy Policy").underline()
-            let andText = Text(" and Tap \"Agree & Continue\" to accept the ")
+            let youMustBe18Text = Text("You must be 18 or older to use this app. ")
+            let byTappingText = Text("By tapping \"Agree & Continue\", you confirm you meet this requirement and accept our ")
             let termsText = Text("Terms of Use").underline()
+            let andText = Text(" and ")
+            let privacyText = Text("Privacy Policy").underline()
+            let periodText = Text(".")
             
-            (readOurText + privacyText + andText + termsText)
+            (youMustBe18Text + byTappingText + termsText + andText + privacyText + periodText)
                 .font(.system(size: 14, weight: .semibold, design: .default))
                 .foregroundColor(.white)
                 .padding(.bottom, 30)
