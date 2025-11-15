@@ -470,14 +470,14 @@ struct UnlockView: View {
                 Spacer()
                 
                 HStack(spacing: 6) {
-                    Text("\(estimatedPayout)")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                    
                     Image("coin")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 20, height: 20)
+                    
+                    Text("\(estimatedPayout)")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
             
