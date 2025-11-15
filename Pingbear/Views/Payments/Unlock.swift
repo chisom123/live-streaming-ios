@@ -636,7 +636,9 @@ struct UnlockView: View {
                 HStack(spacing: 0) {
                     ForEach(suggestedAmounts, id: \.self) { amount in
                         Button(action: {
-                            customStakeAmount = String(amount)
+                            let currentAmount = Int(customStakeAmount) ?? 0
+                            let newAmount = currentAmount + amount
+                            customStakeAmount = String(newAmount)
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
                         }) {
