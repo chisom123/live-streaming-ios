@@ -349,14 +349,36 @@ struct AddThemeSheet: View {
     
     // Theme suggestions grid layout
     private var suggestionsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            ForEach(0..<themeSuggestions.count, id: \.self) { index in
-                suggestionCell(index: index, theme: themeSuggestions[index])
+        VStack(spacing: 0) {
+            ForEach(0..<(themeSuggestions.count + 1) / 2, id: \.self) { rowIndex in
+                HStack(spacing: 0) {
+                    let leftIndex = rowIndex * 2
+                    let rightIndex = leftIndex + 1
+                    
+                    suggestionCell(index: leftIndex, theme: themeSuggestions[leftIndex])
+                    
+                    if rightIndex < themeSuggestions.count {
+                        Divider()
+                            .background(Color.white.opacity(0.2))
+                            .frame(width: 1)
+                        
+                        suggestionCell(index: rightIndex, theme: themeSuggestions[rightIndex])
+                    }
+                }
+                
+                if rowIndex < (themeSuggestions.count + 1) / 2 - 1 {
+                    Divider()
+                        .background(Color.white.opacity(0.2))
+                        .frame(height: 1)
+                }
             }
         }
+        .background(Color(hex: "#1A2245"))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
     
     // Individual suggestion cell
@@ -369,16 +391,13 @@ struct AddThemeSheet: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }) {
             Text(theme)
-                .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundColor(Color.white)
                 .frame(maxWidth: .infinity)
                 .lineLimit(1)
                 .padding(.horizontal, 10)
-                .frame(height: 55)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(hex: "#2A335A"))
-                )
+                .frame(height: 65)
+                .background(Color.clear)
         }
         .buttonStyle(PlainButtonStyle())
     }
