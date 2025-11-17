@@ -8,15 +8,15 @@ class CompetitionPricingCalculator: ObservableObject {
     @Published var isOffline: Bool = false
     
     // MARK: - Private Properties
-    private var cachedHouseEdge: Double = 0.20 // Default fallback
+    private var cachedHouseEdge: Double = 0.10 // Default fallback
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
     private var cachedStarAccuracyRates: [Int: Double] = [
-        1: 0.50,  // 1-star: 50% accurate (lowest accuracy)
-        2: 0.55,  // 2-star: 55% accurate
-        3: 0.60,  // 3-star: 60% accurate
-        4: 0.70,  // 4-star: 70% accurate
-        5: 0.85   // 5-star: 85% accurate (highest accuracy)
+        1: 0.30,  // 1-star: 30% accurate (lowest accuracy)
+        2: 0.40,  // 2-star: 40% accurate
+        3: 0.50,  // 3-star: 50% accurate
+        4: 0.60,  // 4-star: 60% accurate
+        5: 0.70   // 5-star: 70% accurate (highest accuracy)
     ]
     private let db = Firestore.firestore()
     
