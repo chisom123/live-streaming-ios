@@ -39,6 +39,9 @@ class EntryUploadManager: ObservableObject {
         entryCost: Int,
         predictions: [String: Int],
         potentialPayout: Int,
+        rakebackAmount: Int, // NEW
+        rakebackPercentage: Double, // NEW
+        effectiveHouseEdge: Double, // NEW
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
@@ -92,6 +95,9 @@ class EntryUploadManager: ObservableObject {
                     entryCost: entryCost,
                     predictions: predictions,
                     potentialPayout: potentialPayout,
+                    rakebackAmount: rakebackAmount,
+                    rakebackPercentage: rakebackPercentage,
+                    effectiveHouseEdge: effectiveHouseEdge,
                     onProgress: onProgress,
                     onSuccess: onSuccess,
                     onFailure: onFailure
@@ -114,6 +120,9 @@ class EntryUploadManager: ObservableObject {
         entryCost: Int,
         predictions: [String: Int],
         potentialPayout: Int,
+        rakebackAmount: Int,
+        rakebackPercentage: Double,
+        effectiveHouseEdge: Double,
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
@@ -201,6 +210,9 @@ class EntryUploadManager: ObservableObject {
                     entryCost: entryCost,
                     predictions: predictions,
                     potentialPayout: potentialPayout,
+                    rakebackAmount: rakebackAmount,
+                    rakebackPercentage: rakebackPercentage,
+                    effectiveHouseEdge: effectiveHouseEdge,
                     onProgress: onProgress,
                     onSuccess: onSuccess,
                     onFailure: onFailure
@@ -240,6 +252,9 @@ class EntryUploadManager: ObservableObject {
         entryCost: Int,
         predictions: [String: Int],
         potentialPayout: Int,
+        rakebackAmount: Int,
+        rakebackPercentage: Double,
+        effectiveHouseEdge: Double,
         onProgress: @escaping (Double) -> Void,
         onSuccess: @escaping (String) -> Void,
         onFailure: @escaping (Error) -> Void
@@ -275,7 +290,11 @@ class EntryUploadManager: ObservableObject {
                         "predictions": predictionsForFirestore,
                         "potentialPayout": potentialPayout,
                         "groupSizeAtEntry": groupSize,
-                        "parlayStatus": "pending"
+                        "parlayStatus": "pending",
+                        // NEW: Rakeback metadata
+                        "rakebackAmount": rakebackAmount,
+                        "rakebackPercentage": rakebackPercentage,
+                        "effectiveHouseEdge": effectiveHouseEdge
                     ]
                     
                     // Add theme information if available
@@ -284,7 +303,7 @@ class EntryUploadManager: ObservableObject {
                         entryData["themeName"] = themeName
                     }
                     
-                    print("EntryUploadManager: Adding parlay entry document to Firestore with new structure")
+                    print("EntryUploadManager: Adding parlay entry document to Firestore with rakeback data")
                     
                     // Add the document to Firestore
                     let entriesRef = self.db.collection("competitions").document(competitionId).collection("entries")
@@ -327,7 +346,10 @@ class EntryUploadManager: ObservableObject {
                                         "has_theme": themeId != nil && themeName != nil,
                                         "entry_cost": entryCost,
                                         "predictions_count": predictions.count,
-                                        "potential_payout": potentialPayout
+                                        "potential_payout": potentialPayout,
+                                        "rakeback_amount": rakebackAmount,
+                                        "rakeback_percentage": rakebackPercentage,
+                                        "effective_house_edge": effectiveHouseEdge
                                     ]
                                 )
                                 

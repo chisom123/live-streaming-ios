@@ -8,6 +8,7 @@ struct UnlockView: View {
     @State private var userCoins: Int = 0
     @State private var isLoadingCoins = true
     @State private var showPayView = false
+    @State private var unclaimedRakeback: Int = 0
     @State private var unlockSuccessful = false
     @State private var isUnlocking = false
     @State private var isUploading = false
@@ -46,6 +47,12 @@ struct UnlockView: View {
         return CompetitionPricingCalculator.shared.getParlayMultiplier(
             predictions: selectedPredictions
         )
+    }
+    
+    // NEW: Calculate rakeback for current bet
+    private var rakebackAmount: Int {
+        guard entryCost > 0 else { return 0 }
+        return pricingCalculator.calculateRakeback(entryCost: entryCost)
     }
     
     @Environment(\.dismiss) private var dismiss
@@ -164,57 +171,85 @@ struct UnlockView: View {
                     .foregroundColor(.white.opacity(0.7))
                     .padding(.trailing, 5)
                 
-                HStack(alignment: .center, spacing: 0) {
-                    HStack(spacing: 5) {
-                        Image("coin")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
-                        
-                        if isLoadingCoins {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("\(userCoins)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.horizontal, 15)
-                    .frame(height: 45)
-                    .background(
-                        (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
-                            ? Color(hex: "#F85149").opacity(0.3)
-                            : Color(hex: "#2A3255")
-                    )
-                    .clipShape(
-                        RoundedCorner(
-                            radius: 200,
-                            corners: [.topLeft, .bottomLeft]
-                        )
-                    )
-                    
-                    Button(action: {
-                        showPayView = true
-                        Analytics.shared.track(event: "coins_button_tapped")
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20, weight: .bold))
-                            .frame(width: 45, height: 45)
-                            .foregroundColor(.white)
+                // Coin balance with rakeback badge - now fully tappable
+                Button(action: {
+                    showPayView = true
+                    Analytics.shared.track(event: "coins_button_tapped")
+                }) {
+                    ZStack(alignment: .topTrailing) {
+                        HStack(alignment: .center, spacing: 0) {
+                            HStack(spacing: 5) {
+                                Image("coin")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 19, height: 19)
+                                
+                                if isLoadingCoins {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Text("\(userCoins)")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .padding(.horizontal, 15)
+                            .frame(height: 45)
                             .background(
-                                Color(hex: "#3B4374")
-                                    .clipShape(
-                                        RoundedCorner(
-                                            radius: 200,
-                                            corners: [.topRight, .bottomRight]
-                                        )
+                                (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
+                                    ? Color(hex: "#F85149").opacity(0.3)
+                                    : Color(hex: "#2A3255")
+                            )
+                            .clipShape(
+                                RoundedCorner(
+                                    radius: 200,
+                                    corners: [.topLeft, .bottomLeft]
+                                )
+                            )
+                            
+                            HStack {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .frame(width: 45, height: 45)
+                                    .foregroundColor(.white)
+                                    .background(
+                                        Color(hex: "#3B4374")
+                                            .clipShape(
+                                                RoundedCorner(
+                                                    radius: 200,
+                                                    corners: [.topRight, .bottomRight]
+                                                )
+                                            )
+                                    )
+                            }
+                        }
+                        
+                        // Rakeback badge indicator
+                        if unclaimedRakeback > 0 {
+                            HStack(spacing: 3) {
+                                Image(systemName: "gift.fill")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Text("\(unclaimedRakeback)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        Color.red
                                     )
                             )
+                            .offset(x: -8, y: -8)
+                        }
                     }
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
         .padding(.horizontal, 20)
@@ -628,7 +663,11 @@ struct UnlockView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding()
-                .background(Color.white.opacity(0.1))
+                .background(
+                    (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
+                        ? Color(hex: "#F85149").opacity(0.3)
+                        : Color.white.opacity(0.1)
+                )
                 
                 // Quick Select Amounts
                 let suggestedAmounts = generateSuggestedAmounts()
@@ -954,11 +993,20 @@ struct UnlockView: View {
                     return
                 }
                 
-                if let coins = document.data()?["coins"] as? Int {
+                let data = document.data() ?? [:]
+                
+                if let coins = data["coins"] as? Int {
                     self.userCoins = coins
                 } else {
                     print("Coins field not found or invalid type, defaulting to 0")
                     self.userCoins = 0
+                }
+                
+                // Fetch unclaimed rakeback
+                if let unclaimed = data["unclaimedRakeback"] as? Int {
+                    self.unclaimedRakeback = unclaimed
+                } else {
+                    self.unclaimedRakeback = 0
                 }
             }
         }
@@ -967,7 +1015,7 @@ struct UnlockView: View {
     // Removed: updateStakeAmountForNewGroupSize method since we don't auto-update
     
     private func placeParlayBet() {
-        guard userCoins >= entryCost && !selectedPredictions.isEmpty && entryCost > 0 && !isUnlocking else { return } // Added entryCost > 0 check
+        guard userCoins >= entryCost && !selectedPredictions.isEmpty && entryCost > 0 && !isUnlocking else { return }
         
         isUnlocking = true
         
@@ -981,12 +1029,52 @@ struct UnlockView: View {
         
         let memberDocRef = db.collection("competitions").document(competitionId).collection("members").document(currentUser.uid)
         
-        memberDocRef.updateData(["coins": userCoins - entryCost]) { error in
+        // NEW: Calculate rakeback before deducting coins
+        let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
+        
+        // Use transaction to atomically deduct coins AND add rakeback
+        db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let memberDoc: DocumentSnapshot
+            do {
+                try memberDoc = transaction.getDocument(memberDocRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+            
+            guard let data = memberDoc.data() else {
+                let error = NSError(domain: "AppErrorDomain", code: -1, userInfo: [NSLocalizedDescriptionKey: "Member document does not exist"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            let currentCoins = data["coins"] as? Int ?? 0
+            let currentUnclaimedRakeback = data["unclaimedRakeback"] as? Int ?? 0
+            let currentTotalRakeback = data["totalRakebackEarned"] as? Int ?? 0
+            
+            // Deduct bet amount
+            let newCoins = currentCoins - self.entryCost
+            
+            // Add rakeback to unclaimed
+            let newUnclaimedRakeback = currentUnclaimedRakeback + rakebackEarned
+            let newTotalRakeback = currentTotalRakeback + rakebackEarned
+            
+            var updates: [String: Any] = ["coins": newCoins]
+            
+            if rakebackEarned > 0 {
+                updates["unclaimedRakeback"] = newUnclaimedRakeback
+                updates["totalRakebackEarned"] = newTotalRakeback
+            }
+            
+            transaction.updateData(updates, forDocument: memberDocRef)
+            
+            return nil
+        }) { (object, error) in
             DispatchQueue.main.async {
                 self.isUnlocking = false
                 
                 if let error = error {
-                    print("Error deducting coins: \(error)")
+                    print("Error in bet placement transaction: \(error)")
                     Analytics.shared.trackError(
                         message: "Parlay bet coin deduction failed",
                         properties: ["error": error.localizedDescription]
@@ -994,16 +1082,25 @@ struct UnlockView: View {
                     return
                 }
                 
-                self.userCoins -= entryCost
+                // Update local state
+                self.userCoins -= self.entryCost
+                
+                // Track analytics with rakeback info
                 Analytics.shared.track(
                     event: "parlay_bet_placed",
                     properties: [
-                        "stake": entryCost,
-                        "predictions_count": selectedPredictions.count,
-                        "potential_payout": estimatedPayout,
-                        "multiplier": parlayMultiplier
+                        "stake": self.entryCost,
+                        "predictions_count": self.selectedPredictions.count,
+                        "potential_payout": self.estimatedPayout,
+                        "multiplier": self.parlayMultiplier,
+                        "rakeback_earned": rakebackEarned
                     ]
                 )
+                
+                if rakebackEarned > 0 {
+                    print("💰 Rakeback earned: \(rakebackEarned) coins")
+                }
+                
                 self.unlockSuccessful = true
                 self.uploadEntryAfterBet()
             }
@@ -1020,6 +1117,11 @@ struct UnlockView: View {
         
         isUploading = true
         uploadProgress = 0.0
+        
+        // Calculate rakeback info for entry metadata
+        let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
+        let config = pricingCalculator.getCurrentConfig()
+        let effectiveHouseEdge = config.houseEdge - (config.houseEdge * config.rakebackPercentage)
                 
         EntryUploadManager.shared.uploadParlayEntry(
             image: image,
@@ -1034,6 +1136,9 @@ struct UnlockView: View {
             entryCost: entryCost,
             predictions: selectedPredictions,
             potentialPayout: estimatedPayout,
+            rakebackAmount: rakebackEarned, // NEW: Pass rakeback info
+            rakebackPercentage: config.rakebackPercentage, // NEW
+            effectiveHouseEdge: effectiveHouseEdge, // NEW
             onProgress: { progress in
                 self.uploadProgress = progress * 100
             },

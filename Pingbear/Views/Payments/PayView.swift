@@ -13,6 +13,12 @@ struct PayView: View {
     @State private var isGeneratingToken = false
     @State private var selectedPackage: Int? = nil
     
+    // NEW: Rakeback state
+    @State private var unclaimedRakeback: Int = 0
+    @State private var totalRakebackEarned: Int = 0
+    @State private var isClaimingRakeback = false
+    @State private var showRakebackSuccess = false
+    
     var competition: Competition
     var competitionId: String
     var entryDocId: String
@@ -36,26 +42,38 @@ struct PayView: View {
                 // Header
                 headerView
                 
-                // Title
-                Text("Get Coins")
-                    .font(.system(size: 25, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.top, 40)
-                
-                // Main Content Area
-                if shouldShowWebPurchase {
-                    // Show only custom input for web purchase users
-                    customCoinInputView
-                        .padding(.horizontal, 20)
-                        .padding(.top, 40)
-                } else {
-                    // Show standard packages for non-web purchase users
-                    coinPackagesView
-                        .padding(.top, 40)
-                        .padding(.horizontal, 20)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // NEW: Rakeback Section (at top)
+                        if unclaimedRakeback > 0 {
+                            rakebackSection
+                        }
+                        
+                        HStack {
+                            // Title
+                            Text("Get Coins")
+                                .font(.system(size: 25, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.top, unclaimedRakeback > 0 ? 0 : 40)
+                                .padding(.leading, unclaimedRakeback > 0 ? 20 : 0)
+                            
+                            if unclaimedRakeback > 0 {
+                                Spacer()
+                            }
+                        }
+                        
+                        // Main Content Area
+                        if shouldShowWebPurchase {
+                            // Show only custom input for web purchase users
+                            customCoinInputView
+                                .padding(.horizontal, 20)
+                        } else {
+                            // Show standard packages for non-web purchase users
+                            coinPackagesView
+                                .padding(.horizontal, 20)
+                        }
+                    }
                 }
-                
-                Spacer()
                 
                 // Privacy and Terms
                 privacyAndTerms
@@ -64,13 +82,125 @@ struct PayView: View {
             .onAppear {
                 viewModel.competitionId = self.competitionId
                 viewModel.entryDocId = self.entryDocId
-                fetchUserCoins()
+                fetchUserCoinsAndRakeback()
                 NotificationQueueManager.shared.processQueuedNotifications()
                 Analytics.shared.trackScreen(name: "coins_view")
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
                 // Refresh when user returns to app (possibly from web purchase)
                 handleReturnFromWeb()
+            }
+            .overlay(
+                // Success animation overlay
+                Group {
+                    if showRakebackSuccess {
+                        rakebackSuccessOverlay
+                    }
+                }
+            )
+        }
+    }
+    
+    // MARK: - NEW: Rakeback Section
+    
+    private var rakebackSection: some View {
+        VStack(spacing: 16) {
+            // Header with icon
+            HStack {
+                
+                Text("Bonus Available")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+            }
+            
+            // Rakeback Amount Display
+            HStack(spacing: 12) {
+                Image("coin")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40)
+                
+                Text("\(unclaimedRakeback)")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+            }
+            
+            // Claim Button
+            Button(action: {
+                claimRakeback()
+            }) {
+                HStack {
+                    if isClaimingRakeback {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Claim Bonus")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .background(Color(hex: "#008000"))
+                .cornerRadius(200)
+            }
+            .disabled(isClaimingRakeback)
+            
+            // Lifetime Stats
+            if totalRakebackEarned > 0 {
+                HStack {
+                    Text("Bonus grows as you place predictions")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.6))
+                    
+                    Spacer()
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "#1A2245"))
+        )
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+    }
+    
+    // MARK: - NEW: Rakeback Success Overlay
+    
+    private var rakebackSuccessOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                // Success icon
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 60, weight: .bold))
+                    .foregroundColor(Color(hex: "#FFF"))
+                
+                // Success message
+                Text("Bonus Claimed")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .padding(40)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: "#1A2245"))
+            )
+            .padding(.horizontal, 40)
+        }
+        .onAppear {
+            // Auto-dismiss after 2 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation {
+                    showRakebackSuccess = false
+                }
             }
         }
     }
@@ -253,6 +383,150 @@ struct PayView: View {
         .padding(.vertical, 20)
     }
     
+    // MARK: - NEW: Rakeback Functions
+    
+    private func claimRakeback() {
+        guard unclaimedRakeback > 0 && !isClaimingRakeback else { return }
+        
+        isClaimingRakeback = true
+        
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No authenticated user")
+            isClaimingRakeback = false
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let memberRef = db.collection("competitions")
+            .document(competitionId)
+            .collection("members")
+            .document(userId)
+        
+        // Use transaction to atomically move rakeback to coins
+        db.runTransaction({ (transaction, errorPointer) -> Any? in
+            let memberDoc: DocumentSnapshot
+            do {
+                try memberDoc = transaction.getDocument(memberRef)
+            } catch let fetchError as NSError {
+                errorPointer?.pointee = fetchError
+                return nil
+            }
+            
+            guard let data = memberDoc.data() else {
+                let error = NSError(domain: "AppErrorDomain", code: -1, userInfo: [NSLocalizedDescriptionKey: "Member document does not exist"])
+                errorPointer?.pointee = error
+                return nil
+            }
+            
+            let currentCoins = data["coins"] as? Int ?? 0
+            let currentUnclaimed = data["unclaimedRakeback"] as? Int ?? 0
+            
+            // Move unclaimed rakeback to coins
+            let newCoins = currentCoins + currentUnclaimed
+            
+            transaction.updateData([
+                "coins": newCoins,
+                "unclaimedRakeback": 0,
+                "lastRakebackClaim": FieldValue.serverTimestamp()
+            ], forDocument: memberRef)
+            
+            return currentUnclaimed
+        }) { (claimedAmount, error) in
+            DispatchQueue.main.async {
+                self.isClaimingRakeback = false
+                
+                if let error = error {
+                    print("Error claiming rakeback: \(error)")
+                    Analytics.shared.trackError(
+                        message: "Rakeback claim failed",
+                        properties: ["error": error.localizedDescription]
+                    )
+                    return
+                }
+                
+                if let claimed = claimedAmount as? Int {
+                    // Update local state
+                    let previousUnclaimed = self.unclaimedRakeback
+                    self.userCoins += claimed
+                    self.unclaimedRakeback = 0
+                    
+                    // Show success animation
+                    withAnimation {
+                        self.showRakebackSuccess = true
+                    }
+                    
+                    // Haptic feedback
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    
+                    // Track analytics
+                    Analytics.shared.track(
+                        event: "rakeback_claimed",
+                        properties: [
+                            "amount": claimed,
+                            "competition_id": self.competitionId,
+                            "total_lifetime": self.totalRakebackEarned
+                        ]
+                    )
+                    
+                    print("💰 Successfully claimed \(claimed) coins rakeback")
+                }
+            }
+        }
+    }
+    
+    private func fetchUserCoinsAndRakeback() {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("No authenticated user found")
+            isLoadingCoins = false
+            return
+        }
+        
+        let db = Firestore.firestore()
+        
+        // Fetch coins AND rakeback from the member document
+        db.collection("competitions").document(competitionId).collection("members").document(currentUser.uid).getDocument { document, error in
+            DispatchQueue.main.async {
+                isLoadingCoins = false
+                
+                if let error = error {
+                    print("Error fetching member data: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let document = document, document.exists else {
+                    print("Member document does not exist")
+                    return
+                }
+                
+                let data = document.data() ?? [:]
+                
+                // Update coins
+                if let coins = data["coins"] as? Int {
+                    self.userCoins = coins
+                } else {
+                    print("Coins field not found, defaulting to 0")
+                    self.userCoins = 0
+                }
+                
+                // NEW: Update rakeback
+                if let unclaimed = data["unclaimedRakeback"] as? Int {
+                    self.unclaimedRakeback = unclaimed
+                } else {
+                    self.unclaimedRakeback = 0
+                }
+                
+                if let total = data["totalRakebackEarned"] as? Int {
+                    self.totalRakebackEarned = total
+                } else {
+                    self.totalRakebackEarned = 0
+                }
+                
+                print("Fetched coins: \(self.userCoins), unclaimed rakeback: \(self.unclaimedRakeback)")
+            }
+        }
+    }
+    
     // MARK: - Web Purchase Function
     private func openWebPurchase(coinAmount: Int) {
         guard !isGeneratingToken else { return }
@@ -317,8 +591,8 @@ struct PayView: View {
     }
     
     private func handleReturnFromWeb() {
-        // Refresh coin balance when user returns from web
-        fetchUserCoins()
+        // Refresh coin balance and rakeback when user returns from web
+        fetchUserCoinsAndRakeback()
         
         // Check for recent purchases
         Functions.functions().httpsCallable("checkPurchaseStatus").call([
@@ -356,37 +630,8 @@ struct PayView: View {
     }
     
     private func fetchUserCoins() {
-        guard let currentUser = Auth.auth().currentUser else {
-            print("No authenticated user found")
-            isLoadingCoins = false
-            return
-        }
-        
-        let db = Firestore.firestore()
-        
-        // Fetch coins from the member document in the competition
-        db.collection("competitions").document(competitionId).collection("members").document(currentUser.uid).getDocument { document, error in
-            DispatchQueue.main.async {
-                isLoadingCoins = false
-                
-                if let error = error {
-                    print("Error fetching member coins: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let document = document, document.exists else {
-                    print("Member document does not exist")
-                    return
-                }
-                
-                if let coins = document.data()?["coins"] as? Int {
-                    self.userCoins = coins
-                } else {
-                    print("Coins field not found or invalid type, defaulting to 0")
-                    self.userCoins = 0
-                }
-            }
-        }
+        // Redirect to the new function that fetches both
+        fetchUserCoinsAndRakeback()
     }
 }
 

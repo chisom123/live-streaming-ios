@@ -44,6 +44,9 @@ struct CompDetails: View {
     @State private var showPayView = false
     @StateObject private var payViewModel = PayViewModel()
     
+    // NEW: Rakeback state
+    @State private var unclaimedRakeback: Int = 0
+    
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
     
@@ -77,60 +80,88 @@ struct CompDetails: View {
                     
                     Spacer()
                     
-                    HStack(alignment: .center, spacing: 0) {
-                        HStack {
-                            Image("coin")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 19, height: 19)
-                                .padding(.leading, 15)
-                            
-                            if isLoadingCoins {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            } else {
-                                Text("\(userCoins)")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .lineLimit(1)
-                            }
-                            
-                            Spacer()
-                        }
-                        .frame(height: 45)
-                        .background(
-                            Color(hex: "#2A3255")
-                                .clipShape(
-                                    RoundedCorner(
-                                        radius: 200,
-                                        corners: [.topLeft, .bottomLeft]
-                                    )
-                                )
+                    // NEW: Coin balance with rakeback badge - now fully tappable
+                    Button(action: {
+                        showPayView = true
+                        Analytics.shared.trackTap(
+                            elementId: "coins_button_tapped",
+                            screenName: "competition_details"
                         )
-                        
-                        Button(action: {
-                            showPayView = true
-                            Analytics.shared.trackTap(
-                                elementId: "coins_button_header",
-                                screenName: "competition_details"
-                            )
-                        }) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .bold))
-                                .frame(width: 45, height: 45)
-                                .foregroundColor(.white)
+                    }) {
+                        ZStack(alignment: .topTrailing) {
+                            HStack(alignment: .center, spacing: 0) {
+                                HStack {
+                                    Image("coin")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 19, height: 19)
+                                        .padding(.leading, 15)
+                                    
+                                    if isLoadingCoins {
+                                        ProgressView()
+                                            .scaleEffect(0.8)
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    } else {
+                                        Text("\(userCoins)")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                    }
+                                    
+                                    Spacer()
+                                }
+                                .frame(height: 45)
                                 .background(
-                                    Color(hex: "#3B4374")
+                                    Color(hex: "#2A3255")
                                         .clipShape(
                                             RoundedCorner(
                                                 radius: 200,
-                                                corners: [.topRight, .bottomRight]
+                                                corners: [.topLeft, .bottomLeft]
                                             )
                                         )
                                 )
+                                
+                                HStack {
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .frame(width: 45, height: 45)
+                                        .foregroundColor(.white)
+                                        .background(
+                                            Color(hex: "#3B4374")
+                                                .clipShape(
+                                                    RoundedCorner(
+                                                        radius: 200,
+                                                        corners: [.topRight, .bottomRight]
+                                                    )
+                                                )
+                                        )
+                                }
+                            }
+                            
+                            // NEW: Rakeback badge indicator
+                            if unclaimedRakeback > 0 {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "gift.fill")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text("\(unclaimedRakeback)")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 3)
+                                .background(
+                                    Capsule()
+                                        .fill(
+                                            Color.red
+                                        )
+                                )
+                                .offset(x: -8, y: -8)
+                            }
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal, 40)
                     
                     Spacer()
@@ -538,6 +569,8 @@ struct CompDetails: View {
             screenName: "competition_details"
         )
     }
+    
+    // NEW: Updated to fetch rakeback as well
     private func fetchUserCoins() {
         guard let currentUser = Auth.auth().currentUser else {
             print("No authenticated user found")
@@ -547,7 +580,7 @@ struct CompDetails: View {
         
         let db = Firestore.firestore()
         
-        // Fetch coins from the member document in the competition
+        // Fetch coins and rakeback from the member document in the competition
         db.collection("competitions").document(competition.id).collection("members").document(currentUser.uid).getDocument { document, error in
             DispatchQueue.main.async {
                 isLoadingCoins = false
@@ -562,11 +595,20 @@ struct CompDetails: View {
                     return
                 }
                 
-                if let coins = document.data()?["coins"] as? Int {
+                let data = document.data() ?? [:]
+                
+                if let coins = data["coins"] as? Int {
                     self.userCoins = coins
                 } else {
                     print("Coins field not found or invalid type, defaulting to 0")
                     self.userCoins = 0
+                }
+                
+                // NEW: Fetch unclaimed rakeback
+                if let unclaimed = data["unclaimedRakeback"] as? Int {
+                    self.unclaimedRakeback = unclaimed
+                } else {
+                    self.unclaimedRakeback = 0
                 }
             }
         }

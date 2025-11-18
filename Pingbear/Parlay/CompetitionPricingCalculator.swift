@@ -9,6 +9,7 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Private Properties
     private var cachedHouseEdge: Double = 0.10 // Default fallback
+    private var cachedRakebackPercentage: Double = 0.0 // Default: no rakeback
     private var lastFetchTime: Date?
     private let cacheExpirationInterval: TimeInterval = 60 // 1 minute
     private var cachedStarAccuracyRates: [Int: Double] = [
@@ -120,8 +121,20 @@ class CompetitionPricingCalculator: ObservableObject {
             }
         }
         
+        // NEW: Update rakeback percentage
+        if let rakebackPercentage = data["rakeback_percentage"] as? Double {
+            let clampedValue = max(0.0, min(1.0, rakebackPercentage)) // 0-100% of house edge
+            if rakebackPercentage != clampedValue {
+                print("⚠️ Rakeback percentage value \(rakebackPercentage) was clamped to \(clampedValue)")
+            }
+            if self.cachedRakebackPercentage != clampedValue {
+                self.cachedRakebackPercentage = clampedValue
+                hasChanges = true
+            }
+        }
+        
         if hasChanges {
-            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge)")
+            print("✅ Updated pricing config - House Edge: \(self.cachedHouseEdge), Rakeback: \(self.cachedRakebackPercentage * 100)%")
             self.objectWillChange.send()
         }
         
@@ -133,7 +146,32 @@ class CompetitionPricingCalculator: ObservableObject {
         return cachedHouseEdge
     }
     
-    // MARK: - NEW: Star Rating Methods
+    private func getRakebackPercentage() -> Double {
+        return cachedRakebackPercentage
+    }
+    
+    // MARK: - NEW: Rakeback Calculation
+    
+    /// Calculate rakeback amount for a given entry cost
+    /// - Parameter entryCost: The amount of coins being staked
+    /// - Returns: Rakeback amount in coins (floored, minimum 0)
+    func calculateRakeback(entryCost: Int) -> Int {
+        let houseEdge = getHouseEdge()
+        let rakebackPercentage = getRakebackPercentage()
+        
+        // Calculate house edge taken
+        let houseEdgeTaken = Double(entryCost) * houseEdge
+        
+        // Calculate rakeback (percentage of house edge)
+        let rakebackAmount = houseEdgeTaken * rakebackPercentage
+        
+        // Floor and only award if >= 1 coin
+        let flooredRakeback = Int(floor(rakebackAmount))
+        
+        return flooredRakeback >= 1 ? flooredRakeback : 0
+    }
+    
+    // MARK: - Star Rating Methods
     
     func getAccuracyRate(for starRating: Int) -> Double {
         return cachedStarAccuracyRates[starRating] ?? 0.5 // Fallback to 50%
@@ -170,7 +208,7 @@ class CompetitionPricingCalculator: ObservableObject {
         let multiplier = getParlayMultiplier(predictions: predictions)
         let finalPayout = Double(entryCost) * multiplier
         
-        return Int(round(finalPayout))
+        return Int(floor(finalPayout))
     }
     
     // MARK: - Manual Refresh (optional)
@@ -203,8 +241,8 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Utility Methods
     
-    func getCurrentConfig() -> (houseEdge: Double, starAccuracyRates: [Int: Double], isOnline: Bool, lastUpdate: Date?) {
-        return (cachedHouseEdge, cachedStarAccuracyRates, !isOffline, lastFetchTime)
+    func getCurrentConfig() -> (houseEdge: Double, starAccuracyRates: [Int: Double], rakebackPercentage: Double, isOnline: Bool, lastUpdate: Date?) {
+        return (cachedHouseEdge, cachedStarAccuracyRates, cachedRakebackPercentage, !isOffline, lastFetchTime)
     }
     
     /// Force reconnection (useful for handling app foreground events)
