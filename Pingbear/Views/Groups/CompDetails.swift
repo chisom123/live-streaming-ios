@@ -39,14 +39,6 @@ struct CompDetails: View {
     @State private var hasUserPostedFirstEntry = false
     @StateObject private var myFriendsModel = MyFriendsModel()
     
-    @State private var userCoins: Int = 0
-    @State private var isLoadingCoins = true
-    @State private var showPayView = false
-    @StateObject private var payViewModel = PayViewModel()
-    
-    // NEW: Rakeback state
-    @State private var unclaimedRakeback: Int = 0
-    
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
     
@@ -80,89 +72,25 @@ struct CompDetails: View {
                     
                     Spacer()
                     
-                    // NEW: Coin balance with rakeback badge - now fully tappable
                     Button(action: {
-                        showPayView = true
+                        isEditingCompetition = true
                         Analytics.shared.trackTap(
-                            elementId: "coins_button_tapped",
+                            elementId: "edit_competition_name_button",
                             screenName: "competition_details"
                         )
                     }) {
-                        ZStack(alignment: .topTrailing) {
-                            HStack(alignment: .center, spacing: 0) {
-                                HStack {
-                                    Image("coin")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 19, height: 19)
-                                        .padding(.leading, 15)
-                                    
-                                    if isLoadingCoins {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    } else {
-                                        Text("\(userCoins)")
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .lineLimit(1)
-                                    }
-                                    
-                                    Spacer()
-                                }
-                                .frame(height: 45)
-                                .background(
-                                    Color(hex: "#2A3255")
-                                        .clipShape(
-                                            RoundedCorner(
-                                                radius: 200,
-                                                corners: [.topLeft, .bottomLeft]
-                                            )
-                                        )
+                        Text(competition.description == "Competition" ? "Add Competition Name" : competition.description)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .lineLimit(1)
+                            .foregroundColor(.white)
+                            .padding(.horizontal)
+                            .onAppear {
+                                Analytics.shared.trackCompetition(
+                                    action: "view",
+                                    competitionId: competition.id
                                 )
-                                
-                                HStack {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 20, weight: .bold))
-                                        .frame(width: 45, height: 45)
-                                        .foregroundColor(.white)
-                                        .background(
-                                            Color(hex: "#3B4374")
-                                                .clipShape(
-                                                    RoundedCorner(
-                                                        radius: 200,
-                                                        corners: [.topRight, .bottomRight]
-                                                    )
-                                                )
-                                        )
-                                }
                             }
-                            
-                            // NEW: Rakeback badge indicator
-                            if unclaimedRakeback > 0 {
-                                HStack(spacing: 3) {
-                                    Image(systemName: "gift.fill")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .foregroundColor(.white)
-                                    
-                                    Text("\(unclaimedRakeback)")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                }
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 3)
-                                .background(
-                                    Capsule()
-                                        .fill(
-                                            Color.red
-                                        )
-                                )
-                                .offset(x: -8, y: -8)
-                            }
-                        }
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .padding(.horizontal, 40)
                     
                     Spacer()
                     
@@ -183,27 +111,6 @@ struct CompDetails: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                
-                Button(action: {
-                    isEditingCompetition = true
-                    Analytics.shared.trackTap(
-                        elementId: "edit_competition_name_button",
-                        screenName: "competition_details"
-                    )
-                }) {
-                    Text(competition.description == "Competition" ? "Add Competition Name" : competition.description)
-                        .font(.system(size: 20, weight: .bold, design: .default))
-                        .lineLimit(1)
-                        .foregroundColor(.white.opacity(0.9))
-                        .onAppear {
-                            Analytics.shared.trackCompetition(
-                                action: "view",
-                                competitionId: competition.id
-                            )
-                        }
-                }
-                .padding(.vertical)
-                .padding(.horizontal, 20)
                 
                 HStack(spacing: 10) {
                     Button(action: {
@@ -269,7 +176,7 @@ struct CompDetails: View {
                 .padding(.horizontal, 10)
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
                 .padding(.horizontal, 20)
                 
                 if isLoading {
@@ -385,7 +292,6 @@ struct CompDetails: View {
             fetchData()
             NotificationQueueManager.shared.processQueuedNotifications()
             fetchCurrentUserProfilePictureUrl()
-            fetchUserCoins()
             
             entryViewModel.setupListeners()
         }
@@ -405,8 +311,6 @@ struct CompDetails: View {
                 // Process notifications immediately for existing users too
                 NotificationQueueManager.shared.processQueuedNotifications()
             }
-            
-            fetchUserCoins()
         }
         // ✅ KEEP: Only Camera as fullScreenCover (true modal)
         .fullScreenCover(isPresented: $isCameraPresented, content: {
@@ -425,7 +329,6 @@ struct CompDetails: View {
         }
         .sheet(item: $selectedUserForPhotos, onDismiss: {
             chatIndicator.refresh()
-            fetchUserCoins()
         }) { selection in
             UserPhotosView(
                 userId: selection.user.userName == "Me" ? currentUserId : selection.user.id,
@@ -433,9 +336,6 @@ struct CompDetails: View {
                 competitionId: selection.competitionId,
                 userProfilePictureUrl: selection.user.profilePictureUrl
             )
-        }
-        .sheet(isPresented: $showPayView, onDismiss: fetchUserCoins) {
-            PayView(viewModel: payViewModel, competition: competition, competitionId: competition.id, entryDocId: "")
         }
         .onDisappear {
             entryViewModel.removeListeners()
@@ -478,12 +378,6 @@ struct CompDetails: View {
                         }
                     })
                 )
-            }
-        }
-        .onChange(of: payViewModel.purchaseCompleted) { completed in
-            if completed {
-                fetchUserCoins()
-                payViewModel.purchaseCompleted = false
             }
         }
     }
@@ -568,50 +462,6 @@ struct CompDetails: View {
             elementId: "add_player_prompt",
             screenName: "competition_details"
         )
-    }
-    
-    // NEW: Updated to fetch rakeback as well
-    private func fetchUserCoins() {
-        guard let currentUser = Auth.auth().currentUser else {
-            print("No authenticated user found")
-            isLoadingCoins = false
-            return
-        }
-        
-        let db = Firestore.firestore()
-        
-        // Fetch coins and rakeback from the member document in the competition
-        db.collection("competitions").document(competition.id).collection("members").document(currentUser.uid).getDocument { document, error in
-            DispatchQueue.main.async {
-                isLoadingCoins = false
-                
-                if let error = error {
-                    print("Error fetching member coins: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let document = document, document.exists else {
-                    print("Member document does not exist")
-                    return
-                }
-                
-                let data = document.data() ?? [:]
-                
-                if let coins = data["coins"] as? Int {
-                    self.userCoins = coins
-                } else {
-                    print("Coins field not found or invalid type, defaulting to 0")
-                    self.userCoins = 0
-                }
-                
-                // NEW: Fetch unclaimed rakeback
-                if let unclaimed = data["unclaimedRakeback"] as? Int {
-                    self.unclaimedRakeback = unclaimed
-                } else {
-                    self.unclaimedRakeback = 0
-                }
-            }
-        }
     }
     private func fetchCurrentUserProfilePictureUrl() {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
