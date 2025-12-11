@@ -336,7 +336,7 @@ struct FullScreenPhotoView: View {
                 }
                 
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -408,7 +408,7 @@ struct FullScreenPhotoView: View {
                 }
                 
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -481,7 +481,7 @@ struct FullScreenPhotoView: View {
                 }
                 
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     

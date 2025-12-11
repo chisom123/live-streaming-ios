@@ -140,7 +140,7 @@ struct PredictionsDetailView: View {
                 predictionsList
                 
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -200,7 +200,7 @@ struct PredictionsDetailView: View {
                 
                 // Entry - Smaller, supporting info
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -262,7 +262,7 @@ struct PredictionsDetailView: View {
                 predictionsList
                 
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
