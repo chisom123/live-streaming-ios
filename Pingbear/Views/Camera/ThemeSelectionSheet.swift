@@ -393,13 +393,12 @@ struct AddThemeSheet: View {
             Text(theme)
                 .font(.system(size: 16, weight: .bold))
                 .foregroundColor(Color.white)
-                .frame(maxWidth: .infinity)
                 .lineLimit(1)
                 .padding(.horizontal, 10)
+                .frame(maxWidth: .infinity)
                 .frame(height: 65)
-                .background(Color.clear)
+                .contentShape(Rectangle()) // This makes the entire frame tappable
         }
-        .buttonStyle(PlainButtonStyle())
     }
     
     private func createTheme() {
