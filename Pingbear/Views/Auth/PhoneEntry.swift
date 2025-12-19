@@ -169,7 +169,7 @@ struct PhoneEntryView: View {
                             .foregroundColor(Color(hex: "#fff"))
                             .cornerRadius(200)
                     }
-                    .padding(.top, 20)
+                    .padding(.vertical, 20)
                 }
             }
             .frame(maxWidth: .infinity)
