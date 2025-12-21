@@ -41,34 +41,34 @@ struct CustomShareSheet: View {
             // Share options
             VStack(spacing: 25) {
                 // Instagram DM
-                Button(action: {
-                    shareToInstagramDM()
-                }) {
-                    HStack(spacing: 15) {
-                        Image("instagram")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(.white)
-                            .frame(width: 22, height: 22)
-                            .padding(8)
-                            .background(Color(hex: "#DD2A7B"))
-                            .clipShape(Circle())
-                        
-                        Text("Share via Instagram DM")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                        
-                        Spacer()
-                        
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(Color(hex: "#D3D3D3"))
-                            .font(.system(size: 15, weight: .bold))
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 20)
-                    .background(Color(hex: "#1A2245"))
-                    .cornerRadius(10)
-                }
+//                Button(action: {
+//                    shareToInstagramDM()
+//                }) {
+//                    HStack(spacing: 15) {
+//                        Image("instagram")
+//                            .resizable()
+//                            .renderingMode(.template)
+//                            .foregroundColor(.white)
+//                            .frame(width: 22, height: 22)
+//                            .padding(8)
+//                            .background(Color(hex: "#DD2A7B"))
+//                            .clipShape(Circle())
+//                        
+//                        Text("Share via Instagram DM")
+//                            .font(.system(size: 16, weight: .semibold))
+//                            .foregroundColor(.white)
+//                        
+//                        Spacer()
+//                        
+//                        Image(systemName: "chevron.right")
+//                            .foregroundColor(Color(hex: "#D3D3D3"))
+//                            .font(.system(size: 15, weight: .bold))
+//                    }
+//                    .padding(.horizontal, 20)
+//                    .padding(.vertical, 20)
+//                    .background(Color(hex: "#1A2245"))
+//                    .cornerRadius(10)
+//                }
                 
                 // iMessage
                 Button(action: {
