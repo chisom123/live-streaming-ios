@@ -353,25 +353,25 @@ struct ThemePhotoCard: View {
                 .cornerRadius(20)
                 
                 // My Predictions Button (Only for entry creator with parlay)
-                if isEntryCreator && photo.parlayStatus != nil {
-                    Button(action: onPredictionsTap) {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(parlayStatusColor)
-                                .frame(width: 10, height: 10)
-                            
-                            Text("Predictions")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .truncationMode(.tail)
-                                .lineLimit(1)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(parlayStatusColor.opacity(0.15))
-                        .cornerRadius(20)
-                    }
-                }
+//                if isEntryCreator && photo.parlayStatus != nil {
+//                    Button(action: onPredictionsTap) {
+//                        HStack(spacing: 6) {
+//                            Circle()
+//                                .fill(parlayStatusColor)
+//                                .frame(width: 10, height: 10)
+//                            
+//                            Text("Predictions")
+//                                .font(.system(size: 16, weight: .bold))
+//                                .foregroundColor(.white)
+//                                .truncationMode(.tail)
+//                                .lineLimit(1)
+//                        }
+//                        .padding(.horizontal, 10)
+//                        .padding(.vertical, 5)
+//                        .background(parlayStatusColor.opacity(0.15))
+//                        .cornerRadius(20)
+//                    }
+//                }
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)

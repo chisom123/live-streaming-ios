@@ -90,93 +90,209 @@ struct FullScreenPhotoView: View {
                 Spacer()
             }
             
-            UltraSmoothBottomSheet(
-                minHeight: PhotoViewConstants.minHeight,
-                midHeight: PhotoViewConstants.midHeight(withFooter: true),
-                maxHeight: PhotoViewConstants.maxHeight(withFooter: true),
-                bottomPadding: PhotoViewConstants.starFooterHeight
-            ) {
-                VStack(spacing: 0) {
-                    // Centered handle
-                    VStack {
-                        RoundedRectangle(cornerRadius: 200)
-                            .fill(Color.white.opacity(0.3))
-                            .frame(width: 40, height: 5)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical)
-                    
-                    HStack {
-                        Text("Ratings (\(interactionService.interactions.count))")
-                            .foregroundColor(.white.opacity(0.7))
-                            .font(.system(size: 15, weight: .bold))
-                            .padding(.bottom, 10)
+            // Bottom sheet - different content for entry creator vs raters
+            if isEntryCreator && parlayStatus != nil {
+                // Entry Creator View - Predictions focused
+                UltraSmoothBottomSheet(
+                    minHeight: PhotoViewConstants.minHeight,
+                    midHeight: UIScreen.main.bounds.height * 0.5, // Start at 50%
+                    maxHeight: PhotoViewConstants.maxHeight(withFooter: false),
+                    bottomPadding: 0
+                ) {
+                    VStack(spacing: 0) {
+                        // Centered handle
+                        VStack {
+                            RoundedRectangle(cornerRadius: 200)
+                                .fill(Color.white.opacity(0.3))
+                                .frame(width: 40, height: 5)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical)
                         
-                        Spacer()
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // Content
-                    if interactionService.isLoadingInteractions {
-                        EmptyView()
-                    } else {
+                        // Scrollable content
                         ScrollView {
-                            VStack(spacing: 0) {
-                                ForEach(interactionService.interactions) { interaction in
-                                    VStack(spacing: 0) {
-                                        HStack {
-                                            ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
-                                            
-                                            Text(interaction.userName)
-                                                .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(.white)
-                                                .lineLimit(1)
-                                                .padding(.leading, 10)
-                                            
-                                            Spacer()
-                                            
-                                            HStack(spacing: 6) {
-                                                Text("\(interaction.rating)")
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                
-                                                Image(systemName: "star.fill")
-                                                    .resizable()
-                                                    .frame(width: 16, height: 16)
-                                                    .foregroundColor(.white)
-                                            }
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 5)
-                                            .background(Color(hex: "#DAA520"))
-                                            .cornerRadius(20)
-                                        }
-                                        .padding(.horizontal, 20)
-                                        .padding(.vertical, 15)
+                            VStack(spacing: 16) {
+                                // Single container for both Predictions and Other Ratings
+                                VStack(spacing: 12) {
+                                    HStack {
+                                        Text("My Predictions")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
                                         
-                                        if interaction.id != interactionService.interactions.last?.id {
+                                        Spacer()
+                                        
+                                        parlayStatusBadge
+                                    }
+                                    .padding(.bottom, 8)
+                                    
+                                    if parlayStatus == "pending" {
+                                        parlayProgressViewInline
+                                    } else if parlayStatus == "won" {
+                                        parlayWonViewInline
+                                    } else if parlayStatus == "lost" {
+                                        parlayLostViewInline
+                                    }
+                                    
+                                    // Other Ratings Section (inside same container)
+                                    let predictedUserIds = Set(parlayPredictions.keys)
+                                    let otherRatings = interactionService.interactions.filter { !predictedUserIds.contains($0.userId) }
+                                    
+                                    if !otherRatings.isEmpty {
+                                        VStack(spacing: 0) {
                                             Divider()
                                                 .background(Color.white.opacity(0.2))
+                                                .padding(.vertical, 12)
+                                            
+                                            HStack {
+                                                Text("Other Ratings (\(otherRatings.count))")
+                                                    .foregroundColor(.white)
+                                                    .font(.system(size: 15, weight: .bold))
+                                                    .padding(.bottom, 5)
+                                                
+                                                Spacer()
+                                            }
+                                            
+                                            VStack(spacing: 0) {
+                                                ForEach(otherRatings) { interaction in
+                                                    VStack(spacing: 0) {
+                                                        HStack(spacing: 5) {
+                                                            ProfilePictureView(url: interaction.profilePictureUrl, size: 36)
+                                                            
+                                                            Text(interaction.userName)
+                                                                .font(.system(size: 15, weight: .semibold))
+                                                                .foregroundColor(.white)
+                                                                .lineLimit(1)
+                                                                .padding(.leading, 10)
+                                                            
+                                                            Spacer()
+                                                            
+                                                            HStack(spacing: 6) {
+                                                                Text("\(interaction.rating)")
+                                                                    .font(.system(size: 15, weight: .bold))
+                                                                    .foregroundColor(.white)
+                                                                
+                                                                Image(systemName: "star.fill")
+                                                                    .resizable()
+                                                                    .frame(width: 15, height: 15)
+                                                                    .foregroundColor(.white)
+                                                            }
+                                                            .padding(.horizontal, 10)
+                                                            .padding(.vertical, 5)
+                                                            .background(Color(hex: "#DAA520"))
+                                                            .cornerRadius(20)
+                                                        }
+                                                        .padding(.horizontal, 0)
+                                                        .padding(.vertical, 15)
+                                                        
+                                                        if interaction.id != otherRatings.last?.id {
+                                                            Divider()
+                                                                .background(Color.white.opacity(0.2))
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .padding(.horizontal, 20)
+                            }
+                            .padding(.bottom, 20)
+                        }
+                    }
+                }
+            } else {
+                // Regular Rater View - Ratings list + star footer
+                UltraSmoothBottomSheet(
+                    minHeight: PhotoViewConstants.minHeight,
+                    midHeight: PhotoViewConstants.midHeight(withFooter: true),
+                    maxHeight: PhotoViewConstants.maxHeight(withFooter: true),
+                    bottomPadding: PhotoViewConstants.starFooterHeight
+                ) {
+                    VStack(spacing: 0) {
+                        // Centered handle
+                        VStack {
+                            RoundedRectangle(cornerRadius: 200)
+                                .fill(Color.white.opacity(0.3))
+                                .frame(width: 40, height: 5)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical)
+                        
+                        HStack {
+                            Text("Ratings (\(interactionService.interactions.count))")
+                                .foregroundColor(.white.opacity(0.7))
+                                .font(.system(size: 15, weight: .bold))
+                                .padding(.bottom, 10)
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        
+                        // Content
+                        if interactionService.isLoadingInteractions {
+                            EmptyView()
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    ForEach(interactionService.interactions) { interaction in
+                                        VStack(spacing: 0) {
+                                            HStack {
+                                                ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
+                                                
+                                                Text(interaction.userName)
+                                                    .font(.system(size: 16, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                    .lineLimit(1)
+                                                    .padding(.leading, 10)
+                                                
+                                                Spacer()
+                                                
+                                                HStack(spacing: 6) {
+                                                    Text("\(interaction.rating)")
+                                                        .font(.system(size: 16, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                    
+                                                    Image(systemName: "star.fill")
+                                                        .resizable()
+                                                        .frame(width: 16, height: 16)
+                                                        .foregroundColor(.white)
+                                                }
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(Color(hex: "#DAA520"))
+                                                .cornerRadius(20)
+                                            }
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 15)
+                                            
+                                            if interaction.id != interactionService.interactions.last?.id {
+                                                Divider()
+                                                    .background(Color.white.opacity(0.2))
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                        
+                        Spacer()
                     }
-                    
-                    Spacer()
                 }
+                
+                PhotoStarRatingFooter(
+                    rating: $rating,
+                    hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
+                    isRatingEnabled: isRatingEnabled && userName != "Me",
+                    animateRating: animateRating,
+                    onRatingSubmit: { stars in
+                        submitRating(stars: stars)
+                    },
+                    height: PhotoViewConstants.starFooterHeight
+                )
             }
-            
-            PhotoStarRatingFooter(
-                rating: $rating,
-                hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
-                isRatingEnabled: isRatingEnabled && userName != "Me",
-                animateRating: animateRating,
-                onRatingSubmit: { stars in
-                    submitRating(stars: stars)
-                },
-                height: PhotoViewConstants.starFooterHeight
-            )
         }
         .background(Color(hex: "#10183C"))
         .onAppear {
@@ -235,44 +351,22 @@ struct FullScreenPhotoView: View {
         }
     }
     
-    // MARK: - Parlay Status Views
-    
-    private var parlayStatusView: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Predictions")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Spacer()
-                
-                parlayStatusBadge
-            }
-            
-            if parlayStatus == "pending" {
-                parlayProgressView
-            } else if parlayStatus == "won" {
-                parlayWonView
-            } else if parlayStatus == "lost" {
-                parlayLostView
-            }
-        }
-        .padding()
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
-        .padding(.horizontal, 20)
-    }
+    // MARK: - Parlay Status Views (Inline versions for bottom sheet)
     
     private var parlayStatusBadge: some View {
         HStack(spacing: 6) {
             Circle()
                 .fill(parlayStatusColor)
                 .frame(width: 8, height: 8)
+            
+            Text(parlayStatusText)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(parlayStatusColor)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(parlayStatusColor.opacity(0.15))
-        .cornerRadius(200)
+        .cornerRadius(20)
     }
     
     private var parlayStatusColor: Color {
@@ -291,222 +385,185 @@ struct FullScreenPhotoView: View {
         }
     }
     
-    private var parlayProgressView: some View {
+    private var parlayProgressViewInline: some View {
         VStack(spacing: 8) {
+            predictionsList
+            
+            Divider()
+                .background(Color.white.opacity(0.2))
+                .padding(.vertical, 5)
+            
             VStack(spacing: 8) {
-                let totalPredictions = parlayPredictions.count
-                let completedPredictions = parlayPredictions.values.compactMap { predictionData in
-                    (predictionData as? [String: Any])?["actualRating"]
-                }.count
-                
                 HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                HStack {
-                    Text("Entry")
-                        .font(.system(size: 14, weight: .semibold))
+                    Text("Bet")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 HStack {
                     Text("To Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayPayout)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 let profit = parlayPayout - parlayStake
                 HStack {
                     Text("Profit")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
-            
-            predictionsList
         }
     }
     
-    private var parlayWonView: some View {
+    private var parlayWonViewInline: some View {
         VStack(spacing: 8) {
+            predictionsList
+            
+            Divider()
+                .background(Color.white.opacity(0.2))
+                .padding(.vertical, 5)
+            
             VStack(spacing: 8) {
                 HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                HStack {
-                    Text("Entry")
-                        .font(.system(size: 14, weight: .semibold))
+                    Text("Bet")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 HStack {
                     Text("Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayPayout)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 let profit = parlayPayout - parlayStake
                 HStack {
                     Text("Profit")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
-            
-            predictionsList
         }
     }
     
-    private var parlayLostView: some View {
+    private var parlayLostViewInline: some View {
         VStack(spacing: 8) {
-            // Parlay summary
+            predictionsList
+            
+            Divider()
+                .background(Color.white.opacity(0.2))
+                .padding(.vertical, 5)
+            
             VStack(spacing: 8) {
                 HStack {
-                    Text("Correct")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    Spacer()
-                    
-                    let (correct, total) = getCorrectPredictionsCount()
-                    Text("\(correct)/\(total)")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                HStack {
-                    Text("Entry")
-                        .font(.system(size: 14, weight: .semibold))
+                    Text("Bet")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("\(parlayStake)")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
                 
                 HStack {
                     Text("Win")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
                     Spacer()
                     
                     HStack(spacing: 6) {
                         Text("0")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                         
                         Image("coin")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 19, height: 19)
+                            .frame(width: 20, height: 20)
                     }
                 }
             }
-            
-            predictionsList
         }
     }
     
     private var predictionsList: some View {
         VStack(spacing: 0) {
             if !parlayPredictions.isEmpty {
-                Divider()
-                    .background(Color.white.opacity(0.2))
-                    .padding(.vertical, 8)
-                
                 VStack(spacing: 0) {
                     ForEach(Array(parlayPredictions.keys.sorted()), id: \.self) { userId in
                         predictionRow(for: userId)
@@ -554,12 +611,12 @@ struct FullScreenPhotoView: View {
         return AnyView(
             HStack(spacing: 12) {
                 // Profile Picture
-                ProfilePictureView(url: profilePictureUrl, size: 35)
+                ProfilePictureView(url: profilePictureUrl, size: 36)
                 
                 // User Info
                 VStack(alignment: .leading, spacing: 5) {
                     Text(userName)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
                         .lineLimit(1)
                     
@@ -569,14 +626,14 @@ struct FullScreenPhotoView: View {
                            // Main tab
                            HStack(spacing: 3) {
                                Image(systemName: "star.fill")
-                                   .font(.system(size: 11))
+                                   .font(.system(size: 12))
                                    .foregroundColor(.white)
                                
                                Text("\(predictedRating)")
-                                   .font(.system(size: 13, weight: .bold))
+                                   .font(.system(size: 14, weight: .bold))
                                    .foregroundColor(.white)
                            }
-                           .frame(height: 28) // Same fixed height
+                           .frame(height: 28)
                            .padding(.horizontal, 8)
                            .background(
                             (isCorrect ? Color(hex: "#00FF00").opacity(0.6) : Color(hex: "#FF4444"))
@@ -592,13 +649,13 @@ struct FullScreenPhotoView: View {
                            if !isCorrect {
                                HStack(spacing: 4) {
                                    Text("\(actualRating)")
-                                       .font(.system(size: 13, weight: .bold)) // Same size as main
+                                       .font(.system(size: 14, weight: .bold))
                                        .foregroundColor(.white.opacity(0.8))
                                }
-                               .frame(height: 28) // Same fixed height
+                               .frame(height: 28)
                                .padding(.horizontal, 8)
                                .background(
-                                    Color.gray.opacity(0.6) // Dark grey/black background
+                                    Color.gray.opacity(0.6)
                                        .clipShape(
                                            RoundedCorner(
                                                radius: 6,
@@ -611,11 +668,11 @@ struct FullScreenPhotoView: View {
                     } else {
                         HStack(spacing: 3) {
                            Image(systemName: "star.fill")
-                               .font(.system(size: 11))
+                               .font(.system(size: 12))
                                .foregroundColor(.white)
                            
                            Text("\(predictedRating)")
-                               .font(.system(size: 13, weight: .bold))
+                               .font(.system(size: 14, weight: .bold))
                                .foregroundColor(.white.opacity(0.8))
                         }
                         .frame(height: 28)
@@ -637,11 +694,11 @@ struct FullScreenPhotoView: View {
                 // Status indicator with icon
                 if actualRating != nil {
                     Text(isCorrect ? "✓" : "✗")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundColor(isCorrect ? Color(hex: "#00FF00") : Color(hex: "#FF4444"))
                 } else {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 17))
                         .foregroundColor(Color(hex: "#FFD700"))
                 }
             }
@@ -650,97 +707,6 @@ struct FullScreenPhotoView: View {
     }
     
     // MARK: - Parlay Helper Methods
-    
-    private func isPredictedUser(userId: String) -> Bool {
-        return parlayPredictions[userId] != nil
-    }
-    
-    private func predictionIndicator(for userId: String, actualRating: Int) -> some View {
-        guard let predictionData = parlayPredictions[userId] as? [String: Any],
-              let predictedRating = predictionData["predictedRating"] as? Int else {
-            return AnyView(EmptyView())
-        }
-        
-        let isCorrect = actualRating == predictedRating
-        let hasActualRating = predictionData["actualRating"] != nil
-        
-        if hasActualRating {
-            return AnyView(
-                HStack(spacing: 6) {
-                    Text("\(predictedRating)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Image(systemName: "star.fill")
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(isCorrect ? Color(hex: "#00FF00").opacity(0.5) : Color(hex: "#FF4444"))
-                .cornerRadius(20)
-            )
-        } else {
-            return AnyView(
-                HStack(spacing: 6) {
-                    Text("\(predictedRating)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Image(systemName: "star.fill")
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(isCorrect ? Color(hex: "#00FF00").opacity(0.5) : Color(hex: "#FF4444"))
-                .cornerRadius(20)
-            )
-        }
-    }
-    
-    private func getPendingUsers() -> [String] {
-        var pendingUsernames: [String] = []
-        
-        for (userId, predictionData) in parlayPredictions {
-            if let prediction = predictionData as? [String: Any],
-               prediction["actualRating"] == nil {
-                
-                // Try to find username from interactions first (most reliable)
-                if let interaction = interactionService.interactions.first(where: { $0.userId == userId }) {
-                    pendingUsernames.append(interaction.userName)
-                }
-                // Check if we have cached username in pendingUsernames state
-                else if let cachedUsername = pendingUsernamesCache[userId] {
-                    pendingUsernames.append(cachedUsername)
-                }
-                // Fallback to "Friend" if username not found
-                else {
-                    pendingUsernames.append("Friend")
-                    // Fetch username asynchronously and cache it
-                    fetchUsernameForPendingUser(userId: userId)
-                }
-            }
-        }
-        
-        return pendingUsernames
-    }
-    
-    private func fetchUsernameForPendingUser(userId: String) {
-        // Don't fetch if already cached or currently fetching
-        guard pendingUsernamesCache[userId] == nil else { return }
-        
-        db.collection("users").document(userId).getDocument { document, error in
-            if let data = document?.data(),
-               let username = data["username"] as? String {
-                DispatchQueue.main.async {
-                    self.pendingUsernamesCache[userId] = username
-                }
-            }
-        }
-    }
     
     private func fetchUserProfileForPendingUser(userId: String) {
         // Don't fetch if already cached
@@ -755,21 +721,6 @@ struct FullScreenPhotoView: View {
                 }
             }
         }
-    }
-    
-    private func getCorrectPredictionsCount() -> (correct: Int, total: Int) {
-        var correctCount = 0
-        let totalCount = parlayPredictions.count
-        
-        for (_, predictionData) in parlayPredictions {
-            if let prediction = predictionData as? [String: Any],
-               let isCorrect = prediction["correct"] as? Bool,
-               isCorrect {
-                correctCount += 1
-            }
-        }
-        
-        return (correctCount, totalCount)
     }
     
     private func loadParlayStatus() {
