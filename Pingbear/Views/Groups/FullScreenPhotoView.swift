@@ -141,7 +141,7 @@ struct FullScreenPhotoView: View {
                                         VStack(spacing: 0) {
                                             Divider()
                                                 .background(Color.white.opacity(0.2))
-                                                .padding(.vertical, 12)
+                                                .padding(.bottom, 12)
                                             
                                             HStack {
                                                 Text("Other Ratings (\(otherRatings.count))")
