@@ -295,6 +295,7 @@ struct PhotoMainImageView: View {
 struct UltraSmoothBottomSheet<Content: View>: View {
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
+    @State private var scrollViewContentOffset: CGFloat = 0
     
     let minHeight: CGFloat
     let midHeight: CGFloat
@@ -345,7 +346,7 @@ struct UltraSmoothBottomSheet<Content: View>: View {
                     .fill(Color(hex: "#1A2245"))
             )
             .offset(y: screenHeight - currentHeight - bottomPadding + displayOffset)
-            .gesture(
+            .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         isDragging = true
