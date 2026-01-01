@@ -252,8 +252,6 @@ struct ThemePhotoCard: View {
     let onTap: () -> Void
     let onPredictionsTap: () -> Void
     
-    @State private var hasDragged = false
-    
     private var parlayStatusColor: Color {
         switch photo.parlayStatus {
         case "won": return Color(hex: "#00FF00")
@@ -299,25 +297,9 @@ struct ThemePhotoCard: View {
                     alignment: .bottomLeading
                 )
                 .contentShape(Rectangle())
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let dragDistance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                            if dragDistance > 10 {
-                                hasDragged = true
-                            }
-                        }
-                        .onEnded { value in
-                            let dragDistance = sqrt(pow(value.translation.width, 2) + pow(value.translation.height, 2))
-                            
-                            // Only trigger tap if drag distance is less than 10 points
-                            if dragDistance < 10 && !hasDragged {
-                                onTap()
-                            }
-                            
-                            hasDragged = false
-                        }
-                )
+                .onTapGesture {
+                    onTap()
+                }
 
             
             // Stats section - NOT TAPPABLE
