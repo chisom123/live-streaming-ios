@@ -129,7 +129,7 @@ struct ChatView: View {
                 )
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(hex: "#1A2245"))
+                .background(Color(hex: "#10183C"))
             }
         }
         .navigationBarHidden(true) // ✅ Hide default navigation bar
@@ -444,9 +444,8 @@ struct MessageInputView: View {
     let onSend: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Single-line TextField
-            TextField("Type a message...", text: $text)
+        // Single-line TextField with return key as send
+        TextField("Type a message...", text: $text)
             .font(.system(size: 15, weight: .medium))
             .foregroundColor(.white)
             .padding(.horizontal, 16)
@@ -456,15 +455,9 @@ struct MessageInputView: View {
                     .fill(Color(hex: "#3B4374"))
             )
             .focused($isTextFieldFocused)
-            
-            // Send button
-            Button(action: onSend) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 35))
-                    .foregroundColor(text.isEmpty ? Color.gray : Color(hex: "#FFF"))
+            .submitLabel(.send) // ✅ Changes return key to "Send"
+            .onSubmit {
+                onSend() // ✅ Triggers send when return is pressed
             }
-            .disabled(text.isEmpty)
-            .animation(.easeInOut(duration: 0.2), value: text.isEmpty)
-        }
     }
 }
