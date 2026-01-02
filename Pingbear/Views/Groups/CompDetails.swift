@@ -525,7 +525,7 @@ struct NoPlayersView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
+                ForEach(Array(["Me", "Player 2", "Player 3"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         if userName == "Me" {
                             // Make the entire "Me" cell tappable
@@ -572,7 +572,7 @@ struct NoPlayersView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
-                            // For other cells, only the Add button is tappable
+                            // Grayed out placeholder cells for other players
                             HStack {
                                 Text("\(index + 1)")
                                     .font(.system(size: 16, weight: .bold))
@@ -581,42 +581,60 @@ struct NoPlayersView: View {
                                     .padding(.leading, 20)
                                 
                                 HStack(spacing: 20) {
-                                    ProfilePictureView(url: nil, size: 40)
+                                    // Grayed out profile picture placeholder
+                                    Circle()
+                                        .fill(Color.white.opacity(0.15))
+                                        .frame(width: 40, height: 40)
                                     
-                                    Text(userName)
-                                        .font(.system(size: 16, weight: .bold))
-                                        .lineLimit(1)
-                                        .truncationMode(.tail)
-                                        .foregroundColor(.white)
+                                    // Grayed out name placeholder
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.white.opacity(0.15))
+                                        .frame(width: 80, height: 16)
                                 }
 
                                 Spacer()
 
-                                Button(action: action_player) {
-                                    HStack(spacing: 8) {
-                                        Text("Add")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                    }
-                                    .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                    .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(200)
+                                // Star count (same as "Me" row)
+                                HStack(spacing: 6.5) {
+                                    Text("0")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                    
+                                    Image(systemName: "star.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                        .foregroundColor(Color(hex: "#FFF"))
                                 }
+                                .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
+                                .background(Color(hex: "#DAA520"))
+                                .cornerRadius(200)
                                 .padding(.trailing, 30)
                             }
                             .padding(.vertical, 25)
                             .background(Color.clear)
                         }
                         
-                        if userName != "Player 4" {
+                        if userName != "Player 3" {
                             Divider()
                                 .background(Color.white.opacity(0.2))
                         }
                     }
                 }
+                
+                // Add Players button flush at the bottom
+                Button(action: action_player) {
+                    Text("Add Players")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 25)
+                        .background(Color(hex: "#4169E1"))
+                }
             }
             .background(Color(hex: "#1A2245"))
             .cornerRadius(10)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 20)
         }
         .onAppear {

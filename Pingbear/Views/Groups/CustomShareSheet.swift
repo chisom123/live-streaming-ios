@@ -25,7 +25,7 @@ struct CustomShareSheet: View {
                 
                 Spacer()
                 
-                Text("Share Competition Link")
+                Text("Share Invite Link")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 
@@ -119,7 +119,7 @@ struct CustomShareSheet: View {
                     }
                 }) {
                     HStack(spacing: 15) {
-                        Image(systemName: linkCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                        Image(systemName: "doc.on.doc.fill")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 22, height: 22)

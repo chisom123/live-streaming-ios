@@ -64,32 +64,6 @@ struct MembersView: View {
                         .padding(20)
                         .padding(.vertical, 5)
                     }
-                    
-                    Divider()
-                        .background(Color.white.opacity(0.2))
-                    
-                    // Edit Competition Name Button (NEW)
-                    Button(action: {
-                        isEditingCompetition = true
-                    }) {
-                        HStack {
-                            Text("Edit Competition Name")
-                                .font(.system(size: 16, weight: .bold, design: .default))
-                                .foregroundColor(Color(hex: "#FFF"))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.leading, 10)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(Color(hex: "#D3D3D3"))
-                                .font(.system(size: 15, weight: .bold))
-                                .padding(.trailing, 10)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(20)
-                        .padding(.vertical, 5)
-                    }
                 }
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
