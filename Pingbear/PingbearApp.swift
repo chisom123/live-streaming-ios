@@ -130,14 +130,15 @@ struct PingbearApp: App {
         WindowGroup {
             ZStack {
                 if isLoggedIn && Auth.auth().currentUser != nil {
-                    // ✅ WRAP MyCompsView in NavigationStack
                     NavigationStack {
-                        MyCompsView()
-                            .navigationBarHidden(true) // Keep your custom UI
+                        MainTabView(isNewUser: UserDefaults.standard.bool(forKey: "isNewUser"))
+                            .navigationBarHidden(true)
                     }
                     .onAppear {
                         setupApp()
                         processLoginPendingDeepLink()
+                        // Clear the new user flag after first appearance
+                        UserDefaults.standard.set(false, forKey: "isNewUser")
                     }
                     .environment(\.didLogOut, didLogOut)
                     .onReceive(didLogOut) { _ in

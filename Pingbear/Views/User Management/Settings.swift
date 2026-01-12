@@ -39,15 +39,8 @@ struct SettingsView: View {
         VStack {
             // Top Navigation Bar
             HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
-                }
+                Color.clear
+                    .frame(width: 30, height: 30)
                 
                 Spacer()
                 
@@ -57,16 +50,11 @@ struct SettingsView: View {
                 
                 Spacer()
                 
-                Button(action: {}) {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
-                }
-                .opacity(0)
+                Color.clear
+                    .frame(width: 30, height: 30)
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
             
             ScrollView {
                 VStack(spacing: 50) {
@@ -128,6 +116,7 @@ struct SettingsView: View {
                     .cornerRadius(10)
                 }
                 .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
         }
         .background(Color(hex: "#10183C"))

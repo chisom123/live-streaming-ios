@@ -167,6 +167,7 @@ struct NameEntryView: View {
                 
                 // Just update UserDefaults
                 UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                UserDefaults.standard.set(true, forKey: "isNewUser")
                 UserDefaults.standard.synchronize()
                 
                 // Post notification to trigger UI update

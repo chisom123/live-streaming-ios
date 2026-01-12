@@ -91,7 +91,8 @@ struct FullScreenPhotoView: View {
             }
             
             // Bottom sheet - different content for entry creator vs raters
-            if isEntryCreator && parlayStatus != nil {
+            // Only show predictions view if entry creator AND has parlay data (entryCost > 0)
+            if isEntryCreator && parlayStatus != nil && parlayStake > 0 {
                 // Entry Creator View - Predictions focused
                 UltraSmoothBottomSheet(
                     minHeight: PhotoViewConstants.minHeight,
@@ -147,7 +148,7 @@ struct FullScreenPhotoView: View {
                                                 Text("Other Ratings (\(otherRatings.count))")
                                                     .foregroundColor(.white)
                                                     .font(.system(size: 15, weight: .bold))
-                                                    .padding(.bottom, 5)
+                                                    .padding(.top, 5)
                                                 
                                                 Spacer()
                                             }
@@ -395,7 +396,7 @@ struct FullScreenPhotoView: View {
             
             VStack(spacing: 8) {
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -458,7 +459,7 @@ struct FullScreenPhotoView: View {
             
             VStack(spacing: 8) {
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     
@@ -521,7 +522,7 @@ struct FullScreenPhotoView: View {
             
             VStack(spacing: 8) {
                 HStack {
-                    Text("Bet")
+                    Text("Entry")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
                     

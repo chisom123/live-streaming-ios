@@ -151,105 +151,113 @@ struct UnlockView: View {
     }
     
     private var headerView: some View {
-        ZStack {
-            HStack {
-                Button(action: {
-                    dismiss()
-                    Analytics.shared.track(event: "parlay_back_button_tapped")
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
-                }
-                
-                Spacer()
-                
-                Text("Balance")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.trailing, 5)
-                
-                // Coin balance with rakeback badge - now fully tappable
-                Button(action: {
-                    showPayView = true
-                    Analytics.shared.track(event: "coins_button_tapped")
-                }) {
-                    ZStack(alignment: .topTrailing) {
-                        HStack(alignment: .center, spacing: 0) {
-                            HStack(spacing: 5) {
-                                Image("coin")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 19, height: 19)
-                                
-                                if isLoadingCoins {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Text("\(userCoins)")
-                                        .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .lineLimit(1)
-                                }
-                            }
-                            .padding(.horizontal, 15)
-                            .frame(height: 45)
-                            .background(
-                                (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
-                                    ? Color(hex: "#F85149").opacity(0.3)
-                                    : Color(hex: "#2A3255")
-                            )
-                            .clipShape(
-                                RoundedCorner(
-                                    radius: 200,
-                                    corners: [.topLeft, .bottomLeft]
-                                )
-                            )
+        HStack {
+            // Left: Back button
+            Button(action: {
+                dismiss()
+                Analytics.shared.track(event: "parlay_back_button_tapped")
+            }) {
+                Image(systemName: "arrow.left")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 27, height: 27)
+                    .foregroundColor(Color.white)
+            }
+            
+            Spacer()
+            
+            // Coin balance with rakeback badge - now fully tappable
+            Button(action: {
+                showPayView = true
+                Analytics.shared.track(event: "coins_button_tapped")
+            }) {
+                ZStack(alignment: .topTrailing) {
+                    HStack(alignment: .center, spacing: 0) {
+                        HStack(spacing: 5) {
+                            Image("coin")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 19, height: 19)
                             
-                            HStack {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 20, weight: .bold))
-                                    .frame(width: 45, height: 45)
+                            if isLoadingCoins {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("\(userCoins)")
+                                    .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
-                                    .background(
-                                        Color(hex: "#3B4374")
-                                            .clipShape(
-                                                RoundedCorner(
-                                                    radius: 200,
-                                                    corners: [.topRight, .bottomRight]
-                                                )
-                                            )
-                                    )
+                                    .lineLimit(1)
                             }
                         }
-                        
-                        // Rakeback badge indicator
-                        if unclaimedRakeback > 0 {
-                            HStack(spacing: 3) {
-                                Image(systemName: "gift.fill")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                Text("\(unclaimedRakeback)")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(
-                                Capsule()
-                                    .fill(
-                                        Color.red
-                                    )
+                        .padding(.horizontal, 15)
+                        .frame(height: 45)
+                        .background(
+                            (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
+                                ? Color(hex: "#F85149").opacity(0.3)
+                                : Color(hex: "#2A3255")
+                        )
+                        .clipShape(
+                            RoundedCorner(
+                                radius: 200,
+                                corners: [.topLeft, .bottomLeft]
                             )
-                            .offset(x: -8, y: -8)
+                        )
+                        
+                        HStack {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold))
+                                .frame(width: 45, height: 45)
+                                .foregroundColor(.white)
+                                .background(
+                                    Color(hex: "#3B4374")
+                                        .clipShape(
+                                            RoundedCorner(
+                                                radius: 200,
+                                                corners: [.topRight, .bottomRight]
+                                            )
+                                        )
+                                )
                         }
                     }
+                    
+                    // Rakeback badge indicator
+                    if unclaimedRakeback > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "gift.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("\(unclaimedRakeback)")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(
+                            Capsule()
+                                .fill(
+                                    Color.red
+                                )
+                        )
+                        .offset(x: -8, y: -8)
+                    }
                 }
-                .buttonStyle(PlainButtonStyle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Spacer()
+            
+            // Right: X button to submit without parlay
+            Button(action: {
+                submitWithoutParlay()
+                Analytics.shared.track(event: "submit_without_parlay_tapped")
+            }) {
+                Image(systemName: "xmark")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 21, height: 21)
+                    .foregroundColor(Color.white)
             }
         }
         .padding(.horizontal, 20)
@@ -289,7 +297,7 @@ struct UnlockView: View {
                 .background(Color.white.opacity(0.1))
             
             HStack {
-                Text("Bet")
+                Text("Entry")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.7))
                 
@@ -545,7 +553,7 @@ struct UnlockView: View {
             if selectedPredictions.isEmpty {
                 return "Make Predictions to Continue"
             } else if entryCost == 0 {
-                return "Set Bet Amount"
+                return "Set Entry Amount"
             } else {
                 return "Place Predictions"
             }
@@ -626,7 +634,7 @@ struct UnlockView: View {
                 
                 Spacer()
                 
-                Text("Set Bet Amount")
+                Text("Set Entry Amount")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 
@@ -663,11 +671,7 @@ struct UnlockView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding()
-                .background(
-                    (!isLoadingCoins && entryCost > 0 && userCoins < entryCost)
-                        ? Color(hex: "#F85149").opacity(0.3)
-                        : Color.white.opacity(0.1)
-                )
+                .background(Color.white.opacity(0.1))
                 
                 // Quick Select Amounts
                 let suggestedAmounts = generateSuggestedAmounts()
@@ -1010,6 +1014,55 @@ struct UnlockView: View {
                 }
             }
         }
+    }
+    
+    // NEW: Method to submit photo without parlay bet
+    private func submitWithoutParlay() {
+        guard !isUploading && !isUnlocking else { return }
+        
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("User not logged in")
+            return
+        }
+        
+        isUploading = true
+        uploadProgress = 0.0
+        
+        // Reuse uploadEntryAfterBet with empty parlay values
+        // Set entryCost to 0, predictions to empty, and other parlay values to 0
+        let config = pricingCalculator.getCurrentConfig()
+        
+        EntryUploadManager.shared.uploadParlayEntry(
+            image: image,
+            competitionId: competitionId,
+            userId: userId,
+            overlayText: overlayText,
+            overlayVerticalPosition: overlayVerticalPosition,
+            isFromCamera: isFromCamera,
+            themeId: selectedTheme?.id,
+            themeName: selectedTheme?.name,
+            competition: competition,
+            entryCost: 0, // No bet placed
+            predictions: [:], // No predictions
+            potentialPayout: 0, // No payout
+            rakebackAmount: 0, // No rakeback
+            rakebackPercentage: config.rakebackPercentage,
+            effectiveHouseEdge: config.houseEdge,
+            onProgress: { progress in
+                self.uploadProgress = progress * 100
+            },
+            onSuccess: { entryId in
+                DispatchQueue.main.async {
+                    self.shouldDismissCameraFlow = true
+                }
+            },
+            onFailure: { error in
+                print("Failed to upload entry: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.isUploading = false
+                }
+            }
+        )
     }
     
     // Removed: updateStakeAmountForNewGroupSize method since we don't auto-update

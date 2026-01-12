@@ -1,4 +1,5 @@
 const { onRequest, onCall } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const { google } = require('googleapis');
 const logger = require("firebase-functions/logger");
@@ -348,3 +349,223 @@ exports.checkPurchaseStatus = onCall({
   
   return { coins };
 });
+
+// GLOBAL LEADERBOARD - Close pots function
+exports.closePots = onSchedule({
+  schedule: 'every 1 minutes',
+  timeZone: 'UTC',
+}, async (event) => {
+  const db = admin.firestore();
+  const now = admin.firestore.Timestamp.now();
+  
+  // Find all active pots that have ended
+  // NOTE: This query requires a composite index on (end_date, status)
+  const endedPotsSnapshot = await db.collection('global_pots')
+    .where('end_date', '<=', now)
+    .where('status', '==', 'active')
+    .get();
+  
+  if (endedPotsSnapshot.empty) {
+    logger.info('No pots to close');
+    return null;
+  }
+  
+  logger.info(`Found ${endedPotsSnapshot.size} pots to close`);
+  
+  // Process each pot
+  const promises = endedPotsSnapshot.docs.map(potDoc => 
+    closePot(potDoc.id, potDoc.data(), db)
+  );
+  
+  await Promise.all(promises);
+  logger.info('All pots processed');
+  return null;
+});
+
+async function closePot(potId, potData, db) {
+  logger.info(`Closing pot ${potId}`);
+  
+  try {
+    // Get all participants sorted by stars
+    const participantsSnapshot = await db.collection('global_pots')
+      .doc(potId)
+      .collection('participants')
+      .orderBy('total_stars', 'desc')
+      .get();
+    
+    if (participantsSnapshot.empty) {
+      logger.info(`Pot ${potId} has no participants`);
+      await db.collection('global_pots').doc(potId).update({
+        status: 'closed',
+        closed_at: admin.firestore.FieldValue.serverTimestamp(),
+        prizes_paid: false,
+        total_winners: 0
+      });
+      return;
+    }
+    
+    // Calculate ranks and prizes with tie handling
+    const participantUpdates = [];
+    const userUpdates = [];
+    let currentRank = 1;
+    let lastStarCount = null;
+    let tiedPlayers = [];
+    
+    participantsSnapshot.docs.forEach((doc, index) => {
+      const data = doc.data();
+      const userId = doc.id;
+      const stars = data.total_stars || 0;
+      
+      // Check if this is a tie with previous player
+      if (lastStarCount !== null && stars < lastStarCount) {
+        // Different score - process previous tied group first
+        if (tiedPlayers.length > 0) {
+          processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates);
+        }
+        
+        // Start new rank
+        currentRank = index + 1;
+        tiedPlayers = [{ref: doc.ref, userId, stars, rank: currentRank}];
+      } else if (lastStarCount === stars) {
+        // Same score as previous - add to tied group
+        tiedPlayers.push({ref: doc.ref, userId, stars, rank: currentRank});
+      } else {
+        // First player
+        tiedPlayers = [{ref: doc.ref, userId, stars, rank: currentRank}];
+      }
+      
+      lastStarCount = stars;
+    });
+    
+    // Don't forget to process the last group
+    if (tiedPlayers.length > 0) {
+      processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates);
+    }
+    
+    // Batch write all participant updates (max 500 per batch)
+    const participantBatches = [];
+    for (let i = 0; i < participantUpdates.length; i += 500) {
+      const batch = db.batch();
+      const chunk = participantUpdates.slice(i, i + 500);
+      chunk.forEach(update => {
+        batch.update(update.ref, update.data);
+      });
+      participantBatches.push(batch.commit());
+    }
+    await Promise.all(participantBatches);
+    
+    // Update user wallets and create transactions (max 500 per batch)
+    const userBatches = [];
+    for (let i = 0; i < userUpdates.length; i += 500) {
+      const batch = db.batch();
+      const chunk = userUpdates.slice(i, i + 500);
+      
+      chunk.forEach(update => {
+        const userRef = db.collection('users').doc(update.userId);
+        
+        // Update wallet balance, lifetime earnings, and clear active_pot_id
+        batch.update(userRef, {
+          wallet_balance: admin.firestore.FieldValue.increment(update.prize),
+          lifetime_earnings: admin.firestore.FieldValue.increment(update.prize),
+          active_pot_id: admin.firestore.FieldValue.delete()
+        });
+        
+        // Create transaction record
+        const transactionRef = userRef.collection('transactions').doc();
+        batch.set(transactionRef, {
+          type: 'winning',
+          amount: update.prize,
+          description: `Rank #${update.rank} - ${update.stars} stars`,
+          pot_id: potId,
+          rank: update.rank,
+          stars: update.stars,
+          timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      
+      userBatches.push(batch.commit());
+    }
+    await Promise.all(userBatches);
+    
+    // Clear active_pot_id for ALL participants (including non-winners)
+    const clearPotBatches = [];
+    for (let i = 0; i < participantsSnapshot.docs.length; i += 500) {
+      const batch = db.batch();
+      const chunk = participantsSnapshot.docs.slice(i, i + 500);
+      
+      chunk.forEach(doc => {
+        const userRef = db.collection('users').doc(doc.id);
+        batch.update(userRef, {
+          active_pot_id: admin.firestore.FieldValue.delete()
+        });
+      });
+      
+      clearPotBatches.push(batch.commit());
+    }
+    await Promise.all(clearPotBatches);
+    
+    // Mark pot as closed
+    await db.collection('global_pots').doc(potId).update({
+      status: 'closed',
+      closed_at: admin.firestore.FieldValue.serverTimestamp(),
+      prizes_paid: true,
+      total_winners: userUpdates.length
+    });
+    
+    logger.info(`Pot ${potId} closed successfully with ${participantUpdates.length} participants and ${userUpdates.length} winners`);
+  } catch (error) {
+    logger.error(`Error closing pot ${potId}:`, error);
+    throw error;
+  }
+}
+
+function calculatePrize(rank, firstPlacePrize, decayRate, minPayout) {
+  if (decayRate === 0) return rank === 1 ? firstPlacePrize : 0;
+  
+  // Use integer math for cents to avoid floating point errors
+  const prizeCents = Math.floor(firstPlacePrize * 100 * Math.pow(decayRate, rank - 1));
+  
+  if (prizeCents < minPayout * 100) return 0;
+  
+  return prizeCents / 100;
+}
+
+// Helper function to process a group of tied players
+function processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates) {
+  // Calculate base prize for this rank
+  const basePrize = calculatePrize(
+    tiedPlayers[0].rank,
+    potData.first_place_prize || 100,
+    potData.decay_rate || 0,
+    potData.min_payout || 0.01
+  );
+  
+  // Split prize evenly among tied players
+  const splitPrize = Math.floor((basePrize / tiedPlayers.length) * 100) / 100;
+  
+  logger.info(`Rank ${tiedPlayers[0].rank}: ${tiedPlayers.length} tied players, splitting $${basePrize} = $${splitPrize} each`);
+  
+  // Queue updates for each tied player
+  tiedPlayers.forEach(player => {
+    // Queue participant update
+    participantUpdates.push({
+      ref: player.ref,
+      data: {
+        final_rank: player.rank,
+        prize_amount: splitPrize,
+        tied_with: tiedPlayers.length - 1,  // Exclude self from count
+        calculated_at: admin.firestore.FieldValue.serverTimestamp()
+      }
+    });
+    
+    // If prize > 0, queue user wallet update
+    if (splitPrize > 0) {
+      userUpdates.push({
+        userId: player.userId,
+        prize: splitPrize,
+        rank: player.rank,
+        stars: player.stars
+      });
+    }
+  });
+}

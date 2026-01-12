@@ -5,7 +5,6 @@ import FirebaseFirestore
 struct MyCompsView: View {
     @StateObject private var viewModel = CompetitionsModel()
     @State private var isLoading = true
-    @State private var navigateToSettings = false
     @State private var competitionToLeave: Competition?
     @State private var showLeaveConfirmation = false
     @State private var isCreatingCompetition = false
@@ -13,19 +12,10 @@ struct MyCompsView: View {
     
     var body: some View {
         VStack {
-            // Top Bar with Title
-            HStack(alignment: .center) {  // Add this
-                Button(action: {
-                    viewModel.cleanupListeners()
-                    navigateToSettings = true
-                }) {
-                    Image("settings")
-                        .resizable()
-                        .renderingMode(.template)
-                        .foregroundColor(.white)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 30, height: 30)
-                }
+            // Clean Top Bar with just Logo and Plus
+            HStack {
+                Color.clear
+                    .frame(width: 30, height: 30)
                 
                 Spacer()
                 
@@ -37,6 +27,7 @@ struct MyCompsView: View {
 
                 Spacer()
                 
+                // Plus button
                 Button(action: {
                     if !isCreatingCompetition {
                         createNewCompetition()
@@ -51,7 +42,7 @@ struct MyCompsView: View {
                 .disabled(isCreatingCompetition)
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 20)
+            .padding(.vertical, 10)
 
             Spacer()
             
@@ -96,14 +87,12 @@ struct MyCompsView: View {
                     .background(Color(hex: "#1A2245"))
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
                 }
             }
         }
         .navigationBarHidden(true)
         .background(Color(hex: "#10183C"))
-        .fullScreenCover(isPresented: $navigateToSettings) {
-            SettingsView()
-        }
         .background(
             EmptyView()
                 .navigationDestination(
