@@ -5,6 +5,7 @@ import CryptoKit
 
 struct NameEntryView: View {
     let phoneNumber: String
+    let fullName: String
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
@@ -35,6 +36,7 @@ struct NameEntryView: View {
                     )
                     .foregroundColor(.white)
                     .font(.system(size: 16, weight: .bold, design: .default))
+                    .autocapitalization(.none)
                 
                 if let error = errorMessage {
                     Text(error)
@@ -147,7 +149,8 @@ struct NameEntryView: View {
        
         db.collection("users").document(userID).setData([
             "username": processedUsername,
-            "phoneNumberHash": hashedPhoneNumber
+            "phoneNumberHash": hashedPhoneNumber,
+            "name": fullName
         ], merge: true) { error in
             isLoading = false
             if let error = error {

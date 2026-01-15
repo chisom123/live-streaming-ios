@@ -108,7 +108,7 @@ struct VerificationView: View {
             .cornerRadius(10)
             .padding(.horizontal, 20)
             
-            NavigationLink(destination: NameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
+            NavigationLink(destination: RealNameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
                 EmptyView()
             }.isDetailLink(false)
             
