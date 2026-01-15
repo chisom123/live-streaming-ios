@@ -302,6 +302,10 @@ struct ChangeNameView: View {
         
         let docRef = db.collection("users").document(userId)
         
+        // Store the old values before updating
+        let nameChanged = name != self.fullName
+        let usernameChanged = username != self.userName
+        
         docRef.updateData([
             "name": name,
             "username": username
@@ -324,8 +328,8 @@ struct ChangeNameView: View {
                 Analytics.shared.track(
                     event: "profile_updated",
                     properties: [
-                        "name_changed": name != self.fullName,
-                        "username_changed": username != self.userName
+                        "name_changed": nameChanged,
+                        "username_changed": usernameChanged
                     ]
                 )
             }
