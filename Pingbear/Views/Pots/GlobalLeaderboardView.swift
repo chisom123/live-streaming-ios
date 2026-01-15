@@ -4,6 +4,7 @@ import FirebaseAuth
 struct GlobalLeaderboardView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = GlobalLeaderboardViewModel()
+    @StateObject private var walletViewModel = WalletViewModel()
     @Binding var selectedTab: Int
     
     var body: some View {
@@ -11,12 +12,22 @@ struct GlobalLeaderboardView: View {
             VStack {
                 HStack {
                     NavigationLink(destination: WalletView()) {
-                        Image("wallet")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(Color.white)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 30, height: 30)
+                        ZStack(alignment: .topTrailing) {
+                            Image("wallet")
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(Color.white)
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 30, height: 30)
+                            
+                            // Red badge indicator
+                            if walletViewModel.balance > 0 {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 14, height: 14)
+                                    .offset(x: 3, y: -3)
+                            }
+                        }
                     }
                     
                     Spacer()
@@ -278,6 +289,7 @@ struct GlobalLeaderboardView: View {
         .navigationBarHidden(true)
         .onAppear {
             viewModel.loadLeaderboard()
+            walletViewModel.loadWalletData()
         }
     }
 }
