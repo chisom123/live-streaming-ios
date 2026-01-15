@@ -186,18 +186,17 @@ class GlobalLeaderboardViewModel: ObservableObject {
                     tiedGroups[currentRank]?.append(participant)
                     
                     currentPosition += 1
+                }
+                
+                // Calculate current user's prize AFTER all participants are processed
+                if let currentUserParticipant = participants.first(where: { $0.isCurrentUser }) {
+                    let tiedCount = tiedGroups[currentUserParticipant.rank]?.count ?? 1
+                    let prize = self.calculatePrizeForRank(rank: currentUserParticipant.rank, tiedCount: tiedCount, potInfo: potInfo)
                     
-                    // Track current user's stats (position will be set after participant is added to array)
-                    if participantUserId == userId {
-                        let tiedCount = tiedGroups[currentRank]?.count ?? 1
-                        let prize = self.calculatePrizeForRank(rank: currentRank, tiedCount: tiedCount, potInfo: potInfo)
-                        
-                        DispatchQueue.main.async {
-                            self.userStars = stars
-                            self.userRank = currentRank
-                            self.userPrize = prize
-                            // userPosition will be set from the participant object
-                        }
+                    DispatchQueue.main.async {
+                        self.userStars = currentUserParticipant.totalStars
+                        self.userRank = currentUserParticipant.rank
+                        self.userPrize = prize
                     }
                 }
                 
