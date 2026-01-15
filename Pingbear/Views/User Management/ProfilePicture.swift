@@ -43,8 +43,8 @@ class ProfilePictureManager: ObservableObject {
                 return
             }
             
-            // Get optimized image data
-            guard let optimizedData = image.optimizedForUpload() else {
+            // Get optimized image data using the same method as SettingsView
+            guard let optimizedData = image.optimizedForProfilePicture() else {
                 DispatchQueue.main.async {
                     self.isUploading = false
                     completion(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to optimize image"])))
@@ -219,5 +219,53 @@ struct ProfilePictureView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)  // Make image slightly smaller than circle
         }
+    }
+}
+
+// MARK: - UIImage Extension for Profile Picture Optimization
+extension UIImage {
+    func optimizedForProfilePicture(maxDimension: CGFloat = 400.0, compressionQuality: CGFloat = 0.7) -> Data? {
+        // Profile pictures are smaller, so we use a smaller max dimension
+        let resizedImage = self.resizeIfNeeded(maxDimension: maxDimension)
+        return resizedImage.compressedData(compressionQuality: compressionQuality, targetSize: 200 * 1024) // 200KB target
+    }
+    
+    private func resizeIfNeeded(maxDimension: CGFloat) -> UIImage {
+        let originalWidth = self.size.width
+        let originalHeight = self.size.height
+        
+        if originalWidth <= maxDimension && originalHeight <= maxDimension {
+            return self
+        }
+        
+        let scaleFactor: CGFloat
+        if originalWidth > originalHeight {
+            scaleFactor = maxDimension / originalWidth
+        } else {
+            scaleFactor = maxDimension / originalHeight
+        }
+        
+        let newWidth = originalWidth * scaleFactor
+        let newHeight = originalHeight * scaleFactor
+        let newSize = CGSize(width: newWidth, height: newHeight)
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        self.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext() ?? self
+        UIGraphicsEndImageContext()
+        
+        return resizedImage
+    }
+    
+    private func compressedData(compressionQuality: CGFloat, targetSize: Int) -> Data? {
+        var quality = compressionQuality
+        var data = self.jpegData(compressionQuality: quality)
+        
+        while let imageData = data, imageData.count > targetSize && quality > 0.1 {
+            quality -= 0.1
+            data = self.jpegData(compressionQuality: quality)
+        }
+        
+        return data
     }
 }
