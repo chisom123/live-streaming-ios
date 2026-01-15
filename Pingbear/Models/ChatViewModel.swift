@@ -112,7 +112,7 @@ class ChatViewModel: ObservableObject {
             .document(userId)
             .getDocument { [weak self] userDoc, userError in
                 let userData = userDoc?.data()
-                let userName = userData?["username"] as? String ?? "Unknown"
+                let userName = userData?["name"] as? String ?? "Unknown"
                 let profilePicture = userData?["profilePictureUrl"] as? String
                 
                 // Cache the result
@@ -425,7 +425,7 @@ class ChatViewModel: ObservableObject {
                 return
             }
             
-            let userName = data["username"] as? String ?? "Unknown"
+            let userName = data["name"] as? String ?? "Unknown"
             let profilePicture = data["profilePictureUrl"] as? String
             
             self?.userCache[currentUserId] = (userName, profilePicture)

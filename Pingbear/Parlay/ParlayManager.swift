@@ -306,7 +306,7 @@ class ParlayManager {
                     
                     // Fetch winner's username
                     self.db.collection("users").document(entryOwnerId).getDocument { userDoc, _ in
-                        let winnerUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        let winnerUsername = userDoc?.data()?["name"] as? String ?? "Someone"
                         
                         // Send individual notification to winner
                         NotificationQueueManager.shared.queueIndividualNotification(
@@ -432,7 +432,7 @@ class ParlayManager {
                     
                     group.enter()
                     self.db.collection("users").document(userId).getDocument { userDoc, _ in
-                        raterUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        raterUsername = userDoc?.data()?["name"] as? String ?? "Someone"
                         group.leave()
                     }
                     
@@ -551,7 +551,7 @@ class ParlayManager {
                     
                     group.enter()
                     raterRef.getDocument { userDoc, _ in
-                        raterUsername = userDoc?.data()?["username"] as? String ?? "Someone"
+                        raterUsername = userDoc?.data()?["name"] as? String ?? "Someone"
                         group.leave()
                     }
                     
@@ -595,7 +595,7 @@ class ParlayManager {
         db.collection("users").document(winnerUserId).getDocument { [weak self] userDoc, userError in
             guard let self = self else { return }
             
-            let winnerName = userDoc?.data()?["username"] as? String ?? "Someone"
+            let winnerName = userDoc?.data()?["name"] as? String ?? "Someone"
             let predictionText = predictionCount == 1 ? "prediction" : "predictions"
             let messageText = "\(winnerName) just won \(payout) coins on \(predictionCount) \(predictionText)!"
             

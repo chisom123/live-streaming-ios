@@ -246,11 +246,11 @@ class EntryViewModel: ObservableObject {
                         userSnapshot?.documents.forEach { document in
                             let userId = document.documentID
                             let data = document.data()
-                            let username = data["username"] as? String ?? "Unknown"
+                            let name = data["name"] as? String ?? "Unknown"
                             let profilePictureUrl = data["profilePictureUrl"] as? String
                             
                             if let userStats = userStarsDict[userId] {
-                                let displayName = userStats.isCurrentUser ? "Me" : username
+                                let displayName = userStats.isCurrentUser ? "Me" : name
                                 userEntries.append(UserEntry(
                                     id: userId,
                                     userName: displayName,
@@ -369,8 +369,8 @@ class EntryViewModel: ObservableObject {
                 
                 userSnapshot?.documents.forEach { document in
                     let data = document.data()
-                    if let username = data["username"] as? String {
-                        userNames[document.documentID] = username
+                    if let name = data["name"] as? String {
+                        userNames[document.documentID] = name
                     }
                     if let profilePictureUrl = data["profilePictureUrl"] as? String {
                         userProfilePictures[document.documentID] = profilePictureUrl

@@ -456,7 +456,7 @@ struct PredictionsDetailView: View {
         
         db.collection("users").document(userId).getDocument { document, error in
             if let data = document?.data(),
-               let username = data["username"] as? String {
+               let username = data["name"] as? String {  // Changed from "username"
                 let profilePictureUrl = data["profilePictureUrl"] as? String
                 DispatchQueue.main.async {
                     self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)

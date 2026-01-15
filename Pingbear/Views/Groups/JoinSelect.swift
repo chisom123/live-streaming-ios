@@ -223,7 +223,7 @@ struct JoinSelectView: View {
         let currentUserRef = db.collection("users").document(currentUserId)
         
         currentUserRef.getDocument { (document, error) in
-            if let document = document, let username = document.data()?["username"] as? String {
+            if let document = document, let username = document.data()?["name"] as? String {
                 self.updateCompetitionWithNotifications(username: username)
             } else {
                 print("Failed to fetch username for current user.")
@@ -276,7 +276,7 @@ struct JoinSelectView: View {
                     
                     // STEP 3: Fetch the new member's username and send notifications
                     db.collection("users").document(userId).getDocument { userDoc, userError in
-                        let newMemberName = userDoc?.data()?["username"] as? String ?? "Someone"
+                        let newMemberName = userDoc?.data()?["name"] as? String ?? "Someone"
                         
                         // Notify the new member
                         NotificationQueueManager.shared.queueIndividualNotification(

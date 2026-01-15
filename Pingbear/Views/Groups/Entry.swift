@@ -317,7 +317,7 @@ private extension EntryView {
         if let userId = Auth.auth().currentUser?.uid {
             // Fetch sender's username
             db.collection("users").document(userId).getDocument { userDoc, _ in
-                let username = userDoc?.data()?["username"] as? String ?? "Someone"
+                let username = userDoc?.data()?["name"] as? String ?? "Someone"
                 
                 NotificationQueueManager.shared.queueGroupNotification(
                     competitionId: competition.id,

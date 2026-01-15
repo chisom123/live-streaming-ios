@@ -275,7 +275,7 @@ class DeepLinkHandler: ObservableObject {
                     
                     // Fetch the new member's username and competition description for notifications
                     self?.db.collection("users").document(userId).getDocument { userDoc, userError in
-                        let newMemberName = userDoc?.data()?["username"] as? String ?? "Someone"
+                        let newMemberName = userDoc?.data()?["name"] as? String ?? "Someone"  // Changed from "username"
                         
                         // Fetch competition description
                         self?.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in

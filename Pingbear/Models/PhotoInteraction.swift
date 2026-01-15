@@ -215,7 +215,7 @@ class PhotoInteractionService: ObservableObject {
                     usersSnapshot?.documents.forEach { doc in
                         let data = doc.data()
                         userMap[doc.documentID] = (
-                            data["username"] as? String ?? "Unknown",
+                            data["name"] as? String ?? "Unknown",
                             data["profilePictureUrl"] as? String
                         )
                     }

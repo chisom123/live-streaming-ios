@@ -323,7 +323,7 @@ class EntryUploadManager: ObservableObject {
                                 
                                 // Fetch sender's username for notification
                                 self.db.collection("users").document(userId).getDocument { userDoc, _ in
-                                    let username = userDoc?.data()?["username"] as? String ?? "Someone"
+                                    let username = userDoc?.data()?["name"] as? String ?? "Someone"
                                     
                                     NotificationQueueManager.shared.queueGroupNotification(
                                         competitionId: competitionId,

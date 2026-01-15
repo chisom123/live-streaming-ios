@@ -226,7 +226,7 @@ class GlobalLeaderboardViewModel: ObservableObject {
             
             db.collection("users").document(participant.userId).getDocument { document, error in
                 if let data = document?.data() {
-                    let username = data["username"] as? String ?? "Unknown"
+                    let username = data["name"] as? String ?? "Unknown"  // Changed from "username"
                     let profilePictureUrl = data["profilePictureUrl"] as? String
                     
                     // Calculate prize with tie splitting

@@ -136,7 +136,7 @@ class ThemePhotosViewModel: ObservableObject {
                 // Update user cache
                 userSnapshot?.documents.forEach { userDoc in
                     let data = userDoc.data()
-                    let username = data["username"] as? String ?? "Unknown"
+                    let username = data["name"] as? String ?? "Unknown"  // Changed from "username"
                     let profilePic = data["profilePictureUrl"] as? String
                     self?.userCache[userDoc.documentID] = (username, profilePic)
                 }

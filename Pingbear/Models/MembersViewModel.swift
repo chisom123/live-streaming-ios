@@ -58,11 +58,11 @@ class MembersViewModel: ObservableObject {
                 
                 if let document = document, document.exists,
                    let data = document.data(),
-                   let username = data["username"] as? String {
+                   let name = data["name"] as? String {
                     
                     let profileurl = data["profilePictureUrl"] as? String
                     let isAdded = self?.myFriendsModel.friends.contains(where: { $0.id == userId }) ?? false
-                    let member = MemberUser(id: userId, username: username, profileurl: profileurl, isAdded: isAdded, justAdded: false)
+                    let member = MemberUser(id: userId, username: name, profileurl: profileurl, isAdded: isAdded, justAdded: false)
                     tempMembers.append(member)
                 }
             }

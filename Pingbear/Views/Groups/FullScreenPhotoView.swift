@@ -715,10 +715,10 @@ struct FullScreenPhotoView: View {
         
         db.collection("users").document(userId).getDocument { document, error in
             if let data = document?.data(),
-               let username = data["username"] as? String {
+               let name = data["name"] as? String {  // Changed from "username"
                 let profilePictureUrl = data["profilePictureUrl"] as? String
                 DispatchQueue.main.async {
-                    self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)
+                    self.pendingUserProfiles[userId] = (username: name, profilePictureUrl: profilePictureUrl)
                 }
             }
         }
@@ -781,7 +781,7 @@ struct FullScreenPhotoView: View {
             
             group.enter()
             userRef.getDocument { userDoc, _ in
-                username = userDoc?.data()?["username"] as? String ?? "Someone"
+                username = userDoc?.data()?["name"] as? String ?? "Someone"  // Changed from "username"
                 group.leave()
             }
             

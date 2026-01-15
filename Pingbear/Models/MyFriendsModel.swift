@@ -60,7 +60,7 @@ class MyFriendsModel: ObservableObject {
                 defer { group.leave() }
                 if let document = document, document.exists,
                    let data = document.data(),
-                   let name = data["username"] as? String {
+                   let name = data["name"] as? String {
 
                     let profileImageUrl = data["profilePictureUrl"] as? String
                     let user = AppUser(id: friendID, name: name, profileImageUrl: profileImageUrl)

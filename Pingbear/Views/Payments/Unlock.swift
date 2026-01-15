@@ -885,7 +885,7 @@ struct UnlockView: View {
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
-                            .lineLimit(1)
+                            .lineSpacing(2)
                     }
                     
                     VStack(spacing: 16) {
