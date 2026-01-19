@@ -306,23 +306,12 @@ struct CompetitionCellContent: View {
                 
                 Spacer()
                 
-                HStack(spacing: 8) {
-                    Text("\(competition.entriesNotVotedCount)")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(Color(hex: "#FFF"))
-                    
-                    Image(systemName: "photo.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundColor(Color(hex: "#FFF"))
-                }
-                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                .background(Color.white.opacity(0.15))
-                .cornerRadius(200)
-                .padding(.trailing, 30)
+                Image(systemName: "chevron.right")
+                    .foregroundColor(Color(hex: "#D3D3D3"))
+                    .font(.system(size: 15, weight: .bold))
+                    .padding(.trailing, 30)
             }
-            .padding(.vertical, 25)
+            .padding(.vertical, 30)
             .contentShape(Rectangle())
             .contextMenu {
                 Button() {
