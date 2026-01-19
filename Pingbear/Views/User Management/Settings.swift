@@ -11,13 +11,14 @@ struct SettingsView: View {
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
     
     enum ActiveSheet: Identifiable {
-        case addFriends, myFriends, myAccount
+        case addFriends, myFriends, myAccount, storyLinks
         
         var id: Int {
             switch self {
             case .addFriends: return 0
             case .myFriends: return 1
             case .myAccount: return 2
+            case .storyLinks: return 3
             }
         }
     }
@@ -83,6 +84,17 @@ struct SettingsView: View {
                     .background(Color(hex: "#1A2245"))
                     .cornerRadius(10)
                     
+                    // Story Links Section
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            activeSheet = .storyLinks
+                        }) {
+                            SettingsRow(text: "Story Links", color: .white)
+                        }
+                    }
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(10)
+                    
                     // Support & Account Actions Section
                     VStack(spacing: 0) {
                         ForEach(["Contact Us", "Log Out", "Delete Account"], id: \.self) { text in
@@ -128,6 +140,8 @@ struct SettingsView: View {
                 MyFriendsView(viewModel: myFriendsModel)
             case .myAccount:
                 ChangeNameView()
+            case .storyLinks:
+                MyStoryLinksView()
             }
         }
         .alert("Are you sure?", isPresented: $showSignOutAlert) {

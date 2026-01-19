@@ -100,7 +100,7 @@ class GlobalLeaderboardViewModel: ObservableObject {
             guard let data = document?.data(),
                   let endDateTimestamp = data["end_date"] as? Timestamp else {
                 DispatchQueue.main.async {
-                    self.errorMessage = "Invalid pot data"
+                    self.errorMessage = "Invalid prize pool data"
                     self.isLoading = false
                 }
                 return

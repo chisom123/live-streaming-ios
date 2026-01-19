@@ -80,11 +80,11 @@ struct GlobalLeaderboardView: View {
                             .font(.system(size: 64))
                             .foregroundColor(Color(hex: "#FFD700"))
                         
-                        Text("Join the $\(String(format: "%.0f", viewModel.firstPlacePrize)) Prize Pot!")
+                        Text("Join the $\(String(format: "%.0f", viewModel.firstPlacePrize)) Prize Pool!")
                             .font(.system(size: 21, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Get your first rating to enter the weekly competition")
+                        Text("Get your first rating to enter the weekly prize pool")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)

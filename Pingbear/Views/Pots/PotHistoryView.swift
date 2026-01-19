@@ -20,7 +20,7 @@ struct PotHistoryView: View {
                 
                 Spacer()
                 
-                Text("My Pot History")
+                Text("My Prize Pool History")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
@@ -72,11 +72,11 @@ struct PotHistoryView: View {
                         .font(.system(size: 64))
                         .foregroundColor(.white.opacity(0.5))
                     
-                    Text("No Past Pots")
+                    Text("No Past Prize Pools")
                         .font(.system(size: 21, weight: .bold))
                         .foregroundColor(.white)
                     
-                    Text("Your pot history will appear here")
+                    Text("Your prize pool history will appear here")
                         .font(.system(size: 16))
                         .foregroundColor(.white.opacity(0.7))
                 }
