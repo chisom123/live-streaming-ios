@@ -92,9 +92,12 @@ struct MyStoryLinksView: View {
             } else if viewModel.assignedLinks.isEmpty {
                 // Empty state - no ScrollView needed
                 VStack(spacing: 20) {
-                    Image(systemName: "link.circle")
-                        .font(.system(size: 64))
+                    Image("link")
+                        .resizable()
+                        .renderingMode(.template)
                         .foregroundColor(.white.opacity(0.5))
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 64, height: 64)
                     
                     Text("No Story Links Yet")
                         .font(.system(size: 21, weight: .bold))
