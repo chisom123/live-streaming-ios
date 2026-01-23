@@ -2,7 +2,6 @@ import SwiftUI
 
 struct CustomTabBar: View {
     @Binding var selectedTab: Int
-    let isRecruit: Bool
     
     var body: some View {
         VStack(spacing: 0) {
@@ -26,20 +25,11 @@ struct CustomTabBar: View {
                     action: { selectedTab = 1 }
                 )
                 
-                if isRecruit {
-                    TabBarButton(
-                        icon: "book-user",  // Icon for recruits - you can change this
-                        title: "Stories",
-                        isSelected: selectedTab == 2,
-                        action: { selectedTab = 2 }
-                    )
-                }
-                
                 TabBarButton(
                     icon: "settings",
                     title: "Settings",
-                    isSelected: selectedTab == (isRecruit ? 3 : 2),
-                    action: { selectedTab = (isRecruit ? 3 : 2) }
+                    isSelected: selectedTab == 2,
+                    action: { selectedTab = 2 }
                 )
             }
             .padding(.vertical, 12)
