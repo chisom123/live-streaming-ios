@@ -4,6 +4,11 @@ import FirebaseAuth
 import Kingfisher
 import NotificationBannerSwift
 
+// Keep this extension - still needed for dismissing camera flow
+extension Notification.Name {
+    static let showUserPhotosAfterUpload = Notification.Name("showUserPhotosAfterUpload")
+}
+
 struct FullScreenPhotoView: View {
     let photo: UserPhoto
     let userName: String
@@ -40,9 +45,15 @@ struct FullScreenPhotoView: View {
     // Chat ViewModel for sending messages
     @StateObject private var chatViewModel: ChatViewModel
     
+    // Navigation flag
+    let shouldShowUserPhotosOnBack: Bool
+    
+    // NEW: State for dismissal loading
+    @State private var isDismissing = false
+    
     let onDismiss: ((Int) -> Void)?
     
-    init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, onDismiss: ((Int) -> Void)? = nil) {
+    init(photo: UserPhoto, userName: String, competitionId: String?, userProfilePictureUrl: String? = nil, onDismiss: ((Int) -> Void)? = nil, shouldShowUserPhotosOnBack: Bool = false) {
         self.photo = photo
         self.userName = userName
         self.competitionId = competitionId
@@ -50,249 +61,258 @@ struct FullScreenPhotoView: View {
         self.onDismiss = onDismiss
         self._currentStarCount = State(initialValue: photo.stars)
         self._chatViewModel = StateObject(wrappedValue: ChatViewModel(competitionId: competitionId ?? ""))
+        self.shouldShowUserPhotosOnBack = shouldShowUserPhotosOnBack
     }
     
     private let db = Firestore.firestore()
     
     var body: some View {
         ZStack {
-            GeometryReader { geometry in
-                let screenWidth = geometry.size.width
+            // Main content
+            ZStack {
+                GeometryReader { geometry in
+                    let screenWidth = geometry.size.width
+                    
+                    // Photo with text overlay using shared component
+                    PhotoMainImageView(
+                        photoUrl: photo.photoUrl,
+                        overlayText: photo.overlayText,
+                        overlayVerticalPosition: photo.overlayVerticalPosition,
+                        isTransitioning: false,
+                        slideDirection: .left,
+                        screenWidth: screenWidth
+                    )
+                }
                 
-                // Photo with text overlay using shared component
-                PhotoMainImageView(
-                    photoUrl: photo.photoUrl,
-                    overlayText: photo.overlayText,
-                    overlayVerticalPosition: photo.overlayVerticalPosition,
-                    isTransitioning: false, // No transitions in FullScreenPhotoView
-                    slideDirection: .left,   // Not used but required
-                    screenWidth: screenWidth
-                )
-            }
-            
-            // TOP NAVIGATION using shared component
-            VStack {
-                PhotoNavigationBar(
-                    onBack: {
-                        onDismiss?(currentStarCount)
-                        dismiss()
-                    },
-                    userName: userName,
-                    userProfilePictureUrl: userProfilePictureUrl,
-                    themeName: photo.themeName,
-                    themeId: photo.themeId,
-                    competitionId: competitionId ?? "",
-                    onMessage: {
-                        showingMessageComposer = true
-                    }
-                )
-                
-                Spacer()
-            }
-            
-            // Bottom sheet - different content for entry creator vs raters
-            // Only show predictions view if entry creator AND has parlay data (entryCost > 0)
-            if isEntryCreator && parlayStatus != nil && parlayStake > 0 {
-                // Entry Creator View - Predictions focused
-                UltraSmoothBottomSheet(
-                    minHeight: PhotoViewConstants.minHeight,
-                    midHeight: UIScreen.main.bounds.height * 0.5, // Start at 50%
-                    maxHeight: PhotoViewConstants.maxHeight(withFooter: false),
-                    bottomPadding: 0
-                ) {
-                    VStack(spacing: 0) {
-                        // Centered handle
-                        VStack {
-                            RoundedRectangle(cornerRadius: 200)
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 40, height: 5)
+                // TOP NAVIGATION using shared component
+                VStack {
+                    PhotoNavigationBar(
+                        onBack: {
+                            handleBackNavigation()
+                        },
+                        userName: userName,
+                        userProfilePictureUrl: userProfilePictureUrl,
+                        themeName: photo.themeName,
+                        themeId: photo.themeId,
+                        competitionId: competitionId ?? "",
+                        onMessage: {
+                            showingMessageComposer = true
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical)
-                        
-                        // Scrollable content
-                        ScrollView {
-                            VStack(spacing: 16) {
-                                // Single container for both Predictions and Other Ratings
-                                VStack(spacing: 12) {
-                                    HStack {
-                                        Text("My Predictions")
-                                            .font(.system(size: 16, weight: .bold))
-                                            .foregroundColor(.white)
-                                        
-                                        Spacer()
-                                        
-                                        parlayStatusBadge
-                                    }
-                                    .padding(.bottom, 8)
-                                    
-                                    if parlayStatus == "pending" {
-                                        parlayProgressViewInline
-                                    } else if parlayStatus == "won" {
-                                        parlayWonViewInline
-                                    } else if parlayStatus == "lost" {
-                                        parlayLostViewInline
-                                    }
-                                    
-                                    // Other Ratings Section (inside same container)
-                                    let predictedUserIds = Set(parlayPredictions.keys)
-                                    let otherRatings = interactionService.interactions.filter { !predictedUserIds.contains($0.userId) }
-                                    
-                                    if !otherRatings.isEmpty {
-                                        VStack(spacing: 0) {
-                                            Divider()
-                                                .background(Color.white.opacity(0.2))
-                                                .padding(.bottom, 12)
+                    )
+                    
+                    Spacer()
+                }
+                
+                // Bottom sheet - different content for entry creator vs raters
+                // Only show predictions view if entry creator AND has parlay data (entryCost > 0)
+                if isEntryCreator && parlayStatus != nil && parlayStake > 0 {
+                    // Entry Creator View - Predictions focused
+                    UltraSmoothBottomSheet(
+                        minHeight: PhotoViewConstants.minHeight,
+                        midHeight: UIScreen.main.bounds.height * 0.5,
+                        maxHeight: PhotoViewConstants.maxHeight(withFooter: false),
+                        bottomPadding: 0
+                    ) {
+                        VStack(spacing: 0) {
+                            // Centered handle
+                            VStack {
+                                RoundedRectangle(cornerRadius: 200)
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 40, height: 5)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical)
+                            
+                            // Scrollable content
+                            ScrollView {
+                                VStack(spacing: 16) {
+                                    // Single container for both Predictions and Other Ratings
+                                    VStack(spacing: 12) {
+                                        HStack {
+                                            Text("My Predictions")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(.white)
                                             
-                                            HStack {
-                                                Text("Other Ratings (\(otherRatings.count))")
-                                                    .foregroundColor(.white)
-                                                    .font(.system(size: 15, weight: .bold))
-                                                    .padding(.top, 5)
-                                                
-                                                Spacer()
-                                            }
+                                            Spacer()
                                             
+                                            parlayStatusBadge
+                                        }
+                                        .padding(.bottom, 8)
+                                        
+                                        if parlayStatus == "pending" {
+                                            parlayProgressViewInline
+                                        } else if parlayStatus == "won" {
+                                            parlayWonViewInline
+                                        } else if parlayStatus == "lost" {
+                                            parlayLostViewInline
+                                        }
+                                        
+                                        // Other Ratings Section (inside same container)
+                                        let predictedUserIds = Set(parlayPredictions.keys)
+                                        let otherRatings = interactionService.interactions.filter { !predictedUserIds.contains($0.userId) }
+                                        
+                                        if !otherRatings.isEmpty {
                                             VStack(spacing: 0) {
-                                                ForEach(otherRatings) { interaction in
-                                                    VStack(spacing: 0) {
-                                                        HStack(spacing: 5) {
-                                                            ProfilePictureView(url: interaction.profilePictureUrl, size: 36)
-                                                            
-                                                            Text(interaction.userName)
-                                                                .font(.system(size: 15, weight: .semibold))
-                                                                .foregroundColor(.white)
-                                                                .lineLimit(1)
-                                                                .padding(.leading, 10)
-                                                            
-                                                            Spacer()
-                                                            
-                                                            HStack(spacing: 6) {
-                                                                Text("\(interaction.rating)")
-                                                                    .font(.system(size: 15, weight: .bold))
-                                                                    .foregroundColor(.white)
+                                                Divider()
+                                                    .background(Color.white.opacity(0.2))
+                                                    .padding(.bottom, 12)
+                                                
+                                                HStack {
+                                                    Text("Other Ratings (\(otherRatings.count))")
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 15, weight: .bold))
+                                                        .padding(.top, 5)
+                                                    
+                                                    Spacer()
+                                                }
+                                                
+                                                VStack(spacing: 0) {
+                                                    ForEach(otherRatings) { interaction in
+                                                        VStack(spacing: 0) {
+                                                            HStack(spacing: 5) {
+                                                                ProfilePictureView(url: interaction.profilePictureUrl, size: 36)
                                                                 
-                                                                Image(systemName: "star.fill")
-                                                                    .resizable()
-                                                                    .frame(width: 15, height: 15)
+                                                                Text(interaction.userName)
+                                                                    .font(.system(size: 15, weight: .semibold))
                                                                     .foregroundColor(.white)
+                                                                    .lineLimit(1)
+                                                                    .padding(.leading, 10)
+                                                                
+                                                                Spacer()
+                                                                
+                                                                HStack(spacing: 6) {
+                                                                    Text("\(interaction.rating)")
+                                                                        .font(.system(size: 15, weight: .bold))
+                                                                        .foregroundColor(.white)
+                                                                    
+                                                                    Image(systemName: "star.fill")
+                                                                        .resizable()
+                                                                        .frame(width: 15, height: 15)
+                                                                        .foregroundColor(.white)
+                                                                }
+                                                                .padding(.horizontal, 10)
+                                                                .padding(.vertical, 5)
+                                                                .background(Color(hex: "#DAA520"))
+                                                                .cornerRadius(20)
                                                             }
-                                                            .padding(.horizontal, 10)
-                                                            .padding(.vertical, 5)
-                                                            .background(Color(hex: "#DAA520"))
-                                                            .cornerRadius(20)
-                                                        }
-                                                        .padding(.horizontal, 0)
-                                                        .padding(.vertical, 15)
-                                                        
-                                                        if interaction.id != otherRatings.last?.id {
-                                                            Divider()
-                                                                .background(Color.white.opacity(0.2))
+                                                            .padding(.horizontal, 0)
+                                                            .padding(.vertical, 15)
+                                                            
+                                                            if interaction.id != otherRatings.last?.id {
+                                                                Divider()
+                                                                    .background(Color.white.opacity(0.2))
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
                                         }
                                     }
+                                    .padding()
+                                    .background(Color.white.opacity(0.05))
+                                    .cornerRadius(12)
+                                    .padding(.horizontal, 20)
                                 }
-                                .padding()
-                                .background(Color.white.opacity(0.05))
-                                .cornerRadius(12)
-                                .padding(.horizontal, 20)
+                                .padding(.bottom, 40)
                             }
-                            .padding(.bottom, 40)
                         }
                     }
-                }
-            } else {
-                // Regular Rater View - Ratings list + star footer
-                UltraSmoothBottomSheet(
-                    minHeight: PhotoViewConstants.minHeight,
-                    midHeight: PhotoViewConstants.midHeight(withFooter: true),
-                    maxHeight: PhotoViewConstants.maxHeight(withFooter: true),
-                    bottomPadding: PhotoViewConstants.starFooterHeight
-                ) {
-                    VStack(spacing: 0) {
-                        // Centered handle
-                        VStack {
-                            RoundedRectangle(cornerRadius: 200)
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 40, height: 5)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical)
-                        
-                        HStack {
-                            Text("Ratings (\(interactionService.interactions.count))")
-                                .foregroundColor(.white.opacity(0.7))
-                                .font(.system(size: 15, weight: .bold))
-                                .padding(.bottom, 10)
+                } else {
+                    // Regular Rater View - Ratings list + star footer
+                    UltraSmoothBottomSheet(
+                        minHeight: PhotoViewConstants.minHeight,
+                        midHeight: PhotoViewConstants.midHeight(withFooter: true),
+                        maxHeight: PhotoViewConstants.maxHeight(withFooter: true),
+                        bottomPadding: PhotoViewConstants.starFooterHeight
+                    ) {
+                        VStack(spacing: 0) {
+                            // Centered handle
+                            VStack {
+                                RoundedRectangle(cornerRadius: 200)
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 40, height: 5)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical)
                             
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        
-                        // Content
-                        if interactionService.isLoadingInteractions {
-                            EmptyView()
-                        } else {
-                            ScrollView {
-                                VStack(spacing: 0) {
-                                    ForEach(interactionService.interactions) { interaction in
-                                        VStack(spacing: 0) {
-                                            HStack {
-                                                ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
-                                                
-                                                Text(interaction.userName)
-                                                    .font(.system(size: 16, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .lineLimit(1)
-                                                    .padding(.leading, 10)
-                                                
-                                                Spacer()
-                                                
-                                                HStack(spacing: 6) {
-                                                    Text("\(interaction.rating)")
+                            HStack {
+                                Text("Ratings (\(interactionService.interactions.count))")
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .font(.system(size: 15, weight: .bold))
+                                    .padding(.bottom, 10)
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // Content
+                            if interactionService.isLoadingInteractions {
+                                EmptyView()
+                            } else {
+                                ScrollView {
+                                    VStack(spacing: 0) {
+                                        ForEach(interactionService.interactions) { interaction in
+                                            VStack(spacing: 0) {
+                                                HStack {
+                                                    ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
+                                                    
+                                                    Text(interaction.userName)
                                                         .font(.system(size: 16, weight: .bold))
                                                         .foregroundColor(.white)
+                                                        .lineLimit(1)
+                                                        .padding(.leading, 10)
                                                     
-                                                    Image(systemName: "star.fill")
-                                                        .resizable()
-                                                        .frame(width: 16, height: 16)
-                                                        .foregroundColor(.white)
+                                                    Spacer()
+                                                    
+                                                    HStack(spacing: 6) {
+                                                        Text("\(interaction.rating)")
+                                                            .font(.system(size: 16, weight: .bold))
+                                                            .foregroundColor(.white)
+                                                        
+                                                        Image(systemName: "star.fill")
+                                                            .resizable()
+                                                            .frame(width: 16, height: 16)
+                                                            .foregroundColor(.white)
+                                                    }
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 5)
+                                                    .background(Color(hex: "#DAA520"))
+                                                    .cornerRadius(20)
                                                 }
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 5)
-                                                .background(Color(hex: "#DAA520"))
-                                                .cornerRadius(20)
-                                            }
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 15)
-                                            
-                                            if interaction.id != interactionService.interactions.last?.id {
-                                                Divider()
-                                                    .background(Color.white.opacity(0.2))
+                                                .padding(.horizontal, 20)
+                                                .padding(.vertical, 15)
+                                                
+                                                if interaction.id != interactionService.interactions.last?.id {
+                                                    Divider()
+                                                        .background(Color.white.opacity(0.2))
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                            
+                            Spacer()
                         }
-                        
-                        Spacer()
                     }
+                    
+                    PhotoStarRatingFooter(
+                        rating: $rating,
+                        hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
+                        isRatingEnabled: isRatingEnabled && userName != "Me",
+                        animateRating: animateRating,
+                        onRatingSubmit: { stars in
+                            submitRating(stars: stars)
+                        },
+                        height: PhotoViewConstants.starFooterHeight
+                    )
                 }
-                
-                PhotoStarRatingFooter(
-                    rating: $rating,
-                    hasAlreadyVoted: hasAlreadyVoted || userName == "Me",
-                    isRatingEnabled: isRatingEnabled && userName != "Me",
-                    animateRating: animateRating,
-                    onRatingSubmit: { stars in
-                        submitRating(stars: stars)
-                    },
-                    height: PhotoViewConstants.starFooterHeight
-                )
+            }
+            
+            // NEW: Dismissal loading overlay
+            if isDismissing {
+                Color(hex: "#10183C")
+                    .ignoresSafeArea()
             }
         }
         .background(Color(hex: "#10183C"))
@@ -349,6 +369,27 @@ struct FullScreenPhotoView: View {
                 interactionService: interactionService,
                 onDismiss: { showingPredictionsView = false }
             )
+        }
+    }
+    
+    // MARK: - Navigation Handler
+    
+    private func handleBackNavigation() {
+        if shouldShowUserPhotosOnBack {
+            // Show loading overlay
+            isDismissing = true
+            
+            // Post notification to dismiss camera flow
+            NotificationCenter.default.post(name: .dismissCameraFlow, object: nil)
+            
+            // Dismiss after a brief moment to ensure smooth transition
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.dismiss()
+            }
+        } else {
+            // Normal dismissal
+            onDismiss?(currentStarCount)
+            dismiss()
         }
     }
     
@@ -715,7 +756,7 @@ struct FullScreenPhotoView: View {
         
         db.collection("users").document(userId).getDocument { document, error in
             if let data = document?.data(),
-               let name = data["name"] as? String {  // Changed from "username"
+               let name = data["name"] as? String {
                 let profilePictureUrl = data["profilePictureUrl"] as? String
                 DispatchQueue.main.async {
                     self.pendingUserProfiles[userId] = (username: name, profilePictureUrl: profilePictureUrl)
@@ -781,7 +822,7 @@ struct FullScreenPhotoView: View {
             
             group.enter()
             userRef.getDocument { userDoc, _ in
-                username = userDoc?.data()?["name"] as? String ?? "Someone"  // Changed from "username"
+                username = userDoc?.data()?["name"] as? String ?? "Someone"
                 group.leave()
             }
             

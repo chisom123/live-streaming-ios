@@ -14,7 +14,7 @@ struct UnlockView: View {
     @State private var isUploading = false
     @State private var uploadProgress: Double = 0.0
     @State private var isLoadingGroupSize = false
-    @State private var customStakeAmount: String = "" // Changed: Start with empty string
+    @State private var customStakeAmount: String = ""
     @State private var showStakeEditor: Bool = false
     @StateObject private var membersViewModel = MembersViewModel()
     @ObservedObject private var pricingCalculator = CompetitionPricingCalculator.shared
@@ -27,15 +27,20 @@ struct UnlockView: View {
     @State private var showPredictionSelector = false
     @State private var selectedRaterId = ""
     
+    // NEW: State for showing uploaded photo (removed UserPhotosView state)
+    @State private var uploadedPhoto: UserPhoto? = nil
+    @State private var showingUploadedPhoto = false
+    @State private var currentUserProfilePictureUrl: String? = nil
+    
     private var entryCost: Int {
         if !customStakeAmount.isEmpty, let customAmount = Int(customStakeAmount), customAmount > 0 {
             return customAmount
         }
-        return 0 // Changed: Return 0 when no amount is set
+        return 0
     }
     
     private var estimatedPayout: Int {
-        guard !selectedPredictions.isEmpty && entryCost > 0 else { return 0 } // Added entryCost > 0 check
+        guard !selectedPredictions.isEmpty && entryCost > 0 else { return 0 }
         return CompetitionPricingCalculator.shared.calculateParlayPayout(
             entryCost: entryCost,
             predictions: selectedPredictions
@@ -49,7 +54,6 @@ struct UnlockView: View {
         )
     }
     
-    // NEW: Calculate rakeback for current bet
     private var rakebackAmount: Int {
         guard entryCost > 0 else { return 0 }
         return pricingCalculator.calculateRakeback(entryCost: entryCost)
@@ -67,6 +71,8 @@ struct UnlockView: View {
     
     @ObservedObject private var uploadManager = EntryUploadManager.shared
     
+    private let db = Firestore.firestore()
+    
     init(competition: Competition, competitionId: String, image: UIImage, overlayText: String, overlayVerticalPosition: CGFloat, isFromCamera: Bool, selectedTheme: Theme?) {
         self.competition = competition
         self.competitionId = competitionId
@@ -75,8 +81,6 @@ struct UnlockView: View {
         self.overlayVerticalPosition = overlayVerticalPosition
         self.isFromCamera = isFromCamera
         self.selectedTheme = selectedTheme
-        
-        // Removed: Default value initialization
     }
     
     var body: some View {
@@ -100,15 +104,28 @@ struct UnlockView: View {
         .sheet(isPresented: $showPredictionSelector) {
             predictionSelectorView
                 .onAppear {
-                    // Always refresh data when sheet appears
                     membersViewModel.fetchMembersDetails(for: competition)
                 }
         }
         .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
-            // Refresh the members data when returning from JoinSelectView
             membersViewModel.fetchMembersDetails(for: competition)
         }) {
             JoinSelectView(competition: competition, viewModel: myFriendsModel)
+        }
+        // Show uploaded photo full screen
+        .fullScreenCover(isPresented: $showingUploadedPhoto) {
+            if let photo = uploadedPhoto {
+                FullScreenPhotoView(
+                    photo: photo,
+                    userName: "Me",
+                    competitionId: competitionId,
+                    userProfilePictureUrl: currentUserProfilePictureUrl,
+                    onDismiss: { _ in
+                        showingUploadedPhoto = false
+                    },
+                    shouldShowUserPhotosOnBack: true
+                )
+            }
         }
         .onChange(of: payViewModel.purchaseCompleted) { completed in
             if completed {
@@ -124,6 +141,7 @@ struct UnlockView: View {
         .onAppear {
             Analytics.shared.trackScreen(name: "parlay_betting_paywall")
             fetchUserCoins()
+            fetchCurrentUserProfilePicture() 
             EntryUploadManager.shared.initialize()
             membersViewModel.fetchMembersDetails(for: competition)
         }
@@ -166,7 +184,7 @@ struct UnlockView: View {
             
             Spacer()
             
-            // Coin balance with rakeback badge - now fully tappable
+            // Coin balance with rakeback badge
             Button(action: {
                 showPayView = true
                 Analytics.shared.track(event: "coins_button_tapped")
@@ -236,9 +254,7 @@ struct UnlockView: View {
                         .padding(.vertical, 3)
                         .background(
                             Capsule()
-                                .fill(
-                                    Color.red
-                                )
+                                .fill(Color.red)
                         )
                         .offset(x: -8, y: -8)
                     }
@@ -268,17 +284,11 @@ struct UnlockView: View {
     private var parlayBettingView: some View {
         VStack(spacing: 0) {
             VStack(spacing: 20) {
-                // Predictions Section (now first)
                 predictionsSection
-                
                 stakeSectionView
-                
                 payoutSection
-                
-                // Submit Button
                 submitButtonView
                 
-                // Insufficient Coins Warning
                 if !isLoadingCoins && entryCost > 0 && userCoins < entryCost {
                     insufficientCoinsView
                 }
@@ -313,7 +323,6 @@ struct UnlockView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 18, height: 18)
                         
-                        // Changed: Show placeholder text when no amount is set
                         if entryCost > 0 {
                             Text("\(entryCost)")
                                 .font(.system(size: 15, weight: .bold))
@@ -335,7 +344,6 @@ struct UnlockView: View {
     
     private var predictionsSection: some View {
         VStack(spacing: 16) {
-            
             let availableRaters = membersViewModel.members.filter { $0.id != membersViewModel.currentUserId }
             
             HStack {
@@ -353,9 +361,7 @@ struct UnlockView: View {
                     .tint(.white)
                 Spacer()
             } else if availableRaters.isEmpty {
-                // No other members available
                 VStack(spacing: 16) {
-                    
                     VStack(spacing: 8) {
                         Text("Add players to this competition so you can make predictions on their ratings")
                             .font(.system(size: 15, weight: .medium))
@@ -387,7 +393,6 @@ struct UnlockView: View {
                 .background(Color.white.opacity(0.05))
                 .cornerRadius(8)
             } else {
-                // Show available members for predictions
                 ScrollView(.vertical, showsIndicators: false) {
                     LazyVGrid(columns: [
                         GridItem(.flexible()),
@@ -433,7 +438,6 @@ struct UnlockView: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
-                // Always show stars, but make empty ones gray for unselected
                 HStack(spacing: 2) {
                     ForEach(1...5, id: \.self) { star in
                         Image(systemName: star <= (selectedRating ?? 0) ? "star.fill" : "star.fill")
@@ -441,14 +445,12 @@ struct UnlockView: View {
                             .foregroundColor(
                                 star <= (selectedRating ?? 0) ?
                                 Color(hex: "#FFD700") :
-                                Color.white.opacity(0.1) // Very faint for unselected
+                                Color.white.opacity(0.1)
                             )
                     }
                 }
                 
-                // Always show multiplier area
                 if let rating = selectedRating {
-                    // Show actual multiplier when selected
                     let multiplier = CompetitionPricingCalculator.shared.getSingleStarMultiplier(starRating: rating)
                     Text("\(String(format: "%.1fx", multiplier))")
                         .font(.system(size: 14, weight: .bold))
@@ -491,7 +493,6 @@ struct UnlockView: View {
             Divider()
                 .background(Color.white.opacity(0.1))
             
-            // Multiplier Display
             HStack {
                 Text("Total Multiplier")
                     .font(.system(size: 15, weight: .semibold))
@@ -504,7 +505,6 @@ struct UnlockView: View {
                     .foregroundColor(.white.opacity(0.7))
             }
             
-            // Potential Payout
             HStack {
                 Text("To Win")
                     .font(.system(size: 15, weight: .semibold))
@@ -524,7 +524,6 @@ struct UnlockView: View {
                 }
             }
             
-            // Profit Display
             let profit = estimatedPayout - entryCost
             if profit > 0 {
                 HStack {
@@ -539,16 +538,12 @@ struct UnlockView: View {
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
-            
-            // Win Probability - removed as it's not accurate without friend behavior data
         }
     }
     
     private var submitButtonView: some View {
-        // Changed: Now requires both predictions and stake amount
         let canSubmit = userCoins >= entryCost && !selectedPredictions.isEmpty && entryCost > 0 && !isLoadingCoins && !isUnlocking
         
-        // Changed: Better button text logic
         var buttonText: String {
             if selectedPredictions.isEmpty {
                 return "Make Predictions to Continue"
@@ -619,7 +614,6 @@ struct UnlockView: View {
     
     private var stakeEditorView: some View {
         VStack(spacing: 0) {
-            // Header
             HStack {
                 Button(action: {
                     showStakeEditor = false
@@ -661,7 +655,6 @@ struct UnlockView: View {
             .background(Color(hex: "#2A3255"))
             .padding(.bottom, 50)
             
-            // Amount Display
             VStack(spacing: 0) {
                 HStack {
                     Text(customStakeAmount.isEmpty ? "0" : customStakeAmount)
@@ -673,7 +666,6 @@ struct UnlockView: View {
                 .padding()
                 .background(Color.white.opacity(0.1))
                 
-                // Quick Select Amounts
                 let suggestedAmounts = generateSuggestedAmounts()
                 
                 HStack(spacing: 0) {
@@ -703,9 +695,7 @@ struct UnlockView: View {
                 }
             }
             
-            // Custom Number Pad
             VStack(spacing: 1) {
-                // Row 1: 1, 2, 3
                 HStack(spacing: 1) {
                     ForEach(1...3, id: \.self) { number in
                         NumberPadButton(number: "\(number)") {
@@ -714,7 +704,6 @@ struct UnlockView: View {
                     }
                 }
                 
-                // Row 2: 4, 5, 6
                 HStack(spacing: 1) {
                     ForEach(4...6, id: \.self) { number in
                         NumberPadButton(number: "\(number)") {
@@ -723,7 +712,6 @@ struct UnlockView: View {
                     }
                 }
                 
-                // Row 3: 7, 8, 9
                 HStack(spacing: 1) {
                     ForEach(7...9, id: \.self) { number in
                         NumberPadButton(number: "\(number)") {
@@ -732,9 +720,7 @@ struct UnlockView: View {
                     }
                 }
                 
-                // Row 4: Clear, 0, Backspace
                 HStack(spacing: 1) {
-                    // Clear Button
                     Button(action: {
                         clearAmount()
                     }) {
@@ -745,12 +731,10 @@ struct UnlockView: View {
                             .background(Color.white.opacity(0.1))
                     }
                     
-                    // Zero Button
                     NumberPadButton(number: "0") {
                         appendNumber("0")
                     }
                     
-                    // Backspace Button
                     Button(action: {
                         deleteLastDigit()
                     }) {
@@ -768,10 +752,9 @@ struct UnlockView: View {
             Spacer()
         }
         .background(Color(hex: "#1A2245"))
-        .ignoresSafeArea(.keyboard) // Add this to handle keyboard if needed
+        .ignoresSafeArea(.keyboard)
     }
 
-    // Custom Number Button Component
     struct NumberPadButton: View {
         let number: String
         let action: () -> Void
@@ -791,12 +774,10 @@ struct UnlockView: View {
         }
     }
 
-    // Helper Methods (add these to your view or view model)
     private func appendNumber(_ digit: String) {
-        // Prevent leading zeros and limit reasonable length
         if customStakeAmount == "0" {
             customStakeAmount = digit
-        } else if customStakeAmount.count < 8 { // Reasonable limit for betting amounts
+        } else if customStakeAmount.count < 8 {
             customStakeAmount += digit
         }
     }
@@ -813,7 +794,6 @@ struct UnlockView: View {
     
     private var predictionSelectorView: some View {
         VStack(spacing: 20) {
-            // Header remains the same
             HStack {
                 Button(action: {
                     showPredictionSelector = false
@@ -847,7 +827,6 @@ struct UnlockView: View {
             .padding(.vertical, 20)
             .background(Color(hex: "#2A3255"))
             
-            // Content area with loading states
             if membersViewModel.isLoading {
                 VStack {
                     Spacer()
@@ -913,13 +892,11 @@ struct UnlockView: View {
                                     
                                     Spacer()
                                     
-                                    // Rating text and multiplier horizontally aligned
                                     HStack(spacing: 12) {
                                         Text("\(rating) Star\(rating == 1 ? "" : "s")")
                                             .font(.system(size: 16, weight: .semibold))
                                             .foregroundColor(.white)
                                         
-                                        // Multiplier in a box
                                         Text("\(String(format: "%.1fx", multiplier))")
                                             .font(.system(size: 14, weight: .bold))
                                             .foregroundColor(.white)
@@ -1006,7 +983,6 @@ struct UnlockView: View {
                     self.userCoins = 0
                 }
                 
-                // Fetch unclaimed rakeback
                 if let unclaimed = data["unclaimedRakeback"] as? Int {
                     self.unclaimedRakeback = unclaimed
                 } else {
@@ -1016,7 +992,6 @@ struct UnlockView: View {
         }
     }
     
-    // NEW: Method to submit photo without parlay bet
     private func submitWithoutParlay() {
         guard !isUploading && !isUnlocking else { return }
         
@@ -1028,8 +1003,6 @@ struct UnlockView: View {
         isUploading = true
         uploadProgress = 0.0
         
-        // Reuse uploadEntryAfterBet with empty parlay values
-        // Set entryCost to 0, predictions to empty, and other parlay values to 0
         let config = pricingCalculator.getCurrentConfig()
         
         EntryUploadManager.shared.uploadParlayEntry(
@@ -1042,19 +1015,17 @@ struct UnlockView: View {
             themeId: selectedTheme?.id,
             themeName: selectedTheme?.name,
             competition: competition,
-            entryCost: 0, // No bet placed
-            predictions: [:], // No predictions
-            potentialPayout: 0, // No payout
-            rakebackAmount: 0, // No rakeback
+            entryCost: 0,
+            predictions: [:],
+            potentialPayout: 0,
+            rakebackAmount: 0,
             rakebackPercentage: config.rakebackPercentage,
             effectiveHouseEdge: config.houseEdge,
             onProgress: { progress in
                 self.uploadProgress = progress * 100
             },
             onSuccess: { entryId in
-                DispatchQueue.main.async {
-                    self.shouldDismissCameraFlow = true
-                }
+                self.fetchUploadedEntry(entryId: entryId, userId: userId)
             },
             onFailure: { error in
                 print("Failed to upload entry: \(error.localizedDescription)")
@@ -1064,8 +1035,6 @@ struct UnlockView: View {
             }
         )
     }
-    
-    // Removed: updateStakeAmountForNewGroupSize method since we don't auto-update
     
     private func placeParlayBet() {
         guard userCoins >= entryCost && !selectedPredictions.isEmpty && entryCost > 0 && !isUnlocking else { return }
@@ -1082,10 +1051,8 @@ struct UnlockView: View {
         
         let memberDocRef = db.collection("competitions").document(competitionId).collection("members").document(currentUser.uid)
         
-        // NEW: Calculate rakeback before deducting coins
         let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
         
-        // Use transaction to atomically deduct coins AND add rakeback
         db.runTransaction({ (transaction, errorPointer) -> Any? in
             let memberDoc: DocumentSnapshot
             do {
@@ -1105,10 +1072,7 @@ struct UnlockView: View {
             let currentUnclaimedRakeback = data["unclaimedRakeback"] as? Int ?? 0
             let currentTotalRakeback = data["totalRakebackEarned"] as? Int ?? 0
             
-            // Deduct bet amount
             let newCoins = currentCoins - self.entryCost
-            
-            // Add rakeback to unclaimed
             let newUnclaimedRakeback = currentUnclaimedRakeback + rakebackEarned
             let newTotalRakeback = currentTotalRakeback + rakebackEarned
             
@@ -1135,10 +1099,8 @@ struct UnlockView: View {
                     return
                 }
                 
-                // Update local state
                 self.userCoins -= self.entryCost
                 
-                // Track analytics with rakeback info
                 Analytics.shared.track(
                     event: "parlay_bet_placed",
                     properties: [
@@ -1171,7 +1133,6 @@ struct UnlockView: View {
         isUploading = true
         uploadProgress = 0.0
         
-        // Calculate rakeback info for entry metadata
         let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
         let config = pricingCalculator.getCurrentConfig()
         let effectiveHouseEdge = config.houseEdge - (config.houseEdge * config.rakebackPercentage)
@@ -1189,16 +1150,14 @@ struct UnlockView: View {
             entryCost: entryCost,
             predictions: selectedPredictions,
             potentialPayout: estimatedPayout,
-            rakebackAmount: rakebackEarned, // NEW: Pass rakeback info
-            rakebackPercentage: config.rakebackPercentage, // NEW
-            effectiveHouseEdge: effectiveHouseEdge, // NEW
+            rakebackAmount: rakebackEarned,
+            rakebackPercentage: config.rakebackPercentage,
+            effectiveHouseEdge: effectiveHouseEdge,
             onProgress: { progress in
                 self.uploadProgress = progress * 100
             },
             onSuccess: { entryId in
-                DispatchQueue.main.async {
-                    self.shouldDismissCameraFlow = true
-                }
+                self.fetchUploadedEntry(entryId: entryId, userId: userId)
             },
             onFailure: { error in
                 print("Failed to upload parlay entry: \(error.localizedDescription)")
@@ -1207,5 +1166,66 @@ struct UnlockView: View {
                 }
             }
         )
+    }
+    
+    private func fetchCurrentUserProfilePicture() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let data = document?.data(),
+               let profileUrl = data["profilePictureUrl"] as? String {
+                DispatchQueue.main.async {
+                    self.currentUserProfilePictureUrl = profileUrl
+                }
+            }
+        }
+    }
+    
+    // Fetch the uploaded entry from Firestore and convert to UserPhoto
+    private func fetchUploadedEntry(entryId: String, userId: String) {
+        let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
+        
+        entryRef.getDocument(completion: { document, error in
+            let workItem = DispatchWorkItem {
+                self.isUploading = false
+                
+                if let error = error {
+                    print("Error fetching uploaded entry: \(error)")
+                    self.shouldDismissCameraFlow = true
+                    return
+                }
+                
+                guard let data = document?.data() else {
+                    print("No data in uploaded entry")
+                    self.shouldDismissCameraFlow = true
+                    return
+                }
+                
+                // Convert Firestore data to UserPhoto
+                let photo = UserPhoto(
+                    id: entryId,
+                    photoUrl: data["imageUrl"] as? String ?? "",
+                    stars: data["stars"] as? Int ?? 0,
+                    isSuperstar: data["stars"] as? Int ?? 0 >= 4,
+                    creationDate: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date(),
+                    themeName: data["themeName"] as? String,
+                    themeId: data["themeId"] as? String,
+                    overlayText: data["overlayText"] as? String,
+                    overlayVerticalPosition: data["overlayVerticalPosition"] as? CGFloat ?? 0.5,
+                    isFromCamera: data["isFromCamera"] as? Bool ?? self.isFromCamera,
+                    userId: userId,
+                    parlayStatus: data["parlayStatus"] as? String,
+                    parlayPredictions: data["predictions"] as? [String: Any],
+                    parlayPayout: data["potentialPayout"] as? Int,
+                    parlayStake: data["entryCost"] as? Int
+                )
+                
+                // Store the photo and show full screen view
+                self.uploadedPhoto = photo
+                self.showingUploadedPhoto = true
+            }
+            
+            DispatchQueue.main.async(execute: workItem)
+        })
     }
 }

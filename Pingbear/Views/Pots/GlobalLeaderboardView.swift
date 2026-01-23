@@ -6,6 +6,8 @@ struct GlobalLeaderboardView: View {
     @StateObject private var viewModel = GlobalLeaderboardViewModel()
     @StateObject private var walletViewModel = WalletViewModel()
     @Binding var selectedTab: Int
+    @State private var showStatsBar = true
+    @State private var initialOffset: CGFloat?
     
     var body: some View {
         ZStack {
@@ -149,7 +151,13 @@ struct GlobalLeaderboardView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
+                            // Track the scroll offset using overlay
                             ScrollView {
+                                ScrollViewOffsetTracker()
+                                    .onScrollOffsetChange { offset in
+                                        handleScrollOffset(offset)
+                                    }
+                                
                                 // Leaderboard - styled identical to CompDetails
                                 VStack(spacing: 0) {
                                     ForEach(Array(viewModel.participants.prefix(50).enumerated()), id: \.element.id) { index, participant in
@@ -220,7 +228,7 @@ struct GlobalLeaderboardView: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 80) // Add padding for fixed bottom bar
+                                .padding(.bottom, 20) // Add padding for fixed bottom bar
                             }
                         }
                         
@@ -281,6 +289,10 @@ struct GlobalLeaderboardView: View {
                             .padding(20)
                             .background(Color(hex: "#2A3255"))
                         }
+                        .offset(y: showStatsBar ? 0 : 100) // Animate off screen when hidden
+                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
+                        .opacity(showStatsBar ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
                     }
                 }
             }
@@ -290,6 +302,71 @@ struct GlobalLeaderboardView: View {
         .onAppear {
             viewModel.loadLeaderboard()
             walletViewModel.loadWalletData()
+            // Reset initial offset when view appears
+            initialOffset = nil
         }
+    }
+    
+    private func handleScrollOffset(_ offset: CGFloat) {
+        // Set initial offset on first call
+        if initialOffset == nil {
+            initialOffset = offset
+            return
+        }
+        
+        guard let baseOffset = initialOffset else { return }
+        
+        // Calculate relative scroll distance from initial position
+        let relativeOffset = baseOffset - offset
+        let threshold: CGFloat = 50 // Hide after scrolling 50 points down
+        
+        if relativeOffset > threshold && showStatsBar {
+            // Scrolling down, hide the bar
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showStatsBar = false
+            }
+        } else if relativeOffset <= threshold && !showStatsBar {
+            // Scrolling up or at top, show the bar
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showStatsBar = true
+            }
+        }
+    }
+}
+
+// Helper view to track scroll offset
+struct ScrollViewOffsetTracker: View {
+    var onScrollOffsetChange: ((CGFloat) -> Void)?
+    
+    var body: some View {
+        GeometryReader { geometry in
+            Color.clear
+                .preference(
+                    key: ScrollOffsetKey.self,
+                    value: geometry.frame(in: .global).minY
+                )
+        }
+        .frame(height: 0)
+        .onPreferenceChange(ScrollOffsetKey.self) { offset in
+            onScrollOffsetChange?(offset)
+        }
+    }
+}
+
+// Key for tracking scroll offset
+struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+// Extension for easier use
+extension View {
+    func onScrollOffsetChange(_ action: @escaping (CGFloat) -> Void) -> some View {
+        self.background(
+            ScrollViewOffsetTracker(onScrollOffsetChange: action)
+        )
     }
 }
