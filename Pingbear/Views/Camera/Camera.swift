@@ -2,7 +2,6 @@ import SwiftUI
 import PhotosUI
 
 struct CameraView: View {
-    // Use StateObject for view-owned objects, ObservedObject for parent-injected
     @StateObject private var cameraModel = CameraViewModel()
     var competition: Competition
     @Environment(\.dismiss) private var dismiss
@@ -10,13 +9,18 @@ struct CameraView: View {
     @State private var selectedImage: UIImage?
     @State private var imageSource: ImageSource = .camera
     @State private var isViewAppeared = false
-    @State private var selectedTheme: Theme?
+    @Binding var preselectedTheme: Theme?
     @StateObject private var themesViewModel = ThemesViewModel()
     @State private var showingThemeSelection = false
     
     enum ImageSource {
         case camera
         case gallery
+    }
+    
+    init(competition: Competition, preselectedTheme: Binding<Theme?>) {
+        self.competition = competition
+        self._preselectedTheme = preselectedTheme
     }
     
     var body: some View {
@@ -56,8 +60,7 @@ struct CameraView: View {
                                 .font(.system(size: 18))
                                 .foregroundColor(.white)
                             
-                            if let theme = selectedTheme {
-                                // Show the selected theme name directly in the button
+                            if let theme = preselectedTheme {
                                 Text(theme.name)
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(.white)
@@ -138,7 +141,7 @@ struct CameraView: View {
                     competition: competition,
                     competitionId: competition.id,
                     resetCameraAction: { self.resetCamera() },
-                    selectedTheme: $selectedTheme,
+                    selectedTheme: $preselectedTheme,
                     isFromCamera: imageSource == .camera
                 )
             }
@@ -147,7 +150,7 @@ struct CameraView: View {
             ThemeSelectionSheet(
                 viewModel: themesViewModel,
                 competitionId: competition.id,
-                selectedTheme: $selectedTheme
+                selectedTheme: $preselectedTheme
             )
         }
         .onAppear {

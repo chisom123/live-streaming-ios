@@ -37,6 +37,186 @@ struct ThemeEmptyStateView: View {
     }
 }
 
+// MARK: - Theme Selection Before Camera Sheet (Required)
+struct ThemeSelectionBeforeCameraSheet: View {
+    @ObservedObject var viewModel: ThemesViewModel
+    let competitionId: String
+    @Binding var selectedTheme: Theme?
+    var onContinue: () -> Void
+    @State private var isAddingNewTheme: Bool = false
+    @State private var searchText: String = ""
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack {
+            Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(.white)
+                    }
+                    
+                    Spacer()
+                    
+                    Text("Pick a Theme")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        isAddingNewTheme = true
+                    }) {
+                        Image(systemName: "plus")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 23, height: 23)
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                .background(Color(hex: "#1A2245"))
+                
+                // Search bar (only show when themes exist)
+                if !viewModel.themes.isEmpty {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.white.opacity(0.7))
+                        
+                        TextField("Search Themes", text: $searchText)
+                            .foregroundColor(.white)
+                            .accentColor(.white)
+                            .font(.system(size: 16, weight: .bold))
+                        
+                        if !searchText.isEmpty {
+                            Button(action: {
+                                searchText = ""
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.white.opacity(0.7))
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(hex: "#3B4374"))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical)
+                }
+                
+                // Content
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.2)
+                    Spacer()
+                } else if viewModel.themes.isEmpty {
+                    Spacer()
+                    ThemeEmptyStateView {
+                        isAddingNewTheme = true
+                    }
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(filteredThemes, id: \.id) { theme in
+                                VStack(spacing: 0) {
+                                    Button(action: {
+                                        selectedTheme = theme
+                                        
+                                        // Track analytics first
+                                        Analytics.shared.track(
+                                            event: "theme_selected_before_camera",
+                                            properties: [
+                                                "theme_name": theme.name,
+                                                "theme_id": theme.id,
+                                                "competition_id": competitionId
+                                            ]
+                                        )
+                                        
+                                        // Haptic feedback for selection
+                                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                                        generator.impactOccurred()
+                                        onContinue()
+                                    }) {
+                                        HStack {
+                                            Text(theme.name)
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 16, weight: .bold))
+                                                .padding(.leading, 10)
+                                                .truncationMode(.tail)
+                                                .lineLimit(1)
+                                            
+                                            Spacer()
+                                        }
+                                        .padding(.vertical, 22)
+                                        .padding(.horizontal, 15)
+                                    }
+                                    
+                                    Divider()
+                                        .background(Color.white.opacity(0.2))
+                                }
+                            }
+                            
+                            // Add New Theme button at bottom of list
+                            Button(action: {
+                                isAddingNewTheme = true
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    
+                                    Image(systemName: "plus.circle.fill")
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .font(.system(size: 20))
+                                    
+                                    Text("Add New Theme")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16, weight: .bold))
+                                    
+                                    Spacer()
+                                }
+                                .padding(.vertical, 22)
+                            }
+                        }
+                        .background(Color(hex: "#1A2245"))
+                        .cornerRadius(10)
+                        .padding(.horizontal, 20)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isAddingNewTheme) {
+            AddThemeSheet(
+                competitionId: competitionId,
+                viewModel: viewModel,
+                isPresented: $isAddingNewTheme
+            )
+        }
+        .onAppear {
+            viewModel.loadThemes(for: competitionId)
+            Analytics.shared.trackScreen(name: "theme_selection_before_camera")
+        }
+    }
+    
+    private var filteredThemes: [Theme] {
+        if searchText.isEmpty {
+            return viewModel.themes
+        } else {
+            return viewModel.themes.filter { $0.name.lowercased().contains(searchText.lowercased()) }
+        }
+    }
+}
+
 // MARK: - Updated Theme Selection Sheet
 struct ThemeSelectionSheet: View {
     @ObservedObject var viewModel: ThemesViewModel

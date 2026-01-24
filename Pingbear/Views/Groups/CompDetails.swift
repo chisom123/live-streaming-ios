@@ -38,6 +38,9 @@ struct CompDetails: View {
     @State private var showingJoinSelectView = false
     @State private var hasUserPostedFirstEntry = false
     @StateObject private var myFriendsModel = MyFriendsModel()
+    @StateObject private var themesViewModel = ThemesViewModel()
+    @State private var showingThemeSelection = false
+    @State private var selectedThemeForCapture: Theme? = nil
     
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
@@ -115,7 +118,11 @@ struct CompDetails: View {
                 HStack(spacing: 10) {
                     Button(action: {
                         entryViewModel.removeListeners()
-                        initiateVideoCapture()
+                        showingThemeSelection = true
+                        Analytics.shared.trackTap(
+                            elementId: "add_photo_initiated",
+                            screenName: "competition_details"
+                        )
                     }) {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 24, weight: .bold))
@@ -207,7 +214,13 @@ struct CompDetails: View {
                         )
                     } else {
                         if entryViewModel.userLeaderboard.isEmpty {
-                            EmptyLeaderboardView(action: initiateVideoCapture)
+                            EmptyLeaderboardView(action: {
+                                showingThemeSelection = true
+                                Analytics.shared.trackTap(
+                                    elementId: "add_photo_initiated",
+                                    screenName: "competition_details"
+                                )
+                            })
                             Spacer()
                         } else {
                             ScrollView {
@@ -294,6 +307,7 @@ struct CompDetails: View {
             fetchCurrentUserProfilePictureUrl()
             
             entryViewModel.setupListeners()
+            themesViewModel.loadThemes(for: competition.id)
         }
         .onReceive(NotificationCenter.default.publisher(for: .dismissCameraFlow)) { _ in
             // Dismiss the camera modal immediately
@@ -312,16 +326,16 @@ struct CompDetails: View {
                 NotificationQueueManager.shared.processQueuedNotifications()
             }
         }
-        // ✅ KEEP: Only Camera as fullScreenCover (true modal)
-        .fullScreenCover(isPresented: $isCameraPresented, content: {
-            CameraView(competition: competition)
-        })
-        // ✅ REMOVED: Voting fullScreenCover - now using NavigationLink
+        .fullScreenCover(isPresented: $isCameraPresented, onDismiss: {
+            // Clear the theme selection when camera is dismissed
+            selectedThemeForCapture = nil
+        }) {
+            CameraView(competition: competition, preselectedTheme: $selectedThemeForCapture)
+        }
         .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
             entryViewModel.fetchMemberCount()
             entryViewModel.fetchEntries(mode: .compDetailsView)
         }) {
-            // content closure comes last
             JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
         .sheet(isPresented: $isEditingCompetition) {
@@ -335,6 +349,26 @@ struct CompDetails: View {
                 userName: selection.user.userName,
                 competitionId: selection.competitionId,
                 userProfilePictureUrl: selection.user.profilePictureUrl
+            )
+        }
+        .sheet(isPresented: $showingThemeSelection) {
+            ThemeSelectionBeforeCameraSheet(
+                viewModel: themesViewModel,
+                competitionId: competition.id,
+                selectedTheme: $selectedThemeForCapture,
+                onContinue: {
+                    showingThemeSelection = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        checkCameraAndMicrophonePermissions { granted in
+                            if granted {
+                                joincomp()
+                            } else {
+                                // Now show the alert after sheet is fully dismissed
+                                self.activeAlert = .camera
+                            }
+                        }
+                    }
+                }
             )
         }
         .onDisappear {
@@ -411,22 +445,6 @@ struct CompDetails: View {
         }
     }
     
-    
-    func initiateVideoCapture() {
-        entryViewModel.removeListeners()
-        checkCameraAndMicrophonePermissions { granted in
-            if granted {
-                Analytics.shared.trackTap(
-                    elementId: "add_photo_initiated",
-                    screenName: "competition_details"
-                )
-                joincomp()
-            } else {
-                self.activeAlert = .camera
-            }
-        }
-    }
-    
     func checkCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
         let cameraAuthStatus = AVCaptureDevice.authorizationStatus(for: .video)
         
@@ -448,13 +466,14 @@ struct CompDetails: View {
         entryViewModel.removeListeners()
         self.isCameraPresented = true
     }
-    // ✅ REMOVED: vote() function - no longer needed
+    
     func openSettings() {
         entryViewModel.removeListeners()
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
             UIApplication.shared.open(settingsUrl)
         }
     }
+    
     func addPlayer() {
         entryViewModel.removeListeners()
         showingJoinSelectView = true
@@ -463,6 +482,7 @@ struct CompDetails: View {
             screenName: "competition_details"
         )
     }
+    
     private func fetchCurrentUserProfilePictureUrl() {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         
