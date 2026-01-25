@@ -530,55 +530,38 @@ struct AddThemeSheet: View {
     // Theme suggestions grid layout
     private var suggestionsGrid: some View {
         VStack(spacing: 0) {
-            ForEach(0..<(themeSuggestions.count + 1) / 2, id: \.self) { rowIndex in
-                HStack(spacing: 0) {
-                    let leftIndex = rowIndex * 2
-                    let rightIndex = leftIndex + 1
-                    
-                    suggestionCell(index: leftIndex, theme: themeSuggestions[leftIndex])
-                    
-                    if rightIndex < themeSuggestions.count {
-                        Divider()
-                            .background(Color.white.opacity(0.2))
-                            .frame(width: 1)
+            ForEach(Array(themeSuggestions.enumerated()), id: \.offset) { index, theme in
+                Button(action: {
+                    self.selectedSuggestionIndex = index
+                    self.themeName = theme
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }) {
+                    HStack {
+                        Text(theme)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
                         
-                        suggestionCell(index: rightIndex, theme: themeSuggestions[rightIndex])
+                        Spacer()
+                        
+                        Image(systemName: "plus")
+                            .foregroundColor(Color.white.opacity(1))
+                            .font(.system(size: 19))
+                            .fontWeight(.bold)
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 22)
+                    .background(Color.clear)
+                    .contentShape(Rectangle())
                 }
                 
-                if rowIndex < (themeSuggestions.count + 1) / 2 - 1 {
+                if index < themeSuggestions.count - 1 {
                     Divider()
                         .background(Color.white.opacity(0.2))
-                        .frame(height: 1)
                 }
             }
         }
         .background(Color(hex: "#1A2245"))
         .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-        )
-    }
-    
-    // Individual suggestion cell
-    private func suggestionCell(index: Int, theme: String) -> some View {
-        let isSelected = selectedSuggestionIndex == index
-        
-        return Button(action: {
-            self.selectedSuggestionIndex = index
-            self.themeName = theme
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        }) {
-            Text(theme)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(Color.white)
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity)
-                .frame(height: 65)
-                .contentShape(Rectangle()) // This makes the entire frame tappable
-        }
     }
     
     private func createTheme() {
