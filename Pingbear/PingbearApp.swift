@@ -131,14 +131,12 @@ struct PingbearApp: App {
             ZStack {
                 if isLoggedIn && Auth.auth().currentUser != nil {
                     NavigationStack {
-                        MainTabView(isNewUser: UserDefaults.standard.bool(forKey: "isNewUser"))
+                        MainTabView()
                             .navigationBarHidden(true)
                     }
                     .onAppear {
                         setupApp()
                         processLoginPendingDeepLink()
-                        // Clear the new user flag after first appearance
-                        UserDefaults.standard.set(false, forKey: "isNewUser")
                     }
                     .environment(\.didLogOut, didLogOut)
                     .onReceive(didLogOut) { _ in

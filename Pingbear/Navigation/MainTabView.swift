@@ -1,12 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab: Int
-    
-    init(isNewUser: Bool = false) {
-        // Start on GlobalLeaderboardView (tab 1) for new users, MyCompsView (tab 0) for existing users
-        _selectedTab = State(initialValue: isNewUser ? 1 : 0)
-    }
+    @State private var selectedTab: Int = 0  // Always start on tab 0 (home)
     
     var body: some View {
         GeometryReader { geometry in
