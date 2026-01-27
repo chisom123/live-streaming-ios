@@ -264,20 +264,18 @@ struct UnlockView: View {
             
             Spacer()
             
-            // Right: X button to submit without parlay
+            // Right: Skip button to submit without parlay
             Button(action: {
                 submitWithoutParlay()
                 Analytics.shared.track(event: "submit_without_parlay_tapped")
             }) {
-                Image(systemName: "xmark")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 21, height: 21)
-                    .foregroundColor(Color.white)
+                Text("Skip")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(Color.white.opacity(0.7))
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 20)
+        .padding(.vertical, 15)
         .background(Color(hex: "#1A2245"))
     }
     
