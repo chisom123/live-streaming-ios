@@ -633,20 +633,20 @@ struct UnlockView: View {
                 Spacer()
                 
                 Button(action: {
-                    if let amount = Int(customStakeAmount), amount > 0 {
-                        showStakeEditor = false
-                        Analytics.shared.track(
-                            event: "parlay_stake_set",
-                            properties: ["amount": amount]
-                        )
-                    }
+//                    if let amount = Int(customStakeAmount), amount > 0 {
+//                        showStakeEditor = false
+//                        Analytics.shared.track(
+//                            event: "parlay_stake_set",
+//                            properties: ["amount": amount]
+//                        )
+//                    }
                 }) {
                     Image(systemName: "checkmark")
                         .font(.system(size: 21))
                         .fontWeight(.semibold)
                         .foregroundColor(Color(hex: "#FFF"))
                 }
-                .opacity((Int(customStakeAmount) ?? 0) > 0 ? 1.0 : 0.5)
+                .opacity(0)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
