@@ -449,8 +449,7 @@ struct UnlockView: View {
                 }
                 
                 if let rating = selectedRating {
-                    let multiplier = CompetitionPricingCalculator.shared.getSingleStarMultiplier(starRating: rating)
-                    Text("\(String(format: "%.1fx", multiplier))")
+                    Text("\(rating) Star\(rating == 1 ? "" : "s")")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
@@ -490,18 +489,6 @@ struct UnlockView: View {
         VStack(spacing: 12) {
             Divider()
                 .background(Color.white.opacity(0.1))
-            
-            HStack {
-                Text("Total Multiplier")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                
-                Spacer()
-                
-                Text("\(String(format: "%.1fx", parlayMultiplier))")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-            }
             
             HStack {
                 Text("To Win")
@@ -894,14 +881,6 @@ struct UnlockView: View {
                                         Text("\(rating) Star\(rating == 1 ? "" : "s")")
                                             .font(.system(size: 16, weight: .semibold))
                                             .foregroundColor(.white)
-                                        
-                                        Text("\(String(format: "%.1fx", multiplier))")
-                                            .font(.system(size: 14, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 4)
-                                            .background(Color(hex: "#4169E1").opacity(0.3))
-                                            .cornerRadius(8)
                                     }
                                 }
                                 .padding()
