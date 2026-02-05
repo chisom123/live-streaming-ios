@@ -8,6 +8,7 @@ struct GlobalLeaderboardView: View {
     @Binding var selectedTab: Int
     @State private var showStatsBar = true
     @State private var initialOffset: CGFloat?
+    @State private var showPrizePoolInfo = false
     
     var body: some View {
         ZStack {
@@ -94,13 +95,13 @@ struct GlobalLeaderboardView: View {
                         
                         // Start Playing Button
                         Button(action: {
-                            selectedTab = 0  // Switch to My Comps tab
+                            showPrizePoolInfo = true
                             Analytics.shared.trackTap(
-                                elementId: "start_playing_cta",
+                                elementId: "learn_more_cta",
                                 screenName: "global_leaderboard"
                             )
                         }) {
-                            Text("Start Playing")
+                            Text("Learn More")
                                 .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(width: 200, height: 50)
@@ -299,6 +300,9 @@ struct GlobalLeaderboardView: View {
             .background(Color(hex: "#10183C"))
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showPrizePoolInfo) {
+            PrizePoolInfoView()
+        }
         .onAppear {
             viewModel.loadLeaderboard()
             walletViewModel.loadWalletData()
