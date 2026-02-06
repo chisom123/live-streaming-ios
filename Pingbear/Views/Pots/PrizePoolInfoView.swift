@@ -107,7 +107,7 @@ struct InfoStepView: View {
             Text(number)
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(.white)
-                .frame(width: 36, height: 36)
+                .frame(width: 35, height: 35)
                 .background(Color(hex: "#4169E1"))
                 .clipShape(Circle())
             
