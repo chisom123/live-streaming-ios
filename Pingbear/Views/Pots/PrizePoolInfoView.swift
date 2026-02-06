@@ -27,6 +27,7 @@ struct PrizePoolInfoView: View {
                     Text("How Prize Pools Work")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .foregroundColor(.white)
+                        .opacity(0)
                     
                     Spacer()
                     
@@ -49,15 +50,15 @@ struct PrizePoolInfoView: View {
                 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        // Prize Pool Icon
                         HStack {
                             Spacer()
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 64))
-                                .foregroundColor(Color(hex: "#FFD700"))
+                            Text("How Prize Pools Work")
+                                .font(.system(size: 21, weight: .bold))
+                                .foregroundColor(.white)
                             Spacer()
                         }
-                        .padding(.top, 20)
+                        .padding(.top, 40)
+                        .padding(.bottom, 15)
                         
                         // Step 1
                         InfoStepView(
