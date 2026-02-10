@@ -9,6 +9,7 @@ struct GlobalLeaderboardView: View {
     @State private var showStatsBar = true
     @State private var initialOffset: CGFloat?
     @State private var showPrizePoolInfo = false
+    @State private var showRedeemCode = false
     
     var body: some View {
         ZStack {
@@ -76,40 +77,78 @@ struct GlobalLeaderboardView: View {
                     }
                     Spacer()
                 } else if !viewModel.isInPot {
-                    // User not in pot yet
-                    Spacer()
-                    VStack(spacing: 20) {
-                        Image(systemName: "trophy.fill")
-                            .font(.system(size: 64))
-                            .foregroundColor(Color(hex: "#FFD700"))
+                    // User not in pot yet - wrapped in ZStack to show redeem button
+                    ZStack {
+                        VStack {
+                            Spacer()
+                            VStack(spacing: 20) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.system(size: 64))
+                                    .foregroundColor(Color(hex: "#FFD700"))
+                                
+                                Text("Join the $\(Int(ceil(viewModel.maxPrizePool))) Prize Pool!")
+                                    .font(.system(size: 21, weight: .bold))
+                                    .foregroundColor(.white)
+                                
+                                Text("Rate a photo to enter the weekly prize pool")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 40)
+                                
+                                // Start Playing Button
+                                Button(action: {
+                                    showPrizePoolInfo = true
+                                    Analytics.shared.trackTap(
+                                        elementId: "learn_more_cta",
+                                        screenName: "global_leaderboard"
+                                    )
+                                }) {
+                                    Text("Learn More")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 200, height: 50)
+                                        .background(Color(hex: "#4169E1"))
+                                        .cornerRadius(25)
+                                }
+                            }
+                            Spacer()
+                        }
                         
-                        Text("Join the $\(String(format: "%.0f", viewModel.firstPlacePrize)) Prize Pool!")
-                            .font(.system(size: 21, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Text("Get your first rating to enter the weekly prize pool")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                        
-                        // Start Playing Button
-                        Button(action: {
-                            showPrizePoolInfo = true
-                            Analytics.shared.trackTap(
-                                elementId: "learn_more_cta",
-                                screenName: "global_leaderboard"
-                            )
-                        }) {
-                            Text("Learn More")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 200, height: 50)
-                                .background(Color(hex: "#4169E1"))
-                                .cornerRadius(25)
+                        // Floating Claim Button (bottom right) - always visible in empty state
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    showRedeemCode = true
+                                    Analytics.shared.trackTap(
+                                        elementId: "claim_win_code_button",
+                                        screenName: "global_leaderboard"
+                                    )
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image("gem")
+                                            .resizable()
+                                            .renderingMode(.template)
+                                            .foregroundColor(Color.white)
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 18, height: 18)
+                                        
+                                        Text("Claim")
+                                            .font(.system(size: 17, weight: .bold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(Color(hex: "#4169E1"))
+                                    .cornerRadius(100)
+                                }
+                                .padding(.trailing, 20)
+                                .padding(.bottom, 20)
+                            }
                         }
                     }
-                    Spacer()
                 } else {
                     // Show leaderboard
                     ZStack {
@@ -123,7 +162,7 @@ struct GlobalLeaderboardView: View {
                                             .foregroundColor(.white.opacity(0.7))
                                             .padding(.bottom, 2)
                                         
-                                        Text("$\(String(format: "%.0f", viewModel.totalPrizePool))")
+                                        Text("$\(Int(ceil(viewModel.potMaxPrizePool)))")
                                             .font(.system(size: 28, weight: .bold))
                                             .foregroundColor(Color(hex: "#FFF"))
                                             .padding(.horizontal, 10)
@@ -204,14 +243,15 @@ struct GlobalLeaderboardView: View {
                                                             .foregroundColor(Color(hex: "#FFF"))
                                                             .lineLimit(1)
                                                         
-                                                        Image(systemName: "star.fill")
+                                                        Image("gem")
                                                             .resizable()
-                                                            .scaledToFit()
+                                                            .renderingMode(.template)
+                                                            .foregroundColor(Color.white)
+                                                            .aspectRatio(contentMode: .fit)
                                                             .frame(width: 18, height: 18)
-                                                            .foregroundColor(Color(hex: "#FFF"))
                                                     }
                                                     .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                    .background(Color(hex: "#DAA520"))
+                                                    .background(Color(hex: "#6A5ACD"))
                                                     .cornerRadius(200)
                                                 }
                                                 .padding(.trailing, 20)
@@ -232,6 +272,43 @@ struct GlobalLeaderboardView: View {
                                 .padding(.bottom, 20) // Add padding for fixed bottom bar
                             }
                         }
+                        
+                        // Floating Claim Button (bottom right)
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    showRedeemCode = true
+                                    Analytics.shared.trackTap(
+                                        elementId: "claim_win_code_button",
+                                        screenName: "global_leaderboard"
+                                    )
+                                }) {
+                                    HStack(spacing: 8) {
+                                        Image("gem")
+                                            .resizable()
+                                            .renderingMode(.template)
+                                            .foregroundColor(Color.white)
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 18, height: 18)
+                                        
+                                        Text("Claim")
+                                            .font(.system(size: 17, weight: .bold))
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(Color(hex: "#4169E1"))
+                                    .cornerRadius(100)
+                                }
+                                .padding(.trailing, 20)
+                                .padding(.bottom, showStatsBar ? 90 : 20) // Move up when stats bar is visible
+                            }
+                        }
+                        .offset(y: showStatsBar ? 0 : 100)
+                        .opacity(showStatsBar ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
                         
                         // Fixed User Stats Bar at Bottom
                         VStack {
@@ -276,14 +353,15 @@ struct GlobalLeaderboardView: View {
                                             .font(.system(size: 17, weight: .bold))
                                             .foregroundColor(Color(hex: "#FFF"))
                                         
-                                        Image(systemName: "star.fill")
+                                        Image("gem")
                                             .resizable()
-                                            .scaledToFit()
+                                            .renderingMode(.template)
+                                            .foregroundColor(Color.white)
+                                            .aspectRatio(contentMode: .fit)
                                             .frame(width: 18, height: 18)
-                                            .foregroundColor(Color(hex: "#FFF"))
                                     }
                                     .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#DAA520"))
+                                    .background(Color(hex: "#6A5ACD"))
                                     .cornerRadius(200)
                                 }
                             }
@@ -302,6 +380,9 @@ struct GlobalLeaderboardView: View {
         .navigationBarHidden(true)
         .sheet(isPresented: $showPrizePoolInfo) {
             PrizePoolInfoView()
+        }
+        .fullScreenCover(isPresented: $showRedeemCode) {
+            RedeemWinCodeView()
         }
         .onAppear {
             viewModel.loadLeaderboard()
