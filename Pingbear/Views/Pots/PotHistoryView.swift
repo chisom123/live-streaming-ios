@@ -173,17 +173,17 @@ struct PotHistoryCard: View {
                 HStack(spacing: 12) {
                     // Stars earned
                     StatCard(
-                        icon: "star.fill",
-                        iconColor: Color(hex: "#FFD700"),
+                        icon: "gem_icon",
+                        iconColor: Color(hex: "#FFF"),
                         value: "\(pot.totalStars)",
-                        label: "Stars"
+                        label: "Points"
                     )
                     
                     // Rank (if available)
                     if let finalRank = pot.finalRank {
                         StatCard(
                             icon: finalRank <= 3 ? "trophy.fill" : "medal.fill",
-                            iconColor: rankColor(finalRank),
+                            iconColor: Color(hex: "#FFF"),
                             value: "#\(finalRank)",
                             label: "Rank"
                         )
@@ -198,7 +198,7 @@ struct PotHistoryCard: View {
                     HStack(spacing: 12) {
                         StatCard(
                             icon: "gift.fill",
-                            iconColor: Color.orange,
+                            iconColor: Color(hex: "#FFF"),
                             value: "$\(String(format: "%.2f", prize))",
                             label: "Prize Won"
                         )
@@ -213,19 +213,6 @@ struct PotHistoryCard: View {
         .background(Color(hex: "#1A2245"))
         .cornerRadius(12)
     }
-    
-    private func rankColor(_ rank: Int) -> Color {
-        switch rank {
-        case 1:
-            return Color(hex: "#FFD700") // Gold
-        case 2:
-            return Color(hex: "#C0C0C0") // Silver
-        case 3:
-            return Color(hex: "#CD7F32") // Bronze
-        default:
-            return Color(hex: "#FFD700").opacity(0.7)
-        }
-    }
 }
 
 // Reusable stat card component
@@ -237,10 +224,20 @@ struct StatCard: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(iconColor)
-                .frame(width: 24)
+            // Use custom gem image for star.fill, otherwise use SF Symbol
+            if icon == "gem_icon" {
+                Image("gem")
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(iconColor)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 24, height: 24)
+            } else {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(iconColor)
+                    .frame(width: 24)
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
