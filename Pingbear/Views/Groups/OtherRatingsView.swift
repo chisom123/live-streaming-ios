@@ -82,20 +82,23 @@ struct OtherRatingsView: View {
                                 
                                 if !otherRatings.isEmpty {
                                     Divider()
-                                        .background(Color.white.opacity(0.1))
+                                        .background(Color.white.opacity(0.2))
                                 }
                             }
                             
                             // Other users' ratings
-                            ForEach(otherRatings) { interaction in
+                            ForEach(Array(otherRatings.enumerated()), id: \.element.id) { index, interaction in
                                 ratingRow(interaction: interaction, isCurrentUser: false)
                                 
-                                if interaction.id != otherRatings.last?.id {
+                                if index < otherRatings.count - 1 {
                                     Divider()
-                                        .background(Color.white.opacity(0.1))
+                                        .background(Color.white.opacity(0.2))
                                 }
                             }
                         }
+                        .background(Color(hex: "#1A2245"))
+                        .cornerRadius(10)
+                        .padding(.horizontal, 20)
                         .padding(.vertical, 16)
                     }
                 }
@@ -106,81 +109,58 @@ struct OtherRatingsView: View {
     }
     
     private func ratingRow(interaction: PhotoInteraction, isCurrentUser: Bool) -> some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 20) {
             // Profile picture
-            ProfilePictureView(url: interaction.profilePictureUrl, size: 44)
+            ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
+                .padding(.leading, 20)
             
-            // Name and timestamp
-            VStack(alignment: .leading, spacing: 4) {
-                Text(isCurrentUser ? "Me" : interaction.userName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                
-                Text(timeAgo(from: interaction.ratedAt))
-                    .font(.system(size: 13))
-                    .foregroundColor(.white.opacity(0.5))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .layoutPriority(-1)
+            // Username
+            Text(isCurrentUser ? "Me" : interaction.userName)
+                .font(.system(size: 16, weight: .bold))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundColor(.white)
             
-            // Rating and points badges side by side
-            HStack(spacing: 8) {
+            Spacer()
+            
+            // Rating and points badges stacked vertically
+            VStack(alignment: .trailing, spacing: 8) {
                 // Star rating badge
-                HStack(spacing: 4) {
+                HStack(spacing: 8) {
                     Text("\(interaction.rating)")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(hex: "#FFF"))
+                        .lineLimit(1)
                     
                     Image(systemName: "star.fill")
                         .font(.system(size: 14))
                         .foregroundColor(Color(hex: "#FFF"))
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
                 .background(Color(hex: "#DAA520"))
                 .cornerRadius(200)
                 
                 // Points badge
-                HStack(spacing: 4) {
+                HStack(spacing: 8) {
                     Text("\(interaction.points)")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(Color(hex: "#FFF"))
+                        .lineLimit(1)
                     
                     Image("gem")
                         .resizable()
                         .renderingMode(.template)
-                        .foregroundColor(.white)
+                        .foregroundColor(Color.white)
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 16, height: 16)
+                        .frame(width: 18, height: 18)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
+                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
                 .background(Color(hex: "#6A5ACD"))
                 .cornerRadius(200)
             }
-            .fixedSize(horizontal: true, vertical: false)
+            .padding(.trailing, 20)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-    }
-    
-    private func timeAgo(from date: Date) -> String {
-        let calendar = Calendar.current
-        let now = Date()
-        let components = calendar.dateComponents([.minute, .hour, .day, .weekOfYear], from: date, to: now)
-        
-        if let weeks = components.weekOfYear, weeks > 0 {
-            return weeks == 1 ? "1w ago" : "\(weeks)w ago"
-        } else if let days = components.day, days > 0 {
-            return days == 1 ? "1d ago" : "\(days)d ago"
-        } else if let hours = components.hour, hours > 0 {
-            return hours == 1 ? "1h ago" : "\(hours)h ago"
-        } else if let minutes = components.minute, minutes > 0 {
-            return minutes == 1 ? "1m ago" : "\(minutes)m ago"
-        } else {
-            return "Just now"
-        }
+        .padding(.vertical, 20)
+        .background(isCurrentUser ? Color(hex: "#2A3255") : Color.clear)
     }
 }
