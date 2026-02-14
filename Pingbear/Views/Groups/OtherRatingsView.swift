@@ -127,7 +127,7 @@ struct OtherRatingsView: View {
                 
                 // Points badge
                 HStack(spacing: 4) {
-                    Text("+\(interaction.points)")
+                    Text("\(interaction.points)")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                     
@@ -136,11 +136,11 @@ struct OtherRatingsView: View {
                         .renderingMode(.template)
                         .foregroundColor(.white)
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 17, height: 17)
+                        .frame(width: 16, height: 16)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color(hex: "#10B981"))
+                .background(Color(hex: "#6A5ACD"))
                 .cornerRadius(200)
             }
             .fixedSize(horizontal: true, vertical: false)
