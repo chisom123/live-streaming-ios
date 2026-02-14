@@ -139,24 +139,6 @@ struct OtherRatingsView: View {
                 .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
                 .background(Color(hex: "#DAA520"))
                 .cornerRadius(200)
-                
-                // Points badge
-                HStack(spacing: 8) {
-                    Text("\(interaction.points)")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(Color(hex: "#FFF"))
-                        .lineLimit(1)
-                    
-                    Image("gem")
-                        .resizable()
-                        .renderingMode(.template)
-                        .foregroundColor(Color.white)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 18, height: 18)
-                }
-                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                .background(Color(hex: "#6A5ACD"))
-                .cornerRadius(200)
             }
             .padding(.trailing, 20)
         }
