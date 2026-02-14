@@ -5,8 +5,14 @@ struct OtherRatingsView: View {
     let interactions: [PhotoInteraction]
     @Environment(\.dismiss) private var dismiss
     
+    private var currentUserRating: PhotoInteraction? {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            return nil
+        }
+        return interactions.first { $0.userId == currentUserId }
+    }
+    
     private var otherRatings: [PhotoInteraction] {
-        // Filter out current user
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             return interactions
         }
@@ -29,7 +35,7 @@ struct OtherRatingsView: View {
                 
                 Spacer()
                 
-                Text("Other Ratings")
+                Text("Ratings")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .foregroundColor(.white)
                 
@@ -55,14 +61,14 @@ struct OtherRatingsView: View {
                 Color(hex: "#10183C")
                     .ignoresSafeArea()
                 
-                if otherRatings.isEmpty {
+                if interactions.isEmpty {
                     // Empty state
                     VStack(spacing: 16) {
                         Image(systemName: "star.slash")
                             .font(.system(size: 48))
                             .foregroundColor(.white.opacity(0.4))
                         
-                        Text("No other ratings yet")
+                        Text("No ratings yet")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(.white.opacity(0.6))
                     }
@@ -70,8 +76,19 @@ struct OtherRatingsView: View {
                     // Ratings list
                     ScrollView {
                         VStack(spacing: 0) {
+                            // Current user's rating (if exists)
+                            if let currentRating = currentUserRating {
+                                ratingRow(interaction: currentRating, isCurrentUser: true)
+                                
+                                if !otherRatings.isEmpty {
+                                    Divider()
+                                        .background(Color.white.opacity(0.1))
+                                }
+                            }
+                            
+                            // Other users' ratings
                             ForEach(otherRatings) { interaction in
-                                ratingRow(interaction: interaction)
+                                ratingRow(interaction: interaction, isCurrentUser: false)
                                 
                                 if interaction.id != otherRatings.last?.id {
                                     Divider()
@@ -88,14 +105,14 @@ struct OtherRatingsView: View {
         .ignoresSafeArea()
     }
     
-    private func ratingRow(interaction: PhotoInteraction) -> some View {
+    private func ratingRow(interaction: PhotoInteraction, isCurrentUser: Bool) -> some View {
         HStack(spacing: 16) {
             // Profile picture
             ProfilePictureView(url: interaction.profilePictureUrl, size: 44)
             
             // Name and timestamp
             VStack(alignment: .leading, spacing: 4) {
-                Text(interaction.userName)
+                Text(isCurrentUser ? "Me" : interaction.userName)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(1)

@@ -223,11 +223,11 @@ struct FullScreenPhotoView: View {
             Spacer()
             
             // Content with rounded top
-            VStack(spacing: 20) {
+            VStack(spacing: 5) {
                 // "Rating Completed" text
-                Text("Rating Completed")
+                Text("You Won")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
                 
                 // Side by side: Points won and Star rating given
@@ -236,54 +236,29 @@ struct FullScreenPhotoView: View {
                     VStack(spacing: 8) {
                         HStack(spacing: 8) {
                             Text("+\(displayedPointsEarned)")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(Color(hex: "#FFF"))
+                                .font(.system(size: 45, weight: .bold))
+                                .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
                             
                             Image("gem")
                                 .resizable()
                                 .renderingMode(.template)
                                 .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 32, height: 32)
+                                .frame(width: 48, height: 48)
                         }
-                        
-                        Text("Points")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
-                    }
-                    
-                    // Star Rating Given
-                    VStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            if let userInteraction = interactionService.getCurrentUserInteraction() {
-                                Text("\(userInteraction.rating)")
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                Image(systemName: "star.fill")
-                                    .font(.system(size: 32))
-                                    .foregroundColor(Color(hex: "#DAA520"))
-                            }
-                        }
-                        
-                        Text("Rating")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 .padding(.vertical, 10)
                 
-                // See Other Ratings button
-                if interactionService.interactions.count > 1 {
-                    Button(action: {
-                        showingOtherRatings = true
-                    }) {
-                        Text("See Other Ratings (\(interactionService.interactions.count - 1))")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(Color(hex: "#FFF"))
-                    }
-                    .padding(.top, 4)
+                Button(action: {
+                    showingOtherRatings = true
+                }) {
+                    Text("See Ratings (\(interactionService.interactions.count))")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(Color(hex: "#FFF"))
                 }
+                .padding(.top, 4)
+                .padding(.bottom)
                 
                 // Disabled Spin button
                 Button(action: {}) {
