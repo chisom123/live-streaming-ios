@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab: Int = 0  // Always start on tab 0 (home)
+    @State private var selectedTab: Int = 0  // Default start on tab 0 (home)
     
     var body: some View {
         GeometryReader { geometry in
@@ -18,6 +18,7 @@ struct MainTabView: View {
                         .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
+                .id(selectedTab) // Force TabView to update when selectedTab changes
                 
                 // Custom Tab Bar
                 CustomTabBar(selectedTab: $selectedTab)
@@ -27,5 +28,22 @@ struct MainTabView: View {
             .ignoresSafeArea(.all, edges: .bottom)
         }
         .background(Color(hex: "#10183C"))
+        .onAppear {
+            checkForGlobalLeaderboardFlag()
+        }
+    }
+    
+    private func checkForGlobalLeaderboardFlag() {
+        // Check if user just redeemed a code during onboarding
+        if UserDefaults.standard.bool(forKey: "shouldShowGlobalLeaderboard") {
+            // Navigate to GlobalLeaderboardView (tab 1)
+            selectedTab = 1
+            
+            // Clear the flag so it only happens once
+            UserDefaults.standard.removeObject(forKey: "shouldShowGlobalLeaderboard")
+            UserDefaults.standard.synchronize()
+            
+            print("✅ Navigated to GlobalLeaderboardView after code redemption")
+        }
     }
 }

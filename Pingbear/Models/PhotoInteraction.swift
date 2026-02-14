@@ -2,13 +2,20 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
-struct PhotoInteraction: Identifiable {
+struct PhotoInteraction: Identifiable, Equatable {
     let id = UUID()
     let userId: String
     let userName: String
     let profilePictureUrl: String?
     let ratedAt: Date
     let rating: Int
+    let points: Int
+    
+    static func == (lhs: PhotoInteraction, rhs: PhotoInteraction) -> Bool {
+        return lhs.userId == rhs.userId &&
+               lhs.rating == rhs.rating &&
+               lhs.points == rhs.points
+    }
 }
 
 class PhotoInteractionService: ObservableObject {
@@ -65,7 +72,7 @@ class PhotoInteractionService: ObservableObject {
     // MARK: - Rating Tracking
     
     /// Tracks when a user rates a photo entry
-    func submitRating(competitionId: String, entryId: String, rating: Int, completion: ((Bool) -> Void)? = nil) {
+    func submitRating(competitionId: String, entryId: String, rating: Int, points: Int = 0, completion: ((Bool) -> Void)? = nil) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             completion?(false)
             return
@@ -125,6 +132,7 @@ class PhotoInteractionService: ObservableObject {
                 
                 interactionRef?.setData([
                     "rating": rating,
+                    "points": points,
                     "ratedAt": FieldValue.serverTimestamp(),
                     "userId": currentUserId
                 ], merge: true) { error in
@@ -229,12 +237,15 @@ class PhotoInteractionService: ObservableObject {
                             return nil // Skip interactions without valid ratings
                         }
                         
+                        let points = data["points"] as? Int ?? 0
+                        
                         return PhotoInteraction(
                             userId: userId,
                             userName: userName,
                             profilePictureUrl: profileUrl,
                             ratedAt: (data["ratedAt"] as? Timestamp)?.dateValue() ?? Date(),
-                            rating: rating
+                            rating: rating,
+                            points: points
                         )
                     } ?? []
                     
@@ -262,6 +273,17 @@ class PhotoInteractionService: ObservableObject {
             self.interactions = []
             self.isLoadingInteractions = false
         }
+    }
+    
+    // MARK: - Get Current User's Interaction
+    
+    /// Gets the current user's interaction (rating and points) for this entry
+    func getCurrentUserInteraction() -> PhotoInteraction? {
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            return nil
+        }
+        
+        return interactions.first { $0.userId == currentUserId }
     }
 }
 

@@ -9,6 +9,7 @@ struct NameEntryView: View {
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
+    @State private var navigateToRedeemCode = false
 
     var body: some View {
         VStack {
@@ -78,6 +79,10 @@ struct NameEntryView: View {
             .background(Color(hex: "#1A2245"))
             .cornerRadius(10)
             .padding(.horizontal, 20)
+            
+            NavigationLink(destination: OnboardingRedeemCodeView(), isActive: $navigateToRedeemCode) {
+                EmptyView()
+            }.isDetailLink(false)
             
             Spacer()
         }
@@ -168,12 +173,8 @@ struct NameEntryView: View {
                     ]
                 )
                 
-                // Just update UserDefaults
-                UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                UserDefaults.standard.synchronize()
-                
-                // Post notification to trigger UI update
-                NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                // Navigate to redeem code screen
+                self.navigateToRedeemCode = true
             }
         }
     }

@@ -288,15 +288,7 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Parlay won! Paid out \(potentialPayout) coins to user \(entryOwnerId)")
                 
-                GlobalLeaderboardManager.shared.handleStarAwarded(
-                    userId: entryOwnerId,
-                    stars: starIncrement,
-                    competitionId: competitionId
-                ) { success in
-                    if success {
-                        print("GlobalLeaderboard: Updated for parlay win")
-                    }
-                }
+                // Photo owner does NOT get leaderboard points - only raters do
                 
                 // Fetch competition name and winner's username for notifications
                 self.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
@@ -391,21 +383,7 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Parlay entry updated successfully - Status: \(parlayStatus)")
                 
-                entryRef.getDocument { entryDoc, _ in
-                    if let entryData = entryDoc?.data(),
-                       let entryOwnerId = entryData["userId"] as? String {
-                        
-                        GlobalLeaderboardManager.shared.handleStarAwarded(
-                            userId: entryOwnerId,
-                            stars: starIncrement,
-                            competitionId: competitionId
-                        ) { success in
-                            if success {
-                                print("GlobalLeaderboard: Updated for parlay entry")
-                            }
-                        }
-                    }
-                }
+                // Photo owner does NOT get leaderboard points - only raters do
                 
                 // Send notification to photo owner about the rating
                 entryRef.getDocument { entryDoc, _ in
@@ -495,26 +473,7 @@ class ParlayManager {
             } else {
                 print("ParlayManager: Regular entry rating updated successfully!")
                 
-                entryRef.getDocument { entryDoc, _ in
-                    guard let entryData = entryDoc?.data(),
-                          let entryOwnerId = entryData["userId"] as? String else {
-                        return
-                    }
-                    
-                    // Get competition ID from path
-                    let pathComponents = entryRef.path.components(separatedBy: "/")
-                    let competitionId = pathComponents.count > 1 ? pathComponents[1] : ""
-                    
-                    GlobalLeaderboardManager.shared.handleStarAwarded(
-                        userId: entryOwnerId,
-                        stars: starIncrement,
-                        competitionId: competitionId
-                    ) { success in
-                        if success {
-                            print("GlobalLeaderboard: Updated for regular rating")
-                        }
-                    }
-                }
+                // Photo owner does NOT get leaderboard points - only raters do
                 
                 // Fetch entry owner ID and competition ID
                 entryRef.getDocument { entryDoc, _ in

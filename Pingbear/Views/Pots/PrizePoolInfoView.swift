@@ -64,26 +64,19 @@ struct PrizePoolInfoView: View {
                         InfoStepView(
                             number: "1",
                             title: "Rate Photos",
-                            description: "Win points by rating your friend's photos."
+                            description: "Win points by rating your friends' photos in competitions."
                         )
-                        
+        
                         // Step 2
                         InfoStepView(
                             number: "2",
-                            title: "Share Photos",
-                            description: "Win points by sharing photos with your friends and receiving ratings."
-                        )
-        
-                        // Step 3
-                        InfoStepView(
-                            number: "3",
                             title: "Climb the Leaderboard",
                             description: "Your position is determined by your total points. The more points you win, the higher you rank."
                         )
                         
-                        // Step 4
+                        // Step 3
                         InfoStepView(
-                            number: "4",
+                            number: "3",
                             title: "Win Money",
                             description: "Top performers share the weekly prize pool. Rankings reset every week, giving everyone a fresh chance to win."
                         )

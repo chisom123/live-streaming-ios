@@ -18,6 +18,8 @@ class GlobalLeaderboardViewModel: ObservableObject {
     @Published var potEnded = false
     @Published var totalPrizePool = 0.0
     @Published var firstPlacePrize: Double = 0.0
+    @Published var maxPrizePool: Double = 0.0
+    @Published var potMaxPrizePool: Double = 0.0
     
     private let db = Firestore.firestore()
     private var timer: Timer?
@@ -76,11 +78,36 @@ class GlobalLeaderboardViewModel: ObservableObject {
                 guard let self = self else { return }
                 
                 if let data = document?.data() {
+                    let firstPlace = data["first_place_prize"] as? Double ?? 100.0
+                    let decayRate = data["decay_rate"] as? Double ?? 0.91
+                    let minPayout = data["min_payout"] as? Double ?? 0.01
+                    let maxParticipants = data["pot_max_participants"] as? Int ?? 99
+                    
                     DispatchQueue.main.async {
-                        self.firstPlacePrize = data["first_place_prize"] as? Double ?? 100.0
+                        self.firstPlacePrize = firstPlace
+                        self.maxPrizePool = self.calculateMaxPrizePool(
+                            firstPlace: firstPlace,
+                            decayRate: decayRate,
+                            minPayout: minPayout,
+                            maxParticipants: maxParticipants
+                        )
                     }
                 }
             }
+    }
+
+    private func calculateMaxPrizePool(firstPlace: Double, decayRate: Double, minPayout: Double, maxParticipants: Int) -> Double {
+        var totalCents = 0
+        
+        for rank in 1...maxParticipants {
+            let prizeCents = Int(floor(firstPlace * 100 * pow(decayRate, Double(rank - 1))))
+            if prizeCents < Int(minPayout * 100) {
+                break
+            }
+            totalCents += prizeCents
+        }
+        
+        return Double(totalCents) / 100.0
     }
     
     private func loadPotData(potId: String, userId: String) {
@@ -106,17 +133,29 @@ class GlobalLeaderboardViewModel: ObservableObject {
                 return
             }
             
+            let firstPlace = data["first_place_prize"] as? Double ?? 100.0
+            let maxParts = data["max_participants"] as? Int ?? 1000
+            let decay = data["decay_rate"] as? Double ?? 0.0
+            let minPay = data["min_payout"] as? Double ?? 0.01
+            
             let potInfo = PotInfo(
                 potId: potId,
                 endDate: endDateTimestamp.dateValue(),
-                firstPlacePrize: data["first_place_prize"] as? Double ?? 100.0,
-                maxParticipants: data["max_participants"] as? Int ?? 1000,
-                decayRate: data["decay_rate"] as? Double ?? 0.0,
-                minPayout: data["min_payout"] as? Double ?? 0.01
+                firstPlacePrize: firstPlace,
+                maxParticipants: maxParts,
+                decayRate: decay,
+                minPayout: minPay
             )
             
             DispatchQueue.main.async {
                 self.potInfo = potInfo
+                // Calculate max prize pool for THIS specific pot
+                self.potMaxPrizePool = self.calculateMaxPrizePool(
+                    firstPlace: firstPlace,
+                    decayRate: decay,
+                    minPayout: minPay,
+                    maxParticipants: maxParts
+                )
                 self.updateTimeRemaining()
                 self.startTimer()
             }
