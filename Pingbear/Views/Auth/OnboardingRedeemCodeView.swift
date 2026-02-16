@@ -9,6 +9,7 @@ struct OnboardingRedeemCodeView: View {
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @FocusState private var isTextFieldFocused: Bool
+    @State private var showPostSignupLeaderboard: Bool = false
     
     var body: some View {
         ZStack {
@@ -16,18 +17,17 @@ struct OnboardingRedeemCodeView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
+                // Header with Skip button
                 HStack {
                     Spacer()
                     
-                    Text("Claim Winnings")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .foregroundColor(.white)
-                        .padding(.horizontal)
-                    
-                    Spacer()
+                    Button(action: {
+                        completeOnboarding()
+                    }) {
+                        Text("Skip")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -102,54 +102,46 @@ struct OnboardingRedeemCodeView: View {
                 
                 Spacer()
                 
-                // Buttons
-                VStack(spacing: 12) {
-                    // Claim Button
-                    Button(action: {
-                        isTextFieldFocused = false
-                        redeemCode()
-                    }) {
-                        HStack(spacing: 10) {
-                            if isRedeeming {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            } else {
-                                Text("Claim")
-                                    .font(.system(size: 18, weight: .bold))
-                            }
+                // Claim Button
+                Button(action: {
+                    isTextFieldFocused = false
+                    redeemCode()
+                }) {
+                    HStack(spacing: 10) {
+                        if isRedeeming {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Claim")
+                                .font(.system(size: 18, weight: .bold))
                         }
-                        .foregroundColor(
-                            enteredCode.count == 10 && !isRedeeming
-                            ? Color(.white)
-                                : Color.gray.opacity(0.5)
-                        )
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(
-                            enteredCode.count == 10 && !isRedeeming
-                                ? Color(red: 65/255, green: 105/255, blue: 225/255)
-                                : Color.gray.opacity(0.5)
-                        )
                     }
-                    .disabled(enteredCode.count != 10 || isRedeeming)
-                    .cornerRadius(200)
-                    
-                    // Skip Button
-                    Button(action: {
-                        completeOnboarding()
-                    }) {
-                        Text("Skip for Now")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    }
+                    .foregroundColor(
+                        enteredCode.count == 10 && !isRedeeming
+                        ? Color(.white)
+                            : Color.gray.opacity(0.5)
+                    )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 55)
+                    .background(
+                        enteredCode.count == 10 && !isRedeeming
+                            ? Color(red: 65/255, green: 105/255, blue: 225/255)
+                            : Color.gray.opacity(0.5)
+                    )
                 }
+                .disabled(enteredCode.count != 10 || isRedeeming)
+                .cornerRadius(200)
                 .padding(.horizontal)
                 .padding(.bottom)
             }
         }
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showPostSignupLeaderboard) {
+            PostSignupLeaderboardView {
+                // When user taps Continue, complete onboarding
+                completeOnboarding()
+            }
+        }
         .onAppear {
             Analytics.shared.trackScreen(name: "onboarding_redeem_code")
         }
@@ -223,24 +215,20 @@ struct OnboardingRedeemCodeView: View {
                             if success {
                                 print("✅ Points added to global leaderboard")
                                 
-                                // Verify user is actually in pot before navigating
+                                // Verify user is actually in pot before showing leaderboard
                                 self.verifyUserInPot(userId: userId) { isInPot in
                                     if isInPot {
-                                        // Set flag to show GlobalLeaderboardView
-                                        UserDefaults.standard.set(true, forKey: "shouldShowGlobalLeaderboard")
-                                        UserDefaults.standard.synchronize()
-                                        
-                                        // Complete onboarding and navigate to app
-                                        self.completeOnboarding()
+                                        // Show the PostSignupLeaderboardView
+                                        self.showPostSignupLeaderboard = true
                                     } else {
-                                        // Fallback: still complete but without flag (go to MyComps)
-                                        print("⚠️ User not in pot yet, navigating to MyComps")
+                                        // Fallback: complete onboarding without showing leaderboard
+                                        print("⚠️ User not in pot yet, completing onboarding normally")
                                         self.completeOnboarding()
                                     }
                                 }
                             } else {
                                 print("⚠️ Failed to add points to leaderboard")
-                                // Still complete onboarding but without the flag
+                                // Still complete onboarding
                                 self.completeOnboarding()
                             }
                         }

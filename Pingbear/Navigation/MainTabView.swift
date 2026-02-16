@@ -28,22 +28,5 @@ struct MainTabView: View {
             .ignoresSafeArea(.all, edges: .bottom)
         }
         .background(Color(hex: "#10183C"))
-        .onAppear {
-            checkForGlobalLeaderboardFlag()
-        }
-    }
-    
-    private func checkForGlobalLeaderboardFlag() {
-        // Check if user just redeemed a code during onboarding
-        if UserDefaults.standard.bool(forKey: "shouldShowGlobalLeaderboard") {
-            // Navigate to GlobalLeaderboardView (tab 1)
-            selectedTab = 1
-            
-            // Clear the flag so it only happens once
-            UserDefaults.standard.removeObject(forKey: "shouldShowGlobalLeaderboard")
-            UserDefaults.standard.synchronize()
-            
-            print("✅ Navigated to GlobalLeaderboardView after code redemption")
-        }
     }
 }
