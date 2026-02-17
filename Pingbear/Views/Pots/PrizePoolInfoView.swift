@@ -63,7 +63,7 @@ struct PrizePoolInfoView: View {
                         // Step 1
                         InfoStepView(
                             number: "1",
-                            title: "Rate Photos",
+                            title: "Play with Friends",
                             description: "Win points by rating your friends' photos in competitions."
                         )
         
