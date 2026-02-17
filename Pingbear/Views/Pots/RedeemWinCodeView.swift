@@ -14,7 +14,7 @@ struct RedeemWinCodeView: View {
     
     var body: some View {
         ZStack {
-            Color(hex: "#1A2245")
+            Color(hex: "#10183C")
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {

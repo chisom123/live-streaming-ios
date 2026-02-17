@@ -78,7 +78,7 @@ struct PotHistoryView: View {
                     
                     Text("Your prize pool history will appear here")
                         .font(.system(size: 16))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.white.opacity(0.9))
                 }
                 Spacer()
             } else {

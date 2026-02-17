@@ -85,6 +85,7 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
+		4F45EC3E2F448EE400DD5D96 /* HowItWorksSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */; };
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
@@ -195,6 +196,7 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
+		4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksSheet.swift; sourceTree = "<group>"; };
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
 		4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParlayManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
@@ -336,6 +338,7 @@
 				4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */,
 				4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */,
 				4FDD66AE2F37842D0023B145 /* OtherRatingsView.swift */,
+				4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -803,6 +806,7 @@
 				4FF9C1952F0FD229000F045C /* GlobalLeaderboardManager.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4FF9C19D2F0FF116000F045C /* CustomTabBar.swift in Sources */,
+				4F45EC3E2F448EE400DD5D96 /* HowItWorksSheet.swift in Sources */,
 				4F90E1602E070FC700C84525 /* CompetitionPricingCalculator.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F33595A2DE5E9A0003EF5E1 /* ChatViewModel.swift in Sources */,

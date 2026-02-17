@@ -9,16 +9,17 @@ struct MyCompsView: View {
     @State private var showLeaveConfirmation = false
     @State private var isCreatingCompetition = false
     @State private var navigateToNewCompetition: Competition?
-    
+    @State private var showHowItWorks = false
+
     var body: some View {
         VStack {
             // Clean Top Bar with just Logo and Plus
             HStack {
                 Color.clear
                     .frame(width: 30, height: 30)
-                
+
                 Spacer()
-                
+
                 Image("Logo-T")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -26,11 +27,11 @@ struct MyCompsView: View {
                     .offset(y: -1.5)
 
                 Spacer()
-                
-                // Plus button
+
+                // Plus button – now shows the explainer sheet first
                 Button(action: {
                     if !isCreatingCompetition {
-                        createNewCompetition()
+                        showHowItWorks = true
                     }
                 }) {
                     Image(systemName: "plus.circle")
@@ -45,7 +46,7 @@ struct MyCompsView: View {
             .padding(.vertical, 10)
 
             Spacer()
-            
+
             if isLoading {
                 ProgressView()
                     .tint(.white)
@@ -54,7 +55,7 @@ struct MyCompsView: View {
                 EmptyCompsView(
                     newCompAction: {
                         if !isCreatingCompetition {
-                            createNewCompetition()
+                            showHowItWorks = true   // ← same sheet from empty state
                         }
                     },
                     isCreating: isCreatingCompetition
@@ -93,6 +94,12 @@ struct MyCompsView: View {
         }
         .navigationBarHidden(true)
         .background(Color(hex: "#10183C"))
+        // How It Works sheet – user taps "Create Competition" to actually trigger creation
+        .sheet(isPresented: $showHowItWorks) {
+            HowItWorksSheet {
+                createNewCompetition()
+            }
+        }
         .background(
             EmptyView()
                 .navigationDestination(
@@ -132,58 +139,57 @@ struct MyCompsView: View {
             viewModel.refreshCompetitions()
         }
     }
-    
+
+    // MARK: - Private helpers
+
     private func fetchData() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        
         isLoading = true
-        
         viewModel.setupCompetitionListeners(userId: userId) {
             self.isLoading = false
         }
     }
-    
+
     private func leaveCompetition(competitionId: String, userId: String) {
         viewModel.competitions.removeAll { $0.id == competitionId }
-        
+
         let membersViewModel = MembersViewModel()
         membersViewModel.leaveCompetition(competitionId: competitionId, userId: userId)
-        
+
         Analytics.shared.trackCompetition(
             action: "leave",
             competitionId: competitionId
         )
-        
+
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
     }
-    
+
     private func createNewCompetition() {
         guard let userID = Auth.auth().currentUser?.uid else { return }
-        
+
         isCreatingCompetition = true
-        
+
         let db = Firestore.firestore()
-        
-        // First fetch the user's username
+
+        // Fetch the user's document (username, etc.)
         db.collection("users").document(userID).getDocument { (document, error) in
             if let error = error {
                 print("Failed to fetch user data: \(error.localizedDescription)")
                 self.isCreatingCompetition = false
                 return
             }
-            
+
             let competitionName = "Competition"
-            
-            // Now create the competition
+
             let competitionRef = db.collection("competitions").document()
             let newCompetitionId = competitionRef.documentID
             let timestamp = Timestamp()
             let creationDate = timestamp.dateValue()
-            
-            // First establish membership
+
+            // Establish membership first
             let creatorMemberRef = competitionRef.collection("members").document(userID)
-            
+
             creatorMemberRef.setData([
                 "userId": userID,
                 "coins": 150
@@ -193,50 +199,46 @@ struct MyCompsView: View {
                     self.isCreatingCompetition = false
                     return
                 }
-                
-                // Create the competition
+
                 let competitionData: [String: Any] = [
                     "id": newCompetitionId,
                     "description": competitionName,
                     "timestamp": timestamp,
                     "hostId": userID
                 ]
-                
+
                 competitionRef.setData(competitionData) { error in
                     if let error = error {
                         print("Failed to create competition: \(error.localizedDescription)")
                         self.isCreatingCompetition = false
                         return
                     }
-                    
-                    // Add to creator's groupMemberships
+
                     let creatorGroupMembershipRef = db.collection("groupMemberships").document(userID)
-                                                     .collection("competitions").document(newCompetitionId)
+                        .collection("competitions").document(newCompetitionId)
+
                     creatorGroupMembershipRef.setData(["competitionId": newCompetitionId]) { error in
                         if let error = error {
                             print("Failed to add group membership: \(error.localizedDescription)")
                         }
-                        
+
                         self.isCreatingCompetition = false
-                        
-                        // Create Competition object and navigate to it
+
                         let newCompetition = Competition(
                             id: newCompetitionId,
                             description: competitionName,
                             date: creationDate
                         )
-                        
-                        // Navigate to the newly created competition
+
                         DispatchQueue.main.async {
                             self.navigateToNewCompetition = newCompetition
                         }
-                        
+
                         Analytics.shared.trackCompetition(
                             action: "create",
                             competitionId: newCompetitionId
                         )
-                        
-                        // Provide haptic feedback
+
                         let generator = UINotificationFeedbackGenerator()
                         generator.notificationOccurred(.success)
                     }
@@ -246,21 +248,20 @@ struct MyCompsView: View {
     }
 }
 
-// Updated EmptyCompsView to handle loading state
+// MARK: - EmptyCompsView
+
 struct EmptyCompsView: View {
     var newCompAction: () -> Void
     let isCreating: Bool
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 30)
                 .padding(.bottom, 30)
-            
-            // Button container - fixed width for consistency
+
             VStack() {
                 Button(action: newCompAction) {
                     HStack {
@@ -286,13 +287,15 @@ struct EmptyCompsView: View {
     }
 }
 
+// MARK: - CompetitionCellContent
+
 struct CompetitionCellContent: View {
     let competition: Competition
     let isLast: Bool
     let onLeave: () -> Void
-    
+
     @State private var isLongPressing = false
-    
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -303,9 +306,9 @@ struct CompetitionCellContent: View {
                     .foregroundColor(.white)
                     .truncationMode(.tail)
                     .padding(.leading, 30)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .foregroundColor(Color(hex: "#D3D3D3"))
                     .font(.system(size: 15, weight: .bold))
@@ -328,7 +331,7 @@ struct CompetitionCellContent: View {
             }
             .scaleEffect(isLongPressing ? 0.95 : 1)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isLongPressing)
-            
+
             if !isLast {
                 Divider()
                     .background(Color.white.opacity(0.2))

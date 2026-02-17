@@ -45,7 +45,7 @@ struct PrizePoolInfoView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
+                .background(Color(hex: "#10183C"))
                 .edgesIgnoringSafeArea(.top)
                 
                 ScrollView {
