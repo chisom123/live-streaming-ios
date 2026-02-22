@@ -27,7 +27,6 @@ struct UnlockView: View {
     @State private var showPredictionSelector = false
     @State private var selectedRaterId = ""
     
-    // NEW: State for showing uploaded photo (removed UserPhotosView state)
     @State private var uploadedPhoto: UserPhoto? = nil
     @State private var showingUploadedPhoto = false
     @State private var currentUserProfilePictureUrl: String? = nil
@@ -56,7 +55,7 @@ struct UnlockView: View {
     
     private var rakebackAmount: Int {
         guard entryCost > 0 else { return 0 }
-        return pricingCalculator.calculateRakeback(entryCost: entryCost)
+        return pricingCalculator.calculateRakeback(entryCost: entryCost, predictions: selectedPredictions)
     }
     
     @Environment(\.dismiss) private var dismiss
@@ -112,7 +111,6 @@ struct UnlockView: View {
         }) {
             JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
-        // Show uploaded photo full screen
         .fullScreenCover(isPresented: $showingUploadedPhoto) {
             if let photo = uploadedPhoto {
                 FullScreenPhotoView(
@@ -141,7 +139,7 @@ struct UnlockView: View {
         .onAppear {
             Analytics.shared.trackScreen(name: "parlay_betting_paywall")
             fetchUserCoins()
-            fetchCurrentUserProfilePicture() 
+            fetchCurrentUserProfilePicture()
             EntryUploadManager.shared.initialize()
             membersViewModel.fetchMembersDetails(for: competition)
         }
@@ -170,7 +168,6 @@ struct UnlockView: View {
     
     private var headerView: some View {
         HStack {
-            // Left: Back button
             Button(action: {
                 dismiss()
                 Analytics.shared.track(event: "parlay_back_button_tapped")
@@ -184,7 +181,6 @@ struct UnlockView: View {
             
             Spacer()
             
-            // Coin balance with rakeback badge
             Button(action: {
                 showPayView = true
                 Analytics.shared.track(event: "coins_button_tapped")
@@ -239,7 +235,6 @@ struct UnlockView: View {
                         }
                     }
                     
-                    // Rakeback badge indicator
                     if unclaimedRakeback > 0 {
                         HStack(spacing: 3) {
                             Image(systemName: "gift.fill")
@@ -264,7 +259,6 @@ struct UnlockView: View {
             
             Spacer()
             
-            // Right: Skip button to submit without parlay
             Button(action: {
                 submitWithoutParlay()
                 Analytics.shared.track(event: "submit_without_parlay_tapped")
@@ -619,15 +613,7 @@ struct UnlockView: View {
                 
                 Spacer()
                 
-                Button(action: {
-//                    if let amount = Int(customStakeAmount), amount > 0 {
-//                        showStakeEditor = false
-//                        Analytics.shared.track(
-//                            event: "parlay_stake_set",
-//                            properties: ["amount": amount]
-//                        )
-//                    }
-                }) {
+                Button(action: {}) {
                     Image(systemName: "checkmark")
                         .font(.system(size: 21))
                         .fontWeight(.semibold)
@@ -855,7 +841,6 @@ struct UnlockView: View {
                     VStack(spacing: 16) {
                         ForEach((1...5).reversed(), id: \.self) { rating in
                             let isSelected = selectedPredictions[selectedRaterId] == rating
-                            let multiplier = CompetitionPricingCalculator.shared.getSingleStarMultiplier(starRating: rating)
                             
                             Button(action: {
                                 selectedPredictions[selectedRaterId] = rating
@@ -956,7 +941,6 @@ struct UnlockView: View {
                 if let coins = data["coins"] as? Int {
                     self.userCoins = coins
                 } else {
-                    print("Coins field not found or invalid type, defaulting to 0")
                     self.userCoins = 0
                 }
                 
@@ -1025,10 +1009,14 @@ struct UnlockView: View {
         }
         
         let db = Firestore.firestore()
-        
         let memberDocRef = db.collection("competitions").document(competitionId).collection("members").document(currentUser.uid)
         
-        let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
+        // Calculate rakeback once here and pass through to uploadEntryAfterBet
+        // to ensure both Firestore documents use the exact same value
+        let rakebackEarned = pricingCalculator.calculateRakeback(
+            entryCost: entryCost,
+            predictions: selectedPredictions
+        )
         
         db.runTransaction({ (transaction, errorPointer) -> Any? in
             let memberDoc: DocumentSnapshot
@@ -1094,12 +1082,15 @@ struct UnlockView: View {
                 }
                 
                 self.unlockSuccessful = true
-                self.uploadEntryAfterBet()
+                // Pass rakebackEarned through so entry document matches member document exactly
+                self.uploadEntryAfterBet(rakebackEarned: rakebackEarned)
             }
         }
     }
     
-    private func uploadEntryAfterBet() {
+    // Accepts rakebackEarned as a parameter rather than recalculating
+    // to guarantee the member document and entry document always match
+    private func uploadEntryAfterBet(rakebackEarned: Int) {
         guard !isUploading else { return }
         
         guard let userId = Auth.auth().currentUser?.uid else {
@@ -1110,7 +1101,6 @@ struct UnlockView: View {
         isUploading = true
         uploadProgress = 0.0
         
-        let rakebackEarned = pricingCalculator.calculateRakeback(entryCost: entryCost)
         let config = pricingCalculator.getCurrentConfig()
         let effectiveHouseEdge = config.houseEdge - (config.houseEdge * config.rakebackPercentage)
                 
@@ -1158,7 +1148,6 @@ struct UnlockView: View {
         }
     }
     
-    // Fetch the uploaded entry from Firestore and convert to UserPhoto
     private func fetchUploadedEntry(entryId: String, userId: String) {
         let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
         
@@ -1178,7 +1167,6 @@ struct UnlockView: View {
                     return
                 }
                 
-                // Convert Firestore data to UserPhoto
                 let photo = UserPhoto(
                     id: entryId,
                     photoUrl: data["imageUrl"] as? String ?? "",
@@ -1197,7 +1185,6 @@ struct UnlockView: View {
                     parlayStake: data["entryCost"] as? Int
                 )
                 
-                // Store the photo and show full screen view
                 self.uploadedPhoto = photo
                 self.showingUploadedPhoto = true
             }

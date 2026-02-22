@@ -39,7 +39,7 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Real-time Configuration
     private func setupRealtimeListener() {
-        configListener?.remove() // Remove existing listener before creating new one
+        configListener?.remove()
         
         configListener = db.collection("app_config").document("pricing")
             .addSnapshotListener { [weak self] documentSnapshot, error in
@@ -52,7 +52,6 @@ class CompetitionPricingCalculator: ObservableObject {
                         return
                     }
                     
-                    // Reset error state on successful connection
                     self.isOffline = false
                     self.retryCount = 0
                     
@@ -85,7 +84,6 @@ class CompetitionPricingCalculator: ObservableObject {
     }
     
     private func updateConfigFromDocument(_ document: DocumentSnapshot) {
-        // Debounce rapid updates
         let now = Date()
         if let lastUpdate = lastUpdateTime,
            now.timeIntervalSince(lastUpdate) < debounceInterval {
@@ -96,11 +94,10 @@ class CompetitionPricingCalculator: ObservableObject {
         let data = document.data() ?? [:]
         var hasChanges = false
         
-        // NEW: Update star accuracy rates
         if let starRates = data["star_accuracy_rates"] as? [String: Double] {
             for (starStr, rate) in starRates {
                 if let star = Int(starStr), (1...5).contains(star) {
-                    let clampedValue = max(0.01, min(0.99, rate)) // Prevent 0% or 100%
+                    let clampedValue = max(0.01, min(0.99, rate))
                     if self.cachedStarAccuracyRates[star] != clampedValue {
                         self.cachedStarAccuracyRates[star] = clampedValue
                         hasChanges = true
@@ -121,9 +118,8 @@ class CompetitionPricingCalculator: ObservableObject {
             }
         }
         
-        // NEW: Update rakeback percentage
         if let rakebackPercentage = data["rakeback_percentage"] as? Double {
-            let clampedValue = max(0.0, min(1.0, rakebackPercentage)) // 0-100% of house edge
+            let clampedValue = max(0.0, min(1.0, rakebackPercentage))
             if rakebackPercentage != clampedValue {
                 print("⚠️ Rakeback percentage value \(rakebackPercentage) was clamped to \(clampedValue)")
             }
@@ -150,38 +146,13 @@ class CompetitionPricingCalculator: ObservableObject {
         return cachedRakebackPercentage
     }
     
-    // MARK: - NEW: Rakeback Calculation
+    // MARK: - Multiplier Calculations
     
-    /// Calculate rakeback amount for a given entry cost
-    /// - Parameter entryCost: The amount of coins being staked
-    /// - Returns: Rakeback amount in coins (floored, minimum 0)
-    func calculateRakeback(entryCost: Int) -> Int {
-        let houseEdge = getHouseEdge()
-        let rakebackPercentage = getRakebackPercentage()
-        
-        // Calculate house edge taken
-        let houseEdgeTaken = Double(entryCost) * houseEdge
-        
-        // Calculate rakeback (percentage of house edge)
-        let rakebackAmount = houseEdgeTaken * rakebackPercentage
-        
-        // Floor and only award if >= 1 coin
-        let flooredRakeback = Int(floor(rakebackAmount))
-        
-        return flooredRakeback >= 1 ? flooredRakeback : 0
-    }
-    
-    // MARK: - Star Rating Methods
-    
-    func getAccuracyRate(for starRating: Int) -> Double {
-        return cachedStarAccuracyRates[starRating] ?? 0.5 // Fallback to 50%
-    }
-    
+    /// Actual multiplier for a single star rating — house edge applied and floored.
     func getSingleStarMultiplier(starRating: Int) -> Double {
         let starAccuracy = getAccuracyRate(for: starRating)
         let fairMultiplier = 1.0 / starAccuracy
-        let houseEdge = getHouseEdge()
-        let multiplier = fairMultiplier * (1.0 - houseEdge)
+        let multiplier = fairMultiplier * (1.0 - getHouseEdge())
         let rounded = floor(multiplier * 10) / 10.0
         return max(rounded, 1.1)
     }
@@ -192,11 +163,8 @@ class CompetitionPricingCalculator: ObservableObject {
         guard !predictions.isEmpty else { return 1.0 }
         
         var finalMultiplier = 1.0
-        
-        // Simply multiply all the individual star multipliers (house edge already applied)
         for (_, starRating) in predictions {
-            let starMultiplier = getSingleStarMultiplier(starRating: starRating)
-            finalMultiplier *= starMultiplier
+            finalMultiplier *= getSingleStarMultiplier(starRating: starRating)
         }
         
         return min(floor(finalMultiplier * 10) / 10.0, 100.0)
@@ -204,14 +172,56 @@ class CompetitionPricingCalculator: ObservableObject {
 
     func calculateParlayPayout(entryCost: Int, predictions: [String: Int]) -> Int {
         guard !predictions.isEmpty else { return 0 }
-        
         let multiplier = getParlayMultiplier(predictions: predictions)
-        let finalPayout = Double(entryCost) * multiplier
-        
-        return Int(floor(finalPayout))
+        return Int(floor(Double(entryCost) * multiplier))
     }
     
-    // MARK: - Manual Refresh (optional)
+    // MARK: - Rakeback Calculation
+    
+    /// Calculate rakeback as a percentage of gross house expected keep.
+    ///
+    /// Rakeback scales proportionally with actual house profitability — on parlays
+    /// where the player is unlikely to win, the house expects to keep more and
+    /// rakeback grows accordingly. On easy bets where the house expects less,
+    /// rakeback is smaller. This guarantees House EV is always positive regardless
+    /// of parlay size, star ratings, or rakeback percentage (as long as it stays below 100%).
+    ///
+    /// This method is called once in placeParlayBet and the result is passed through
+    /// to uploadEntryAfterBet to ensure both use the exact same value.
+    ///
+    /// - Parameters:
+    ///   - entryCost: The amount of coins staked
+    ///   - predictions: The star rating predictions per friend
+    /// - Returns: Rakeback amount in coins (floored, minimum 0)
+    func calculateRakeback(entryCost: Int, predictions: [String: Int]) -> Int {
+        let rakebackPercentage = getRakebackPercentage()
+        guard rakebackPercentage > 0, !predictions.isEmpty else { return 0 }
+        
+        // Combined win probability across all legs
+        let combinedWinProbability = predictions.values.reduce(1.0) { total, starRating in
+            total * getAccuracyRate(for: starRating)
+        }
+        
+        // Actual multiplier shown to the player
+        let actualMultiplier = getParlayMultiplier(predictions: predictions)
+        
+        // Gross house expected keep — what house statistically expects to profit before rakeback
+        let grossHouseExpectedKeep = Double(entryCost) - (combinedWinProbability * actualMultiplier * Double(entryCost))
+        
+        // Rakeback is a percentage of gross expected keep — always proportional, always positive
+        let rakebackAmount = max(0, grossHouseExpectedKeep) * rakebackPercentage
+        let flooredRakeback = Int(floor(rakebackAmount))
+        
+        return flooredRakeback >= 1 ? flooredRakeback : 0
+    }
+    
+    // MARK: - Star Rating Methods
+    
+    func getAccuracyRate(for starRating: Int) -> Double {
+        return cachedStarAccuracyRates[starRating] ?? 0.5
+    }
+    
+    // MARK: - Manual Refresh
     func refreshConfig() async -> Bool {
         await MainActor.run {
             self.isLoading = true
