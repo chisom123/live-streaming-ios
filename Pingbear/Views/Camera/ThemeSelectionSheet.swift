@@ -497,8 +497,8 @@ struct AddThemeSheet: View {
                                 .padding(.bottom, 5)
                         }
                         
-                        // Only show suggestions if the text field is empty
-                        if themeName.isEmpty {
+                        // Show suggestions only when text field is empty AND not focused
+                        if themeName.isEmpty && !isThemeNameFocused {
                             // Suggestions title
                             Text("Suggested Themes")
                                 .font(.system(size: 16, weight: .semibold))
@@ -518,9 +518,6 @@ struct AddThemeSheet: View {
             }
             .background(Color(hex: "#10183C"))
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isThemeNameFocused = true
-                }
                 Analytics.shared.trackScreen(name: "add_new_theme")
             }
         }
