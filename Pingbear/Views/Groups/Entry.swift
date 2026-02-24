@@ -387,25 +387,79 @@ private extension EntryView {
         }
     }
     
-    // Perform all remaining spins sequentially
+    // MARK: - Fetch predicted rating for current rater
+    
+    /// Reads the entry's predictions map to find if the entry creator predicted
+    /// what rating the current user would give. Returns that predicted rating if found.
+    func fetchMyPredictedRating(entryId: String, userId: String) async -> Int? {
+        return await withCheckedContinuation { continuation in
+            db.collection("competitions")
+                .document(competition.id)
+                .collection("entries")
+                .document(entryId)
+                .getDocument { document, _ in
+                    guard let predictions = document?.data()?["predictions"] as? [String: Any],
+                          let myPrediction = predictions[userId] as? [String: Any],
+                          let predictedRating = myPrediction["predictedRating"] as? Int else {
+                        continuation.resume(returning: nil)
+                        return
+                    }
+                    continuation.resume(returning: predictedRating)
+                }
+        }
+    }
+    
+    // MARK: - Sequential Spins with Guaranteed Rating
+    
     private func performSequentialSpins() async {
         isSpinning = true
         hasStartedSpinning = true
         
         let totalToSpin = spinsRemaining
         let startingIndex = 3 - spinsRemaining
-        var settledRatings = spinResults.map { $0.stars }
+        
+        // Fetch prediction and assign to a random slot upfront.
+        // Falls back to a guaranteed 4 or 5 if no prediction exists
+        // so the rater always has a "good" option.
+        let guaranteedRating: Int
+        let guaranteedSlot: Int
+        
+        if let entry = currentEntry,
+           let currentUserId = Auth.auth().currentUser?.uid,
+           let prediction = await fetchMyPredictedRating(entryId: entry.id, userId: currentUserId) {
+            // Has prediction - guarantee that number appears
+            guaranteedRating = prediction
+        } else {
+            // No prediction - guarantee a 4 or 5 always appears
+            guaranteedRating = Int.random(in: 4...5)
+        }
+        // Pick a random slot among the ones we're about to spin so it's not always first/last
+        guaranteedSlot = startingIndex + Int.random(in: 0..<totalToSpin)
+        
+        // Track ALL ratings that must not appear in non-forced slots.
+        // Seed with already-settled results + the guaranteed rating so free slots
+        // never accidentally duplicate it.
+        var usedRatings = spinResults.map { $0.stars }
+        usedRatings.append(guaranteedRating)
         
         for i in 0..<totalToSpin {
             let slotIndex = startingIndex + i
+            let isGuaranteedSlot = slotIndex == guaranteedSlot
+            let forcedRating = isGuaranteedSlot ? guaranteedRating : nil
             
-            // Run single spin animation
-            let finalResult = await runSingleSpin(slotIndex: slotIndex, usedRatings: settledRatings)
+            // Forced slot: pass empty usedRatings — it ignores them anyway.
+            // Free slots: pass usedRatings so they avoid all settled + guaranteed values.
+            let finalResult = await runSingleSpin(
+                slotIndex: slotIndex,
+                usedRatings: isGuaranteedSlot ? [] : usedRatings,
+                forcedRating: forcedRating
+            )
             
-            // Update settled ratings
-            settledRatings.append(finalResult.stars)
+            // Only append free-slot results to usedRatings — guaranteed was already added above.
+            if !isGuaranteedSlot {
+                usedRatings.append(finalResult.stars)
+            }
             
-            // Decrement spins remaining
             await MainActor.run {
                 spinsRemaining -= 1
             }
@@ -432,11 +486,19 @@ private extension EntryView {
         isSpinning = false
     }
     
-    // Run a single spin animation for one slot
-    private func runSingleSpin(slotIndex: Int, usedRatings: [Int]) async -> SlotMachineUtils.SpinResult {
+    // MARK: - Single Spin Animation
+    
+    /// Runs the slot animation for one slot then settles on the final value.
+    /// If `forcedRating` is provided the slot always lands on that value.
+    /// Otherwise it picks randomly while avoiding anything in `usedRatings`.
+    private func runSingleSpin(
+        slotIndex: Int,
+        usedRatings: [Int],
+        forcedRating: Int? = nil
+    ) async -> SlotMachineUtils.SpinResult {
         var spinCount = 0
         
-        // Animate with random values
+        // Animate with random values during the spin
         while spinCount < 10 {
             let randomRating = Int.random(in: 1...5)
             let tempResult = SlotMachineUtils.SpinResult(stars: randomRating, multiplier: 1, points: 0)
@@ -453,18 +515,22 @@ private extension EntryView {
             spinCount += 1
         }
         
-        // Generate final result - avoid duplicates
+        // Settle on the final value
         var finalRating: Int
-        var attempts = 0
-        repeat {
-            finalRating = Int.random(in: 1...5)
-            attempts += 1
-        } while usedRatings.contains(finalRating) && attempts < 100
+        if let forced = forcedRating {
+            // This slot must show the guaranteed rating
+            finalRating = forced
+        } else {
+            // Pick randomly, avoiding all used/reserved ratings
+            var attempts = 0
+            repeat {
+                finalRating = Int.random(in: 1...5)
+                attempts += 1
+            } while usedRatings.contains(finalRating) && attempts < 100
+        }
         
-        // Generate spin result using SlotMachineUtils
         let multiplier = SlotMachineUtils.getWeightedMultiplier()
         let points = SlotMachineUtils.calculatePoints(stars: finalRating, multiplier: multiplier)
-        
         let finalResult = SlotMachineUtils.SpinResult(stars: finalRating, multiplier: multiplier, points: points)
         
         await MainActor.run {
@@ -595,7 +661,6 @@ private extension EntryView {
                     self.spinResults = spinResults
                     self.hasStartedSpinning = true
                     
-                    // Calculate remaining spins based on how many they've already done
                     let spinsUsed = spinResults.count
                     self.spinsRemaining = 3 - spinsUsed
                     
