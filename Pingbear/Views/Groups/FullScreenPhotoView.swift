@@ -394,8 +394,8 @@ struct FullScreenPhotoView: View {
             Color(hex: "#10B981")
                 .ignoresSafeArea()
             
-            VStack(spacing: 40) {
-                // Close button
+            // Close button pinned to top-right
+            VStack {
                 HStack {
                     Spacer()
                     Button(action: {
@@ -411,35 +411,31 @@ struct FullScreenPhotoView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                
                 Spacer()
+            }
+            
+            // Centred content
+            VStack(spacing: 30) {
+                Text("You Won")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
                 
-                // Win content
-                VStack(spacing: 30) {
-                    Text("You Won")
-                        .font(.system(size: 20, weight: .semibold))
+                HStack(spacing: 15) {
+                    Text("+\(displayedPointsEarned)")
+                        .font(.system(size: 72, weight: .bold))
                         .foregroundColor(.white)
                     
-                    // Points display with animation
-                    HStack(spacing: 15) {
-                        Text("+\(displayedPointsEarned)")
-                            .font(.system(size: 72, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Image("gem")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(.white)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 65, height: 65)
-                    }
-                    
-                    Text("$\(Int(ceil(prizePoolAmount))) Prize Pool")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.9))
+                    Image("gem")
+                        .resizable()
+                        .renderingMode(.template)
+                        .foregroundColor(.white)
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 65, height: 65)
                 }
                 
-                // Continue button
+                Text("$\(Int(ceil(prizePoolAmount))) Prize Pool")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
                 
                 Button(action: {
                     withAnimation {
@@ -449,9 +445,6 @@ struct FullScreenPhotoView: View {
                     HStack(spacing: 10) {
                         Text("Continue")
                             .font(.system(size: 20, weight: .bold))
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 20, weight: .bold))
                     }
                     .foregroundColor(Color(hex: "#000"))
                     .frame(maxWidth: .infinity)
@@ -460,8 +453,6 @@ struct FullScreenPhotoView: View {
                     .cornerRadius(200)
                 }
                 .padding(.horizontal, 20)
-                
-                Spacer()
             }
         }
     }
