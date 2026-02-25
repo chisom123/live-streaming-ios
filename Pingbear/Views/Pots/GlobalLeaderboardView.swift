@@ -214,29 +214,29 @@ struct GlobalLeaderboardView: View {
                                                     // Profile Picture
                                                     ProfilePictureView(url: participant.profilePictureUrl, size: 40)
                                                     
-                                                    // Username
-                                                    Text(participant.isCurrentUser ? "Me" : participant.username)
-                                                        .font(.system(size: 16, weight: .bold))
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
-                                                        .foregroundColor(.white)
+                                                    // Username + Prize
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        Text(participant.isCurrentUser ? "Me" : participant.username)
+                                                            .font(.system(size: 16, weight: .bold))
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
+                                                            .foregroundColor(.white)
+                                                        
+                                                        if participant.prize > 0 {
+                                                            Text("$\(String(format: "%.2f", participant.prize))")
+                                                                .font(.system(size: 14, weight: .bold))
+                                                                .foregroundColor(.white)
+                                                                .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                                                                .background(Color(hex: "#00AA00"))
+                                                                .cornerRadius(200)
+                                                        }
+                                                    }
                                                 }
                                                 
                                                 Spacer()
                                                 
                                                 VStack(alignment: .trailing, spacing: 8) {
-                                                    // Prize badge (if applicable) - shows split prize
-                                                    if participant.prize > 0 {
-                                                        Text("$\(String(format: "%.2f", participant.prize))")
-                                                            .font(.system(size: 17, weight: .bold))
-                                                            .foregroundColor(Color(hex: "#FFF"))
-                                                            .lineLimit(1)
-                                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                            .background(Color(hex: "#00AA00"))
-                                                            .cornerRadius(200)
-                                                    }
-                                                    
-                                                    // Stars badge
+                                                    // Stars badge only
                                                     HStack(spacing: 8) {
                                                         Text("\(participant.totalStars)")
                                                             .font(.system(size: 17, weight: .bold))
@@ -303,7 +303,7 @@ struct GlobalLeaderboardView: View {
                                     .cornerRadius(100)
                                 }
                                 .padding(.trailing, 20)
-                                .padding(.bottom, showStatsBar ? 90 : 20) // Move up when stats bar is visible
+                                .padding(.bottom, showStatsBar ? (viewModel.userPrize > 0 ? 95 : 90) : 20)
                             }
                         }
                         .offset(y: showStatsBar ? 0 : 100)
@@ -330,40 +330,40 @@ struct GlobalLeaderboardView: View {
                                         .frame(width: 40, height: 40)
                                 }
                                 
-                                // "Me" text
-                                Text("Me")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                Spacer()
-                                
-                                // Right side: Prize and Stars
-                                HStack(spacing: 8) {
+                                // "Me" text + Prize
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Me")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
                                     if viewModel.userPrize > 0 {
                                         Text("$\(String(format: "%.2f", viewModel.userPrize))")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                            .font(.system(size: 14, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
                                             .background(Color(hex: "#00AA00"))
                                             .cornerRadius(200)
                                     }
-                                    
-                                    HStack(spacing: 6) {
-                                        Text("\(viewModel.userStars)")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                        
-                                        Image("gem")
-                                            .resizable()
-                                            .renderingMode(.template)
-                                            .foregroundColor(Color.white)
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 18, height: 18)
-                                    }
-                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#6A5ACD"))
-                                    .cornerRadius(200)
                                 }
+                                
+                                Spacer()
+                                
+                                // Right side: Stars only
+                                HStack(spacing: 6) {
+                                    Text("\(viewModel.userStars)")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                    
+                                    Image("gem")
+                                        .resizable()
+                                        .renderingMode(.template)
+                                        .foregroundColor(Color.white)
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 18, height: 18)
+                                }
+                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .background(Color(hex: "#6A5ACD"))
+                                .cornerRadius(200)
                             }
                             .padding(20)
                             .background(Color(hex: "#2A3255"))
