@@ -28,6 +28,13 @@ struct HowItWorksSheet: View {
                             .frame(width: 30, height: 30)
                     }
                     Spacer()
+                    Text("New Competition")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(.white)
+                    Spacer()
+                    // Invisible view to balance the close button and keep title centred
+                    Color.clear
+                        .frame(width: 30, height: 30)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
