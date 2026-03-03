@@ -1,14 +1,20 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseFirestore
 
 struct PrizePoolInfoView: View {
     @Environment(\.dismiss) private var dismiss
-    
+
+    @State private var prizePoolAmount: Double = 50.0
+
+    private let db = Firestore.firestore()
+
     var body: some View {
         ZStack {
             Color(hex: "#10183C")
                 .ignoresSafeArea()
             
-            VStack(spacing: 0) {
+            VStack(spacing: 30) {
                 // Header
                 HStack {
                     Button(action: {
@@ -24,101 +30,110 @@ struct PrizePoolInfoView: View {
                     
                     Spacer()
                     
-                    Text("How Prize Pools Work")
-                        .font(.system(size: 18, weight: .bold, design: .default))
+                    Text("Learn More")
+                        .font(.system(size: 17, weight: .bold, design: .default))
                         .foregroundColor(.white)
-                        .opacity(0)
                     
                     Spacer()
                     
-                    Button(action: {
-                       
-                    }) {
-                        Image("x")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(.white)
-                            .aspectRatio(contentMode: .fit)
-                            .opacity(0)
-                            .frame(width: 30, height: 30)
-                    }
+                    // Invisible view to balance the close button and keep title centred
+                    Color.clear
+                        .frame(width: 30, height: 30)
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 20)
-                .background(Color(hex: "#10183C"))
-                .edgesIgnoringSafeArea(.top)
-                
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        HStack {
-                            Spacer()
-                            Text("How Prize Pools Work")
-                                .font(.system(size: 21, weight: .bold))
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .padding(.top, 40)
-                        .padding(.bottom, 15)
-                        
-                        // Step 1
-                        InfoStepView(
-                            number: "1",
-                            title: "Play with Friends",
-                            description: "Win points by rating your friends' photos in competitions."
-                        )
-        
-                        // Step 2
-                        InfoStepView(
-                            number: "2",
-                            title: "Climb the Leaderboard",
-                            description: "Your position is determined by your total points. The more points you win, the higher you rank."
-                        )
-                        
-                        // Step 3
-                        InfoStepView(
-                            number: "3",
-                            title: "Win Money",
-                            description: "Top performers share the weekly prize pool. Rankings reset every week, giving everyone a fresh chance to win."
-                        )
-                    }
+                .padding(.top, 20)
+
+                Spacer()
+
+                Image("gem")
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(Color(hex: "#FFF"))
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 70, height: 70)
+
+                Text("Win prize points playing with friends")
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+
+                Text("$\(Int(ceil(prizePoolAmount))) Prize Pool")
+                    .font(.system(size: 25, weight: .bold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+
+                Spacer()
+            }
+        }
+        .onAppear {
+            loadPrizePool()
+        }
+    }
+
+    // MARK: - Prize Pool Loading
+
+    private func loadPrizePool() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+
+        db.collection("users").document(userId).getDocument { document, _ in
+            if let potId = document?.data()?["active_pot_id"] as? String {
+                self.db.collection("global_pots").document(potId).getDocument { potDoc, _ in
+                    if let potData = potDoc?.data() {
+                        let firstPlace = potData["first_place_prize"] as? Double ?? 100.0
+                        let maxParts = potData["max_participants"] as? Int ?? 99
+                        let decay = potData["decay_rate"] as? Double ?? 0.91
+                        let minPay = potData["min_payout"] as? Double ?? 0.01
+
+                        let maxPool = self.calculateMaxPrizePool(
+                            firstPlace: firstPlace,
+                            decayRate: decay,
+                            minPayout: minPay,
+                            maxParticipants: maxParts
+                        )
+
+                        DispatchQueue.main.async {
+                            self.prizePoolAmount = maxPool
+                        }
+                    }
                 }
+            } else {
+                self.db.collection("app_config").document("global_leaderboard")
+                    .getDocument { configDoc, _ in
+                        if let data = configDoc?.data() {
+                            let firstPlace = data["first_place_prize"] as? Double ?? 100.0
+                            let decayRate = data["decay_rate"] as? Double ?? 0.91
+                            let minPayout = data["min_payout"] as? Double ?? 0.01
+                            let maxParticipants = data["pot_max_participants"] as? Int ?? 99
+
+                            let maxPool = self.calculateMaxPrizePool(
+                                firstPlace: firstPlace,
+                                decayRate: decayRate,
+                                minPayout: minPayout,
+                                maxParticipants: maxParticipants
+                            )
+
+                            DispatchQueue.main.async {
+                                self.prizePoolAmount = maxPool
+                            }
+                        }
+                    }
             }
         }
     }
-}
 
-struct InfoStepView: View {
-    let number: String
-    let title: String
-    let description: String
-    
-    var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Number circle
-            Text(number)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundColor(.white)
-                .frame(width: 35, height: 35)
-                .background(Color(hex: "#4169E1"))
-                .clipShape(Circle())
-            
-            // Content
-            VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Text(description)
-                    .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.8))
-                    .fixedSize(horizontal: false, vertical: true)
+    private func calculateMaxPrizePool(firstPlace: Double, decayRate: Double, minPayout: Double, maxParticipants: Int) -> Double {
+        var totalCents = 0
+
+        for rank in 1...maxParticipants {
+            let prizeCents = Int(floor(firstPlace * 100 * pow(decayRate, Double(rank - 1))))
+            if prizeCents < Int(minPayout * 100) {
+                break
             }
+            totalCents += prizeCents
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(hex: "#1A2245"))
-        .cornerRadius(12)
+
+        return Double(totalCents) / 100.0
     }
 }

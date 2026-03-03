@@ -92,6 +92,8 @@
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
 		4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */; };
 		4F74805C2F420630008636AF /* PostSignupLeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F74805B2F420630008636AF /* PostSignupLeaderboardView.swift */; };
+		4F78D1CB2F4F23AE004A766B /* RaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F78D1CA2F4F23AE004A766B /* RaceManager.swift */; };
+		4F78D1CD2F4F24BC004A766B /* RaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F78D1CC2F4F24BC004A766B /* RaceViewModel.swift */; };
 		4F90E1602E070FC700C84525 /* CompetitionPricingCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
@@ -105,7 +107,6 @@
 		4FDD666B2F3618CD0023B145 /* SlotMachineUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD666A2F3618CD0023B145 /* SlotMachineUtils.swift */; };
 		4FDD666D2F3621460023B145 /* SpinStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD666C2F3621460023B145 /* SpinStateManager.swift */; };
 		4FDD666F2F36314D0023B145 /* RedeemWinCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD666E2F36314D0023B145 /* RedeemWinCodeView.swift */; };
-		4FDD66AF2F37842D0023B145 /* OtherRatingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD66AE2F37842D0023B145 /* OtherRatingsView.swift */; };
 		4FDD66B12F3A60D40023B145 /* OnboardingRedeemCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD66B02F3A60D40023B145 /* OnboardingRedeemCodeView.swift */; };
 		4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05562D993FCD002C592B /* AnalyticsService.swift */; };
 		4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */; };
@@ -203,6 +204,8 @@
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCompetitionView.swift; sourceTree = "<group>"; };
 		4F74805B2F420630008636AF /* PostSignupLeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostSignupLeaderboardView.swift; sourceTree = "<group>"; };
+		4F78D1CA2F4F23AE004A766B /* RaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceManager.swift; sourceTree = "<group>"; };
+		4F78D1CC2F4F24BC004A766B /* RaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceViewModel.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionPricingCalculator.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
@@ -215,7 +218,6 @@
 		4FDD666A2F3618CD0023B145 /* SlotMachineUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotMachineUtils.swift; sourceTree = "<group>"; };
 		4FDD666C2F3621460023B145 /* SpinStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinStateManager.swift; sourceTree = "<group>"; };
 		4FDD666E2F36314D0023B145 /* RedeemWinCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeemWinCodeView.swift; sourceTree = "<group>"; };
-		4FDD66AE2F37842D0023B145 /* OtherRatingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherRatingsView.swift; sourceTree = "<group>"; };
 		4FDD66B02F3A60D40023B145 /* OnboardingRedeemCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRedeemCodeView.swift; sourceTree = "<group>"; };
 		4FDE05562D993FCD002C592B /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogAnalyticsService.swift; sourceTree = "<group>"; };
@@ -337,7 +339,6 @@
 				4F33595F2DE6E596003EF5E1 /* MessageComposerView.swift */,
 				4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */,
 				4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */,
-				4FDD66AE2F37842D0023B145 /* OtherRatingsView.swift */,
 				4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */,
 			);
 			path = Groups;
@@ -391,6 +392,7 @@
 				4FF9C1932F0FD20A000F045C /* Prizes */,
 				4FDE05552D993F8B002C592B /* Analytics */,
 				4F5326DD2E0C2C0E00E6D988 /* Parlay */,
+				4F78D1C92F4F2391004A766B /* Races */,
 				4F3E0D662A895ACA0068F901 /* Extensions */,
 				4F3E0D752A95129D0068F901 /* Models */,
 				4F3E0D522A86F87C0068F901 /* Views */,
@@ -485,6 +487,15 @@
 				4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */,
 			);
 			path = Parlay;
+			sourceTree = "<group>";
+		};
+		4F78D1C92F4F2391004A766B /* Races */ = {
+			isa = PBXGroup;
+			children = (
+				4F78D1CA2F4F23AE004A766B /* RaceManager.swift */,
+				4F78D1CC2F4F24BC004A766B /* RaceViewModel.swift */,
+			);
+			path = Races;
 			sourceTree = "<group>";
 		};
 		4F80A1B42E93C82B00F09EFB /* Frameworks */ = {
@@ -738,6 +749,7 @@
 				4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */,
 				4FF9C1A12F108902000F045C /* PotHistoryViewModel.swift in Sources */,
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
+				4F78D1CD2F4F24BC004A766B /* RaceViewModel.swift in Sources */,
 				4FF9C1A32F10892D000F045C /* PotHistoryView.swift in Sources */,
 				4F1C03CF2DB0E337001C9CE1 /* ThemeModel.swift in Sources */,
 				4FB27D502DE50DB400E10C8F /* ChatView.swift in Sources */,
@@ -745,7 +757,6 @@
 				4FF9C1A72F11F47E000F045C /* WalletViewModel.swift in Sources */,
 				4F3E0D812A9B7BFB0068F901 /* PayViewModel.swift in Sources */,
 				4FB27D482DE054B300E10C8F /* PhotoInteraction.swift in Sources */,
-				4FDD66AF2F37842D0023B145 /* OtherRatingsView.swift in Sources */,
 				4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */,
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
 				4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */,
@@ -794,6 +805,7 @@
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */,
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
+				4F78D1CB2F4F23AE004A766B /* RaceManager.swift in Sources */,
 				4F1146B62E166F6100CEAE21 /* SharedEntryComponents.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Global.swift in Sources */,
 				4F39B2A12DD3C50100F75004 /* UserPhotosViewModel.swift in Sources */,
@@ -963,7 +975,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 474;
+				CURRENT_PROJECT_VERSION = 478;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -993,7 +1005,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 42.2;
+				MARKETING_VERSION = 42.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1013,7 +1025,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 474;
+				CURRENT_PROJECT_VERSION = 478;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1042,7 +1054,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 42.2;
+				MARKETING_VERSION = 42.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

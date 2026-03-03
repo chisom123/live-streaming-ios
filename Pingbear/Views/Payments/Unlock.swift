@@ -265,7 +265,7 @@ struct UnlockView: View {
             }) {
                 Text("Skip")
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Color.white.opacity(0.7))
+                    .foregroundColor(Color.white)
             }
         }
         .padding(.horizontal, 20)

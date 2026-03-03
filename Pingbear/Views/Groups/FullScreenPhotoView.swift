@@ -24,12 +24,8 @@ struct FullScreenPhotoView: View {
     @State private var hasStartedSpinning: Bool = false
     @State private var spinsRemaining: Int = 3
     @State private var selectedRatingIndex: Int? = nil
-    @State private var showWinScreen: Bool = false
-    @State private var totalPointsEarned: Int = 0
-    @State private var displayedPointsEarned: Int = 0
     @State private var hasAlreadyVoted: Bool = false
     @State private var isLoadingSpinState: Bool = false
-    @State private var prizePoolAmount: Double = 50.0
     
     @State private var isEntryCreator = false
     
@@ -49,9 +45,6 @@ struct FullScreenPhotoView: View {
     
     // Message state
     @State private var showingMessageComposer = false
-    
-    // Other ratings state
-    @State private var showingOtherRatings = false
     
     // Chat ViewModel for sending messages
     @StateObject private var chatViewModel: ChatViewModel
@@ -84,7 +77,6 @@ struct FullScreenPhotoView: View {
                 GeometryReader { geometry in
                     let screenWidth = geometry.size.width
                     
-                    // Photo with text overlay using shared component
                     PhotoMainImageView(
                         photoUrl: photo.photoUrl,
                         overlayText: photo.overlayText,
@@ -95,7 +87,7 @@ struct FullScreenPhotoView: View {
                     )
                 }
                 
-                // TOP NAVIGATION using shared component
+                // TOP NAVIGATION
                 VStack {
                     PhotoNavigationBar(
                         onBack: {
@@ -116,22 +108,15 @@ struct FullScreenPhotoView: View {
                 
                 // Bottom sheet - different content based on user role and status
                 if isEntryCreator {
-                    // Entry Creator View
                     if parlayStatus != nil && parlayStake > 0 {
-                        // Has parlay - show predictions
                         entryCreatorBottomSheet
-                    }
-                    // No parlay - show nothing
-                } else {
-                    // Rater View
-                    if hasAlreadyVoted && !showWinScreen {
-                        // Already voted - show winnings
-                        alreadyVotedFooter
-                    } else if showWinScreen {
-                        // Just won - show win screen
-                        winScreenOverlay
                     } else {
-                        // Can still rate - show slot machine
+                        alreadyVotedFooter
+                    }
+                } else {
+                    if hasAlreadyVoted {
+                        alreadyVotedFooter
+                    } else {
                         slotMachineFooter
                     }
                 }
@@ -154,24 +139,8 @@ struct FullScreenPhotoView: View {
                 }
             )
         }
-        .sheet(isPresented: $showingPredictionsView) {
-            PredictionsDetailView(
-                parlayStatus: parlayStatus ?? "",
-                parlayPredictions: parlayPredictions,
-                parlayPayout: parlayPayout,
-                parlayStake: parlayStake,
-                pendingUserProfiles: pendingUserProfiles,
-                interactionService: interactionService,
-                onDismiss: { showingPredictionsView = false }
-            )
-        }
-        .sheet(isPresented: $showingOtherRatings) {
-            OtherRatingsView(interactions: interactionService.interactions)
-        }
         .onAppear {
             checkVotingStatus()
-            loadSpinState()
-            loadPrizePool()
             
             if let currentUserId = Auth.auth().currentUser?.uid {
                 isEntryCreator = (photo.userId == currentUserId)
@@ -183,7 +152,6 @@ struct FullScreenPhotoView: View {
                     entryId: photo.id
                 )
                 
-                // Fetch interactions first
                 interactionService.fetchInteractions(
                     competitionId: competitionId,
                     entryId: photo.id
@@ -202,104 +170,91 @@ struct FullScreenPhotoView: View {
                 ]
             )
         }
-        .onChange(of: interactionService.interactions) { _ in
-            // When interactions are loaded, check if user has already voted and load points
-            if hasAlreadyVoted {
-                if let userInteraction = interactionService.getCurrentUserInteraction() {
-                    totalPointsEarned = userInteraction.points
-                    displayedPointsEarned = userInteraction.points
-                    print("✅ Loaded points from interaction: \(userInteraction.points)")
-                } else {
-                    print("❌ No interaction found for current user")
-                }
-            }
-        }
     }
     
     // MARK: - Slot Machine UI Components
     
     private var alreadyVotedFooter: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            
-            // Content with rounded top
-            VStack(spacing: 5) {
-                // "Rating Completed" text
-                Text("You Won")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
+        UltraSmoothBottomSheet(
+            minHeight: PhotoViewConstants.minHeight,
+            midHeight: UIScreen.main.bounds.height * 0.35,
+            maxHeight: PhotoViewConstants.maxHeight(withFooter: false),
+            bottomPadding: 0
+        ) {
+            VStack(spacing: 0) {
+                VStack {
+                    RoundedRectangle(cornerRadius: 200)
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 40, height: 5)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical)
                 
-                // Side by side: Points won and Star rating given
-                HStack(spacing: 30) {
-                    // Points Won
-                    VStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            Text("+\(displayedPointsEarned)")
-                                .font(.system(size: 45, weight: .bold))
-                                .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
+                HStack {
+                    Text("Ratings")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+                
+                ScrollView {
+                    VStack(spacing: 0) {
+                        let currentUserId = Auth.auth().currentUser?.uid
+                        let sorted = interactionService.interactions.sorted { a, _ in a.userId == currentUserId }
+                        
+                        ForEach(Array(sorted.enumerated()), id: \.element.id) { index, interaction in
+                            let isCurrentUser = interaction.userId == currentUserId
                             
-                            Image("gem")
-                                .resizable()
-                                .renderingMode(.template)
-                                .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 48, height: 48)
+                            HStack(spacing: 15) {
+                                ProfilePictureView(url: interaction.profilePictureUrl, size: 40)
+                                
+                                Text(isCurrentUser ? "Me" : interaction.userName)
+                                    .font(.system(size: 16, weight: .bold))
+                                    .truncationMode(.tail)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                
+                                Spacer()
+                                
+                                HStack(spacing: 8) {
+                                    Text("\(interaction.rating)")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    Image(systemName: "star.fill")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                }
+                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .background(Color(hex: "#DAA520"))
+                                .cornerRadius(200)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            
+                            if index < sorted.count - 1 {
+                                Divider()
+                                    .background(Color.white.opacity(0.2))
+                                    .padding(.horizontal, 20)
+                            }
                         }
                     }
                 }
-                .padding(.vertical, 10)
                 
-                Button(action: {
-                    showingOtherRatings = true
-                }) {
-                    Text("See Ratings (\(interactionService.interactions.count))")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(Color(hex: "#FFF"))
-                }
-                .padding(.top, 4)
-                .padding(.bottom)
-                
-                // Disabled Spin button
-                Button(action: {}) {
-                    HStack(spacing: 10) {
-                        Text("Spin")
-                            .font(.system(size: 18, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: "#c2c2c2"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(Color(hex: "#666666"))
-                    .cornerRadius(200)
-                }
-                .disabled(true)
+                Spacer()
             }
-            .padding(20)
-            .padding(.bottom, 20) // Extra padding for safe area
-            .background(Color(hex: "#1A2245"))
-            .clipShape(
-                RoundedCorner(
-                    radius: 20,
-                    corners: [.topLeft, .topRight]
-                )
-            )
-            .background(
-                // Background color that extends below
-                VStack(spacing: 0) {
-                    Color.clear
-                        .frame(height: 20)
-                    Color(hex: "#1A2245")
-                }
-            )
         }
-        .ignoresSafeArea(edges: .bottom)
     }
     
     private var slotMachineFooter: some View {
         VStack(spacing: 0) {
             Spacer()
             
-            // Content with rounded top
             VStack(spacing: 20) {
                 // Instruction Text
                 Text(instructionText)
@@ -330,7 +285,7 @@ struct FullScreenPhotoView: View {
                 .disabled(!canSpin)
             }
             .padding(20)
-            .padding(.bottom, 20) // Extra padding for safe area
+            .padding(.bottom, 20)
             .background(Color(hex: "#1A2245"))
             .clipShape(
                 RoundedCorner(
@@ -339,7 +294,6 @@ struct FullScreenPhotoView: View {
                 )
             )
             .background(
-                // Background color that extends below
                 VStack(spacing: 0) {
                     Color.clear
                         .frame(height: 20)
@@ -360,17 +314,14 @@ struct FullScreenPhotoView: View {
                 if index < spinResults.count {
                     let result = spinResults[index]
                     
-                    // Star rating
                     Text("\(result.stars)")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
                     
-                    // Star icon
                     Image(systemName: "star.fill")
                         .font(.system(size: 14))
                         .foregroundColor(.white)
                 } else {
-                    // Empty slot
                     Text("")
                         .font(.system(size: 24, weight: .bold))
                 }
@@ -388,84 +339,17 @@ struct FullScreenPhotoView: View {
         .disabled(!hasStartedSpinning || isSpinning || selectedRatingIndex != nil || spinsRemaining > 0)
     }
     
-    private var winScreenOverlay: some View {
-        ZStack {
-            // Green background
-            Color(hex: "#10B981")
-                .ignoresSafeArea()
-            
-            // Close button pinned to top-right
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        withAnimation {
-                            showWinScreen = false
-                        }
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                Spacer()
-            }
-            
-            // Centred content
-            VStack(spacing: 30) {
-                Text("You Won")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                HStack(spacing: 15) {
-                    Text("+\(displayedPointsEarned)")
-                        .font(.system(size: 72, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Image("gem")
-                        .resizable()
-                        .renderingMode(.template)
-                        .foregroundColor(.white)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 65, height: 65)
-                }
-                
-                Text("$\(Int(ceil(prizePoolAmount))) Prize Pool")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.9))
-                
-                Button(action: {
-                    withAnimation {
-                        showWinScreen = false
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Text("Continue")
-                            .font(.system(size: 20, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: "#000"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 65)
-                    .background(Color.white)
-                    .cornerRadius(200)
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-    
     // MARK: - Slot Machine Logic
     
     private var instructionText: String {
-        if !hasStartedSpinning {
+        if isLoadingSpinState {
+            return "Loading..."
+        } else if !hasStartedSpinning {
             return "Tap spin"
         } else if isSpinning {
             return "Spinning..."
         } else if selectedRatingIndex != nil {
-            return "Submitting..."  // ← Add this condition
+            return "Submitting..."
         } else if hasStartedSpinning && spinsRemaining == 0 {
             return "Pick a rating"
         } else {
@@ -482,15 +366,11 @@ struct FullScreenPhotoView: View {
     }
     
     private var spinButtonColor: Color {
-        if canSpin {
-            return Color(hex: "#4169E1")
-        } else {
-            return Color(hex: "#666666")
-        }
+        canSpin ? Color(hex: "#4169E1") : Color(hex: "#666666")
     }
     
     private var canSpin: Bool {
-        return !isSpinning && spinsRemaining > 0 && !hasAlreadyVoted && userName != "Me"
+        return !isSpinning && !isLoadingSpinState && spinsRemaining > 0 && !hasAlreadyVoted && userName != "Me"
     }
     
     private func slotBackgroundColor(index: Int) -> Color {
@@ -522,8 +402,6 @@ struct FullScreenPhotoView: View {
     
     // MARK: - Fetch predicted rating for current rater
     
-    /// Reads the entry's predictions map to find if the entry creator predicted
-    /// what rating the current user would give. Returns that predicted rating if found.
     private func fetchMyPredictedRating(competitionId: String, userId: String) async -> Int? {
         return await withCheckedContinuation { continuation in
             db.collection("competitions")
@@ -551,25 +429,18 @@ struct FullScreenPhotoView: View {
         let totalToSpin = spinsRemaining
         let startingIndex = 3 - spinsRemaining
         
-        // Fetch prediction and assign to a random slot upfront
         let guaranteedRating: Int
         let guaranteedSlot: Int
         
         if let competitionId = competitionId,
            let currentUserId = Auth.auth().currentUser?.uid,
            let prediction = await fetchMyPredictedRating(competitionId: competitionId, userId: currentUserId) {
-            // Has prediction - guarantee that number appears
             guaranteedRating = prediction
         } else {
-            // No prediction - guarantee a 4 or 5 always appears so rater has a "good" option
             guaranteedRating = Int.random(in: 4...5)
         }
-        // Pick a random slot among the ones we're about to spin so it's not always first/last
         guaranteedSlot = startingIndex + Int.random(in: 0..<totalToSpin)
         
-        // Track ALL ratings that must not appear in non-forced slots.
-        // Seed with already-settled results + the guaranteed rating so free slots
-        // never accidentally duplicate it.
         var usedRatings = spinResults.map { $0.stars }
         usedRatings.append(guaranteedRating)
         
@@ -578,15 +449,12 @@ struct FullScreenPhotoView: View {
             let isGuaranteedSlot = slotIndex == guaranteedSlot
             let forcedRating = isGuaranteedSlot ? guaranteedRating : nil
             
-            // Forced slot: pass empty usedRatings — it ignores them anyway.
-            // Free slots: pass usedRatings so they avoid all settled + guaranteed values.
             let finalResult = await runSingleSpin(
                 slotIndex: slotIndex,
                 usedRatings: isGuaranteedSlot ? [] : usedRatings,
                 forcedRating: forcedRating
             )
             
-            // Only append free-slot results to usedRatings — guaranteed was already added above.
             if !isGuaranteedSlot {
                 usedRatings.append(finalResult.stars)
             }
@@ -595,13 +463,12 @@ struct FullScreenPhotoView: View {
                 spinsRemaining -= 1
             }
             
-            // Pause between spins (except after last spin)
             if i < totalToSpin - 1 {
-                try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                try? await Task.sleep(nanoseconds: 600_000_000)
             }
         }
         
-        // Save spin state to Firestore
+        // Save spin state after all spins complete
         saveSpinState()
         
         isSpinning = false
@@ -609,9 +476,6 @@ struct FullScreenPhotoView: View {
     
     // MARK: - Single Spin Animation
     
-    /// Runs the slot animation for one slot then settles on the final value.
-    /// If `forcedRating` is provided the slot always lands on that value.
-    /// Otherwise it picks randomly while avoiding anything in `usedRatings`.
     private func runSingleSpin(
         slotIndex: Int,
         usedRatings: [Int],
@@ -619,7 +483,6 @@ struct FullScreenPhotoView: View {
     ) async -> SlotMachineUtils.SpinResult {
         var spinCount = 0
         
-        // Animate with random values during the spin
         while spinCount < 10 {
             let randomRating = Int.random(in: 1...5)
             let tempResult = SlotMachineUtils.SpinResult(stars: randomRating, multiplier: 1, points: 0)
@@ -632,17 +495,14 @@ struct FullScreenPhotoView: View {
                 }
             }
             
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try? await Task.sleep(nanoseconds: 100_000_000)
             spinCount += 1
         }
         
-        // Settle on the final value
         var finalRating: Int
         if let forced = forcedRating {
-            // This slot must show the predicted rating
             finalRating = forced
         } else {
-            // Pick randomly, avoiding all used/reserved ratings
             var attempts = 0
             repeat {
                 finalRating = Int.random(in: 1...5)
@@ -668,103 +528,14 @@ struct FullScreenPhotoView: View {
     private func handleSelectRating(index: Int) {
         guard index < spinResults.count, selectedRatingIndex == nil else { return }
         
-        selectedRatingIndex = index  // Triggers scale animation
+        selectedRatingIndex = index
         let selectedStars = spinResults[index].stars
         
-        // Calculate total points from ALL 3 spins
-        totalPointsEarned = SlotMachineUtils.calculateTotalPoints(from: spinResults)
-        
-        // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        // Wait 0.5 second before submitting (keeps enlarged state visible)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.submitRating(stars: selectedStars, points: self.totalPointsEarned)
-        }
-    }
-
-    private func loadPrizePool() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        // First check if user has an active pot
-        db.collection("users").document(userId).getDocument { document, error in
-            if let potId = document?.data()?["active_pot_id"] as? String {
-                // User is in a pot, get that pot's prize pool
-                self.db.collection("global_pots").document(potId).getDocument { potDoc, _ in
-                    if let potData = potDoc?.data() {
-                        let firstPlace = potData["first_place_prize"] as? Double ?? 100.0
-                        let maxParts = potData["max_participants"] as? Int ?? 99
-                        let decay = potData["decay_rate"] as? Double ?? 0.91
-                        let minPay = potData["min_payout"] as? Double ?? 0.01
-                        
-                        let maxPool = self.calculateMaxPrizePool(
-                            firstPlace: firstPlace,
-                            decayRate: decay,
-                            minPayout: minPay,
-                            maxParticipants: maxParts
-                        )
-                        
-                        DispatchQueue.main.async {
-                            self.prizePoolAmount = maxPool
-                        }
-                    }
-                }
-            } else {
-                // User not in pot, get default from config
-                self.db.collection("app_config").document("global_leaderboard")
-                    .getDocument { configDoc, _ in
-                        if let data = configDoc?.data() {
-                            let firstPlace = data["first_place_prize"] as? Double ?? 100.0
-                            let decayRate = data["decay_rate"] as? Double ?? 0.91
-                            let minPayout = data["min_payout"] as? Double ?? 0.01
-                            let maxParticipants = data["pot_max_participants"] as? Int ?? 99
-                            
-                            let maxPool = self.calculateMaxPrizePool(
-                                firstPlace: firstPlace,
-                                decayRate: decayRate,
-                                minPayout: minPayout,
-                                maxParticipants: maxParticipants
-                            )
-                            
-                            DispatchQueue.main.async {
-                                self.prizePoolAmount = maxPool
-                            }
-                        }
-                    }
-            }
-        }
-    }
-
-    private func calculateMaxPrizePool(firstPlace: Double, decayRate: Double, minPayout: Double, maxParticipants: Int) -> Double {
-        var totalCents = 0
-        
-        for rank in 1...maxParticipants {
-            let prizeCents = Int(floor(firstPlace * 100 * pow(decayRate, Double(rank - 1))))
-            if prizeCents < Int(minPayout * 100) {
-                break
-            }
-            totalCents += prizeCents
-        }
-        
-        return Double(totalCents) / 100.0
-    }
-    
-    // Animate the counter on win screen
-    private func animateCounter() {
-        let duration: TimeInterval = 2.0
-        let steps = 60
-        var currentStep = 0
-        
-        Timer.scheduledTimer(withTimeInterval: duration / Double(steps), repeats: true) { timer in
-            currentStep += 1
-            
-            if currentStep >= steps {
-                displayedPointsEarned = totalPointsEarned
-                timer.invalidate()
-            } else {
-                displayedPointsEarned = (totalPointsEarned * currentStep) / steps
-            }
+            self.submitRating(stars: selectedStars)
         }
     }
     
@@ -778,7 +549,6 @@ struct FullScreenPhotoView: View {
             bottomPadding: 0
         ) {
             VStack(spacing: 0) {
-                // Centered handle
                 VStack {
                     RoundedRectangle(cornerRadius: 200)
                         .fill(Color.white.opacity(0.3))
@@ -787,10 +557,8 @@ struct FullScreenPhotoView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical)
                 
-                // Scrollable content
                 ScrollView {
                     VStack(spacing: 16) {
-                        // Single container for both Predictions and Other Ratings
                         VStack(spacing: 12) {
                             HStack {
                                 Text("My Predictions")
@@ -811,7 +579,6 @@ struct FullScreenPhotoView: View {
                                 parlayLostViewInline
                             }
                             
-                            // Other Ratings Section
                             let predictedUserIds = Set(parlayPredictions.keys)
                             let otherRatings = interactionService.interactions.filter { !predictedUserIds.contains($0.userId) }
                             
@@ -1358,13 +1125,17 @@ struct FullScreenPhotoView: View {
             
             DispatchQueue.main.async {
                 self.hasAlreadyVoted = document?.exists ?? false
+                // Only load spin state once we know the vote status,
+                // so we don't waste a read on someone who already voted.
+                if !self.hasAlreadyVoted {
+                    self.loadSpinState()
+                }
             }
         }
     }
     
     private func loadSpinState() {
         guard let competitionId = competitionId,
-              !hasAlreadyVoted,
               userName != "Me" else {
             return
         }
@@ -1374,27 +1145,21 @@ struct FullScreenPhotoView: View {
         SpinStateManager.shared.loadSpinState(
             competitionId: competitionId,
             entryId: photo.id
-        ) { spinResults in
+        ) { savedResults in
             DispatchQueue.main.async {
                 self.isLoadingSpinState = false
                 
-                if !spinResults.isEmpty {
-                    self.spinResults = spinResults
+                if !savedResults.isEmpty {
+                    self.spinResults = savedResults
                     self.hasStartedSpinning = true
-                    
-                    let spinsUsed = spinResults.count
-                    self.spinsRemaining = 3 - spinsUsed
-                    
-                    self.totalPointsEarned = SlotMachineUtils.calculateTotalPoints(from: spinResults)
+                    self.spinsRemaining = max(0, 3 - savedResults.count)
                 }
             }
         }
     }
     
     private func saveSpinState() {
-        guard let competitionId = competitionId else {
-            return
-        }
+        guard let competitionId = competitionId else { return }
         
         SpinStateManager.shared.saveSpinState(
             competitionId: competitionId,
@@ -1402,12 +1167,12 @@ struct FullScreenPhotoView: View {
             spinResults: spinResults
         ) { success in
             if !success {
-                print("Failed to save spin state")
+                print("Failed to save spin state for photo \(photo.id)")
             }
         }
     }
     
-    private func submitRating(stars: Int, points: Int) {
+    private func submitRating(stars: Int) {
         guard let competitionId = competitionId,
               let currentUserId = Auth.auth().currentUser?.uid,
               !hasAlreadyVoted else {
@@ -1418,10 +1183,9 @@ struct FullScreenPhotoView: View {
             action: "rate",
             entryId: photo.id,
             competitionId: competitionId,
-            properties: ["rating": stars, "location": "fullscreen_view", "total_points": points]
+            properties: ["rating": stars, "location": "fullscreen_view"]
         )
         
-        // Use ParlayManager to handle the rating
         ParlayManager.shared.handleRating(
             competitionId: competitionId,
             entryId: photo.id,
@@ -1432,33 +1196,29 @@ struct FullScreenPhotoView: View {
                 if success {
                     print("Rating processed successfully")
                     
-                    // Update local star count
                     self.currentStarCount += stars
                     
-                    // Award points to RATER (the current user)
-                    GlobalLeaderboardManager.shared.handleStarAwarded(
-                        userId: currentUserId,
-                        stars: points,
-                        competitionId: competitionId
-                    ) { pointsSuccess in
-                        if pointsSuccess {
-                            print("✅ Rater awarded \(points) points")
+                    RaceManager.shared.handleRatingReceived(
+                        competitionId: competitionId,
+                        photoOwnerId: photo.userId,
+                        stars: stars
+                    ) { raceSuccess in
+                        if raceSuccess {
+                            print("✅ Race stars updated for photo owner \(photo.userId)")
                         } else {
-                            print("❌ Failed to award points to rater")
+                            print("❌ Failed to update race stars")
                         }
                     }
                     
-                    // Reload parlay status if user is entry creator
                     if self.isEntryCreator {
                         self.loadParlayStatus()
                     }
                     
-                    // Submit to interaction service
                     self.interactionService.submitRating(
                         competitionId: competitionId,
                         entryId: self.photo.id,
                         rating: stars,
-                        points: points
+                        points: 0
                     ) { interactionSuccess in
                         if interactionSuccess {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -1470,21 +1230,10 @@ struct FullScreenPhotoView: View {
                         }
                     }
                     
-                    // Show win screen and start counter animation
-                    withAnimation {
-                        self.showWinScreen = true
-                    }
-                    
-                    // Start counter animation after brief delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.animateCounter()
-                    }
-                    
                     self.hasAlreadyVoted = true
                     
                 } else {
                     print("Failed to process rating")
-                    // Reset state on failure
                     self.selectedRatingIndex = nil
                     self.spinResults = []
                     self.hasStartedSpinning = false

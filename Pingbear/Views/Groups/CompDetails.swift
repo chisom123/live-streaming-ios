@@ -41,6 +41,7 @@ struct CompDetails: View {
     @StateObject private var themesViewModel = ThemesViewModel()
     @State private var showingThemeSelection = false
     @State private var selectedThemeForCapture: Theme? = nil
+    @StateObject private var raceViewModel = RaceViewModel()
     
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
@@ -183,8 +184,61 @@ struct CompDetails: View {
                 .padding(.horizontal, 10)
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
-                .padding(.vertical, 20)
+                .padding(.top, 20)
+                .padding(.bottom, shouldShowRaceBar ? 0 : 20)
                 .padding(.horizontal, 20)
+                
+                // MARK: - Race Status Bar
+                if shouldShowRaceBar {
+                    HStack {
+                        Image(systemName: "flag.checkered")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white)
+                            .padding(.trailing, 10)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Daily Race")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            if raceViewModel.hasActiveRace {
+                                HStack(spacing: 4) {
+                                    Text("\(raceViewModel.raceInfo?.pointsPool ?? 0)")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                    
+                                    Image("gem")
+                                        .resizable()
+                                        .renderingMode(.template)
+                                        .foregroundColor(.white)
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 15, height: 15)
+                                }
+                                .padding(EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8))
+                                .background(Color(hex: "#6A5ACD"))
+                                .cornerRadius(200)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        if raceViewModel.hasActiveRace {
+                            Text("Ends In \(raceViewModel.timeRemaining)")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        } else {
+                            Text("Not Started")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(.horizontal, 25)
+                    .padding(.vertical, 25)
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                }
                 
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -193,7 +247,6 @@ struct CompDetails: View {
                         NoPlayersView(
                             action_player: addPlayer,
                             onMeTapped: {
-                                // Create a UserEntry for the current user
                                 let currentUserEntry = UserEntry(
                                     id: currentUserId,
                                     userName: "Me",
@@ -224,8 +277,9 @@ struct CompDetails: View {
                             Spacer()
                         } else {
                             ScrollView {
+                                // MARK: - Leaderboard
                                 VStack(spacing: 0) {
-                                    ForEach(Array(entryViewModel.userLeaderboard.enumerated()), id: \.element.id) { index, userEntry in
+                                    ForEach(Array(sortedLeaderboard().enumerated()), id: \.element.id) { index, userEntry in
                                         Button(action: {
                                             selectedUserForPhotos = UserSelection(
                                                 user: userEntry,
@@ -238,6 +292,7 @@ struct CompDetails: View {
                                         }) {
                                             VStack(spacing: 0) {
                                                 HStack {
+                                                    // Position
                                                     Text("\(index + 1)")
                                                         .font(.system(size: 16, weight: .bold))
                                                         .foregroundColor(.white)
@@ -247,17 +302,39 @@ struct CompDetails: View {
                                                     HStack(spacing: 20) {
                                                         ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
                                                         
-                                                        Text(userEntry.userName)
-                                                            .font(.system(size: 16, weight: .bold))
-                                                            .lineLimit(1)
-                                                            .truncationMode(.tail)
-                                                            .foregroundColor(.white)
+                                                        VStack(alignment: .leading, spacing: 4) {
+                                                            Text(userEntry.userName)
+                                                                .font(.system(size: 16, weight: .bold))
+                                                                .lineLimit(1)
+                                                                .truncationMode(.tail)
+                                                                .foregroundColor(.white)
+                                                            
+                                                            // Projected points badge
+                                                            if let points = projectedPoints(for: userEntry), points > 0 {
+                                                                HStack(spacing: 4) {
+                                                                    Text("\(points)")
+                                                                        .font(.system(size: 14, weight: .bold))
+                                                                        .foregroundColor(.white)
+                                                                    
+                                                                    Image("gem")
+                                                                        .resizable()
+                                                                        .renderingMode(.template)
+                                                                        .foregroundColor(.white)
+                                                                        .aspectRatio(contentMode: .fit)
+                                                                        .frame(width: 15, height: 15)
+                                                                }
+                                                                .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                                                                .background(Color(hex: "#6A5ACD"))
+                                                                .cornerRadius(200)
+                                                            }
+                                                        }
                                                     }
                                                     
                                                     Spacer()
                                                     
+                                                    // Today's race stars
                                                     HStack(spacing: 8) {
-                                                        Text("\(userEntry.totalStars)")
+                                                        Text("\(raceStars(for: userEntry))")
                                                             .font(.system(size: 17, weight: .bold))
                                                             .foregroundColor(Color(hex: "#FFF"))
                                                         
@@ -275,7 +352,7 @@ struct CompDetails: View {
                                                 .padding(.vertical, 25)
                                                 .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
                                                 
-                                                if userEntry.id != entryViewModel.userLeaderboard.last?.id {
+                                                if index < sortedLeaderboard().count - 1 {
                                                     Divider()
                                                         .background(Color.white.opacity(0.2))
                                                 }
@@ -288,15 +365,16 @@ struct CompDetails: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
+                                .padding(.bottom, 20)
                             }
                             .refreshable {
                                 entryViewModel.fetchEntries(mode: .compDetailsView)
                                 entryViewModel.fetchMemberCount()
+                                raceViewModel.loadRace(competitionId: competition.id)
                             }
                         }
                     }
                 }
-                
             }
         }
         .background(Color(hex: "#10183C"))
@@ -305,29 +383,27 @@ struct CompDetails: View {
             fetchData()
             NotificationQueueManager.shared.processQueuedNotifications()
             fetchCurrentUserProfilePictureUrl()
-            
             entryViewModel.setupListeners()
             themesViewModel.loadThemes(for: competition.id)
+            raceViewModel.loadRace(competitionId: competition.id)
+        }
+        .onDisappear {
+            entryViewModel.removeListeners()
+            raceViewModel.stopListening()
         }
         .onReceive(NotificationCenter.default.publisher(for: .dismissCameraFlow)) { _ in
-            // Dismiss the camera modal immediately
             isCameraPresented = false
             
-            // Refresh data immediately for better UX
             if !hasUserPostedFirstEntry {
                 print("CompDetails: Refreshing data after first entry")
                 fetchData()
                 hasUserPostedFirstEntry = true
-                
-                // Process notifications without delay, but handle potential failures gracefully
                 NotificationQueueManager.shared.processQueuedNotifications()
             } else {
-                // Process notifications immediately for existing users too
                 NotificationQueueManager.shared.processQueuedNotifications()
             }
         }
         .fullScreenCover(isPresented: $isCameraPresented, onDismiss: {
-            // Clear the theme selection when camera is dismissed
             selectedThemeForCapture = nil
         }) {
             CameraView(competition: competition, preselectedTheme: $selectedThemeForCapture)
@@ -363,16 +439,12 @@ struct CompDetails: View {
                             if granted {
                                 joincomp()
                             } else {
-                                // Now show the alert after sheet is fully dismissed
                                 self.activeAlert = .camera
                             }
                         }
                     }
                 }
             )
-        }
-        .onDisappear {
-            entryViewModel.removeListeners()
         }
         .alert(item: $activeAlert) { alertType in
             switch alertType {
@@ -390,23 +462,19 @@ struct CompDetails: View {
                     dismissButton: .default(Text("OK"), action: {
                         notificationManager.requestNotificationPermission { granted in
                             if granted {
-                                // Explicitly queue the token update to ensure persistence
                                 if let userId = Auth.auth().currentUser?.uid {
                                     notificationManager.queueTokenUpdate(userId: userId)
                                 }
-                                
                                 Analytics.shared.trackTap(
                                     elementId: "notification_permission_granted",
                                     screenName: "competition_details"
                                 )
-                                
                                 print("Notification permission granted and token queued")
                             } else {
                                 Analytics.shared.trackTap(
                                     elementId: "notification_permission_denied",
                                     screenName: "competition_details"
                                 )
-                                
                                 print("Permission request denied")
                             }
                         }
@@ -415,6 +483,44 @@ struct CompDetails: View {
             }
         }
     }
+    
+    // MARK: - Race Helpers
+    
+    /// Returns today's race stars for a given user entry
+    private func raceStars(for userEntry: UserEntry) -> Int {
+        return raceViewModel.participants
+            .first { $0.userId == userEntry.id }?.totalStars ?? 0
+    }
+    
+    /// Returns projected points for a user if they have stars in today's race
+    private func projectedPoints(for userEntry: UserEntry) -> Int? {
+        guard raceViewModel.hasActiveRace else { return nil }
+        let points = raceViewModel.participants
+            .first { $0.userId == userEntry.id }?.projectedPoints ?? 0
+        return points > 0 ? points : nil
+    }
+    
+    /// Returns the leaderboard sorted by today's race stars descending
+    /// Users with 0 race stars sink to the bottom, sorted by name for consistency
+    private func sortedLeaderboard() -> [UserEntry] {
+        return entryViewModel.userLeaderboard.sorted { a, b in
+            let starsA = raceStars(for: a)
+            let starsB = raceStars(for: b)
+            if starsA != starsB {
+                return starsA > starsB
+            }
+            // Equal stars - keep "Me" at top of tied group, otherwise alphabetical
+            if a.userName == "Me" { return true }
+            if b.userName == "Me" { return false }
+            return a.userName < b.userName
+        }
+    }
+    
+    private var shouldShowRaceBar: Bool {
+        !isLoading && entryViewModel.totalMemberCount > 1 && !entryViewModel.userLeaderboard.isEmpty
+    }
+    
+    // MARK: - Data Fetching
     
     private func fetchData() {
         isLoading = true
@@ -501,6 +607,8 @@ struct CompDetails: View {
     }
 }
 
+// MARK: - Empty / No Players Views (unchanged)
+
 struct EmptyLeaderboardView: View {
     var action: () -> Void
     
@@ -548,7 +656,6 @@ struct NoPlayersView: View {
                 ForEach(Array(["Me", "Player 2", "Player 3"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         if userName == "Me" {
-                            // Make the entire "Me" cell tappable
                             Button(action: {
                                 onMeTapped()
                             }) {
@@ -592,7 +699,6 @@ struct NoPlayersView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
-                            // Grayed out placeholder cells for other players
                             HStack {
                                 Text("\(index + 1)")
                                     .font(.system(size: 16, weight: .bold))
@@ -601,12 +707,10 @@ struct NoPlayersView: View {
                                     .padding(.leading, 20)
                                 
                                 HStack(spacing: 20) {
-                                    // Grayed out profile picture placeholder
                                     Circle()
                                         .fill(Color.white.opacity(0.15))
                                         .frame(width: 40, height: 40)
                                     
-                                    // Grayed out name placeholder
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(Color.white.opacity(0.15))
                                         .frame(width: 80, height: 16)
@@ -614,7 +718,6 @@ struct NoPlayersView: View {
 
                                 Spacer()
 
-                                // Star count (same as "Me" row)
                                 HStack(spacing: 6.5) {
                                     Text("0")
                                         .font(.system(size: 17, weight: .bold))
@@ -642,7 +745,6 @@ struct NoPlayersView: View {
                     }
                 }
                 
-                // Add Players button flush at the bottom
                 Button(action: action_player) {
                     Text("Add Players")
                         .font(.system(size: 20, weight: .bold))

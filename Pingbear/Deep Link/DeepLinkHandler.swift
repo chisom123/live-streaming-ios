@@ -5,6 +5,7 @@ import FirebaseFirestore
 
 enum DeepLinkType: Equatable {
     case competition(String)
+    case redeem(String)
     case unknown
 }
 
@@ -13,6 +14,7 @@ class DeepLinkHandler: ObservableObject {
     
     @Published var pendingDeepLink: DeepLinkType?
     @Published var isProcessingDeepLink = false
+    @Published var pendingRedeemCode: String? = nil
     
     private let db = Firestore.firestore()
     private var deepLinkQueue: [URL] = []
@@ -25,7 +27,6 @@ class DeepLinkHandler: ObservableObject {
     
     // MARK: - App State Management
     private func setupAppStateObservers() {
-        // Monitor app state changes
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(appDidBecomeActive),
@@ -43,7 +44,6 @@ class DeepLinkHandler: ObservableObject {
     
     @objc private func appDidBecomeActive() {
         print("App became active - processing queued deep links")
-        // Process any queued deep links when app becomes active
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.processQueue()
         }
@@ -51,18 +51,13 @@ class DeepLinkHandler: ObservableObject {
     
     @objc private func appWillResignActive() {
         print("App will resign active")
-        // Cancel any pending processing
         retryTimer?.invalidate()
     }
     
     // MARK: - Enhanced URL Handling
     func handleURL(_ url: URL) {
         print("DeepLinkHandler: Received URL: \(url)")
-        
-        // Add to queue instead of processing immediately
         deepLinkQueue.append(url)
-        
-        // Process queue if not already processing
         if !isProcessingQueue {
             processQueue()
         }
@@ -76,18 +71,15 @@ class DeepLinkHandler: ObservableObject {
         
         print("Processing deep link from queue: \(url)")
         
-        // Parse and process the URL
         processURL(url) { [weak self] success in
             DispatchQueue.main.async {
                 self?.isProcessingQueue = false
                 
                 if success {
-                    // Continue processing queue after a short delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         self?.processQueue()
                     }
                 } else {
-                    // Retry with exponential backoff
                     self?.retryProcessing(url)
                 }
             }
@@ -102,6 +94,8 @@ class DeepLinkHandler: ObservableObject {
         }
         
         let urlString = url.absoluteString
+        
+        // Handle competition deep links: socialstar://competition/<id>
         if urlString.contains("competition/") {
             let components = urlString.components(separatedBy: "competition/")
             if components.count > 1 {
@@ -113,7 +107,19 @@ class DeepLinkHandler: ObservableObject {
             }
         }
         
-        print("URL doesn't contain competition path")
+        // Handle redeem deep links: socialstar://redeem/<code>
+        if urlString.contains("redeem/") {
+            let components = urlString.components(separatedBy: "redeem/")
+            if components.count > 1 {
+                let code = components[1]
+                print("Found redeem code: \(code)")
+                pendingDeepLink = .redeem(code)
+                completion(true)
+                return
+            }
+        }
+        
+        print("URL doesn't match any known deep link path")
         pendingDeepLink = .unknown
         completion(false)
     }
@@ -122,14 +128,13 @@ class DeepLinkHandler: ObservableObject {
     private func retryProcessing(_ url: URL, retryCount: Int = 0) {
         guard retryCount < 3 else {
             print("Failed to process deep link after 3 attempts")
-            // Continue with next item in queue
             DispatchQueue.main.async { [weak self] in
                 self?.processQueue()
             }
             return
         }
         
-        let delay = pow(2.0, Double(retryCount)) // Exponential backoff: 1s, 2s, 4s
+        let delay = pow(2.0, Double(retryCount))
         
         retryTimer?.invalidate()
         retryTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
@@ -156,7 +161,6 @@ class DeepLinkHandler: ObservableObject {
         
         print("Processing deep link: \(deepLink)")
         
-        // Ensure we're on main thread and UI is ready
         DispatchQueue.main.async { [weak self] in
             self?.isProcessingDeepLink = true
             
@@ -169,6 +173,14 @@ class DeepLinkHandler: ObservableObject {
                         completion(competition)
                     }
                 }
+                
+            case .redeem(let code):
+                // Surface the code via pendingRedeemCode so PingbearApp can present RedeemWinCodeView
+                self?.pendingRedeemCode = code
+                self?.isProcessingDeepLink = false
+                self?.pendingDeepLink = nil
+                completion(nil)
+                
             case .unknown:
                 self?.isProcessingDeepLink = false
                 self?.pendingDeepLink = nil
@@ -186,7 +198,6 @@ class DeepLinkHandler: ObservableObject {
         
         print("Processing competition deep link for competition: \(competitionId)")
         
-        // First check if the competition exists
         let competitionRef = db.collection("competitions").document(competitionId)
         
         competitionRef.getDocument { [weak self] snapshot, error in
@@ -207,25 +218,21 @@ class DeepLinkHandler: ObservableObject {
             
             print("Competition found: \(data)")
             
-            // Create competition object
             let competition = Competition(
                 id: competitionId,
                 description: data["description"] as? String ?? "Competition",
                 date: (data["timestamp"] as? Timestamp)?.dateValue() ?? Date()
             )
             
-            // Check if user is already a member
             let memberRef = competitionRef.collection("members").document(userId)
             
             memberRef.getDocument { [weak self] memberSnapshot, memberError in
                 guard let self = self else { return }
                 
                 if memberSnapshot?.exists == true {
-                    // User is already a member, just open the competition
                     print("User is already a member")
                     completion(competition)
                 } else {
-                    // Add user as a member
                     print("Adding user as member")
                     self.addUserToCompetition(userId: userId, competitionId: competitionId) { success in
                         if success {
@@ -244,7 +251,6 @@ class DeepLinkHandler: ObservableObject {
     private func addUserToCompetition(userId: String, competitionId: String, completion: @escaping (Bool) -> Void) {
         print("Adding user \(userId) to competition \(competitionId)")
         
-        // First add to members collection to satisfy security rules
         let memberRef = db.collection("competitions").document(competitionId)
             .collection("members").document(userId)
         
@@ -258,7 +264,6 @@ class DeepLinkHandler: ObservableObject {
                 return
             }
             
-            // Now add to groupMemberships
             let groupMembershipRef = self?.db.collection("groupMemberships").document(userId)
                 .collection("competitions").document(competitionId)
             
@@ -273,29 +278,24 @@ class DeepLinkHandler: ObservableObject {
                         competitionId: competitionId
                     )
                     
-                    // Fetch the new member's username and competition description for notifications
                     self?.db.collection("users").document(userId).getDocument { userDoc, userError in
-                        let newMemberName = userDoc?.data()?["name"] as? String ?? "Someone"  // Changed from "username"
+                        let newMemberName = userDoc?.data()?["name"] as? String ?? "Someone"
                         
-                        // Fetch competition description
                         self?.db.collection("competitions").document(competitionId).getDocument { compDoc, _ in
                             let competitionDescription = compDoc?.data()?["description"] as? String ?? "Competition"
                             
-                            // Notify all existing members about the new member
                             NotificationQueueManager.shared.queueGroupNotification(
                                 competitionId: competitionId,
                                 title: competitionDescription,
                                 body: "\(newMemberName) joined the competition",
                                 senderId: userId,
-                                excludeUsers: [userId] // Don't notify the person who just joined
+                                excludeUsers: [userId]
                             )
                             
-                            // Process the notification
                             NotificationQueueManager.shared.processQueuedNotifications()
                         }
                     }
                     
-                    // Trigger refresh of competitions list
                     DispatchQueue.main.async {
                         NotificationCenter.default.post(name: NSNotification.Name("RefreshCompetitions"), object: nil)
                     }
@@ -314,6 +314,7 @@ class DeepLinkHandler: ObservableObject {
     func reset() {
         deepLinkQueue.removeAll()
         pendingDeepLink = nil
+        pendingRedeemCode = nil
         isProcessingDeepLink = false
         isProcessingQueue = false
         retryTimer?.invalidate()

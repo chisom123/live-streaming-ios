@@ -20,10 +20,11 @@ struct EntryView: View {
     @State private var hasStartedSpinning: Bool = false
     @State private var spinsRemaining: Int = 3
     @State private var selectedRatingIndex: Int? = nil
-    @State private var showWinScreen: Bool = false
-    @State private var totalPointsEarned: Int = 0
-    @State private var displayedPointsEarned: Int = 0
-    @State private var isLoadingSpinState: Bool = false
+    @State private var isLoadingSpinState: Bool = true
+    
+    // Generation counter — incremented on every entry change so stale
+    // async callbacks know to discard their results.
+    @State private var loadGeneration: Int = 0
     
     // Services
     @StateObject private var interactionService = PhotoInteractionService()
@@ -69,15 +70,8 @@ struct EntryView: View {
                 Spacer()
             }
             
-            // Win Screen Overlay
-            if showWinScreen {
-                winScreenOverlay
-            }
-            
             // Slot Machine Footer
-            if !showWinScreen {
-                slotMachineFooter
-            }
+            slotMachineFooter
         }
         .background(Color(hex: "#10183C"))
         .sheet(isPresented: $currentEntryState.showingMessageComposer) {
@@ -92,6 +86,16 @@ struct EntryView: View {
         }
         .onChange(of: viewModel.currentIndex) { _ in
             handleEntryChange()
+        }
+        .onChange(of: viewModel.entries.count) { count in
+            // On cold launch the entries array is empty when onAppear fires.
+            // Watch for the first entry arriving and kick off the load then.
+            // Guard avoids re-running once setupInitialEntry already succeeded.
+            if count > 0 && loadGeneration <= 1 && spinResults.isEmpty && !hasStartedSpinning {
+                loadGeneration += 1
+                loadEntryData()
+                preloadImages()
+            }
         }
         .onAppear {
             setupInitialEntry()
@@ -149,7 +153,6 @@ private extension EntryView {
         VStack(spacing: 0) {
             Spacer()
             
-            // Content with rounded top
             VStack(spacing: 20) {
                 // Instruction Text
                 Text(instructionText)
@@ -180,7 +183,7 @@ private extension EntryView {
                 .disabled(!canSpin)
             }
             .padding(20)
-            .padding(.bottom, 20) // Extra padding for safe area
+            .padding(.bottom, 20)
             .background(Color(hex: "#1A2245"))
             .clipShape(
                 RoundedCorner(
@@ -189,7 +192,6 @@ private extension EntryView {
                 )
             )
             .background(
-                // Background color that extends below
                 VStack(spacing: 0) {
                     Color.clear
                         .frame(height: 20)
@@ -206,21 +208,18 @@ private extension EntryView {
                 handleSelectRating(index: index)
             }
         }) {
-            VStack(spacing: 8) {
+            VStack(spacing: 2) {
                 if index < spinResults.count {
                     let result = spinResults[index]
                     
-                    // Star rating
                     Text("\(result.stars)")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(.white)
                     
-                    // Star icon
                     Image(systemName: "star.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: 14))
                         .foregroundColor(.white)
                 } else {
-                    // Empty slot
                     Text("")
                         .font(.system(size: 24, weight: .bold))
                 }
@@ -238,96 +237,16 @@ private extension EntryView {
         .disabled(!hasStartedSpinning || isSpinning || selectedRatingIndex != nil || spinsRemaining > 0)
     }
     
-    var winScreenOverlay: some View {
-        ZStack {
-            // Green background
-            Color(hex: "#10B981")
-                .ignoresSafeArea()
-            
-            VStack(spacing: 40) {
-                // Close button
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        withAnimation {
-                            showWinScreen = false
-                            // Auto-advance after closing win screen
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                self.advanceToNextEntry()
-                            }
-                        }
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 44, height: 44)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                
-                Spacer()
-                
-                // Win content
-                VStack(spacing: 30) {
-                    Text("You Won")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
-                    
-                    // Points display with animation
-                    HStack(spacing: 15) {
-                        Text("+\(displayedPointsEarned)")
-                            .font(.system(size: 72, weight: .bold))
-                            .foregroundColor(.white)
-                        
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.white)
-                    }
-                    
-                    Text("Points")
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.9))
-                }
-                
-                Spacer()
-                
-                // Continue button
-                Button(action: {
-                    withAnimation {
-                        showWinScreen = false
-                    }
-                    // Auto-advance after brief delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.advanceToNextEntry()
-                    }
-                }) {
-                    HStack(spacing: 10) {
-                        Text("Continue")
-                            .font(.system(size: 20, weight: .bold))
-                        
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 20, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: "#10B981"))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 60)
-                    .background(Color.white)
-                    .cornerRadius(200)
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
-            }
-        }
-        .zIndex(100) // Ensure it's above everything
-    }
-    
     var instructionText: String {
-        if !hasStartedSpinning {
+        if isLoadingSpinState {
+            return "Loading..."
+        } else if !hasStartedSpinning {
             return "Tap spin"
         } else if isSpinning {
             return "Spinning..."
-        } else if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
+        } else if selectedRatingIndex != nil {
+            return "Submitting..."
+        } else if hasStartedSpinning && spinsRemaining == 0 {
             return "Pick a rating"
         } else {
             return "Submitting..."
@@ -343,21 +262,15 @@ private extension EntryView {
     }
     
     var spinButtonColor: Color {
-        if canSpin {
-            return Color(hex: "#4169E1")
-        } else {
-            return Color(hex: "#666666")
-        }
+        canSpin ? Color(hex: "#4169E1") : Color(hex: "#666666")
     }
     
     var canSpin: Bool {
-        return !isSpinning && spinsRemaining > 0 && !currentEntryState.hasVoted
+        return !isSpinning && !isLoadingSpinState && spinsRemaining > 0 && !currentEntryState.hasVoted
     }
     
     func slotBackgroundColor(index: Int) -> Color {
-        if selectedRatingIndex == index {
-            return Color(hex: "#4169E1")
-        } else if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
+        if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
             return Color(hex: "#2A3A6B")
         } else {
             return Color(hex: "#2A3A6B").opacity(0.6)
@@ -365,9 +278,7 @@ private extension EntryView {
     }
     
     func slotBorderColor(index: Int) -> Color {
-        if selectedRatingIndex == index {
-            return .white
-        } else if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
+        if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
             return Color.white.opacity(0.3)
         } else {
             return .clear
@@ -382,15 +293,14 @@ private extension EntryView {
     func handleSpin() {
         guard canSpin else { return }
         
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
         Task {
             await performSequentialSpins()
         }
     }
     
-    // MARK: - Fetch predicted rating for current rater
-    
-    /// Reads the entry's predictions map to find if the entry creator predicted
-    /// what rating the current user would give. Returns that predicted rating if found.
     func fetchMyPredictedRating(entryId: String, userId: String) async -> Int? {
         return await withCheckedContinuation { continuation in
             db.collection("competitions")
@@ -409,36 +319,25 @@ private extension EntryView {
         }
     }
     
-    // MARK: - Sequential Spins with Guaranteed Rating
-    
-    private func performSequentialSpins() async {
+    func performSequentialSpins() async {
         isSpinning = true
         hasStartedSpinning = true
         
         let totalToSpin = spinsRemaining
         let startingIndex = 3 - spinsRemaining
         
-        // Fetch prediction and assign to a random slot upfront.
-        // Falls back to a guaranteed 4 or 5 if no prediction exists
-        // so the rater always has a "good" option.
         let guaranteedRating: Int
         let guaranteedSlot: Int
         
         if let entry = currentEntry,
            let currentUserId = Auth.auth().currentUser?.uid,
            let prediction = await fetchMyPredictedRating(entryId: entry.id, userId: currentUserId) {
-            // Has prediction - guarantee that number appears
             guaranteedRating = prediction
         } else {
-            // No prediction - guarantee a 4 or 5 always appears
             guaranteedRating = Int.random(in: 4...5)
         }
-        // Pick a random slot among the ones we're about to spin so it's not always first/last
         guaranteedSlot = startingIndex + Int.random(in: 0..<totalToSpin)
         
-        // Track ALL ratings that must not appear in non-forced slots.
-        // Seed with already-settled results + the guaranteed rating so free slots
-        // never accidentally duplicate it.
         var usedRatings = spinResults.map { $0.stars }
         usedRatings.append(guaranteedRating)
         
@@ -447,15 +346,12 @@ private extension EntryView {
             let isGuaranteedSlot = slotIndex == guaranteedSlot
             let forcedRating = isGuaranteedSlot ? guaranteedRating : nil
             
-            // Forced slot: pass empty usedRatings — it ignores them anyway.
-            // Free slots: pass usedRatings so they avoid all settled + guaranteed values.
             let finalResult = await runSingleSpin(
                 slotIndex: slotIndex,
                 usedRatings: isGuaranteedSlot ? [] : usedRatings,
                 forcedRating: forcedRating
             )
             
-            // Only append free-slot results to usedRatings — guaranteed was already added above.
             if !isGuaranteedSlot {
                 usedRatings.append(finalResult.stars)
             }
@@ -464,41 +360,24 @@ private extension EntryView {
                 spinsRemaining -= 1
             }
             
-            // Pause between spins (except after last spin)
             if i < totalToSpin - 1 {
-                try? await Task.sleep(nanoseconds: 600_000_000) // 600ms
+                try? await Task.sleep(nanoseconds: 600_000_000)
             }
         }
         
-        // Save spin state to Firestore
-        if let entry = currentEntry {
-            SpinStateManager.shared.saveSpinState(
-                competitionId: competition.id,
-                entryId: entry.id,
-                spinResults: spinResults
-            ) { success in
-                if !success {
-                    print("Failed to save spin state")
-                }
-            }
-        }
+        // Save spin state after all spins complete
+        saveSpinState()
         
         isSpinning = false
     }
     
-    // MARK: - Single Spin Animation
-    
-    /// Runs the slot animation for one slot then settles on the final value.
-    /// If `forcedRating` is provided the slot always lands on that value.
-    /// Otherwise it picks randomly while avoiding anything in `usedRatings`.
-    private func runSingleSpin(
+    func runSingleSpin(
         slotIndex: Int,
         usedRatings: [Int],
         forcedRating: Int? = nil
     ) async -> SlotMachineUtils.SpinResult {
         var spinCount = 0
         
-        // Animate with random values during the spin
         while spinCount < 10 {
             let randomRating = Int.random(in: 1...5)
             let tempResult = SlotMachineUtils.SpinResult(stars: randomRating, multiplier: 1, points: 0)
@@ -511,17 +390,14 @@ private extension EntryView {
                 }
             }
             
-            try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try? await Task.sleep(nanoseconds: 100_000_000)
             spinCount += 1
         }
         
-        // Settle on the final value
         var finalRating: Int
         if let forced = forcedRating {
-            // This slot must show the guaranteed rating
             finalRating = forced
         } else {
-            // Pick randomly, avoiding all used/reserved ratings
             var attempts = 0
             repeat {
                 finalRating = Int.random(in: 1...5)
@@ -550,33 +426,11 @@ private extension EntryView {
         selectedRatingIndex = index
         let selectedStars = spinResults[index].stars
         
-        // Calculate total points from ALL 3 spins
-        totalPointsEarned = SlotMachineUtils.calculateTotalPoints(from: spinResults)
-        
-        // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        // Submit the rating
-        handleRatingSubmission(stars: selectedStars, points: totalPointsEarned)
-    }
-    
-    // Animate the counter on win screen
-    private func animateCounter() {
-        let duration: TimeInterval = 2.0
-        let steps = 60
-        let increment = totalPointsEarned / steps
-        var currentStep = 0
-        
-        Timer.scheduledTimer(withTimeInterval: duration / Double(steps), repeats: true) { timer in
-            currentStep += 1
-            
-            if currentStep >= steps {
-                displayedPointsEarned = totalPointsEarned
-                timer.invalidate()
-            } else {
-                displayedPointsEarned += increment
-            }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.submitRating(stars: selectedStars, entry: entry)
         }
     }
 }
@@ -586,31 +440,29 @@ private extension EntryView {
 private extension EntryView {
     
     func setupInitialEntry() {
-        guard let entry = currentEntry else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if self.currentEntry != nil {
-                    self.loadEntryData()
-                }
-            }
-            return
-        }
+        loadGeneration += 1
+        
+        // If entries are already loaded (e.g. view re-opened), kick off immediately.
+        // If not yet loaded (cold launch), the onChange(of: viewModel.entries.count)
+        // watcher will trigger loadEntryData the moment the first entry arrives.
+        guard currentEntry != nil else { return }
         
         loadEntryData()
         preloadImages()
     }
     
     func handleEntryChange() {
-        // Reset ALL state for new entry
+        // Bump generation so any in-flight callbacks for the previous entry
+        // will see a mismatch and discard their results.
+        loadGeneration += 1
+        
         currentEntryState.reset()
         spinResults = []
         isSpinning = false
         hasStartedSpinning = false
         spinsRemaining = 3
         selectedRatingIndex = nil
-        showWinScreen = false
-        totalPointsEarned = 0
-        displayedPointsEarned = 0
-        isLoadingSpinState = false
+        isLoadingSpinState = true
         
         loadEntryData()
     }
@@ -618,15 +470,34 @@ private extension EntryView {
     func loadEntryData() {
         guard let entry = currentEntry else { return }
         
+        // Capture the generation at the time this load started.
+        // If it changes before any callback fires, we discard the result.
+        let generation = loadGeneration
+        
+        isLoadingSpinState = true
+        
         Task {
-            await loadVotingStatus(for: entry)
-            loadSpinState(for: entry)
+            // 1. Vote check first — always required before we touch spin state
+            await loadVotingStatus(for: entry, generation: generation)
+            
+            // Bail if the entry changed while we were checking votes
+            guard loadGeneration == generation else { return }
+            
+            // 2. Only load spin state if the user hasn't already voted
+            if !currentEntryState.hasVoted {
+                await loadSpinState(for: entry, generation: generation)
+            } else {
+                // User already voted — nothing to restore
+                isLoadingSpinState = false
+            }
+            
+            // 3. Interactions can load independently
             loadInteractions(for: entry)
         }
     }
     
     @MainActor
-    func loadVotingStatus(for entry: Entry) async {
+    func loadVotingStatus(for entry: Entry, generation: Int) async {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         
         do {
@@ -638,6 +509,8 @@ private extension EntryView {
                 .document(entry.id)
                 .getDocument()
             
+            guard loadGeneration == generation else { return }
+            
             currentEntryState.hasVoted = voteDoc.exists
             currentEntryState.canRate = !voteDoc.exists
         } catch {
@@ -645,27 +518,44 @@ private extension EntryView {
         }
     }
     
-    func loadSpinState(for entry: Entry) {
-        guard !currentEntryState.hasVoted else { return }
-        
-        isLoadingSpinState = true
-        
-        SpinStateManager.shared.loadSpinState(
-            competitionId: competition.id,
-            entryId: entry.id
-        ) { spinResults in
-            DispatchQueue.main.async {
-                self.isLoadingSpinState = false
-                
-                if !spinResults.isEmpty {
-                    self.spinResults = spinResults
-                    self.hasStartedSpinning = true
+    @MainActor
+    func loadSpinState(for entry: Entry, generation: Int) async {
+        await withCheckedContinuation { continuation in
+            SpinStateManager.shared.loadSpinState(
+                competitionId: competition.id,
+                entryId: entry.id
+            ) { savedResults in
+                DispatchQueue.main.async {
+                    // Discard if the entry changed while this was in flight
+                    guard self.loadGeneration == generation else {
+                        continuation.resume()
+                        return
+                    }
                     
-                    let spinsUsed = spinResults.count
-                    self.spinsRemaining = 3 - spinsUsed
+                    self.isLoadingSpinState = false
                     
-                    self.totalPointsEarned = SlotMachineUtils.calculateTotalPoints(from: spinResults)
+                    if !savedResults.isEmpty {
+                        self.spinResults = savedResults
+                        self.hasStartedSpinning = true
+                        self.spinsRemaining = max(0, 3 - savedResults.count)
+                    }
+                    
+                    continuation.resume()
                 }
+            }
+        }
+    }
+    
+    func saveSpinState() {
+        guard let entry = currentEntry else { return }
+        
+        SpinStateManager.shared.saveSpinState(
+            competitionId: competition.id,
+            entryId: entry.id,
+            spinResults: spinResults
+        ) { success in
+            if !success {
+                print("Failed to save spin state for entry \(entry.id)")
             }
         }
     }
@@ -693,16 +583,17 @@ private extension EntryView {
 
 private extension EntryView {
     
-    func handleRatingSubmission(stars: Int, points: Int) {
-        guard let entry = currentEntry,
-              let currentUserId = Auth.auth().currentUser?.uid,
+    func submitRating(stars: Int, entry: Entry) {
+        guard let currentUserId = Auth.auth().currentUser?.uid,
               currentEntryState.canRate else { return }
         
-        // Immediate UI feedback
-        currentEntryState.completeRating()
-        triggerHapticFeedback(for: stars)
+        Analytics.shared.trackEntry(
+            action: "rate",
+            entryId: entry.id,
+            competitionId: competition.id,
+            properties: ["rating": stars, "location": "entry_view"]
+        )
         
-        // Submit rating
         ParlayManager.shared.handleRating(
             competitionId: competition.id,
             entryId: entry.id,
@@ -713,40 +604,40 @@ private extension EntryView {
                 if success {
                     print("Rating processed successfully")
                     
-                    // Award points to RATER
-                    GlobalLeaderboardManager.shared.handleStarAwarded(
-                        userId: currentUserId,
-                        stars: points,
-                        competitionId: self.competition.id
-                    ) { pointsSuccess in
-                        if pointsSuccess {
-                            print("✅ Rater awarded \(points) points")
+                    currentEntryState.completeRating()
+                    
+                    // Award stars to the photo owner via RaceManager, matching FullScreenPhotoView
+                    RaceManager.shared.handleRatingReceived(
+                        competitionId: competition.id,
+                        photoOwnerId: entry.userId,
+                        stars: stars
+                    ) { raceSuccess in
+                        if raceSuccess {
+                            print("✅ Race stars updated for photo owner \(entry.userId)")
+                        } else {
+                            print("❌ Failed to update race stars")
                         }
                     }
                     
-                    // Submit to interaction service with points
                     self.interactionService.submitRating(
                         competitionId: self.competition.id,
                         entryId: entry.id,
                         rating: stars,
-                        points: points
-                    ) { _ in
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            self.interactionService.fetchInteractions(
-                                competitionId: self.competition.id,
-                                entryId: entry.id
-                            )
+                        points: 0
+                    ) { interactionSuccess in
+                        if interactionSuccess {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                self.interactionService.fetchInteractions(
+                                    competitionId: self.competition.id,
+                                    entryId: entry.id
+                                )
+                            }
                         }
                     }
                     
-                    // Show win screen and start counter animation
-                    withAnimation {
-                        self.showWinScreen = true
-                    }
-                    
-                    // Start counter animation after brief delay
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        self.animateCounter()
+                    // Auto-advance to next entry after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        self.advanceToNextEntry()
                     }
                     
                 } else {
@@ -755,13 +646,6 @@ private extension EntryView {
                 }
             }
         }
-        
-        Analytics.shared.trackEntry(
-            action: "rate",
-            entryId: entry.id,
-            competitionId: competition.id,
-            properties: ["rating": stars, "location": "entry_view", "total_points": points]
-        )
     }
     
     func handleRatingFailure() {
@@ -778,7 +662,6 @@ private extension EntryView {
             return
         }
         
-        // Smooth transition
         currentEntryState.startTransition()
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {

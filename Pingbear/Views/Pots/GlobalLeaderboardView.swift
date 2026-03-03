@@ -90,7 +90,7 @@ struct GlobalLeaderboardView: View {
                                     .font(.system(size: 21, weight: .bold))
                                     .foregroundColor(.white)
                                 
-                                Text("Rate a photo to enter the weekly prize pool")
+                                Text("Win prize points to enter the weekly prize pool")
                                     .font(.system(size: 16))
                                     .foregroundColor(.white.opacity(0.9))
                                     .multilineTextAlignment(.center)
@@ -291,7 +291,7 @@ struct GlobalLeaderboardView: View {
                                             .renderingMode(.template)
                                             .foregroundColor(Color.white)
                                             .aspectRatio(contentMode: .fit)
-                                            .frame(width: 18, height: 18)
+                                            .frame(width: 19, height: 19)
                                         
                                         Text("Claim")
                                             .font(.system(size: 17, weight: .bold))

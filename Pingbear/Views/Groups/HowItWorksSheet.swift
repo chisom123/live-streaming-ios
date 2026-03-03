@@ -44,7 +44,7 @@ struct HowItWorksSheet: View {
                 Image("gem")
                     .resizable()
                     .renderingMode(.template)
-                    .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
+                    .foregroundColor(Color(hex: "#FFF"))
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 70, height: 70)
 

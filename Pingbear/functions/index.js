@@ -569,3 +569,280 @@ function processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates)
     }
   });
 }
+
+
+// DAILY RACE - Close races function
+exports.closeRaces = onSchedule({
+  schedule: 'every 1 minutes',
+  timeZone: 'UTC',
+}, async (event) => {
+  const db = admin.firestore();
+  const now = admin.firestore.Timestamp.now();
+  
+  const endedRacesSnapshot = await db.collection('competition_races')
+    .where('end_date', '<=', now)
+    .where('status', '==', 'active')
+    .get();
+  
+  if (endedRacesSnapshot.empty) {
+    logger.info('No races to close');
+    return null;
+  }
+  
+  logger.info(`Found ${endedRacesSnapshot.size} races to close`);
+  
+  const promises = endedRacesSnapshot.docs.map(raceDoc =>
+    closeRace(raceDoc.id, raceDoc.data(), db)
+  );
+  
+  await Promise.all(promises);
+  logger.info('All races processed');
+  return null;
+});
+
+async function closeRace(raceId, raceData, db) {
+  logger.info(`Closing race ${raceId}`);
+  
+  try {
+    // Get all participants sorted by stars
+    const participantsSnapshot = await db.collection('competition_races')
+      .doc(raceId)
+      .collection('race_participants')
+      .orderBy('total_stars', 'desc')
+      .get();
+    
+    if (participantsSnapshot.empty) {
+      logger.info(`Race ${raceId} has no participants`);
+      await db.collection('competition_races').doc(raceId).update({
+        status: 'closed',
+        closed_at: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return;
+    }
+    
+    const totalStars = raceData.total_stars || 0;
+    const pointsPool = raceData.points_pool || 0;
+    
+    if (totalStars === 0 || pointsPool === 0) {
+      logger.info(`Race ${raceId} has no stars or points to distribute`);
+      await db.collection('competition_races').doc(raceId).update({
+        status: 'closed',
+        closed_at: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return;
+    }
+    
+    // Calculate points for each participant
+    const participantUpdates = [];
+    
+    participantsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const userId = doc.id;
+      const stars = data.total_stars || 0;
+      
+      if (stars === 0) return;
+      
+      // Proportional points: their stars / total stars × points pool
+      const points = Math.floor((stars / totalStars) * pointsPool);
+      
+      if (points > 0) {
+        participantUpdates.push({
+          ref: doc.ref,
+          userId,
+          points,
+          stars
+        });
+      }
+    });
+    
+    // Award points to global leaderboard for each participant
+    const globalLeaderboardPromises = participantUpdates.map(update =>
+      awardPointsToGlobalLeaderboard(update.userId, update.points, db)
+    );
+    
+    await Promise.all(globalLeaderboardPromises);
+    
+    // Update participant records with points awarded
+    const batch = db.batch();
+    participantUpdates.forEach(update => {
+      batch.update(update.ref, {
+        points_awarded: update.points
+      });
+    });
+    
+    // Mark race as closed
+    const raceRef = db.collection('competition_races').doc(raceId);
+    batch.update(raceRef, {
+      status: 'closed',
+      closed_at: admin.firestore.FieldValue.serverTimestamp(),
+      total_winners: participantUpdates.length
+    });
+    
+    await batch.commit();
+    
+    logger.info(`Race ${raceId} closed successfully, ${participantUpdates.length} participants awarded points`);
+  } catch (error) {
+    logger.error(`Error closing race ${raceId}:`, error);
+    throw error;
+  }
+}
+
+async function awardPointsToGlobalLeaderboard(userId, points, db) {
+  try {
+    // Check if user has an active pot
+    const userDoc = await db.collection('users').doc(userId).get();
+    const activePotId = userDoc.data()?.active_pot_id;
+    
+    if (activePotId) {
+      // Verify pot is still active
+      const potDoc = await db.collection('global_pots').doc(activePotId).get();
+      const potData = potDoc.data();
+      
+      if (potData?.status === 'active' && potData?.end_date?.toMillis() > Date.now()) {
+        // Add points to existing pot participant
+        const participantRef = db.collection('global_pots')
+          .doc(activePotId)
+          .collection('participants')
+          .doc(userId);
+        
+        const participantDoc = await participantRef.get();
+        
+        if (participantDoc.exists) {
+          await participantRef.update({
+            total_stars: admin.firestore.FieldValue.increment(points),
+            last_star_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+        } else {
+          // User not yet in pot participants, add them
+          await participantRef.set({
+            user_id: userId,
+            total_stars: points,
+            last_star_at: admin.firestore.FieldValue.serverTimestamp(),
+            joined_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+          
+          // Increment pot participant count
+          await db.collection('global_pots').doc(activePotId).update({
+            participant_count: admin.firestore.FieldValue.increment(1)
+          });
+        }
+        
+        logger.info(`✅ Awarded ${points} points to user ${userId} in pot ${activePotId}`);
+        return;
+      }
+    }
+    
+    // No active pot - find or create one
+    await joinPotAndAwardPoints(userId, points, db);
+    
+  } catch (error) {
+    logger.error(`Error awarding points to user ${userId}:`, error);
+    throw error;
+  }
+}
+
+async function joinPotAndAwardPoints(userId, points, db) {
+  await db.runTransaction(async (transaction) => {
+    const currentPotRef = db.collection('app_config').doc('current_pot');
+    const currentPotDoc = await transaction.get(currentPotRef);
+    
+    let potId;
+    
+    // Check if current pot exists and is valid
+    if (currentPotDoc.exists) {
+      const potData = currentPotDoc.data();
+      const potId_candidate = potData?.pot_id;
+      
+      if (potId_candidate && potData?.end_date?.toMillis() > Date.now()) {
+        const potRef = db.collection('global_pots').doc(potId_candidate);
+        const potDoc = await transaction.get(potRef);
+        const potDocData = potDoc.data();
+        
+        if (potDocData?.status === 'active' &&
+            potDocData?.participant_count < potDocData?.max_participants) {
+          potId = potId_candidate;
+          
+          // Add participant to existing pot
+          const participantRef = db.collection('global_pots')
+            .doc(potId)
+            .collection('participants')
+            .doc(userId);
+          
+          transaction.set(participantRef, {
+            user_id: userId,
+            total_stars: points,
+            last_star_at: admin.firestore.FieldValue.serverTimestamp(),
+            joined_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+          
+          transaction.update(potRef, {
+            participant_count: admin.firestore.FieldValue.increment(1)
+          });
+          
+          transaction.update(currentPotRef, {
+            participant_count: admin.firestore.FieldValue.increment(1)
+          });
+          
+          transaction.update(db.collection('users').doc(userId), {
+            active_pot_id: potId
+          });
+          
+          return;
+        }
+      }
+    }
+    
+    // Create new pot
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const newPotRef = db.collection('global_pots').doc();
+    potId = newPotRef.id;
+    
+    // Get config for pot settings
+    const configDoc = await transaction.get(
+      db.collection('app_config').doc('global_leaderboard')
+    );
+    const config = configDoc.data() || {};
+    
+    transaction.set(newPotRef, {
+      pot_id: potId,
+      start_date: admin.firestore.Timestamp.fromDate(now),
+      end_date: admin.firestore.Timestamp.fromDate(endDate),
+      status: 'active',
+      max_participants: config.pot_max_participants || 1000,
+      first_place_prize: config.first_place_prize || 100.0,
+      decay_rate: config.decay_rate || 0.0,
+      min_payout: config.min_payout || 0.01,
+      participant_count: 1,
+      created_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Add participant
+    const participantRef = db.collection('global_pots')
+      .doc(potId)
+      .collection('participants')
+      .doc(userId);
+    
+    transaction.set(participantRef, {
+      user_id: userId,
+      total_stars: points,
+      last_star_at: admin.firestore.FieldValue.serverTimestamp(),
+      joined_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Update current pot reference
+    transaction.set(currentPotRef, {
+      pot_id: potId,
+      participant_count: 1,
+      end_date: admin.firestore.Timestamp.fromDate(endDate),
+      updated_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    // Update user
+    transaction.update(db.collection('users').doc(userId), {
+      active_pot_id: potId
+    });
+    
+    logger.info(`✅ Created new pot ${potId} and awarded ${points} points to user ${userId}`);
+  });
+}

@@ -4,6 +4,10 @@ import FirebaseFunctions
 
 struct RedeemWinCodeView: View {
     @Environment(\.dismiss) private var dismiss
+    
+    /// Optional code passed in via deep link — pre-populates the text field
+    var prefilledCode: String? = nil
+    
     @State private var enteredCode: String = ""
     @State private var isRedeeming: Bool = false
     @State private var showSuccess: Bool = false
@@ -24,10 +28,10 @@ struct RedeemWinCodeView: View {
                         dismiss()
                     }) {
                         Image(systemName: "arrow.left")
-                            .resizable() // Allows resizing of the image
-                            .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                            .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                            .foregroundColor(Color.white) // Your desired color
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
                     }
                     
                     Spacer()
@@ -65,9 +69,8 @@ struct RedeemWinCodeView: View {
                         .background(Color.white.opacity(0.1))
                         .cornerRadius(12)
                         
-                        // Code Input and Button (wrapped together with no spacing)
+                        // Code Input and Button
                         VStack(spacing: 0) {
-                            // Code Input
                             TextField("Win Code", text: $enteredCode)
                                 .padding()
                                 .frame(height: 70)
@@ -82,12 +85,9 @@ struct RedeemWinCodeView: View {
                                 .disableAutocorrection(true)
                                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                                 .accentColor(.white)
-                                .autocapitalization(.words)
                                 .onChange(of: enteredCode) { newValue in
-                                    // Auto-uppercase and limit to 10 characters
                                     enteredCode = String(newValue.uppercased().prefix(10))
                                     
-                                    // Clear error when user starts typing again
                                     if showError {
                                         showError = false
                                         errorMessage = ""
@@ -95,7 +95,6 @@ struct RedeemWinCodeView: View {
                                 }
                                 .focused($isTextFieldFocused)
             
-                            // Error Message Text
                             if showError && !errorMessage.isEmpty {
                                 Text(errorMessage)
                                     .foregroundColor(Color(hex: "#FF0000"))
@@ -152,7 +151,6 @@ struct RedeemWinCodeView: View {
                     .transition(.opacity)
                 
                 VStack(spacing: 25) {
-                    // Success Icon
                     ZStack {
                         Circle()
                             .fill(Color(red: 16/255, green: 185/255, blue: 129/255))
@@ -208,6 +206,11 @@ struct RedeemWinCodeView: View {
             }
         }
         .onAppear {
+            // Pre-fill code if provided via deep link
+            if let code = prefilledCode {
+                enteredCode = String(code.uppercased().prefix(10))
+            }
+            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTextFieldFocused = true
             }
@@ -264,7 +267,6 @@ struct RedeemWinCodeView: View {
                     return
                 }
                 
-                // Parse response
                 do {
                     if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let result = json["result"] as? [String: Any],
@@ -272,10 +274,8 @@ struct RedeemWinCodeView: View {
                        success,
                        let points = result["points"] as? Int {
                         
-                        // Success!
                         pointsEarned = points
                         
-                        // Add points to global leaderboard
                         GlobalLeaderboardManager.shared.handleStarAwarded(
                             userId: userId,
                             stars: points,
@@ -294,7 +294,6 @@ struct RedeemWinCodeView: View {
                     } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                               let error = json["error"] as? [String: Any],
                               let message = error["message"] as? String {
-                        // Error from Cloud Function
                         handleErrorMessage(message)
                     } else {
                         errorMessage = "Invalid response from server"

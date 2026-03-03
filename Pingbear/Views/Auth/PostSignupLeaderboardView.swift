@@ -114,46 +114,44 @@ struct PostSignupLeaderboardView: View {
                                                     // Profile Picture
                                                     ProfilePictureView(url: participant.profilePictureUrl, size: 40)
                                                     
-                                                    // Username
-                                                    Text(participant.isCurrentUser ? "Me" : participant.username)
-                                                        .font(.system(size: 16, weight: .bold))
-                                                        .lineLimit(1)
-                                                        .truncationMode(.tail)
-                                                        .foregroundColor(.white)
+                                                    // Username + Prize
+                                                    VStack(alignment: .leading, spacing: 4) {
+                                                        Text(participant.isCurrentUser ? "Me" : participant.username)
+                                                            .font(.system(size: 16, weight: .bold))
+                                                            .lineLimit(1)
+                                                            .truncationMode(.tail)
+                                                            .foregroundColor(.white)
+                                                        
+                                                        if participant.prize > 0 {
+                                                            Text("$\(String(format: "%.2f", participant.prize))")
+                                                                .font(.system(size: 14, weight: .bold))
+                                                                .foregroundColor(.white)
+                                                                .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                                                                .background(Color(hex: "#00AA00"))
+                                                                .cornerRadius(200)
+                                                        }
+                                                    }
                                                 }
                                                 
                                                 Spacer()
                                                 
-                                                VStack(alignment: .trailing, spacing: 8) {
-                                                    // Prize badge
-                                                    if participant.prize > 0 {
-                                                        Text("$\(String(format: "%.2f", participant.prize))")
-                                                            .font(.system(size: 17, weight: .bold))
-                                                            .foregroundColor(Color(hex: "#FFF"))
-                                                            .lineLimit(1)
-                                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                            .background(Color(hex: "#00AA00"))
-                                                            .cornerRadius(200)
-                                                    }
+                                                // Stars badge only
+                                                HStack(spacing: 8) {
+                                                    Text("\(participant.totalStars)")
+                                                        .font(.system(size: 17, weight: .bold))
+                                                        .foregroundColor(Color(hex: "#FFF"))
+                                                        .lineLimit(1)
                                                     
-                                                    // Stars badge
-                                                    HStack(spacing: 8) {
-                                                        Text("\(participant.totalStars)")
-                                                            .font(.system(size: 17, weight: .bold))
-                                                            .foregroundColor(Color(hex: "#FFF"))
-                                                            .lineLimit(1)
-                                                        
-                                                        Image("gem")
-                                                            .resizable()
-                                                            .renderingMode(.template)
-                                                            .foregroundColor(Color.white)
-                                                            .aspectRatio(contentMode: .fit)
-                                                            .frame(width: 18, height: 18)
-                                                    }
-                                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                    .background(Color(hex: "#6A5ACD"))
-                                                    .cornerRadius(200)
+                                                    Image("gem")
+                                                        .resizable()
+                                                        .renderingMode(.template)
+                                                        .foregroundColor(Color.white)
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .frame(width: 18, height: 18)
                                                 }
+                                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                                .background(Color(hex: "#6A5ACD"))
+                                                .cornerRadius(200)
                                                 .padding(.trailing, 20)
                                             }
                                             .padding(.vertical, 25)
@@ -178,41 +176,42 @@ struct PostSignupLeaderboardView: View {
                             Spacer()
                             
                             VStack(spacing: 0) {
-                            // User stats
-                            HStack(spacing: 16) {
-                                // Left side: Position number
-                                Text("\(viewModel.userPosition > 0 ? String(viewModel.userPosition) : "--")")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 35)
-                                
-                                // Profile Picture
-                                if let currentUser = viewModel.participants.first(where: { $0.isCurrentUser }) {
-                                    ProfilePictureView(url: currentUser.profilePictureUrl, size: 40)
-                                } else {
-                                    Circle()
-                                        .fill(Color.gray)
-                                        .frame(width: 40, height: 40)
-                                }
-                                
-                                // "Me" text
-                                Text("Me")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
-                                
-                                Spacer()
-                                
-                                // Right side: Prize and Stars
-                                HStack(spacing: 8) {
-                                    if viewModel.userPrize > 0 {
-                                        Text("$\(String(format: "%.2f", viewModel.userPrize))")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                            .background(Color(hex: "#00AA00"))
-                                            .cornerRadius(200)
+                                // User stats
+                                HStack(spacing: 16) {
+                                    // Left side: Position number
+                                    Text("\(viewModel.userPosition > 0 ? String(viewModel.userPosition) : "--")")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 35)
+                                    
+                                    // Profile Picture
+                                    if let currentUser = viewModel.participants.first(where: { $0.isCurrentUser }) {
+                                        ProfilePictureView(url: currentUser.profilePictureUrl, size: 40)
+                                    } else {
+                                        Circle()
+                                            .fill(Color.gray)
+                                            .frame(width: 40, height: 40)
                                     }
                                     
+                                    // "Me" text + Prize
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Me")
+                                            .font(.system(size: 16, weight: .bold))
+                                            .foregroundColor(.white)
+                                        
+                                        if viewModel.userPrize > 0 {
+                                            Text("$\(String(format: "%.2f", viewModel.userPrize))")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                                                .background(Color(hex: "#00AA00"))
+                                                .cornerRadius(200)
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    // Right side: Stars only
                                     HStack(spacing: 6) {
                                         Text("\(viewModel.userStars)")
                                             .font(.system(size: 17, weight: .bold))
@@ -229,31 +228,30 @@ struct PostSignupLeaderboardView: View {
                                     .background(Color(hex: "#6A5ACD"))
                                     .cornerRadius(200)
                                 }
+                                .padding(20)
+                                .background(Color(hex: "#2A3255"))
+                                
+                                // Continue Button
+                                Button(action: {
+                                    Analytics.shared.trackTap(
+                                        elementId: "continue_to_app",
+                                        screenName: "post_signup_leaderboard"
+                                    )
+                                    onContinue()
+                                }) {
+                                    Text("Continue")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 55)
+                                        .background(Color(hex: "#4169E1"))
+                                        .cornerRadius(200)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(Color(hex: "#10183C"))
                             }
-                            .padding(20)
-                            .background(Color(hex: "#2A3255"))
-                            
-                            // Continue Button
-                            Button(action: {
-                                Analytics.shared.trackTap(
-                                    elementId: "continue_to_app",
-                                    screenName: "post_signup_leaderboard"
-                                )
-                                onContinue()
-                            }) {
-                                Text("Continue")
-                                    .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 55)
-                                    .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(200)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(Color(hex: "#10183C"))
                         }
-                    }
                     }
                 }
             }
