@@ -219,7 +219,7 @@ struct RedeemWinCodeView: View {
     
     private func redeemCode() {
         guard enteredCode.count == 10 else { return }
-        guard let userId = Auth.auth().currentUser?.uid else {
+        guard Auth.auth().currentUser != nil else {
             errorMessage = "You must be signed in to claim codes"
             showError = true
             return
@@ -227,7 +227,7 @@ struct RedeemWinCodeView: View {
         
         isRedeeming = true
         
-        // Call Cloud Function on Firebase A (React project)
+        // Step 1: Call side project to validate and claim the code
         let cloudFunctionURL = URL(string: "https://claimwincode-vt3x7ykt4a-uc.a.run.app")!
         var request = URLRequest(url: cloudFunctionURL)
         request.httpMethod = "POST"
@@ -236,7 +236,7 @@ struct RedeemWinCodeView: View {
         let requestBody: [String: Any] = [
             "data": [
                 "code": enteredCode,
-                "swiftUserId": userId
+                "swiftUserId": Auth.auth().currentUser?.uid ?? ""
             ]
         ]
         
@@ -253,15 +253,15 @@ struct RedeemWinCodeView: View {
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                isRedeeming = false
-                
                 if let error = error {
+                    isRedeeming = false
                     errorMessage = "Network error: \(error.localizedDescription)"
                     showError = true
                     return
                 }
                 
                 guard let data = data else {
+                    isRedeeming = false
                     errorMessage = "No response from server"
                     showError = true
                     return
@@ -276,35 +276,47 @@ struct RedeemWinCodeView: View {
                         
                         pointsEarned = points
                         
-                        GlobalLeaderboardManager.shared.handleStarAwarded(
-                            userId: userId,
-                            stars: points,
-                            competitionId: "web_ratings"
-                        ) { success in
-                            if success {
-                                print("✅ Points added to global leaderboard")
-                            } else {
-                                print("⚠️ Failed to add points to leaderboard")
-                            }
-                        }
+                        // Step 2: Award points server-side via main project function
+                        awardLeaderboardPoints(points: points)
                         
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            showSuccess = true
-                        }
                     } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                               let error = json["error"] as? [String: Any],
                               let message = error["message"] as? String {
+                        isRedeeming = false
                         handleErrorMessage(message)
                     } else {
+                        isRedeeming = false
                         errorMessage = "Invalid response from server"
                         showError = true
                     }
                 } catch {
+                    isRedeeming = false
                     errorMessage = "Failed to parse response"
                     showError = true
                 }
             }
         }.resume()
+    }
+    
+    private func awardLeaderboardPoints(points: Int) {
+        // Calls main project Cloud Function — userId comes from auth token server-side
+        let functions = Functions.functions()
+        functions.httpsCallable("awardLeaderboardPoints").call(["points": points]) { result, error in
+            DispatchQueue.main.async {
+                isRedeeming = false
+                
+                if let error = error {
+                    print("⚠️ Failed to award leaderboard points: \(error)")
+                    // Still show success — code was claimed, leaderboard is best-effort
+                }  else {
+                    print("✅ Points awarded to leaderboard")
+                }
+                
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    showSuccess = true
+                }
+            }
+        }
     }
     
     private func handleErrorMessage(_ message: String) {

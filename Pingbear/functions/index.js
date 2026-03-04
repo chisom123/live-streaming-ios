@@ -846,3 +846,32 @@ async function joinPotAndAwardPoints(userId, points, db) {
     logger.info(`✅ Created new pot ${potId} and awarded ${points} points to user ${userId}`);
   });
 }
+
+exports.awardLeaderboardPoints = onCall({
+  cors: ["*"],
+  maxInstances: 20,
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { points } = request.data;
+  const userId = request.auth.uid;
+
+  const MAX_POINTS_PER_CLAIM = 1000;
+  
+  if (!Number.isInteger(points) || points <= 0 || points > MAX_POINTS_PER_CLAIM) {
+    throw new Error('Invalid points value');
+  }
+
+  const db = admin.firestore();
+
+  try {
+    await awardPointsToGlobalLeaderboard(userId, points, db);
+    logger.info(`✅ awardLeaderboardPoints: awarded ${points} to ${userId}`);
+    return { success: true, points };
+  } catch (error) {
+    logger.error('Error in awardLeaderboardPoints:', error);
+    throw new Error(error.message);
+  }
+});

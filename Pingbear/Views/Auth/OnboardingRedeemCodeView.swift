@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 
 struct OnboardingRedeemCodeView: View {
     @Environment(\.dismiss) private var dismiss
@@ -58,7 +59,6 @@ struct OnboardingRedeemCodeView: View {
                         
                         // Code Input Section
                         VStack(spacing: 0) {
-                            // Code Input
                             TextField("Win Code", text: $enteredCode)
                                 .focused($isTextFieldFocused)
                                 .padding()
@@ -75,17 +75,14 @@ struct OnboardingRedeemCodeView: View {
                                 .font(.system(size: 24, weight: .bold, design: .monospaced))
                                 .accentColor(.white)
                                 .onChange(of: enteredCode) { newValue in
-                                    // Auto-uppercase and limit to 10 characters
                                     enteredCode = String(newValue.uppercased().prefix(10))
                                     
-                                    // Clear error when user starts typing again
                                     if showError {
                                         showError = false
                                         errorMessage = ""
                                     }
                                 }
             
-                            // Error Message Text
                             if showError && !errorMessage.isEmpty {
                                 Text(errorMessage)
                                     .foregroundColor(Color(hex: "#FF0000"))
@@ -138,7 +135,6 @@ struct OnboardingRedeemCodeView: View {
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showPostSignupLeaderboard) {
             PostSignupLeaderboardView {
-                // When user taps Continue, complete onboarding
                 completeOnboarding()
             }
         }
@@ -157,7 +153,7 @@ struct OnboardingRedeemCodeView: View {
         
         isRedeeming = true
         
-        // Call Cloud Function on Firebase A (React project)
+        // Step 1: Call side project to validate and claim the code
         let cloudFunctionURL = URL(string: "https://claimwincode-vt3x7ykt4a-uc.a.run.app")!
         var request = URLRequest(url: cloudFunctionURL)
         request.httpMethod = "POST"
@@ -183,55 +179,26 @@ struct OnboardingRedeemCodeView: View {
         
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
-                isRedeeming = false
-                
                 if let error = error {
+                    isRedeeming = false
                     errorMessage = "Network error: \(error.localizedDescription)"
                     showError = true
                     return
                 }
                 
                 guard let data = data else {
+                    isRedeeming = false
                     errorMessage = "No response from server"
                     showError = true
                     return
                 }
                 
-                // Parse response
                 do {
                     if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                        let result = json["result"] as? [String: Any],
                        let success = result["success"] as? Bool,
                        success,
                        let points = result["points"] as? Int {
-                        
-                        // Success!
-                        // Add points to global leaderboard
-                        GlobalLeaderboardManager.shared.handleStarAwarded(
-                            userId: userId,
-                            stars: points,
-                            competitionId: "web_ratings"
-                        ) { success in
-                            if success {
-                                print("✅ Points added to global leaderboard")
-                                
-                                // Verify user is actually in pot before showing leaderboard
-                                self.verifyUserInPot(userId: userId) { isInPot in
-                                    if isInPot {
-                                        // Show the PostSignupLeaderboardView
-                                        self.showPostSignupLeaderboard = true
-                                    } else {
-                                        // Fallback: complete onboarding without showing leaderboard
-                                        print("⚠️ User not in pot yet, completing onboarding normally")
-                                        self.completeOnboarding()
-                                    }
-                                }
-                            } else {
-                                print("⚠️ Failed to add points to leaderboard")
-                                // Still complete onboarding
-                                self.completeOnboarding()
-                            }
-                        }
                         
                         Analytics.shared.track(
                             event: "onboarding_code_claimed",
@@ -240,21 +207,56 @@ struct OnboardingRedeemCodeView: View {
                                 "code": enteredCode
                             ]
                         )
+                        
+                        // Step 2: Award points server-side via main project function
+                        awardLeaderboardPoints(points: points, userId: userId)
+                        
                     } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                               let error = json["error"] as? [String: Any],
                               let message = error["message"] as? String {
-                        // Error from Cloud Function
+                        isRedeeming = false
                         handleErrorMessage(message)
                     } else {
+                        isRedeeming = false
                         errorMessage = "Invalid response from server"
                         showError = true
                     }
                 } catch {
+                    isRedeeming = false
                     errorMessage = "Failed to parse response"
                     showError = true
                 }
             }
         }.resume()
+    }
+    
+    private func awardLeaderboardPoints(points: Int, userId: String) {
+        // Calls main project Cloud Function — userId comes from auth token server-side
+        let functions = Functions.functions()
+        functions.httpsCallable("awardLeaderboardPoints").call(["points": points]) { result, error in
+            DispatchQueue.main.async {
+                isRedeeming = false
+                
+                if let error = error {
+                    print("⚠️ Failed to award leaderboard points: \(error)")
+                    // Still proceed — code was claimed, leaderboard is best-effort
+                    completeOnboarding()
+                    return
+                }
+                
+                print("✅ Points awarded to leaderboard")
+                
+                // Verify user is in pot before showing leaderboard
+                verifyUserInPot(userId: userId) { isInPot in
+                    if isInPot {
+                        showPostSignupLeaderboard = true
+                    } else {
+                        print("⚠️ User not in pot yet, completing onboarding normally")
+                        completeOnboarding()
+                    }
+                }
+            }
+        }
     }
     
     private func verifyUserInPot(userId: String, completion: @escaping (Bool) -> Void) {
@@ -264,7 +266,6 @@ struct OnboardingRedeemCodeView: View {
         func checkPot(attempt: Int) {
             Firestore.firestore().collection("users").document(userId).getDocument { document, error in
                 if let activePotId = document?.data()?["active_pot_id"] as? String, !activePotId.isEmpty {
-                    // Success! User has been added to a pot
                     print("✅ Verified user in pot: \(activePotId)")
                     DispatchQueue.main.async {
                         completion(true)
@@ -272,14 +273,11 @@ struct OnboardingRedeemCodeView: View {
                     return
                 }
                 
-                // Not in pot yet
                 if attempt < maxAttempts {
-                    // Try again after delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + delayBetweenAttempts) {
                         checkPot(attempt: attempt + 1)
                     }
                 } else {
-                    // Max attempts reached, give up
                     print("⚠️ Max attempts reached, user not in pot")
                     DispatchQueue.main.async {
                         completion(false)
@@ -288,7 +286,6 @@ struct OnboardingRedeemCodeView: View {
             }
         }
         
-        // Start checking
         checkPot(attempt: 1)
     }
     
@@ -315,12 +312,10 @@ struct OnboardingRedeemCodeView: View {
     }
     
     private func completeOnboarding() {
-        // Mark onboarding as complete
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         UserDefaults.standard.set(true, forKey: "isFriendActivated")
         UserDefaults.standard.synchronize()
         
-        // Post notification to trigger UI update
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
         
         Analytics.shared.track(
