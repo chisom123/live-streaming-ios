@@ -11,6 +11,7 @@ class RaceManager {
     // MARK: - Constants
     private let raceDurationHours: Double = 24
     private let pointsPerParticipant: Int = 200
+    private let pointsPerRating: Int = 50
     
     // MARK: - Main Entry Point
     
@@ -114,7 +115,7 @@ class RaceManager {
             }
             
             if document?.exists == true {
-                // User already in race - just increment stars
+                // User already in race - increment stars and grow points pool
                 let batch = self.db.batch()
                 
                 batch.updateData([
@@ -124,7 +125,8 @@ class RaceManager {
                 // Update race total stars and points pool
                 let raceRef = self.db.collection("competition_races").document(raceId)
                 batch.updateData([
-                    "total_stars": FieldValue.increment(Int64(stars))
+                    "total_stars": FieldValue.increment(Int64(stars)),
+                    "points_pool": FieldValue.increment(Int64(self.pointsPerRating))
                 ], forDocument: raceRef)
                 
                 batch.commit { error in
@@ -132,7 +134,7 @@ class RaceManager {
                         print("RaceManager: Error updating stars: \(error)")
                         completion(false)
                     } else {
-                        print("RaceManager: ✅ Updated \(stars) stars for user \(userId) in race \(raceId)")
+                        print("RaceManager: ✅ Updated \(stars) stars and added \(self.pointsPerRating) points to pool for user \(userId) in race \(raceId)")
                         completion(true)
                     }
                 }
@@ -171,7 +173,8 @@ class RaceManager {
                 
                 let currentParticipantCount = raceData["participant_count"] as? Int ?? 0
                 let newParticipantCount = currentParticipantCount + 1
-                let newPointsPool = newParticipantCount * self.pointsPerParticipant
+                // Add both the per-participant increment and per-rating increment
+                let newPointsPool = (newParticipantCount * self.pointsPerParticipant) + self.pointsPerRating
                 
                 // Add participant
                 let participantRef = self.db.collection("competition_races")
@@ -221,8 +224,6 @@ class RaceManager {
             guard let self = self else { return nil }
             
             do {
-                // Double check no race was created in the meantime
-                // (transaction handles this atomically)
                 let now = Date()
                 let endDate = Calendar.current.date(
                     byAdding: .hour,
@@ -233,14 +234,14 @@ class RaceManager {
                 let raceRef = self.db.collection("competition_races").document()
                 let participantRef = raceRef.collection("race_participants").document(userId)
                 
-                // Create race
+                // Create race - first participant + first rating both contribute to pool
                 transaction.setData([
                     "competition_id": competitionId,
                     "status": "active",
                     "start_date": Timestamp(date: now),
                     "end_date": Timestamp(date: endDate),
                     "participant_count": 1,
-                    "points_pool": self.pointsPerParticipant,
+                    "points_pool": self.pointsPerParticipant + self.pointsPerRating,
                     "total_stars": stars,
                     "created_at": FieldValue.serverTimestamp()
                 ], forDocument: raceRef)
