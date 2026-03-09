@@ -6,8 +6,6 @@ struct GlobalLeaderboardView: View {
     @StateObject private var viewModel = GlobalLeaderboardViewModel()
     @StateObject private var walletViewModel = WalletViewModel()
     @Binding var selectedTab: Int
-    @State private var showStatsBar = true
-    @State private var initialOffset: CGFloat?
     @State private var showPrizePoolInfo = false
     @State private var showRedeemCode = false
     
@@ -24,7 +22,6 @@ struct GlobalLeaderboardView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 30, height: 30)
                             
-                            // Red badge indicator
                             if walletViewModel.balance > 0 {
                                 Circle()
                                     .fill(Color.red)
@@ -45,7 +42,6 @@ struct GlobalLeaderboardView: View {
                     
                     Spacer()
                     
-                    // Add history button
                     NavigationLink(destination: PotHistoryView()) {
                         Image(systemName: "clock.arrow.circlepath")
                             .resizable()
@@ -77,80 +73,41 @@ struct GlobalLeaderboardView: View {
                     }
                     Spacer()
                 } else if !viewModel.isInPot {
-                    // User not in pot yet - wrapped in ZStack to show redeem button
-                    ZStack {
-                        VStack {
-                            Spacer()
-                            VStack(spacing: 20) {
-                                Image(systemName: "trophy.fill")
-                                    .font(.system(size: 64))
-                                    .foregroundColor(Color(hex: "#FFD700"))
-                                
-                                Text("Join the $\(Int(ceil(viewModel.maxPrizePool))) Prize Pool")
-                                    .font(.system(size: 21, weight: .bold))
+                    VStack {
+                        Spacer()
+                        VStack(spacing: 20) {
+                            Image(systemName: "trophy.fill")
+                                .font(.system(size: 64))
+                                .foregroundColor(Color(hex: "#FFD700"))
+                            
+                            Text("Join the $\(Int(ceil(viewModel.maxPrizePool))) Prize Pool")
+                                .font(.system(size: 21, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("Win prize points to enter the weekly prize pool")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white.opacity(0.9))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                            
+                            Button(action: {
+                                showPrizePoolInfo = true
+                                Analytics.shared.trackTap(
+                                    elementId: "learn_more_cta",
+                                    screenName: "global_leaderboard"
+                                )
+                            }) {
+                                Text("Learn More")
+                                    .font(.system(size: 17, weight: .bold))
                                     .foregroundColor(.white)
-                                
-                                Text("Win prize points to enter the weekly prize pool")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.white.opacity(0.9))
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 40)
-                                
-                                // Start Playing Button
-                                Button(action: {
-                                    showPrizePoolInfo = true
-                                    Analytics.shared.trackTap(
-                                        elementId: "learn_more_cta",
-                                        screenName: "global_leaderboard"
-                                    )
-                                }) {
-                                    Text("Learn More")
-                                        .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 200, height: 50)
-                                        .background(Color(hex: "#4169E1"))
-                                        .cornerRadius(25)
-                                }
-                            }
-                            Spacer()
-                        }
-                        
-                        // Floating Claim Button (bottom right) - always visible in empty state
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Button(action: {
-                                    showRedeemCode = true
-                                    Analytics.shared.trackTap(
-                                        elementId: "claim_win_code_button",
-                                        screenName: "global_leaderboard"
-                                    )
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image("gem")
-                                            .resizable()
-                                            .renderingMode(.template)
-                                            .foregroundColor(Color.white)
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 18, height: 18)
-                                        
-                                        Text("Claim")
-                                            .font(.system(size: 17, weight: .bold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
+                                    .frame(width: 200, height: 50)
                                     .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(100)
-                                }
-                                .padding(.trailing, 20)
-                                .padding(.bottom, 20)
+                                    .cornerRadius(200)
                             }
                         }
+                        Spacer()
                     }
                 } else {
-                    // Show leaderboard
                     ZStack {
                         VStack(spacing: 20) {
                             // Pot Info Card
@@ -191,19 +148,11 @@ struct GlobalLeaderboardView: View {
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
                             
-                            // Track the scroll offset using overlay
                             ScrollView {
-                                ScrollViewOffsetTracker()
-                                    .onScrollOffsetChange { offset in
-                                        handleScrollOffset(offset)
-                                    }
-                                
-                                // Leaderboard - styled identical to CompDetails
                                 VStack(spacing: 0) {
                                     ForEach(Array(viewModel.participants.prefix(50).enumerated()), id: \.element.id) { index, participant in
                                         VStack(spacing: 0) {
                                             HStack {
-                                                // Position (1, 2, 3, 4, 5...)
                                                 Text("\(participant.position)")
                                                     .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(.white)
@@ -211,10 +160,8 @@ struct GlobalLeaderboardView: View {
                                                     .padding(.leading, 20)
                                                 
                                                 HStack(spacing: 20) {
-                                                    // Profile Picture
                                                     ProfilePictureView(url: participant.profilePictureUrl, size: 40)
                                                     
-                                                    // Username + Prize
                                                     VStack(alignment: .leading, spacing: 4) {
                                                         Text(participant.isCurrentUser ? "Me" : participant.username)
                                                             .font(.system(size: 16, weight: .bold))
@@ -236,7 +183,6 @@ struct GlobalLeaderboardView: View {
                                                 Spacer()
                                                 
                                                 VStack(alignment: .trailing, spacing: 8) {
-                                                    // Stars badge only
                                                     HStack(spacing: 8) {
                                                         Text("\(participant.totalStars)")
                                                             .font(.system(size: 17, weight: .bold))
@@ -269,59 +215,20 @@ struct GlobalLeaderboardView: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 20) // Add padding for fixed bottom bar
+                                .padding(.bottom, 100)
                             }
                         }
-                        
-                        // Floating Claim Button (bottom right)
-                        VStack {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Button(action: {
-                                    showRedeemCode = true
-                                    Analytics.shared.trackTap(
-                                        elementId: "claim_win_code_button",
-                                        screenName: "global_leaderboard"
-                                    )
-                                }) {
-                                    HStack(spacing: 8) {
-                                        Image("gem")
-                                            .resizable()
-                                            .renderingMode(.template)
-                                            .foregroundColor(Color.white)
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 19, height: 19)
-                                        
-                                        Text("Claim")
-                                            .font(.system(size: 17, weight: .bold))
-                                    }
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 12)
-                                    .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(100)
-                                }
-                                .padding(.trailing, 20)
-                                .padding(.bottom, showStatsBar ? (viewModel.userPrize > 0 ? 95 : 90) : 20)
-                            }
-                        }
-                        .offset(y: showStatsBar ? 0 : 100)
-                        .opacity(showStatsBar ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
                         
                         // Fixed User Stats Bar at Bottom
                         VStack {
                             Spacer()
                             
                             HStack(spacing: 16) {
-                                // Left side: Position number
                                 Text("\(viewModel.userPosition > 0 ? String(viewModel.userPosition) : "--")")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                                     .frame(width: 35)
                                 
-                                // Profile Picture
                                 if let currentUser = viewModel.participants.first(where: { $0.isCurrentUser }) {
                                     ProfilePictureView(url: currentUser.profilePictureUrl, size: 40)
                                 } else {
@@ -330,7 +237,6 @@ struct GlobalLeaderboardView: View {
                                         .frame(width: 40, height: 40)
                                 }
                                 
-                                // "Me" text + Prize
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Me")
                                         .font(.system(size: 16, weight: .bold))
@@ -348,7 +254,6 @@ struct GlobalLeaderboardView: View {
                                 
                                 Spacer()
                                 
-                                // Right side: Stars only
                                 HStack(spacing: 6) {
                                     Text("\(viewModel.userStars)")
                                         .font(.system(size: 17, weight: .bold))
@@ -368,10 +273,6 @@ struct GlobalLeaderboardView: View {
                             .padding(20)
                             .background(Color(hex: "#2A3255"))
                         }
-                        .offset(y: showStatsBar ? 0 : 100) // Animate off screen when hidden
-                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
-                        .opacity(showStatsBar ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.3), value: showStatsBar)
                     }
                 }
             }
@@ -387,71 +288,6 @@ struct GlobalLeaderboardView: View {
         .onAppear {
             viewModel.loadLeaderboard()
             walletViewModel.loadWalletData()
-            // Reset initial offset when view appears
-            initialOffset = nil
         }
-    }
-    
-    private func handleScrollOffset(_ offset: CGFloat) {
-        // Set initial offset on first call
-        if initialOffset == nil {
-            initialOffset = offset
-            return
-        }
-        
-        guard let baseOffset = initialOffset else { return }
-        
-        // Calculate relative scroll distance from initial position
-        let relativeOffset = baseOffset - offset
-        let threshold: CGFloat = 50 // Hide after scrolling 50 points down
-        
-        if relativeOffset > threshold && showStatsBar {
-            // Scrolling down, hide the bar
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showStatsBar = false
-            }
-        } else if relativeOffset <= threshold && !showStatsBar {
-            // Scrolling up or at top, show the bar
-            withAnimation(.easeInOut(duration: 0.3)) {
-                showStatsBar = true
-            }
-        }
-    }
-}
-
-// Helper view to track scroll offset
-struct ScrollViewOffsetTracker: View {
-    var onScrollOffsetChange: ((CGFloat) -> Void)?
-    
-    var body: some View {
-        GeometryReader { geometry in
-            Color.clear
-                .preference(
-                    key: ScrollOffsetKey.self,
-                    value: geometry.frame(in: .global).minY
-                )
-        }
-        .frame(height: 0)
-        .onPreferenceChange(ScrollOffsetKey.self) { offset in
-            onScrollOffsetChange?(offset)
-        }
-    }
-}
-
-// Key for tracking scroll offset
-struct ScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-// Extension for easier use
-extension View {
-    func onScrollOffsetChange(_ action: @escaping (CGFloat) -> Void) -> some View {
-        self.background(
-            ScrollViewOffsetTracker(onScrollOffsetChange: action)
-        )
     }
 }

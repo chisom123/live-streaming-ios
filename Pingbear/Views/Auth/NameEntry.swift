@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFunctions
 import CryptoKit
 
 struct NameEntryView: View {
@@ -9,7 +10,7 @@ struct NameEntryView: View {
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
-    @State private var navigateToRedeemCode = false
+    @State private var navigateToWelcomeBonus = false
 
     var body: some View {
         VStack {
@@ -80,7 +81,7 @@ struct NameEntryView: View {
             .cornerRadius(10)
             .padding(.horizontal, 20)
             
-            NavigationLink(destination: OnboardingRedeemCodeView(), isActive: $navigateToRedeemCode) {
+            NavigationLink(destination: WelcomeBonusView(), isActive: $navigateToWelcomeBonus) {
                 EmptyView()
             }.isDetailLink(false)
             
@@ -157,24 +158,51 @@ struct NameEntryView: View {
             "phoneNumberHash": hashedPhoneNumber,
             "name": fullName
         ], merge: true) { error in
-            isLoading = false
             if let error = error {
+                self.isLoading = false
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
                 Analytics.shared.track(
                     event: "username_save_failed",
                     properties: ["error": error.localizedDescription]
                 )
-            } else {
-                Analytics.shared.track(
-                    event: "new_user_created",
-                    properties: [
-                        "user_id": userID,
-                        "username": processedUsername
-                    ]
-                )
+                return
+            }
+            
+            Analytics.shared.track(
+                event: "new_user_created",
+                properties: [
+                    "user_id": userID,
+                    "username": processedUsername
+                ]
+            )
+            
+            // Award signup bonus points then navigate
+            self.awardSignupBonus(userID: userID)
+        }
+    }
+    
+    func awardSignupBonus(userID: String) {
+        let functions = Functions.functions()
+        functions.httpsCallable("awardLeaderboardPoints").call(["points": 100]) { result, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
                 
-                // Navigate to redeem code screen
-                self.navigateToRedeemCode = true
+                if let error = error {
+                    // Non-fatal: log and continue — user still gets to onboard
+                    print("⚠️ Failed to award signup bonus: \(error)")
+                    Analytics.shared.track(
+                        event: "signup_bonus_award_failed",
+                        properties: ["error": error.localizedDescription]
+                    )
+                } else {
+                    Analytics.shared.track(
+                        event: "signup_bonus_awarded",
+                        properties: ["user_id": userID, "points": 100]
+                    )
+                }
+                
+                // Always navigate forward regardless of points outcome
+                self.navigateToWelcomeBonus = true
             }
         }
     }
