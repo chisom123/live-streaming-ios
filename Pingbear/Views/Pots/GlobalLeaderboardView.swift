@@ -73,40 +73,46 @@ struct GlobalLeaderboardView: View {
                     }
                     Spacer()
                 } else if !viewModel.isInPot {
-                    VStack {
-                        Spacer()
-                        VStack(spacing: 20) {
-                            Image(systemName: "trophy.fill")
-                                .font(.system(size: 64))
-                                .foregroundColor(Color(hex: "#FFD700"))
-                            
-                            Text("Join the $\(Int(ceil(viewModel.maxPrizePool))) Prize Pool")
-                                .font(.system(size: 21, weight: .bold))
+                    Spacer()
+                   
+                    VStack(spacing: 20) {
+                        Image(systemName: "trophy.fill")
+                            .font(.system(size: 64))
+                            .foregroundColor(Color(hex: "#FFD700"))
+                        
+                        Text("Join the $\(Int(ceil(viewModel.maxPrizePool))) Prize Pool")
+                            .font(.system(size: 21, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Text("Win prize points to enter the weekly prize pool")
+                            .font(.system(size: 16))
+                            .foregroundColor(.white.opacity(0.9))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                        
+                        Button(action: {
+                            showPrizePoolInfo = true
+                            Analytics.shared.trackTap(
+                                elementId: "learn_more_cta",
+                                screenName: "global_leaderboard"
+                            )
+                        }) {
+                            Text("Learn More")
+                                .font(.system(size: 17, weight: .bold))
                                 .foregroundColor(.white)
-                            
-                            Text("Win prize points to enter the weekly prize pool")
-                                .font(.system(size: 16))
-                                .foregroundColor(.white.opacity(0.9))
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                            
-                            Button(action: {
-                                showPrizePoolInfo = true
-                                Analytics.shared.trackTap(
-                                    elementId: "learn_more_cta",
-                                    screenName: "global_leaderboard"
-                                )
-                            }) {
-                                Text("Learn More")
-                                    .font(.system(size: 17, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 200, height: 50)
-                                    .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(200)
-                            }
+                                .frame(width: 200, height: 50)
+                                .background(Color(hex: "#4169E1"))
+                                .cornerRadius(200)
                         }
-                        Spacer()
                     }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 40)
+                    .background(Color(hex: "#1A2245"))
+                    .cornerRadius(14)
+                    .padding(.horizontal, 20)
+                    
+                    Spacer()
                 } else {
                     ZStack {
                         VStack(spacing: 20) {
