@@ -191,11 +191,6 @@ struct CompDetails: View {
                 // MARK: - Race Status Bar
                 if shouldShowRaceBar {
                     HStack {
-                        Image(systemName: "flag.checkered")
-                            .font(.system(size: 16))
-                            .foregroundColor(.white)
-                            .padding(.trailing, 10)
-                        
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Daily Race")
                                 .font(.system(size: 16, weight: .bold))
