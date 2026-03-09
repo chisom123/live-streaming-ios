@@ -23,7 +23,7 @@ struct WelcomeBonusView: View {
                         .frame(width: 72, height: 72)
 
                     VStack(spacing: 12) {
-                        Text("Welcome bonus")
+                        Text("Welcome Bonus")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
