@@ -190,47 +190,49 @@ struct CompDetails: View {
                 
                 // MARK: - Race Status Bar
                 if shouldShowRaceBar {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Daily Race")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            if raceViewModel.hasActiveRace {
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Prize Pool")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding(.bottom, 2)
+                                
                                 HStack(spacing: 4) {
-                                    Text("\(raceViewModel.raceInfo?.pointsPool ?? 0)")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.white)
+                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "200")
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
                                     
                                     Image("gem")
                                         .resizable()
                                         .renderingMode(.template)
                                         .foregroundColor(.white)
                                         .aspectRatio(contentMode: .fit)
-                                        .frame(width: 15, height: 15)
+                                        .frame(width: 23, height: 23)
                                 }
-                                .padding(EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 3)
                                 .background(Color(hex: "#6A5ACD"))
-                                .cornerRadius(200)
+                                .cornerRadius(12)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text("Ends In")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .padding(.bottom, 2)
+                                
+                                Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "Not Started")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(.white)
                             }
                         }
-                        
-                        Spacer()
-                        
-                        if raceViewModel.hasActiveRace {
-                            Text("Ends In \(raceViewModel.timeRemaining)")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                        } else {
-                            Text("Not Started")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                        }
                     }
-                    .padding(.horizontal, 25)
-                    .padding(.vertical, 25)
+                    .padding(20)
                     .background(Color(hex: "#1A2245"))
-                    .cornerRadius(10)
+                    .cornerRadius(12)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                 }
