@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import SafariServices
 
 struct PrizePoolInfoView: View {
     @Environment(\.dismiss) private var dismiss
@@ -8,6 +9,8 @@ struct PrizePoolInfoView: View {
     @State private var prizePoolAmount: Double = 50.0
 
     private let db = Firestore.firestore()
+    
+    private let rulesURL = "https://www.notion.so/Prize-Pool-Rules-31fae3bec80380d080b3fa6d054e9d06"
 
     var body: some View {
         ZStack {
@@ -36,7 +39,6 @@ struct PrizePoolInfoView: View {
                     
                     Spacer()
                     
-                    // Invisible view to balance the close button and keep title centred
                     Color.clear
                         .frame(width: 30, height: 30)
                 }
@@ -65,10 +67,51 @@ struct PrizePoolInfoView: View {
                     .padding(.horizontal, 20)
 
                 Spacer()
+
+                // Prize Pool Rules link
+                Button(action: {
+                    openURL(rulesURL)
+                    Analytics.shared.trackTap(
+                        elementId: "prize_pool_rules",
+                        screenName: "prize_pool_info"
+                    )
+                }) {
+                    Text("Prize Pool Rules")
+                        .font(.system(size: 14, weight: .semibold, design: .default))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+
+                // Apple disclaimer
+                Text("Apple is not a sponsor of or participant in this prize pool. Prize pools are operated solely by SocialStar Technology Ltd.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 30)
             }
         }
         .onAppear {
             loadPrizePool()
+        }
+    }
+
+    // MARK: - Helper
+
+    private func openURL(_ urlString: String) {
+        guard let url = URL(string: urlString) else { return }
+        let config = SFSafariViewController.Configuration()
+        config.entersReaderIfAvailable = false
+        let safariVC = SFSafariViewController(url: url, configuration: config)
+        safariVC.preferredBarTintColor = UIColor(Color(hex: "#10183C"))
+        safariVC.preferredControlTintColor = UIColor.white
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootViewController = window.rootViewController {
+            var topController = rootViewController
+            while let presented = topController.presentedViewController {
+                topController = presented
+            }
+            topController.present(safariVC, animated: true)
         }
     }
 
