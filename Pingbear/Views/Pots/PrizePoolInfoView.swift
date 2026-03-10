@@ -102,8 +102,6 @@ struct PrizePoolInfoView: View {
         let config = SFSafariViewController.Configuration()
         config.entersReaderIfAvailable = false
         let safariVC = SFSafariViewController(url: url, configuration: config)
-        safariVC.preferredBarTintColor = UIColor(Color(hex: "#10183C"))
-        safariVC.preferredControlTintColor = UIColor.white
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first,
            let rootViewController = window.rootViewController {
