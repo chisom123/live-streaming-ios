@@ -20,7 +20,7 @@ struct WelcomeBonusView: View {
                         .renderingMode(.template)
                         .foregroundColor(Color(hex: "#FFF"))
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 72, height: 72)
+                        .frame(width: 70, height: 70)
 
                     VStack(spacing: 12) {
                         Text("Welcome Bonus")

@@ -85,7 +85,6 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
-		4F45EC3E2F448EE400DD5D96 /* HowItWorksSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */; };
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
@@ -97,6 +96,7 @@
 		4F90E1602E070FC700C84525 /* CompetitionPricingCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
+		4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */; };
 		4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */; };
 		4FA5EE3F2E03D7E600355376 /* Unlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA5EE3E2E03D7E600355376 /* Unlock.swift */; };
 		4FABA13A2B996A3800289489 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = 4FABA1392B996A3800289489 /* PostHog */; };
@@ -118,7 +118,6 @@
 		4FF9C1952F0FD229000F045C /* GlobalLeaderboardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1942F0FD229000F045C /* GlobalLeaderboardManager.swift */; };
 		4FF9C1982F0FDAB4000F045C /* GlobalLeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1972F0FDAB4000F045C /* GlobalLeaderboardView.swift */; };
 		4FF9C19A2F0FDB4D000F045C /* GlobalLeaderboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1992F0FDB4D000F045C /* GlobalLeaderboardViewModel.swift */; };
-		4FF9C19D2F0FF116000F045C /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C19C2F0FF116000F045C /* CustomTabBar.swift */; };
 		4FF9C19F2F0FF12D000F045C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C19E2F0FF12D000F045C /* MainTabView.swift */; };
 		4FF9C1A12F108902000F045C /* PotHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A02F108902000F045C /* PotHistoryViewModel.swift */; };
 		4FF9C1A32F10892D000F045C /* PotHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A22F10892D000F045C /* PotHistoryView.swift */; };
@@ -197,7 +196,6 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
-		4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksSheet.swift; sourceTree = "<group>"; };
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
 		4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParlayManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
@@ -209,6 +207,7 @@
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionPricingCalculator.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
+		4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomShareSheet.swift; sourceTree = "<group>"; };
 		4FA5EE3E2E03D7E600355376 /* Unlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Unlock.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
@@ -229,7 +228,6 @@
 		4FF9C1942F0FD229000F045C /* GlobalLeaderboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalLeaderboardManager.swift; sourceTree = "<group>"; };
 		4FF9C1972F0FDAB4000F045C /* GlobalLeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalLeaderboardView.swift; sourceTree = "<group>"; };
 		4FF9C1992F0FDB4D000F045C /* GlobalLeaderboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalLeaderboardViewModel.swift; sourceTree = "<group>"; };
-		4FF9C19C2F0FF116000F045C /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		4FF9C19E2F0FF12D000F045C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4FF9C1A02F108902000F045C /* PotHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotHistoryViewModel.swift; sourceTree = "<group>"; };
 		4FF9C1A22F10892D000F045C /* PotHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotHistoryView.swift; sourceTree = "<group>"; };
@@ -339,7 +337,6 @@
 				4F33595F2DE6E596003EF5E1 /* MessageComposerView.swift */,
 				4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */,
 				4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */,
-				4F45EC3D2F448EE400DD5D96 /* HowItWorksSheet.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -563,8 +560,8 @@
 		4FF9C19B2F0FF0BD000F045C /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
-				4FF9C19C2F0FF116000F045C /* CustomTabBar.swift */,
 				4FF9C19E2F0FF12D000F045C /* MainTabView.swift */,
+				4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";
@@ -760,6 +757,7 @@
 				4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */,
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
 				4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */,
+				4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */,
 				4F33595E2DE65507003EF5E1 /* ChatIndicatorViewModel.swift in Sources */,
 				4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */,
 				4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */,
@@ -816,8 +814,6 @@
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4FF9C1952F0FD229000F045C /* GlobalLeaderboardManager.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
-				4FF9C19D2F0FF116000F045C /* CustomTabBar.swift in Sources */,
-				4F45EC3E2F448EE400DD5D96 /* HowItWorksSheet.swift in Sources */,
 				4F90E1602E070FC700C84525 /* CompetitionPricingCalculator.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F33595A2DE5E9A0003EF5E1 /* ChatViewModel.swift in Sources */,

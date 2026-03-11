@@ -84,11 +84,11 @@ struct GlobalLeaderboardView: View {
                             .font(.system(size: 21, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Win prize points to enter the weekly prize pool")
+                        Text("Win prize points in photo competitions")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, 20)
                         
                         Button(action: {
                             showPrizePoolInfo = true

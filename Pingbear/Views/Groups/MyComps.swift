@@ -9,7 +9,6 @@ struct MyCompsView: View {
     @State private var showLeaveConfirmation = false
     @State private var isCreatingCompetition = false
     @State private var navigateToNewCompetition: Competition?
-    @State private var showHowItWorks = false
 
     var body: some View {
         VStack {
@@ -28,10 +27,10 @@ struct MyCompsView: View {
 
                 Spacer()
 
-                // Plus button – now shows the explainer sheet first
+                // Plus button – directly creates a new competition
                 Button(action: {
                     if !isCreatingCompetition {
-                        showHowItWorks = true
+                        createNewCompetition()
                     }
                 }) {
                     Image(systemName: "plus.circle")
@@ -55,7 +54,7 @@ struct MyCompsView: View {
                 EmptyCompsView(
                     newCompAction: {
                         if !isCreatingCompetition {
-                            showHowItWorks = true   // ← same sheet from empty state
+                            createNewCompetition()
                         }
                     },
                     isCreating: isCreatingCompetition
@@ -94,12 +93,6 @@ struct MyCompsView: View {
         }
         .navigationBarHidden(true)
         .background(Color(hex: "#10183C"))
-        // How It Works sheet – user taps "Create Competition" to actually trigger creation
-        .sheet(isPresented: $showHowItWorks) {
-            HowItWorksSheet {
-                createNewCompetition()
-            }
-        }
         .background(
             EmptyView()
                 .navigationDestination(

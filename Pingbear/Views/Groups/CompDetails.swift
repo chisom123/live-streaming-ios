@@ -199,7 +199,7 @@ struct CompDetails: View {
                                     .padding(.bottom, 2)
                                 
                                 HStack(spacing: 4) {
-                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "200")
+                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "450")
                                         .font(.system(size: 22, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF"))
                                     
@@ -514,7 +514,7 @@ struct CompDetails: View {
     }
     
     private var shouldShowRaceBar: Bool {
-        !isLoading && entryViewModel.totalMemberCount > 1 && !entryViewModel.userLeaderboard.isEmpty
+        !isLoading
     }
     
     // MARK: - Data Fetching
