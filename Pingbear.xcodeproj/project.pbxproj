@@ -86,6 +86,7 @@
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
+		4F52E1CF2F62C7F000E63672 /* HowToWinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F52E1CE2F62C7F000E63672 /* HowToWinView.swift */; };
 		4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */; };
 		4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F56AB312B80DB1D005FFC96 /* PayView.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
@@ -197,6 +198,7 @@
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
 		4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirestoreListenerManager.swift; sourceTree = "<group>"; };
+		4F52E1CE2F62C7F000E63672 /* HowToWinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToWinView.swift; sourceTree = "<group>"; };
 		4F5326DE2E0C2C3D00E6D988 /* ParlayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParlayManager.swift; sourceTree = "<group>"; };
 		4F56AB312B80DB1D005FFC96 /* PayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PayView.swift; sourceTree = "<group>"; };
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
@@ -304,6 +306,7 @@
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
 				4F74805B2F420630008636AF /* PostSignupLeaderboardView.swift */,
 				4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */,
+				4F52E1CE2F62C7F000E63672 /* HowToWinView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -758,6 +761,7 @@
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
 				4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */,
 				4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */,
+				4F52E1CF2F62C7F000E63672 /* HowToWinView.swift in Sources */,
 				4F33595E2DE65507003EF5E1 /* ChatIndicatorViewModel.swift in Sources */,
 				4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */,
 				4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */,

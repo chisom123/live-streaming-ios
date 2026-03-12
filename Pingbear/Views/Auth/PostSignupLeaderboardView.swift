@@ -4,6 +4,7 @@ import FirebaseAuth
 struct PostSignupLeaderboardView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = GlobalLeaderboardViewModel()
+    @State private var navigateToHowToWin = false
     
     var onContinue: () -> Void
     
@@ -237,7 +238,7 @@ struct PostSignupLeaderboardView: View {
                                         elementId: "continue_to_app",
                                         screenName: "post_signup_leaderboard"
                                     )
-                                    onContinue()
+                                    navigateToHowToWin = true
                                 }) {
                                     Text("Continue")
                                         .font(.system(size: 18, weight: .bold))
@@ -258,6 +259,9 @@ struct PostSignupLeaderboardView: View {
             .background(Color(hex: "#10183C"))
         }
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $navigateToHowToWin) {
+            HowToWinView(onContinue: onContinue)
+        }
         .onAppear {
             Analytics.shared.trackScreen(name: "post_signup_leaderboard")
             viewModel.loadLeaderboard()
