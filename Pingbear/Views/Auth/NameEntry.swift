@@ -1,3 +1,4 @@
+// NameEntryView.swift
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
@@ -13,82 +14,85 @@ struct NameEntryView: View {
     @State private var navigateToWelcomeBonus = false
 
     var body: some View {
-        VStack {
-            
-            Spacer()
-            
+        ZStack {
+            Color(hex: "#10183C")
+                .ignoresSafeArea()
+
             VStack {
-                Text("Create a username")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.white)
-                    .padding(.top, 20)
-                    .padding(.bottom, 25)
-                    .onAppear {
-                        Analytics.shared.trackScreen(name: "username_entry")
-                    }
+                Spacer()
                 
-                TextField("Enter your username", text: $username)
-                    .padding()
-                    .frame(height: 60)
-                    .background(
-                        Color(hex: "#3B4374")
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    )
-                    .foregroundColor(.white)
-                    .font(.system(size: 16, weight: .bold, design: .default))
-                    .autocapitalization(.none)
-                
-                if let error = errorMessage {
-                    Text(error)
-                        .foregroundColor(Color(hex: "#FF0000"))
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                VStack {
+                    Text("Create a username")
+                        .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
+                        .foregroundColor(.white)
                         .padding(.top, 20)
-                        .padding(.horizontal)
+                        .padding(.bottom, 25)
                         .onAppear {
-                            Analytics.shared.track(
-                                event: "username_entry_error",
-                                properties: ["error": error]
-                            )
+                            Analytics.shared.trackScreen(name: "username_entry")
                         }
-                }
-                
-                if isLoading {
-                    ProgressView()
-                        .padding(.vertical, 20)
-                        .tint(.white)
-                } else {
-                    Button(action: {
-                        self.hideKeyboard()
-                        self.checkUsernameAndSaveToFirestore()
-                    }) {
-                        Text("Continue")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#4169E1"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
+                    
+                    TextField("Enter your username", text: $username)
+                        .padding()
+                        .frame(height: 60)
+                        .background(
+                            Color(hex: "#3B4374")
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        )
+                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                        .autocapitalization(.none)
+                    
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundColor(Color(hex: "#FF0000"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .padding(.top, 20)
+                            .padding(.horizontal)
+                            .onAppear {
+                                Analytics.shared.track(
+                                    event: "username_entry_error",
+                                    properties: ["error": error]
+                                )
+                            }
                     }
-                    .padding(.vertical, 20)
+                    
+                    if isLoading {
+                        ProgressView()
+                            .padding(.vertical, 20)
+                            .tint(.white)
+                    } else {
+                        Button(action: {
+                            self.hideKeyboard()
+                            self.checkUsernameAndSaveToFirestore()
+                        }) {
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#4169E1"))
+                                .foregroundColor(Color(hex: "#fff"))
+                                .cornerRadius(200)
+                        }
+                        .padding(.vertical, 20)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(20)
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
+                
+                NavigationLink(destination: WelcomeBonusView(), isActive: $navigateToWelcomeBonus) {
+                    EmptyView()
+                }.isDetailLink(false)
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(20)
-            .background(Color(hex: "#1A2245"))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-            
-            NavigationLink(destination: WelcomeBonusView(), isActive: $navigateToWelcomeBonus) {
-                EmptyView()
-            }.isDetailLink(false)
-            
-            Spacer()
         }
-        .background(Color(hex: "#10183C"))
         .navigationBarHidden(true)
     }
     
@@ -177,7 +181,6 @@ struct NameEntryView: View {
                 ]
             )
             
-            // Award signup bonus points then navigate
             self.awardSignupBonus(userID: userID)
         }
     }
@@ -189,7 +192,6 @@ struct NameEntryView: View {
                 self.isLoading = false
                 
                 if let error = error {
-                    // Non-fatal: log and continue — user still gets to onboard
                     print("⚠️ Failed to award signup bonus: \(error)")
                     Analytics.shared.track(
                         event: "signup_bonus_award_failed",
@@ -202,7 +204,6 @@ struct NameEntryView: View {
                     )
                 }
                 
-                // Always navigate forward regardless of points outcome
                 self.navigateToWelcomeBonus = true
             }
         }

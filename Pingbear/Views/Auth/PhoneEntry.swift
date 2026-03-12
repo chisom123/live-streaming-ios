@@ -11,13 +11,10 @@ struct CountryPickerViewControllerWrapper: UIViewControllerRepresentable {
         let countryPicker = CountryPickerViewController()
         countryPicker.selectedCountry = ""
         countryPicker.delegate = context.coordinator
-        
         return countryPicker
     }
 
-    func updateUIViewController(_ uiViewController: CountryPickerViewController, context: UIViewControllerRepresentableContext<CountryPickerViewControllerWrapper>) {
-        
-    }
+    func updateUIViewController(_ uiViewController: CountryPickerViewController, context: UIViewControllerRepresentableContext<CountryPickerViewControllerWrapper>) {}
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
@@ -77,116 +74,117 @@ struct PhoneEntryView: View {
         }
     }
 
-    
     var body: some View {
-        VStack {
-            
-            Spacer()
-            
+        ZStack {
+            Color(hex: "#10183C")
+                .ignoresSafeArea()
+
             VStack {
-                Text("Enter your phone number")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.white)
-                    .padding(.top, 20)
-                    .padding(.bottom, 25)
-                    .onAppear {
-                        Analytics.shared.trackScreen(name: "phone_entry")
-                    }
-                
-                HStack(spacing: 0) {
-                    // Country Picker Button
-                    Button(action: {
-                        showCountryPicker.toggle()
-                    }) {
-                        if let country = selectedCountry {
-                            Text("\(country.isoCode.getFlag()) +\(country.phoneCode)")
-                                .foregroundColor(Color.white)
-                        } else {
-                            Text("🇬🇧 +44")
-                                .foregroundColor(Color.white)
+                Spacer()
+
+                VStack {
+                    Text("Enter your phone number")
+                        .font(.system(size: 18, weight: .bold, design: .default))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(10)
+                        .foregroundColor(.white)
+                        .padding(.top, 20)
+                        .padding(.bottom, 25)
+                        .onAppear {
+                            Analytics.shared.trackScreen(name: "phone_entry")
                         }
-                    }
-                    .sheet(isPresented: $showCountryPicker) {
-                        CountryPickerViewControllerWrapper(selectedCountry: $selectedCountry)
-                    }
-                    .padding()
-                    .frame(height: 60) // Fixed height
-                    .background(
-                        Color(hex: "#323862")
-                            .clipShape(
-                                RoundedCorner(
-                                    radius: 10,
-                                    corners: [.topLeft, .bottomLeft]
-                                )
-                            )
-                    )
-                    .foregroundColor(.black)
-                    .font(.system(size: 16, weight: .bold, design: .default))
                     
-                    // Phone Number TextField
-                    TextField("Enter phone number", text: $phoneNumber)
-                        .keyboardType(.phonePad)
+                    HStack(spacing: 0) {
+                        // Country Picker Button
+                        Button(action: {
+                            showCountryPicker.toggle()
+                        }) {
+                            if let country = selectedCountry {
+                                Text("\(country.isoCode.getFlag()) +\(country.phoneCode)")
+                                    .foregroundColor(Color.white)
+                            } else {
+                                Text("🇬🇧 +44")
+                                    .foregroundColor(Color.white)
+                            }
+                        }
+                        .sheet(isPresented: $showCountryPicker) {
+                            CountryPickerViewControllerWrapper(selectedCountry: $selectedCountry)
+                        }
                         .padding()
-                        .frame(height: 60) // Same fixed height
+                        .frame(height: 60)
                         .background(
-                            Color(hex: "#3B4374")
+                            Color(hex: "#323862")
                                 .clipShape(
                                     RoundedCorner(
                                         radius: 10,
-                                        corners: [.topRight, .bottomRight]
+                                        corners: [.topLeft, .bottomLeft]
                                     )
                                 )
                         )
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .font(.system(size: 16, weight: .bold, design: .default))
-                }
-
-                if let error = errorMessage {
-                    Text(error)
-                        .foregroundColor(Color(hex: "#FF0000"))
-                        .font(.system(size: 16, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .padding(.top, 20)
-                        .padding(.horizontal)
-                }
-            
-                if isLoading {
-                    ProgressView()
-                        .padding(.vertical, 20)
-                        .tint(.white)
-                } else {
-                    Button(action: {
-                        self.hideKeyboard()
-                        self.sendVerificationCode()
-                    }) {
-                        Text("Continue")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#4169E1"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
+                        
+                        // Phone Number TextField
+                        TextField("Enter phone number", text: $phoneNumber)
+                            .keyboardType(.phonePad)
+                            .padding()
+                            .frame(height: 60)
+                            .background(
+                                Color(hex: "#3B4374")
+                                    .clipShape(
+                                        RoundedCorner(
+                                            radius: 10,
+                                            corners: [.topRight, .bottomRight]
+                                        )
+                                    )
+                            )
+                            .foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold, design: .default))
                     }
-                    .padding(.vertical, 20)
+
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundColor(Color(hex: "#FF0000"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .padding(.top, 20)
+                            .padding(.horizontal)
+                    }
+                
+                    if isLoading {
+                        ProgressView()
+                            .padding(.vertical, 20)
+                            .tint(.white)
+                    } else {
+                        Button(action: {
+                            self.hideKeyboard()
+                            self.sendVerificationCode()
+                        }) {
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#4169E1"))
+                                .foregroundColor(Color(hex: "#fff"))
+                                .cornerRadius(200)
+                        }
+                        .padding(.vertical, 20)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(20)
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
+
+                NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
+                    EmptyView()
+                }.isDetailLink(false)
+
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(20)
-            .background(Color(hex: "#1A2245"))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-            
-            NavigationLink(destination: VerificationView(phoneNumber: formattedPhoneNumber, verificationID: verificationID ?? ""), isActive: $showVerificationView) {
-                EmptyView()
-            }.isDetailLink(false)
-            
-            Spacer()
-            
         }
-        .background(Color(hex: "#10183C"))
         .navigationBarBackButtonHidden(true)
     }
 

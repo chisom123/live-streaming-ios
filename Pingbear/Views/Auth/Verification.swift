@@ -1,3 +1,4 @@
+// VerificationView.swift
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
@@ -14,109 +15,113 @@ struct VerificationView: View {
     @State private var isResending: Bool = false
 
     var body: some View {
-        VStack {
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
-                }
-                Spacer()
-            }
-            .padding(20)
-            
-            Spacer()
-            
+        ZStack {
+            Color(hex: "#10183C")
+                .ignoresSafeArea()
+
             VStack {
-                Text("Enter the verification code sent to \(phoneNumber)")
-                    .font(.system(size: 18, weight: .bold, design: .default))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(10)
-                    .foregroundColor(.white)
-                    .padding(.top, 20)
-                    .padding(.bottom, 25)
-                    .padding(.horizontal)
-                    .onAppear {
-                        Analytics.shared.trackScreen(name: "verification")
+                HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .foregroundColor(Color.white)
                     }
+                    Spacer()
+                }
+                .padding(20)
                 
-                TextField("Enter verification code", text: $verificationCode)
-                    .keyboardType(.numberPad)
-                    .padding()
-                    .frame(height: 60)
-                    .background(
-                        Color(hex: "#3B4374")
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
-                    )
-                    .foregroundColor(.white)
-                    .font(.system(size: 16, weight: .bold, design: .default))
+                Spacer()
                 
-                if let error = errorMessage {
-                    Text(error)
-                        .foregroundColor(Color(hex: "#FF0000"))
-                        .font(.system(size: 16, weight: .bold, design: .default))
+                VStack {
+                    Text("Enter the verification code sent to \(phoneNumber)")
+                        .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
+                        .foregroundColor(.white)
                         .padding(.top, 20)
+                        .padding(.bottom, 25)
                         .padding(.horizontal)
-                }
-            
-                if isLoading {
-                    ProgressView()
-                        .padding(.vertical, 20)
-                        .tint(.white)
-                } else {
-                    Button(action: {
-                        self.hideKeyboard()
-                        self.verifyCode()
-                    }) {
-                        Text("Continue")
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .font(.system(size: 18, weight: .bold, design: .default))
-                            .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .background(Color(hex: "#4169E1"))
-                            .foregroundColor(Color(hex: "#fff"))
-                            .cornerRadius(200)
-                    }
-                    .padding(.top, 20)
-                    
-                    // Resend code button
-                    Button(action: {
-                        self.hideKeyboard()
-                        resendVerificationCode()
-                    }) {
-                        HStack(spacing: 4) {
-                            Text("Didn't receive a code?")
-                                .font(.system(size: 16))
-                                .foregroundColor(Color.white.opacity(0.7))
-                            
-                            Text("Resend Code")
-                                .font(.system(size: 16, weight: .semibold, design: .default))
-                                .foregroundColor(Color.white)
+                        .onAppear {
+                            Analytics.shared.trackScreen(name: "verification")
                         }
+                    
+                    TextField("Enter verification code", text: $verificationCode)
+                        .keyboardType(.numberPad)
+                        .padding()
+                        .frame(height: 60)
+                        .background(
+                            Color(hex: "#3B4374")
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        )
+                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .bold, design: .default))
+                    
+                    if let error = errorMessage {
+                        Text(error)
+                            .foregroundColor(Color(hex: "#FF0000"))
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(10)
+                            .padding(.top, 20)
+                            .padding(.horizontal)
                     }
-                    .disabled(isResending)
-                    .padding(.top, 25)
-                    .padding(.bottom, 10)
+                
+                    if isLoading {
+                        ProgressView()
+                            .padding(.vertical, 20)
+                            .tint(.white)
+                    } else {
+                        Button(action: {
+                            self.hideKeyboard()
+                            self.verifyCode()
+                        }) {
+                            Text("Continue")
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .font(.system(size: 18, weight: .bold, design: .default))
+                                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                                .background(Color(hex: "#4169E1"))
+                                .foregroundColor(Color(hex: "#fff"))
+                                .cornerRadius(200)
+                        }
+                        .padding(.top, 20)
+                        
+                        // Resend code button
+                        Button(action: {
+                            self.hideKeyboard()
+                            resendVerificationCode()
+                        }) {
+                            HStack(spacing: 4) {
+                                Text("Didn't receive a code?")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Color.white.opacity(0.7))
+                                
+                                Text("Resend Code")
+                                    .font(.system(size: 16, weight: .semibold, design: .default))
+                                    .foregroundColor(Color.white)
+                            }
+                        }
+                        .disabled(isResending)
+                        .padding(.top, 25)
+                        .padding(.bottom, 10)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(20)
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
+                
+                NavigationLink(destination: RealNameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
+                    EmptyView()
+                }.isDetailLink(false)
+                
+                Spacer()
             }
-            .frame(maxWidth: .infinity)
-            .padding(20)
-            .background(Color(hex: "#1A2245"))
-            .cornerRadius(10)
-            .padding(.horizontal, 20)
-            
-            NavigationLink(destination: RealNameEntryView(phoneNumber: self.phoneNumber), isActive: $navigateToNameEntry) {
-                EmptyView()
-            }.isDetailLink(false)
-            
-            Spacer()
         }
-        .background(Color(hex: "#10183C"))
         .navigationBarBackButtonHidden(true)
     }
 
@@ -151,14 +156,10 @@ struct VerificationView: View {
                 if let document = document, document.exists {
                     if document.data()?["username"] != nil {
                         self.isLoading = false
-                        // User already has a username - just update UserDefaults
                         UserDefaults.standard.set(true, forKey: "isLoggedIn")
                         UserDefaults.standard.set(true, forKey: "isFriendActivated")
                         UserDefaults.standard.synchronize()
-                        
-                        // Post notification to trigger UI update
                         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
-                        
                         Analytics.shared.track(event: "returning_user_signed_in")
                     } else {
                         self.isLoading = false
