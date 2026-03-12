@@ -71,6 +71,7 @@ struct VerificationView: View {
                         .tint(.white)
                 } else {
                     Button(action: {
+                        self.hideKeyboard()
                         self.verifyCode()
                     }) {
                         Text("Continue")
@@ -85,6 +86,7 @@ struct VerificationView: View {
                     
                     // Resend code button
                     Button(action: {
+                        self.hideKeyboard()
                         resendVerificationCode()
                     }) {
                         HStack(spacing: 4) {

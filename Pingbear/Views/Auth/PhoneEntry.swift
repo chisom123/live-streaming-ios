@@ -159,6 +159,7 @@ struct PhoneEntryView: View {
                         .tint(.white)
                 } else {
                     Button(action: {
+                        self.hideKeyboard()
                         self.sendVerificationCode()
                     }) {
                         Text("Continue")

@@ -60,6 +60,7 @@ struct RealNameEntryView: View {
                         .tint(.white)
                 } else {
                     Button(action: {
+                        self.hideKeyboard()
                         self.validateAndContinue()
                     }) {
                         Text("Continue")

@@ -62,6 +62,7 @@ struct NameEntryView: View {
                         .tint(.white)
                 } else {
                     Button(action: {
+                        self.hideKeyboard()
                         self.checkUsernameAndSaveToFirestore()
                     }) {
                         Text("Continue")
