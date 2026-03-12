@@ -8,7 +8,7 @@ struct WelcomeBonusView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#1A2245")
+            Color(hex: "#10183C")
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -21,6 +21,7 @@ struct WelcomeBonusView: View {
                         .foregroundColor(Color(hex: "#FFF"))
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 70, height: 70)
+                        .padding(.top, -10)
 
                     VStack(spacing: 12) {
                         Text("Welcome Bonus")
@@ -38,23 +39,19 @@ struct WelcomeBonusView: View {
                     }
 
                     // Points badge
-                    HStack(spacing: 8) {
-                        Text("100")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.white)
-
-                        Image("gem")
-                            .resizable()
-                            .renderingMode(.template)
-                            .foregroundColor(Color.white)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 24, height: 24)
-                    }
-                    .padding(EdgeInsets(top: 7, leading: 20, bottom: 7, trailing: 20))
-                    .background(Color(hex: "#6A5ACD"))
-                    .cornerRadius(200)
+                    Text("+100")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(EdgeInsets(top: 7, leading: 20, bottom: 7, trailing: 20))
+                        .background(Color(hex: "#6A5ACD"))
+                        .cornerRadius(200)
                 }
-                .padding(.horizontal, 30)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 50)
+                .background(Color(hex: "#1A2245"))
+                .cornerRadius(10)
+                .padding(.horizontal, 20)
 
                 Spacer()
 
@@ -66,7 +63,7 @@ struct WelcomeBonusView: View {
                     )
                     verifyAndShowLeaderboard()
                 }) {
-                    Text("Continue")
+                    Text("Claim Prize Points")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
