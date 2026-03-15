@@ -910,7 +910,7 @@ struct UnlockView: View {
     // MARK: - Helper Methods
     
     private func generateSuggestedAmounts() -> [Int] {
-        return [25, 50, 100]
+        return [25, 100, 400]
     }
     
     private func fetchUserCoins() {
