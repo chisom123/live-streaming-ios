@@ -256,7 +256,7 @@ class DeepLinkHandler: ObservableObject {
         
         memberRef.setData([
             "userId": userId,
-            "coins": 150
+            "coins": 1000
         ]) { [weak self] error in
             if let error = error {
                 print("Error adding member: \(error)")

@@ -185,7 +185,7 @@ struct MyCompsView: View {
 
             creatorMemberRef.setData([
                 "userId": userID,
-                "coins": 150
+                "coins": 1000
             ]) { error in
                 if let error = error {
                     print("Failed to add creator as member: \(error.localizedDescription)")

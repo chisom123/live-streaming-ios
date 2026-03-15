@@ -246,7 +246,7 @@ struct JoinSelectView: View {
             
             memberRef.setData([
                 "userId": userId,
-                "coins": 150
+                "coins": 1000
             ]) { error in
                 if let error = error {
                     print("Error adding member: \(error)")
