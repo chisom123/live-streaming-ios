@@ -249,13 +249,31 @@ struct EmptyCompsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Purple header banner
+            HStack(spacing: 8) {
+                Text("Win 1,000+")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+
+                Image("gem")
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 22, height: 22)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(Color(hex: "#6A5ACD"))
+
+            // Body
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 30)
                 .padding(.bottom, 30)
 
-            VStack() {
+            VStack {
                 Button(action: newCompAction) {
                     HStack {
                         Text("New Competition")
@@ -273,7 +291,6 @@ struct EmptyCompsView: View {
             .padding(.bottom, 30)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20)
         .background(Color(hex: "#1A2245"))
         .cornerRadius(14)
         .padding(.horizontal, 20)

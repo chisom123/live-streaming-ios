@@ -199,7 +199,7 @@ struct CompDetails: View {
                                     .padding(.bottom, 2)
                                 
                                 HStack(spacing: 4) {
-                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "450")
+                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "1,000")
                                         .font(.system(size: 22, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF"))
                                     
