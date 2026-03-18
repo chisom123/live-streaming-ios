@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HowToWinView: View {
     var onContinue: () -> Void
+    @StateObject private var viewModel = HowToWinViewModel()
 
     var body: some View {
         ZStack {
@@ -11,25 +12,46 @@ struct HowToWinView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                VStack(spacing: 20) {
-                    Image("gem")
-                        .resizable()
-                        .renderingMode(.template)
+                VStack(spacing: 0) {
+                    // Header
+                    Text("My Stats")
+                        .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.white)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 70, height: 70)
-                        .padding(.top, -10)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color(hex: "#323862"))
 
-                    Text("Win more prize points in photo competitions")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(5)
-                        .padding(.horizontal, 10)
+                    // Player Stars Card
+                    VStack(spacing: 16) {
+                        ProfilePictureView(url: viewModel.profilePictureUrl, size: 70)
+
+                        Text(viewModel.displayName.isEmpty ? "Loading..." : viewModel.displayName)
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+
+                        HStack(spacing: 8) {
+                            Text("\(viewModel.totalStars)")
+                                .font(.system(size: 21, weight: .bold))
+                                .foregroundColor(.white)
+
+                            Image("gem")
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(.white)
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 22, height: 22)
+                        }
+                        .padding(EdgeInsets(top: 7, leading: 18, bottom: 7, trailing: 18))
+                        .background(Color(hex: "#6A5ACD"))
+                        .cornerRadius(200)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 30)
+                    .padding(.horizontal, 20)
+                    .background(Color(hex: "#2A3255"))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 50)
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
                 .padding(.horizontal, 20)
@@ -43,7 +65,7 @@ struct HowToWinView: View {
                     )
                     onContinue()
                 }) {
-                    Text("Let's Go")
+                    Text("Continue")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -58,6 +80,7 @@ struct HowToWinView: View {
         .navigationBarHidden(true)
         .onAppear {
             Analytics.shared.trackScreen(name: "how_to_win")
+            viewModel.load()
         }
     }
 }
