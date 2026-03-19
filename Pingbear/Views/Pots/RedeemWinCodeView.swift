@@ -2,11 +2,16 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFunctions
 
+extension Notification.Name {
+    static let winCodeRedeemed = Notification.Name("winCodeRedeemed")
+}
+
 struct RedeemWinCodeView: View {
     @Environment(\.dismiss) private var dismiss
     
     /// Optional code passed in via deep link — pre-populates the text field
     var prefilledCode: String? = nil
+    var onSuccess: (() -> Void)? = nil
     
     @State private var enteredCode: String = ""
     @State private var isRedeeming: Bool = false
@@ -176,7 +181,7 @@ struct RedeemWinCodeView: View {
                                 .renderingMode(.template)
                                 .foregroundColor(Color(red: 16/255, green: 185/255, blue: 129/255))
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 42, height: 42)
+                                .frame(width: 49, height: 49)
                         }
                         
                         Text("Points Added")
@@ -186,6 +191,8 @@ struct RedeemWinCodeView: View {
                     
                     Button(action: {
                         showSuccess = false
+                        onSuccess?()
+                        NotificationCenter.default.post(name: .winCodeRedeemed, object: nil)
                         dismiss()
                     }) {
                         Text("Done")

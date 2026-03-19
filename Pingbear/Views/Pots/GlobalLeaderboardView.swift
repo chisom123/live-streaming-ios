@@ -289,7 +289,12 @@ struct GlobalLeaderboardView: View {
             PrizePoolInfoView()
         }
         .fullScreenCover(isPresented: $showRedeemCode) {
-            RedeemWinCodeView()
+            RedeemWinCodeView(onSuccess: {
+                viewModel.loadLeaderboard()
+            })
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .winCodeRedeemed)) { _ in
+            viewModel.loadLeaderboard()
         }
         .onAppear {
             viewModel.loadLeaderboard()
