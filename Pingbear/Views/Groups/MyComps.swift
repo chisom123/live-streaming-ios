@@ -252,7 +252,7 @@ struct EmptyCompsView: View {
             // Purple header banner
             HStack(spacing: 8) {
                 Text("Win 1,000+")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 19, weight: .bold))
                     .foregroundColor(.white)
 
                 Image("gem")
