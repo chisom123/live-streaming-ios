@@ -9,7 +9,6 @@ extension Notification.Name {
 struct RedeemWinCodeView: View {
     @Environment(\.dismiss) private var dismiss
     
-    /// Optional code passed in via deep link — pre-populates the text field
     var prefilledCode: String? = nil
     var onSuccess: (() -> Void)? = nil
     
@@ -30,6 +29,10 @@ struct RedeemWinCodeView: View {
                 // Header
                 HStack {
                     Button(action: {
+                        Analytics.shared.trackTap(
+                            elementId: "back_button",
+                            screenName: "redeem_win_code"
+                        )
                         dismiss()
                     }) {
                         Image(systemName: "arrow.left")
@@ -58,7 +61,6 @@ struct RedeemWinCodeView: View {
                 
                 ScrollView {
                     VStack(spacing: 30) {
-                        // Instructions
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Enter Your Win Code")
                                 .font(.system(size: 18, weight: .bold))
@@ -74,7 +76,6 @@ struct RedeemWinCodeView: View {
                         .background(Color.white.opacity(0.1))
                         .cornerRadius(12)
                         
-                        // Code Input and Button
                         VStack(spacing: 0) {
                             TextField("Win Code", text: $enteredCode)
                                 .padding()
@@ -116,9 +117,12 @@ struct RedeemWinCodeView: View {
                 
                 Spacer()
                 
-                // Redeem Button
                 Button(action: {
                     isTextFieldFocused = false
+                    Analytics.shared.trackTap(
+                        elementId: "claim_button",
+                        screenName: "redeem_win_code"
+                    )
                     redeemCode()
                 }) {
                     HStack(spacing: 10) {
@@ -190,6 +194,10 @@ struct RedeemWinCodeView: View {
                     }
                     
                     Button(action: {
+                        Analytics.shared.trackTap(
+                            elementId: "claim_success_done_button",
+                            screenName: "redeem_win_code"
+                        )
                         showSuccess = false
                         onSuccess?()
                         NotificationCenter.default.post(name: .winCodeRedeemed, object: nil)
@@ -213,9 +221,14 @@ struct RedeemWinCodeView: View {
             }
         }
         .onAppear {
-            // Pre-fill code if provided via deep link
+            Analytics.shared.trackScreen(name: "redeem_win_code")
+            
             if let code = prefilledCode {
                 enteredCode = String(code.uppercased().prefix(10))
+                Analytics.shared.trackTap(
+                    elementId: "deep_link_code_prefilled",
+                    screenName: "redeem_win_code"
+                )
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -229,12 +242,15 @@ struct RedeemWinCodeView: View {
         guard Auth.auth().currentUser != nil else {
             errorMessage = "You must be signed in to claim codes"
             showError = true
+            Analytics.shared.trackTap(
+                elementId: "claim_failed_not_signed_in",
+                screenName: "redeem_win_code"
+            )
             return
         }
         
         isRedeeming = true
         
-        // Step 1: Call side project to validate and claim the code
         let cloudFunctionURL = URL(string: "https://claimwincode-vt3x7ykt4a-uc.a.run.app")!
         var request = URLRequest(url: cloudFunctionURL)
         request.httpMethod = "POST"
@@ -254,6 +270,10 @@ struct RedeemWinCodeView: View {
                 isRedeeming = false
                 errorMessage = "Failed to prepare request"
                 showError = true
+                Analytics.shared.trackTap(
+                    elementId: "claim_failed_request_serialization",
+                    screenName: "redeem_win_code"
+                )
             }
             return
         }
@@ -264,6 +284,10 @@ struct RedeemWinCodeView: View {
                     isRedeeming = false
                     errorMessage = "Network error: \(error.localizedDescription)"
                     showError = true
+                    Analytics.shared.trackTap(
+                        elementId: "claim_failed_network_error",
+                        screenName: "redeem_win_code"
+                    )
                     return
                 }
                 
@@ -271,6 +295,10 @@ struct RedeemWinCodeView: View {
                     isRedeeming = false
                     errorMessage = "No response from server"
                     showError = true
+                    Analytics.shared.trackTap(
+                        elementId: "claim_failed_no_response",
+                        screenName: "redeem_win_code"
+                    )
                     return
                 }
                 
@@ -282,8 +310,6 @@ struct RedeemWinCodeView: View {
                        let points = result["points"] as? Int {
                         
                         pointsEarned = points
-                        
-                        // Step 2: Award points server-side via main project function
                         awardLeaderboardPoints(points: points)
                         
                     } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -291,22 +317,34 @@ struct RedeemWinCodeView: View {
                               let message = error["message"] as? String {
                         isRedeeming = false
                         handleErrorMessage(message)
+                        Analytics.shared.trackTap(
+                            elementId: "claim_failed_server_error",
+                            screenName: "redeem_win_code",
+                            properties: ["error": message]
+                        )
                     } else {
                         isRedeeming = false
                         errorMessage = "Invalid response from server"
                         showError = true
+                        Analytics.shared.trackTap(
+                            elementId: "claim_failed_invalid_response",
+                            screenName: "redeem_win_code"
+                        )
                     }
                 } catch {
                     isRedeeming = false
                     errorMessage = "Failed to parse response"
                     showError = true
+                    Analytics.shared.trackTap(
+                        elementId: "claim_failed_parse_error",
+                        screenName: "redeem_win_code"
+                    )
                 }
             }
         }.resume()
     }
     
     private func awardLeaderboardPoints(points: Int) {
-        // Calls main project Cloud Function — userId comes from auth token server-side
         let functions = Functions.functions()
         functions.httpsCallable("awardLeaderboardPoints").call(["points": points]) { result, error in
             DispatchQueue.main.async {
@@ -315,8 +353,13 @@ struct RedeemWinCodeView: View {
                 if let error = error {
                     print("⚠️ Failed to award leaderboard points: \(error)")
                     // Still show success — code was claimed, leaderboard is best-effort
-                }  else {
+                } else {
                     print("✅ Points awarded to leaderboard")
+                    Analytics.shared.trackTap(
+                        elementId: "claim_success",
+                        screenName: "redeem_win_code",
+                        properties: ["points_earned": points]
+                    )
                 }
                 
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
