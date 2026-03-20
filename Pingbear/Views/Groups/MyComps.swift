@@ -251,7 +251,7 @@ struct EmptyCompsView: View {
         VStack(spacing: 0) {
             // Purple header banner
             HStack(spacing: 8) {
-                Text("Win 1,000+")
+                Text("Win 450+")
                     .font(.system(size: 19, weight: .bold))
                     .foregroundColor(.white)
 
