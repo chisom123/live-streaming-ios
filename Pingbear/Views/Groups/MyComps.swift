@@ -251,8 +251,8 @@ struct EmptyCompsView: View {
         VStack(spacing: 0) {
             // Purple header banner
             HStack(spacing: 8) {
-                Text("Win 450+")
-                    .font(.system(size: 19, weight: .bold))
+                Text("Win 450")
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
 
                 Image("gem")
@@ -260,7 +260,7 @@ struct EmptyCompsView: View {
                     .renderingMode(.template)
                     .foregroundColor(.white)
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 22, height: 22)
+                    .frame(width: 21, height: 21)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
