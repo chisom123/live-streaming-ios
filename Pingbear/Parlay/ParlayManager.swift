@@ -304,7 +304,7 @@ class ParlayManager {
                         NotificationQueueManager.shared.queueIndividualNotification(
                             to: entryOwnerId,
                             title: competitionName,
-                            body: "Congratulations! You won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)",
+                            body: "Congratulations! You just won \(potentialPayout) coins",
                             senderId: systemUserId
                         )
                         
@@ -312,7 +312,7 @@ class ParlayManager {
                         NotificationQueueManager.shared.queueGroupNotification(
                             competitionId: competitionId,
                             title: competitionName,
-                            body: "\(winnerUsername) just won \(potentialPayout) coins on \(updatedPredictions.count) \(predictionText)!",
+                            body: "\(winnerUsername) just won \(potentialPayout) coins!",
                             senderId: systemUserId,
                             excludeUsers: [entryOwnerId]
                         )
@@ -556,17 +556,19 @@ class ParlayManager {
             
             let winnerName = userDoc?.data()?["name"] as? String ?? "Someone"
             let predictionText = predictionCount == 1 ? "prediction" : "predictions"
-            let messageText = "\(winnerName) just won \(payout) coins on \(predictionCount) \(predictionText)!"
+            let messageText = "\(winnerName) just won \(payout) coins!"
             
             let messageId = UUID().uuidString
             
-            let messageData: [String: Any] = [
+            var messageData: [String: Any] = [
                 "senderId": systemUserId,
                 "senderName": "SocialStar",
                 "senderProfilePicture": staticProfilePicUrl,
                 "text": messageText,
                 "timestamp": FieldValue.serverTimestamp(),
-                "isRead": false
+                "isRead": false,
+                "photoId": entryId,                    // ← The winning photo
+                "photoCompetitionId": competitionId    // ← So ChatViewModel can fetch it
             ]
             
             let messageRef = self.db.collection("competitions")
