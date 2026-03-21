@@ -224,7 +224,7 @@ struct CompDetails: View {
                                     .foregroundColor(.white.opacity(0.7))
                                     .padding(.bottom, 2)
                                 
-                                Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "Not Started")
+                                Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "24h 0m")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                             }

@@ -131,6 +131,11 @@ struct MyCompsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshCompetitions"))) { _ in
             viewModel.refreshCompetitions()
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenCompetition"))) { notification in
+            if let competition = notification.object as? Competition {
+                navigateToNewCompetition = competition
+            }
+        }
     }
 
     // MARK: - Private helpers
@@ -173,14 +178,11 @@ struct MyCompsView: View {
                 return
             }
 
-            let competitionName = "Competition"
-
             let competitionRef = db.collection("competitions").document()
             let newCompetitionId = competitionRef.documentID
             let timestamp = Timestamp()
             let creationDate = timestamp.dateValue()
 
-            // Establish membership first
             let creatorMemberRef = competitionRef.collection("members").document(userID)
 
             creatorMemberRef.setData([
@@ -195,7 +197,7 @@ struct MyCompsView: View {
 
                 let competitionData: [String: Any] = [
                     "id": newCompetitionId,
-                    "description": competitionName,
+                    "description": "Competition",
                     "timestamp": timestamp,
                     "hostId": userID
                 ]
@@ -219,7 +221,7 @@ struct MyCompsView: View {
 
                         let newCompetition = Competition(
                             id: newCompetitionId,
-                            description: competitionName,
+                            description: "Competition",
                             date: creationDate
                         )
 
@@ -249,31 +251,15 @@ struct EmptyCompsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Purple header banner
-            HStack(spacing: 8) {
-                Text("Win 450")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
-
-                Image("gem")
-                    .resizable()
-                    .renderingMode(.template)
-                    .foregroundColor(.white)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 21, height: 21)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background(Color(hex: "#6A5ACD"))
-
-            // Body
+            // Header
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
                 .foregroundColor(.white)
                 .padding(.top, 30)
                 .padding(.bottom, 30)
-
-            VStack {
+            
+            // Button container - fixed width for consistency
+            VStack() {
                 Button(action: newCompAction) {
                     HStack {
                         Text("New Competition")
@@ -291,6 +277,7 @@ struct EmptyCompsView: View {
             .padding(.bottom, 30)
         }
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
         .background(Color(hex: "#1A2245"))
         .cornerRadius(14)
         .padding(.horizontal, 20)

@@ -172,20 +172,17 @@ struct PostSignupLeaderboardView: View {
                             }
                         }
                         
-                        // Fixed User Stats Bar at Bottom (overlay)
+                        // Fixed User Stats Bar at Bottom
                         VStack {
                             Spacer()
                             
                             VStack(spacing: 0) {
-                                // User stats
                                 HStack(spacing: 16) {
-                                    // Left side: Position number
                                     Text("\(viewModel.userPosition > 0 ? String(viewModel.userPosition) : "--")")
                                         .font(.system(size: 18, weight: .bold))
                                         .foregroundColor(.white)
                                         .frame(width: 35)
                                     
-                                    // Profile Picture
                                     if let currentUser = viewModel.participants.first(where: { $0.isCurrentUser }) {
                                         ProfilePictureView(url: currentUser.profilePictureUrl, size: 40)
                                     } else {
@@ -194,7 +191,6 @@ struct PostSignupLeaderboardView: View {
                                             .frame(width: 40, height: 40)
                                     }
                                     
-                                    // "Me" text + Prize
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text("Me")
                                             .font(.system(size: 16, weight: .bold))
@@ -212,7 +208,6 @@ struct PostSignupLeaderboardView: View {
                                     
                                     Spacer()
                                     
-                                    // Right side: Stars only
                                     HStack(spacing: 6) {
                                         Text("\(viewModel.userStars)")
                                             .font(.system(size: 17, weight: .bold))
@@ -232,7 +227,6 @@ struct PostSignupLeaderboardView: View {
                                 .padding(20)
                                 .background(Color(hex: "#2A3255"))
                                 
-                                // Continue Button
                                 Button(action: {
                                     Analytics.shared.trackTap(
                                         elementId: "continue_to_app",
@@ -260,7 +254,15 @@ struct PostSignupLeaderboardView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $navigateToHowToWin) {
-            HowToWinView(onContinue: onContinue)
+            HowToWinView(onCreated: { competition in
+                onContinue()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("OpenCompetition"),
+                        object: competition
+                    )
+                }
+            })
         }
         .onAppear {
             Analytics.shared.trackScreen(name: "post_signup_leaderboard")
