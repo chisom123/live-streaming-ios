@@ -15,6 +15,32 @@ struct ProfilePhotoView: View {
             Color(hex: "#10183C")
                 .ignoresSafeArea()
             
+            // Skip button in top right
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        Analytics.shared.trackTap(
+                            elementId: "profile_photo_skip",
+                            screenName: "profile_photo"
+                        )
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("OpenCompetition"),
+                                object: competition
+                            )
+                        }
+                        onComplete()
+                    }) {
+                        Text("Skip")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding()
+                }
+                Spacer()
+            }
+            
             VStack(spacing: 0) {
                 Spacer()
                 
