@@ -5,6 +5,7 @@ import FirebaseFirestore
 struct HowToWinView: View {
     var onCreated: (Competition) -> Void
     @State private var isCreating = false
+    @State private var createdCompetition: Competition?
 
     var body: some View {
         ZStack {
@@ -70,6 +71,11 @@ struct HowToWinView: View {
             }
         }
         .navigationBarHidden(true)
+        .fullScreenCover(item: $createdCompetition) { competition in
+            ProfilePhotoView(competition: competition) {
+                onCreated(competition)
+            }
+        }
         .onAppear {
             Analytics.shared.trackScreen(name: "how_to_win")
         }
@@ -88,6 +94,11 @@ struct HowToWinView: View {
                 self.isCreating = false
                 return
             }
+
+            let rawName = document?.data()?["name"] as? String ?? ""
+            let firstName = rawName.components(separatedBy: " ").first ?? rawName
+            let capitalizedFirst = firstName.prefix(1).uppercased() + firstName.dropFirst()
+            let competitionDescription = capitalizedFirst.isEmpty ? "Competition" : "\(capitalizedFirst)'s Competition"
 
             let competitionRef = db.collection("competitions").document()
             let newCompetitionId = competitionRef.documentID
@@ -108,7 +119,7 @@ struct HowToWinView: View {
 
                 let competitionData: [String: Any] = [
                     "id": newCompetitionId,
-                    "description": "Competition",
+                    "description": competitionDescription,
                     "timestamp": timestamp,
                     "hostId": userID
                 ]
@@ -132,7 +143,7 @@ struct HowToWinView: View {
 
                         let newCompetition = Competition(
                             id: newCompetitionId,
-                            description: "Competition",
+                            description: competitionDescription,
                             date: creationDate
                         )
 
@@ -145,9 +156,7 @@ struct HowToWinView: View {
                                 action: "create",
                                 competitionId: newCompetitionId
                             )
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.success)
-                            onCreated(newCompetition)
+                            self.createdCompetition = newCompetition
                         }
                     }
                 }
