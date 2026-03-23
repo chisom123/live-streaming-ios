@@ -256,12 +256,6 @@ struct PostSignupLeaderboardView: View {
         .fullScreenCover(isPresented: $navigateToHowToWin) {
             HowToWinView(onCreated: { competition in
                 onContinue()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("OpenCompetition"),
-                        object: competition
-                    )
-                }
             })
         }
         .onAppear {

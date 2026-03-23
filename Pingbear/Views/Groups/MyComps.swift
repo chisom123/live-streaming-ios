@@ -131,11 +131,6 @@ struct MyCompsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RefreshCompetitions"))) { _ in
             viewModel.refreshCompetitions()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenCompetition"))) { notification in
-            if let competition = notification.object as? Competition {
-                navigateToNewCompetition = competition
-            }
-        }
     }
 
     // MARK: - Private helpers
