@@ -148,13 +148,11 @@ class CompetitionPricingCalculator: ObservableObject {
     
     // MARK: - Multiplier Calculations
     
-    /// Actual multiplier for a single star rating — house edge applied and floored.
+    /// True multiplier for a single star rating — house edge applied, no flooring or minimum.
     func getSingleStarMultiplier(starRating: Int) -> Double {
         let starAccuracy = getAccuracyRate(for: starRating)
         let fairMultiplier = 1.0 / starAccuracy
-        let multiplier = fairMultiplier * (1.0 - getHouseEdge())
-        let rounded = floor(multiplier * 10) / 10.0
-        return max(rounded, 1.1)
+        return fairMultiplier * (1.0 - getHouseEdge())
     }
     
     // MARK: - Public Methods
@@ -167,13 +165,13 @@ class CompetitionPricingCalculator: ObservableObject {
             finalMultiplier *= getSingleStarMultiplier(starRating: starRating)
         }
         
-        return min(floor(finalMultiplier * 10) / 10.0, 100.0)
+        return min(finalMultiplier, 100.0)
     }
 
     func calculateParlayPayout(entryCost: Int, predictions: [String: Int]) -> Int {
         guard !predictions.isEmpty else { return 0 }
         let multiplier = getParlayMultiplier(predictions: predictions)
-        return Int(floor(Double(entryCost) * multiplier))
+        return Int(Double(entryCost) * multiplier)
     }
     
     // MARK: - Rakeback Calculation
