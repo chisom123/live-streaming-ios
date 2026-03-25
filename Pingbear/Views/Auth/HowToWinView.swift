@@ -72,9 +72,12 @@ struct HowToWinView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(item: $createdCompetition) { competition in
-            ProfilePhotoView(competition: competition) {
-                onCreated(competition)
-            }
+            OnboardingCompView(
+                competition: competition,
+                onSkip: {
+                    onCreated(competition)
+                }
+            )
         }
         .onAppear {
             Analytics.shared.trackScreen(name: "how_to_win")
