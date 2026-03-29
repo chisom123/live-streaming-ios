@@ -17,7 +17,6 @@
 		4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */; };
 		4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */; };
 		4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */; };
-		4F2FDF872F714D9B006592C3 /* ProfilePhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2FDF862F714D9B006592C3 /* ProfilePhotoView.swift */; };
 		4F3359582DE5E983003EF5E1 /* ChatMessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */; };
 		4F33595A2DE5E9A0003EF5E1 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3359592DE5E9A0003EF5E1 /* ChatViewModel.swift */; };
 		4F33595E2DE65507003EF5E1 /* ChatIndicatorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F33595D2DE65507003EF5E1 /* ChatIndicatorViewModel.swift */; };
@@ -95,7 +94,6 @@
 		4F74805C2F420630008636AF /* PostSignupLeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F74805B2F420630008636AF /* PostSignupLeaderboardView.swift */; };
 		4F78D1CB2F4F23AE004A766B /* RaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F78D1CA2F4F23AE004A766B /* RaceManager.swift */; };
 		4F78D1CD2F4F24BC004A766B /* RaceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F78D1CC2F4F24BC004A766B /* RaceViewModel.swift */; };
-		4F82F6E12F73EB7900B3762E /* OnboardingCompView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F82F6E02F73EB7900B3762E /* OnboardingCompView.swift */; };
 		4F90E1602E070FC700C84525 /* CompetitionPricingCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
@@ -157,7 +155,6 @@
 		4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosView.swift; sourceTree = "<group>"; };
 		4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryUploadManager.swift; sourceTree = "<group>"; };
 		4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPreview.swift; sourceTree = "<group>"; };
-		4F2FDF862F714D9B006592C3 /* ProfilePhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePhotoView.swift; sourceTree = "<group>"; };
 		4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageModel.swift; sourceTree = "<group>"; };
 		4F3359592DE5E9A0003EF5E1 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		4F33595D2DE65507003EF5E1 /* ChatIndicatorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatIndicatorViewModel.swift; sourceTree = "<group>"; };
@@ -210,7 +207,6 @@
 		4F78D1CA2F4F23AE004A766B /* RaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceManager.swift; sourceTree = "<group>"; };
 		4F78D1CC2F4F24BC004A766B /* RaceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceViewModel.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
-		4F82F6E02F73EB7900B3762E /* OnboardingCompView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCompView.swift; sourceTree = "<group>"; };
 		4F90E15F2E070FC700C84525 /* CompetitionPricingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionPricingCalculator.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
@@ -311,8 +307,6 @@
 				4F74805B2F420630008636AF /* PostSignupLeaderboardView.swift */,
 				4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */,
 				4F52E1CE2F62C7F000E63672 /* HowToWinView.swift */,
-				4F2FDF862F714D9B006592C3 /* ProfilePhotoView.swift */,
-				4F82F6E02F73EB7900B3762E /* OnboardingCompView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -773,7 +767,6 @@
 				4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */,
 				4F1146B82E2CEAF800CEAE21 /* PredictionsDetailView.swift in Sources */,
 				4FF9C1982F0FDAB4000F045C /* GlobalLeaderboardView.swift in Sources */,
-				4F2FDF872F714D9B006592C3 /* ProfilePhotoView.swift in Sources */,
 				4FDD666F2F36314D0023B145 /* RedeemWinCodeView.swift in Sources */,
 				4F39B2A72DD5447600F75004 /* ThemePhotosView.swift in Sources */,
 				4F3359602DE6E596003EF5E1 /* MessageComposerView.swift in Sources */,
@@ -789,7 +782,6 @@
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F74805C2F420630008636AF /* PostSignupLeaderboardView.swift in Sources */,
 				4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */,
-				4F82F6E12F73EB7900B3762E /* OnboardingCompView.swift in Sources */,
 				4F39B29F2DD3C2DC00F75004 /* FullScreenPhotoView.swift in Sources */,
 				4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,

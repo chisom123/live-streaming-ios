@@ -221,7 +221,7 @@ struct GlobalLeaderboardView: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 140)
+                                .padding(.bottom, 115)
                             }
                         }
                         

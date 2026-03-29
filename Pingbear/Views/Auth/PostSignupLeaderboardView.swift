@@ -44,7 +44,6 @@ struct PostSignupLeaderboardView: View {
                     }
                     Spacer()
                 } else if !viewModel.isInPot {
-                    // Not in pot - shouldn't happen but handle gracefully
                     Spacer()
                     VStack(spacing: 20) {
                         Image(systemName: "trophy.fill")
@@ -136,7 +135,7 @@ struct PostSignupLeaderboardView: View {
                                                 
                                                 Spacer()
                                                 
-                                                // Stars badge only
+                                                // Stars badge
                                                 HStack(spacing: 8) {
                                                     Text("\(participant.totalStars)")
                                                         .font(.system(size: 17, weight: .bold))
@@ -168,7 +167,7 @@ struct PostSignupLeaderboardView: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 180) // Space for fixed bottom section
+                                .padding(.bottom, 180)
                             }
                         }
                         
@@ -254,7 +253,7 @@ struct PostSignupLeaderboardView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $navigateToHowToWin) {
-            HowToWinView(onCreated: { competition in
+            HowToWinView(onContinue: {
                 onContinue()
             })
         }
