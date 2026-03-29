@@ -29,7 +29,7 @@ struct WelcomeBonusView: View {
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
 
-                        Text("You've been awarded 100 prize points to kick things off")
+                        Text("You've been awarded 100 points to kick things off")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)

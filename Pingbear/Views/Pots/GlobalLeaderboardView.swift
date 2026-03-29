@@ -84,7 +84,7 @@ struct GlobalLeaderboardView: View {
                             .font(.system(size: 21, weight: .bold))
                             .foregroundColor(.white)
                         
-                        Text("Win prize points in photo competitions")
+                        Text("Win points in photo competitions")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)

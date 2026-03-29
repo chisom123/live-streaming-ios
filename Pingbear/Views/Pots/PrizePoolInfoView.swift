@@ -54,7 +54,7 @@ struct PrizePoolInfoView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 70, height: 70)
 
-                Text("Win prize points in photo competitions")
+                Text("Win points in photo competitions")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
