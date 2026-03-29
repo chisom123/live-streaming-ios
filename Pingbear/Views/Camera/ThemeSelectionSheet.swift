@@ -424,13 +424,15 @@ struct AddThemeSheet: View {
     // Get current day name in user's local timezone
     private func getCurrentDayName() -> String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE" // Full day name (e.g., "Tuesday", "Wednesday")
-        formatter.timeZone = TimeZone.current // Uses user's local timezone
+        formatter.dateFormat = "EEEE"
+        formatter.timeZone = TimeZone.current
         return formatter.string(from: Date())
     }
     
     var body: some View {
-        NavigationView {
+        ZStack {
+            Color(hex: "#10183C").ignoresSafeArea()
+            
             VStack(spacing: 0) {
                 // Header
                 HStack {
@@ -484,7 +486,6 @@ struct AddThemeSheet: View {
                                 .font(.system(size: 16, weight: .bold))
                                 .focused($isThemeNameFocused)
                                 .onChange(of: themeName) { _ in
-                                    // Clear selection when user types manually
                                     selectedSuggestionIndex = nil
                                 }
                         }
@@ -499,13 +500,11 @@ struct AddThemeSheet: View {
                         
                         // Show suggestions only when text field is empty AND not focused
                         if themeName.isEmpty && !isThemeNameFocused {
-                            // Suggestions title
                             Text("Suggested Themes")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(Color.white.opacity(0.8))
                                 .padding(.top, 10)
                             
-                            // Theme suggestions grid
                             suggestionsGrid
                                 .padding(.top, 5)
                         }
@@ -516,12 +515,11 @@ struct AddThemeSheet: View {
                 }
                 .background(Color(hex: "#10183C"))
             }
-            .background(Color(hex: "#10183C"))
-            .onAppear {
-                Analytics.shared.trackScreen(name: "add_new_theme")
-            }
         }
         .accentColor(.white)
+        .onAppear {
+            Analytics.shared.trackScreen(name: "add_new_theme")
+        }
     }
     
     // Theme suggestions grid layout
@@ -562,31 +560,26 @@ struct AddThemeSheet: View {
     }
     
     private func createTheme() {
-        // Clear previous error message
         errorMessage = nil
         
-        // Basic validation
         guard !themeName.isEmpty else {
             errorMessage = "Please enter a theme name"
             isSaving = false
             return
         }
         
-        // Validate theme name length
         if themeName.count > 25 {
             errorMessage = "Theme name must be 25 characters or less"
             isSaving = false
             return
         }
         
-        // Check if theme already exists
         if viewModel.themes.contains(where: { $0.name.lowercased() == themeName.lowercased() }) {
             errorMessage = "This theme already exists"
             isSaving = false
             return
         }
         
-        // Create theme
         viewModel.addTheme(name: themeName, competitionId: competitionId) { success in
             DispatchQueue.main.async {
                 isSaving = false
@@ -599,6 +592,7 @@ struct AddThemeSheet: View {
         }
     }
 }
+
 
 // MARK: - Theme Badge
 struct ThemeBadgeClickable: View {
