@@ -5,19 +5,14 @@ import Combine
 import AVFoundation
 import UserNotifications
 
-// Remove the DeepLinkCoordinator - we'll use the enhanced DeepLinkHandler directly
-
-// Update AppDelegate extension
 extension AppDelegate {
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
         print("AppDelegate received URL: \(url)")
         
-        // Handle Firebase Auth URLs
         if Auth.auth().canHandle(url) {
             return true
         }
         
-        // Handle custom URL scheme (socialstar://)
         if url.scheme == "socialstar" {
             DeepLinkHandler.shared.handleURL(url)
             return true
@@ -110,6 +105,7 @@ struct PingbearApp: App {
     @StateObject private var deepLinkHandler = DeepLinkHandler.shared
     @State private var selectedCompetition: Competition?
     @State private var pendingLoginDeepLink: URL?
+    @State private var selectedTab: Int = 0
     
     let didLogOut = PassthroughSubject<Void, Never>()
     
@@ -118,7 +114,7 @@ struct PingbearApp: App {
             ZStack {
                 if isLoggedIn && Auth.auth().currentUser != nil {
                     NavigationStack {
-                        MainTabView()
+                        MainTabView(selectedTab: $selectedTab)
                             .navigationBarHidden(true)
                     }
                     .onAppear {
@@ -153,16 +149,12 @@ struct PingbearApp: App {
                     }
                 }
             }
-            // Competition deep link navigation (unchanged)
             .fullScreenCover(item: $selectedCompetition) { competition in
                 NavigationStack {
                     CompDetails(competition: competition)
                 }
             }
-            // Redeem sheet — bound directly to pendingRedeemCode so the value
-            // is always fresh when RedeemWinCodeView's onAppear fires.
-            // No intermediate @State copy that could be stale.
-            .sheet(
+            .fullScreenCover(
                 isPresented: Binding(
                     get: { deepLinkHandler.pendingRedeemCode != nil },
                     set: { if !$0 { deepLinkHandler.pendingRedeemCode = nil } }
@@ -178,6 +170,10 @@ struct PingbearApp: App {
             }
             .onReceive(NotificationCenter.default.publisher(for: .authStateDidChange)) { _ in
                 isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToMyComps"))) { _ in
+                deepLinkHandler.pendingRedeemCode = nil
+                selectedTab = 0
             }
         }
     }

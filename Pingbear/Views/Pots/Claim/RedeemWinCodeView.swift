@@ -18,6 +18,7 @@ struct RedeemWinCodeView: View {
     @State private var showError: Bool = false
     @State private var errorMessage: String = ""
     @State private var pointsEarned: Int = 0
+    @State private var navigateToLeaderboard = false
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
@@ -26,7 +27,6 @@ struct RedeemWinCodeView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
                 HStack {
                     Button(action: {
                         Analytics.shared.trackTap(
@@ -93,7 +93,6 @@ struct RedeemWinCodeView: View {
                                 .accentColor(.white)
                                 .onChange(of: enteredCode) { newValue in
                                     enteredCode = String(newValue.uppercased().prefix(10))
-                                    
                                     if showError {
                                         showError = false
                                         errorMessage = ""
@@ -135,9 +134,7 @@ struct RedeemWinCodeView: View {
                         }
                     }
                     .foregroundColor(
-                        enteredCode.count == 10 && !isRedeeming
-                        ? Color(.white)
-                            : Color.gray.opacity(0.5)
+                        enteredCode.count == 10 && !isRedeeming ? Color(.white) : Color.gray.opacity(0.5)
                     )
                     .frame(maxWidth: .infinity)
                     .frame(height: 55)
@@ -153,7 +150,6 @@ struct RedeemWinCodeView: View {
                 .padding(.bottom)
             }
             
-            // Success Overlay
             if showSuccess {
                 Color.black.opacity(0.4)
                     .ignoresSafeArea()
@@ -171,7 +167,7 @@ struct RedeemWinCodeView: View {
                     }
                     
                     VStack(spacing: 12) {
-                        Text("Code Claimed")
+                        Text("Winnings Claimed")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
                         
@@ -201,7 +197,7 @@ struct RedeemWinCodeView: View {
                         showSuccess = false
                         onSuccess?()
                         NotificationCenter.default.post(name: .winCodeRedeemed, object: nil)
-                        dismiss()
+                        navigateToLeaderboard = true
                     }) {
                         Text("Done")
                             .font(.system(size: 18, weight: .bold))
@@ -234,6 +230,13 @@ struct RedeemWinCodeView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isTextFieldFocused = true
             }
+        }
+        .fullScreenCover(isPresented: $navigateToLeaderboard) {
+            PostClaimLeaderboardView()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToMyComps"))) { _ in
+            navigateToLeaderboard = false
+            dismiss()
         }
     }
     
@@ -352,7 +355,6 @@ struct RedeemWinCodeView: View {
                 
                 if let error = error {
                     print("⚠️ Failed to award leaderboard points: \(error)")
-                    // Still show success — code was claimed, leaderboard is best-effort
                 } else {
                     print("✅ Points awarded to leaderboard")
                     Analytics.shared.trackTap(

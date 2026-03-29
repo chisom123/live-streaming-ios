@@ -1,12 +1,11 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab: Int = 0  // Default start on tab 0 (home)
+    @Binding var selectedTab: Int
     
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
-                // Content
                 TabView(selection: $selectedTab) {
                     MyCompsView()
                         .tag(0)
@@ -18,9 +17,8 @@ struct MainTabView: View {
                         .tag(2)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .id(selectedTab) // Force TabView to update when selectedTab changes
+                .id(selectedTab)
                 
-                // Custom Tab Bar
                 CustomTabBar(selectedTab: $selectedTab)
                     .padding(.bottom, max(geometry.safeAreaInsets.bottom - 15, 0))
                     .background(Color(hex: "#10183C"))

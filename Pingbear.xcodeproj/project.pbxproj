@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F0015912F79593000AAF18E /* PostClaimLeaderboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0015902F79593000AAF18E /* PostClaimLeaderboardView.swift */; };
+		4F0015932F79595300AAF18E /* PostClaimUpsellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0015922F79595300AAF18E /* PostClaimUpsellView.swift */; };
 		4F04161A2BB5A97C00E3C7C0 /* Members.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0416192BB5A97C00E3C7C0 /* Members.swift */; };
 		4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */; };
 		4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0D18262D56325600C1A236 /* ProfilePicture.swift */; };
@@ -145,6 +147,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F0015902F79593000AAF18E /* PostClaimLeaderboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostClaimLeaderboardView.swift; sourceTree = "<group>"; };
+		4F0015922F79595300AAF18E /* PostClaimUpsellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostClaimUpsellView.swift; sourceTree = "<group>"; };
 		4F0416192BB5A97C00E3C7C0 /* Members.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Members.swift; sourceTree = "<group>"; };
 		4F04161B2BB5B53800E3C7C0 /* MembersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MembersViewModel.swift; sourceTree = "<group>"; };
 		4F0D18262D56325600C1A236 /* ProfilePicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePicture.swift; sourceTree = "<group>"; };
@@ -296,6 +300,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4F00158F2F79580200AAF18E /* Claim */ = {
+			isa = PBXGroup;
+			children = (
+				4FDD666E2F36314D0023B145 /* RedeemWinCodeView.swift */,
+				4F0015902F79593000AAF18E /* PostClaimLeaderboardView.swift */,
+				4F0015922F79595300AAF18E /* PostClaimUpsellView.swift */,
+			);
+			path = Claim;
+			sourceTree = "<group>";
+		};
 		4F31B8932BDBAA85007892BC /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -550,12 +564,12 @@
 		4FF9C1962F0FDAA6000F045C /* Pots */ = {
 			isa = PBXGroup;
 			children = (
+				4F00158F2F79580200AAF18E /* Claim */,
 				4FF9C1972F0FDAB4000F045C /* GlobalLeaderboardView.swift */,
 				4FF9C1A22F10892D000F045C /* PotHistoryView.swift */,
 				4FF9C1A42F11F406000F045C /* WalletView.swift */,
 				4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */,
 				4FDD66682F3517340023B145 /* PrizePoolInfoView.swift */,
-				4FDD666E2F36314D0023B145 /* RedeemWinCodeView.swift */,
 			);
 			path = Pots;
 			sourceTree = "<group>";
@@ -765,6 +779,7 @@
 				4F33595E2DE65507003EF5E1 /* ChatIndicatorViewModel.swift in Sources */,
 				4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */,
 				4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */,
+				4F0015912F79593000AAF18E /* PostClaimLeaderboardView.swift in Sources */,
 				4F1146B82E2CEAF800CEAE21 /* PredictionsDetailView.swift in Sources */,
 				4FF9C1982F0FDAB4000F045C /* GlobalLeaderboardView.swift in Sources */,
 				4FDD666F2F36314D0023B145 /* RedeemWinCodeView.swift in Sources */,
@@ -785,6 +800,7 @@
 				4F39B29F2DD3C2DC00F75004 /* FullScreenPhotoView.swift in Sources */,
 				4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
+				4F0015932F79595300AAF18E /* PostClaimUpsellView.swift in Sources */,
 				4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */,
 				4F39B29D2DD3758100F75004 /* DeepLinkHandler.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,

@@ -1,12 +1,11 @@
 import SwiftUI
 
-struct HowToWinView: View {
-    var onContinue: () -> Void
+struct PostClaimUpsellView: View {
 
     var body: some View {
         ZStack {
             GeometryReader { geo in
-                Image("hero")
+                Image("hero2")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: geo.size.width, height: geo.size.height)
@@ -52,10 +51,10 @@ struct HowToWinView: View {
 
                 Button(action: {
                     Analytics.shared.trackTap(
-                        elementId: "how_to_win_view_continue",
-                        screenName: "how_to_win"
+                        elementId: "continue_post_claim_upsell",
+                        screenName: "post_claim_upsell"
                     )
-                    onContinue()
+                    NotificationCenter.default.post(name: NSNotification.Name("DismissToMyComps"), object: nil)
                 }) {
                     Text("Continue")
                         .font(.system(size: 20, weight: .bold))
@@ -71,7 +70,7 @@ struct HowToWinView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            Analytics.shared.trackScreen(name: "how_to_win")
+            Analytics.shared.trackScreen(name: "post_claim_upsell")
         }
     }
 }
