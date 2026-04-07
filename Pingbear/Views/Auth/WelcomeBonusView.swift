@@ -63,7 +63,7 @@ struct WelcomeBonusView: View {
                     )
                     verifyAndShowLeaderboard()
                 }) {
-                    Text("Continue")
+                    Text("Claim Points")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)

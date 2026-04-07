@@ -221,7 +221,7 @@ struct GlobalLeaderboardView: View {
                                 .background(Color(hex: "#1A2245"))
                                 .cornerRadius(10)
                                 .padding(.horizontal, 20)
-                                .padding(.bottom, 115)
+                                .padding(.bottom, 100)
                             }
                         }
                         
@@ -260,38 +260,21 @@ struct GlobalLeaderboardView: View {
                                 
                                 Spacer()
                                 
-                                VStack(alignment: .trailing, spacing: 6) {
-                                    HStack(spacing: 6) {
-                                        Text("\(viewModel.userStars)")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                        
-                                        Image("gem")
-                                            .resizable()
-                                            .renderingMode(.template)
-                                            .foregroundColor(Color.white)
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(width: 18, height: 18)
-                                    }
-                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#6A5ACD"))
-                                    .cornerRadius(200)
+                                HStack(spacing: 6) {
+                                    Text("\(viewModel.userStars)")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
                                     
-                                    Button(action: {
-                                        selectedTab = 0
-                                        Analytics.shared.trackTap(
-                                            elementId: "win_more_points_cta",
-                                            screenName: "global_leaderboard"
-                                        )
-                                    }) {
-                                        Text("Win More Points")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(.white)
-                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                            .background(Color(hex: "#4169E1"))
-                                            .cornerRadius(200)
-                                    }
+                                    Image("gem")
+                                        .resizable()
+                                        .renderingMode(.template)
+                                        .foregroundColor(Color.white)
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 18, height: 18)
                                 }
+                                .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                .background(Color(hex: "#6A5ACD"))
+                                .cornerRadius(200)
                             }
                             .padding(20)
                             .background(Color(hex: "#2A3255"))
