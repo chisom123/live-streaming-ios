@@ -44,7 +44,7 @@ struct RedeemWinCodeView: View {
                     
                     Spacer()
                     
-                    Text("Claim Winnings")
+                    Text("Claim Points")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
@@ -62,11 +62,11 @@ struct RedeemWinCodeView: View {
                 ScrollView {
                     VStack(spacing: 30) {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Enter Your Win Code")
+                            Text("Enter Your Claim Code")
                                 .font(.system(size: 18, weight: .bold))
                                 .foregroundColor(.white)
                             
-                            Text("Enter the 10-character code you received after rating a story")
+                            Text("10-character code")
                                 .font(.system(size: 15))
                                 .foregroundColor(.white.opacity(0.7))
                                 .fixedSize(horizontal: false, vertical: true)
@@ -77,7 +77,7 @@ struct RedeemWinCodeView: View {
                         .cornerRadius(12)
                         
                         VStack(spacing: 0) {
-                            TextField("Win Code", text: $enteredCode)
+                            TextField("Claim Code", text: $enteredCode)
                                 .padding()
                                 .frame(height: 70)
                                 .background(
@@ -129,7 +129,7 @@ struct RedeemWinCodeView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
-                            Text("Claim")
+                            Text("Claim Points")
                                 .font(.system(size: 18, weight: .bold))
                         }
                     }
@@ -167,7 +167,7 @@ struct RedeemWinCodeView: View {
                     }
                     
                     VStack(spacing: 12) {
-                        Text("Winnings Claimed")
+                        Text("Points Claimed")
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(.white)
                         
@@ -183,10 +183,6 @@ struct RedeemWinCodeView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 49, height: 49)
                         }
-                        
-                        Text("Points Added")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
                     }
                     
                     Button(action: {
