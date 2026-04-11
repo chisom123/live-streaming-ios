@@ -2,6 +2,7 @@
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFunctions
 
 struct VerificationView: View {
     let phoneNumber: String
@@ -89,7 +90,6 @@ struct VerificationView: View {
                         }
                         .padding(.top, 20)
                         
-                        // Resend code button
                         Button(action: {
                             self.hideKeyboard()
                             resendVerificationCode()
@@ -154,25 +154,100 @@ struct VerificationView: View {
             let db = Firestore.firestore()
             db.collection("users").document(userID).getDocument { (document, error) in
                 if let document = document, document.exists {
-                    if document.data()?["username"] != nil {
-                        self.isLoading = false
-                        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                        UserDefaults.standard.set(true, forKey: "isFriendActivated")
-                        UserDefaults.standard.synchronize()
-                        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                    let data = document.data() ?? [:]
+                    
+                    if data["username"] != nil {
+                        // ── Existing user ────────────────────────────────
+                        if let winCode = data["winCode"] as? String {
+                            claimWinCodeInBackground(winCode: winCode, userID: userID)
+                        }
+                        
+                        DispatchQueue.main.async {
+                            self.isLoading = false
+                            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                            UserDefaults.standard.set(true, forKey: "isFriendActivated")
+                            UserDefaults.standard.synchronize()
+                            NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                        }
                         Analytics.shared.track(event: "returning_user_signed_in")
                     } else {
+                        // ── New user → onboarding ────────────────────────
                         self.isLoading = false
                         self.navigateToNameEntry = true
                         Analytics.shared.track(event: "new_user_registration_started")
                     }
                 } else {
+                    // ── No document → onboarding ─────────────────────────
                     self.isLoading = false
                     self.navigateToNameEntry = true
                     Analytics.shared.track(event: "user_document_not_found")
                 }
             }
         }
+    }
+    
+    // ── Background claim for existing users who came via web ─────────────────
+    private func claimWinCodeInBackground(winCode: String, userID: String) {
+        
+        let cloudFunctionURL = URL(string: "https://claimwincode-vt3x7ykt4a-uc.a.run.app")!
+        var request = URLRequest(url: cloudFunctionURL)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let requestBody: [String: Any] = [
+            "data": [
+                "code": winCode,
+                "swiftUserId": userID
+            ]
+        ]
+        
+        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody) else { return }
+        request.httpBody = httpBody
+        
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            print("🔵 claimWinCode response received - error: \(String(describing: error))")
+            if let data = data {
+                print("🔵 claimWinCode response data: \(String(data: data, encoding: .utf8) ?? "nil")")
+            }
+            
+            guard let data = data, error == nil else {
+                print("⚠️ claimWinCodeInBackground network error: \(error?.localizedDescription ?? "unknown")")
+                return
+            }
+            
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let result = json["result"] as? [String: Any],
+                   let success = result["success"] as? Bool,
+                   success,
+                   let points = result["points"] as? Int {
+                    
+                    print("✅ claimWinCodeInBackground: claimed \(points) points for user \(userID)")
+                    
+                    let functions = Functions.functions()
+                    functions.httpsCallable("awardLeaderboardPoints").call(["points": points]) { _, error in
+                        if let error = error {
+                            print("⚠️ claimWinCodeInBackground: failed to award points: \(error)")
+                            return
+                        }
+                        
+                        // Clear winCode after successful claim
+                        Firestore.firestore().collection("users").document(userID).updateData([
+                            "winCode": FieldValue.delete()
+                        ])
+                        
+                        Analytics.shared.track(
+                            event: "web_win_code_claimed_background",
+                            properties: ["user_id": userID, "points": points]
+                        )
+                        
+                        print("✅ claimWinCodeInBackground: points awarded and winCode cleared")
+                    }
+                }
+            } catch {
+                print("⚠️ claimWinCodeInBackground parse error: \(error)")
+            }
+        }.resume()
     }
     
     func resendVerificationCode() {

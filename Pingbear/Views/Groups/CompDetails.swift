@@ -199,7 +199,7 @@ struct CompDetails: View {
                                     .padding(.bottom, 2)
                                 
                                 HStack(spacing: 4) {
-                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "450")
+                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "Win Points")
                                         .font(.system(size: 22, weight: .bold))
                                         .foregroundColor(Color(hex: "#FFF"))
                                     
@@ -653,7 +653,6 @@ struct NoPlayersView: View {
                 ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         if userName == "Me" {
-                            // Make the entire "Me" cell tappable
                             Button(action: {
                                 onMeTapped()
                             }) {
@@ -687,7 +686,7 @@ struct NoPlayersView: View {
                                             .frame(width: 18, height: 18)
                                             .foregroundColor(Color(hex: "#FFF"))
                                     }
-                                    .padding(EdgeInsets(top: 2.75, leading: 12.75, bottom: 2.75, trailing: 12.75))
+                                    .frame(width: 70, height: 30)
                                     .background(Color(hex: "#DAA520"))
                                     .cornerRadius(200)
                                     .padding(.trailing, 30)
@@ -697,7 +696,6 @@ struct NoPlayersView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
-                            // For other cells, only the Add button is tappable
                             HStack {
                                 Text("\(index + 1)")
                                     .font(.system(size: 16, weight: .bold))
@@ -718,14 +716,12 @@ struct NoPlayersView: View {
                                 Spacer()
 
                                 Button(action: action_player) {
-                                    HStack(spacing: 8) {
-                                        Text("Add")
-                                            .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
-                                    }
-                                    .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                    .background(Color(hex: "#4169E1"))
-                                    .cornerRadius(200)
+                                    Text("Add")
+                                        .font(.system(size: 17, weight: .bold))
+                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .frame(width: 70, height: 30)
+                                        .background(Color(hex: "#4169E1"))
+                                        .cornerRadius(200)
                                 }
                                 .padding(.trailing, 30)
                             }

@@ -3,6 +3,9 @@ import FirebaseFirestore
 import FirebaseAuth
 
 struct WelcomeBonusView: View {
+    let points: Int
+    let isWebUser: Bool
+
     @State private var showPostSignupLeaderboard: Bool = false
     @State private var isVerifying: Bool = false
 
@@ -24,12 +27,15 @@ struct WelcomeBonusView: View {
                         .padding(.top, -10)
 
                     VStack(spacing: 12) {
-                        Text("Welcome Bonus")
+                        Text(isWebUser ? "Claim Your Points" : "Welcome Bonus")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
 
-                        Text("You've been awarded 100 points to kick things off")
+                        Text(isWebUser
+                             ? "\(points) points you won rating an Instagram Story"
+                             : "You've been awarded 100 points to kick things off"
+                        )
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)
@@ -39,7 +45,7 @@ struct WelcomeBonusView: View {
                     }
 
                     // Points badge
-                    Text("+100")
+                    Text("+\(points)")
                         .font(.system(size: 22, weight: .bold))
                         .foregroundColor(.white)
                         .padding(EdgeInsets(top: 7, leading: 20, bottom: 7, trailing: 20))
@@ -63,13 +69,22 @@ struct WelcomeBonusView: View {
                     )
                     verifyAndShowLeaderboard()
                 }) {
-                    Text("Claim Points")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(Color(hex: "#4169E1"))
-                        .cornerRadius(200)
+                    if isVerifying {
+                        ProgressView()
+                            .tint(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55)
+                            .background(Color(hex: "#4169E1"))
+                            .cornerRadius(200)
+                    } else {
+                        Text("Claim Points")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 55)
+                            .background(Color(hex: "#4169E1"))
+                            .cornerRadius(200)
+                    }
                 }
                 .disabled(isVerifying)
                 .padding(.horizontal, 40)
@@ -145,7 +160,7 @@ struct WelcomeBonusView: View {
 
         Analytics.shared.track(
             event: "onboarding_completed",
-            properties: [:]
+            properties: ["is_web_user": isWebUser]
         )
     }
 }

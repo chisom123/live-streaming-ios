@@ -875,3 +875,179 @@ exports.awardLeaderboardPoints = onCall({
     throw new Error(error.message);
   }
 });
+
+// Call Live Leaderboard
+
+exports.getCurrentPot = onRequest({
+  cors: ["*"],
+  maxInstances: 20,
+  minInstances: 1
+}, async (req, res) => {
+  cors(req, res, async () => {
+    if (req.method !== 'GET') {
+      return res.status(405).send('Method not allowed');
+    }
+
+    try {
+      const db = admin.firestore();
+
+      // 1. Get current pot reference
+      const currentPotDoc = await db.collection('app_config').doc('current_pot').get();
+
+      if (!currentPotDoc.exists) {
+        return res.status(404).json({ error: 'No active pot found' });
+      }
+
+      const currentPotData = currentPotDoc.data();
+      const potId = currentPotData?.pot_id;
+
+      if (!potId) {
+        return res.status(404).json({ error: 'No pot ID in config' });
+      }
+
+      // 2. Get the pot document
+      const potDoc = await db.collection('global_pots').doc(potId).get();
+
+      if (!potDoc.exists) {
+        return res.status(404).json({ error: 'Pot document not found' });
+      }
+
+      const potData = potDoc.data();
+
+      // 3. Get all participants ordered by stars
+      const participantsSnapshot = await db
+        .collection('global_pots')
+        .doc(potId)
+        .collection('participants')
+        .orderBy('total_stars', 'desc')
+        .get();
+
+      // 4. Fetch user display data for each participant
+      const participantDocs = participantsSnapshot.docs;
+      const userIds = participantDocs.map(doc => doc.id);
+
+      // Batch fetch user documents (Firestore allows up to 10 in getAll)
+      const userRefs = userIds.map(uid => db.collection('users').doc(uid));
+      const userDocs = userRefs.length > 0 ? await db.getAll(...userRefs) : [];
+
+      const userMap = {};
+      userDocs.forEach(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          userMap[doc.id] = {
+            name: data.name ?? 'Unknown',
+            profilePictureUrl: data.profilePictureUrl ?? null,
+          };
+        }
+      });
+
+      // 5. Build ranked participant list with tie handling
+      const participants = [];
+      let currentRank = 1;
+      let lastStars = null;
+
+      participantDocs.forEach((doc, index) => {
+        const data = doc.data();
+        const stars = data.total_stars ?? 0;
+
+        if (lastStars !== null && stars < lastStars) {
+          currentRank = index + 1;
+        }
+        lastStars = stars;
+
+        const user = userMap[doc.id] ?? { name: 'Unknown', profilePictureUrl: null };
+
+        participants.push({
+          userId: doc.id,
+          name: user.name,
+          profilePictureUrl: user.profilePictureUrl,
+          totalStars: stars,
+          rank: currentRank,
+          position: index + 1,
+          joinedAt: data.joined_at?.toMillis?.() ?? null,
+          lastStarAt: data.last_star_at?.toMillis?.() ?? null,
+        });
+      });
+
+      // 6. Return everything
+      return res.json({
+        pot: {
+          potId,
+          status: potData.status,
+          startDate: potData.start_date?.toMillis?.() ?? null,
+          endDate: potData.end_date?.toMillis?.() ?? null,
+          firstPlacePrize: potData.first_place_prize ?? 100,
+          decayRate: potData.decay_rate ?? 0,
+          minPayout: potData.min_payout ?? 0.01,
+          maxParticipants: potData.max_participants ?? 1000,
+          participantCount: potData.participant_count ?? 0,
+        },
+        participants,
+      });
+
+    } catch (error) {
+      logger.error('Error in getCurrentPot:', error);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+});
+
+exports.createWebUser = onCall({
+  cors: ["*"],
+  maxInstances: 20,
+}, async (request) => {
+  if (!request.auth) {
+    throw new Error('User must be authenticated');
+  }
+
+  const { winCode, phoneNumberHash } = request.data;
+  const userId = request.auth.uid;
+
+  if (!winCode) throw new Error('winCode is required');
+  if (!phoneNumberHash) throw new Error('phoneNumberHash is required');
+
+  const db = admin.firestore();
+  const userRef = db.collection('users').doc(userId);
+
+  try {
+    const userDoc = await userRef.get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      // Existing user who completed onboarding — save winCode for background claim in app
+      if (userData.profileComplete === true || userData.username) {
+        await userRef.update({
+          winCode,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        logger.info(`createWebUser: existing user ${userId}, winCode saved for background claim`);
+        return { existingUser: true };
+      }
+
+      // Existing web signup — update winCode, claim happens in NameEntryView
+      await userRef.update({
+        winCode,
+        phoneNumberHash,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      logger.info(`createWebUser: updated existing web user ${userId}`);
+      return { existingUser: false };
+    }
+
+    // New user — claim happens in NameEntryView during onboarding
+    await userRef.set({
+      winCode,
+      phoneNumberHash,
+      createdFromWeb: true,
+      profileComplete: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    logger.info(`createWebUser: created new web user ${userId}`);
+    return { existingUser: false };
+
+  } catch (error) {
+    logger.error('Error in createWebUser:', error);
+    throw new Error(error.message);
+  }
+});
