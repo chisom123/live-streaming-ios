@@ -143,38 +143,37 @@ struct ProfilePictureSelector: View {
     @ObservedObject private var uploadManager = ProfilePictureManager.shared
     
     var body: some View {
-        VStack {
-            if uploadManager.isUploading {
-                ProgressView(value: uploadManager.uploadProgress) {
+        if uploadManager.isUploading {
+            // Show progress overlay on the picture itself
+            ZStack {
+                Color.black.opacity(0.4)
+                    .clipShape(Circle())
+                VStack(spacing: 4) {
+                    ProgressView(value: uploadManager.uploadProgress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: .white))
+                        .frame(width: 60)
                     Text("\(Int(uploadManager.uploadProgress * 100))%")
                         .font(.caption)
-                        .foregroundColor(Color(hex: "#4169E1"))
+                        .foregroundColor(.white)
                 }
-                .progressViewStyle(LinearProgressViewStyle(tint: Color(hex: "#4169E1")))
-                .padding()
-            } else {
-                
-                PhotosPicker(
-                    selection: $selectedItem,
-                    matching: .images,
-                    photoLibrary: .shared()
-                ) {
-                    Text("Edit Picture")
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .padding(EdgeInsets(top: 8, leading: 15, bottom: 8, trailing: 15))
-                        .background(Color(hex: "#4169E1"))
-                        .foregroundColor(Color(hex: "#fff"))
-                        .cornerRadius(200)
-                }
-                .onChange(of: selectedItem) { newItem in
-                    Task {
-                        if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                            selectedImageData = data
-                            uploadProfilePicture(imageData: data)
-                        }
+            }
+        } else {
+            PhotosPicker(
+                selection: $selectedItem,
+                matching: .images,
+                photoLibrary: .shared()
+            ) {
+                // Invisible label that fills the entire tappable area
+                Color.clear
+                    .contentShape(Circle())
+            }
+            .onChange(of: selectedItem) { newItem in
+                Task {
+                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                        selectedImageData = data
+                        uploadProfilePicture(imageData: data)
                     }
                 }
-                
             }
         }
     }
@@ -185,8 +184,8 @@ struct ProfilePictureSelector: View {
         ProfilePictureManager.shared.uploadProfilePicture(imageData: imageData, userId: userId) { result in
             DispatchQueue.main.async {
                 switch result {
-                case .success(let url):  // Extract the URL from the success case
-                    onUpdateSuccess?(url)  // Pass the URL to the callback
+                case .success(let url):
+                    onUpdateSuccess?(url)
                 case .failure(let error):
                     print("Failed to update profile picture: \(error.localizedDescription)")
                 }
