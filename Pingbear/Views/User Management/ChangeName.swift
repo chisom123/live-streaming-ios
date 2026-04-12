@@ -79,8 +79,8 @@ struct ChangeNameView: View {
                         })
                     )
 
-                    Text("tap to change photo")
-                        .font(.system(size: 13))
+                    Text("Tap to change photo")
+                        .font(.system(size: 14, weight: .bold, design: .default))
                         .foregroundColor(Color.white.opacity(0.4))
                 }
                 .padding(.bottom, 24)
