@@ -317,11 +317,11 @@ struct UnlockView: View {
                         
                         if entryCost > 0 {
                             Text("\(entryCost)")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                         } else {
                             Text("Set Amount")
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(!selectedPredictions.isEmpty ? .white : .white.opacity(0.7))
                         }
                     }
@@ -513,7 +513,7 @@ struct UnlockView: View {
                     Spacer()
                     
                     Text("+\(profit)")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.system(size: 18, weight: .bold))
                         .foregroundColor(Color(hex: "#00FF00"))
                 }
             }
