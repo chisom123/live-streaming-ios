@@ -505,7 +505,7 @@ struct UnlockView: View {
             
             let profit = estimatedPayout - entryCost
             if profit > 0 {
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text("Profit")
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white.opacity(0.7))
