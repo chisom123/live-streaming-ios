@@ -1000,7 +1000,7 @@ exports.createWebUser = onCall({
     throw new Error('User must be authenticated');
   }
 
-  const { winCode, phoneNumberHash } = request.data;
+  const { winCode, phoneNumberHash, competitionName, selectedThemes } = request.data;
   const userId = request.auth.uid;
 
   if (!winCode) throw new Error('winCode is required');
@@ -1022,6 +1022,17 @@ exports.createWebUser = onCall({
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         logger.info(`createWebUser: existing user ${userId}, winCode saved for background claim`);
+
+        // Still create competition — they went through the effort of setting it up
+        if (competitionName && selectedThemes?.length >= 3) {
+          try {
+            await createCompetitionWithThemes(userId, competitionName, selectedThemes, db);
+            logger.info(`createWebUser: competition created for existing user ${userId}`);
+          } catch (e) {
+            logger.error(`createWebUser: competition creation failed for existing user ${userId}:`, e);
+          }
+        }
+
         return { existingUser: true };
       }
 
@@ -1032,22 +1043,79 @@ exports.createWebUser = onCall({
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       logger.info(`createWebUser: updated existing web user ${userId}`);
-      return { existingUser: false };
+
+    } else {
+
+      // New user — claim happens in NameEntryView during onboarding
+      await userRef.set({
+        winCode,
+        phoneNumberHash,
+        createdFromWeb: true,
+        profileComplete: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      logger.info(`createWebUser: created new web user ${userId}`);
     }
 
-    // New user — claim happens in NameEntryView during onboarding
-    await userRef.set({
-      winCode,
-      phoneNumberHash,
-      createdFromWeb: true,
-      profileComplete: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    logger.info(`createWebUser: created new web user ${userId}`);
-    return { existingUser: false };
+    // Attempt competition creation for new users and existing web signups
+    if (competitionName && selectedThemes?.length >= 3) {
+      try {
+        await createCompetitionWithThemes(userId, competitionName, selectedThemes, db);
+        logger.info(`createWebUser: competition created for user ${userId}`);
+      } catch (e) {
+        logger.error(`createWebUser: competition creation failed for user ${userId}:`, e);
+      }
+    }
+
+    return { existingUser: userDoc.exists };
 
   } catch (error) {
     logger.error('Error in createWebUser:', error);
     throw new Error(error.message);
   }
 });
+
+async function createCompetitionWithThemes(userId, competitionName, selectedThemes, db) {
+  const competitionRef = db.collection('competitions').doc();
+  const competitionId = competitionRef.id;
+  const now = admin.firestore.Timestamp.now();
+
+  await competitionRef.set({
+    id: competitionId,
+    description: competitionName,
+    timestamp: now,
+    hostId: userId,
+  });
+
+  await db
+    .collection('competitions')
+    .doc(competitionId)
+    .collection('members')
+    .doc(userId)
+    .set({ userId, coins: 1000 });
+
+  await db
+    .collection('groupMemberships')
+    .doc(userId)
+    .collection('competitions')
+    .doc(competitionId)
+    .set({ competitionId });
+
+  await Promise.all(
+    selectedThemes.map(themeName =>
+      db
+        .collection('competitions')
+        .doc(competitionId)
+        .collection('themes')
+        .doc()
+        .set({
+          name: themeName,
+          competitionId,
+          createdBy: userId,
+          createdAt: now,
+        })
+    )
+  );
+
+  logger.info(`createCompetitionWithThemes: created competition ${competitionId} with ${selectedThemes.length} themes for user ${userId}`);
+}
