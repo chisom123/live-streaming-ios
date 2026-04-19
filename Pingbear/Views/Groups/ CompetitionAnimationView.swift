@@ -12,17 +12,17 @@ struct CompetitionAnimationView: View {
     struct Player: Identifiable {
         let id = UUID()
         let name: String
-        let emoji: String
+        let image: String
         var score: Int
         let isMe: Bool
         var gems: Int { score * 14 }
     }
 
     @State private var players: [Player] = [
-        Player(name: "Me",     emoji: "👩🏻", score: 12, isMe: true),
-        Player(name: "Olivia", emoji: "👩🏽", score: 10, isMe: false),
-        Player(name: "Emma",   emoji: "👩🏼", score: 9,  isMe: false),
-        Player(name: "Jake",   emoji: "🧑🏻", score: 7,  isMe: false),
+        Player(name: "Me",     image: "girl1", score: 12, isMe: true),
+        Player(name: "Olivia", image: "girl2", score: 10, isMe: false),
+        Player(name: "Emma",   image: "girl3", score: 9,  isMe: false),
+        Player(name: "Jake",   image: "guy1",  score: 7,  isMe: false),
     ]
     @State private var sortedIds: [UUID] = []
     @State private var pulsingWinnerId: UUID? = nil
@@ -40,10 +40,10 @@ struct CompetitionAnimationView: View {
                             .padding(.leading, 20)
 
                         HStack(spacing: 20) {
-                            Text(player.emoji)
-                                .font(.system(size: 26))
+                            Image(player.image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
                                 .frame(width: 40, height: 40)
-                                .background(Color.white.opacity(0.15))
                                 .clipShape(Circle())
                                 .scaleEffect(pulsingWinnerId == player.id ? 1.18 : 1.0)
                                 .animation(.spring(response: 0.35, dampingFraction: 0.6), value: pulsingWinnerId)
