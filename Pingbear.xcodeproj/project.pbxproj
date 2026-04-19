@@ -14,6 +14,7 @@
 		4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0D18262D56325600C1A236 /* ProfilePicture.swift */; };
 		4F1146B62E166F6100CEAE21 /* SharedEntryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */; };
 		4F1146B82E2CEAF800CEAE21 /* PredictionsDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */; };
+		4F140A7F2F956D3800016EAB /*  CompetitionAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F140A7E2F956D3800016EAB /*  CompetitionAnimationView.swift */; };
 		4F1C03CF2DB0E337001C9CE1 /* ThemeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */; };
 		4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */; };
 		4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */; };
@@ -154,6 +155,7 @@
 		4F0D18262D56325600C1A236 /* ProfilePicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePicture.swift; sourceTree = "<group>"; };
 		4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedEntryComponents.swift; sourceTree = "<group>"; };
 		4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictionsDetailView.swift; sourceTree = "<group>"; };
+		4F140A7E2F956D3800016EAB /*  CompetitionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = " CompetitionAnimationView.swift"; sourceTree = "<group>"; };
 		4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeModel.swift; sourceTree = "<group>"; };
 		4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionSheet.swift; sourceTree = "<group>"; };
 		4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosView.swift; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				4F33595F2DE6E596003EF5E1 /* MessageComposerView.swift */,
 				4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */,
 				4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */,
+				4F140A7E2F956D3800016EAB /*  CompetitionAnimationView.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -762,6 +765,7 @@
 				4F375D102B02A1320011F541 /* Entry.swift in Sources */,
 				4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */,
 				4FF9C1A12F108902000F045C /* PotHistoryViewModel.swift in Sources */,
+				4F140A7F2F956D3800016EAB /*  CompetitionAnimationView.swift in Sources */,
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
 				4F78D1CD2F4F24BC004A766B /* RaceViewModel.swift in Sources */,
 				4FF9C1A32F10892D000F045C /* PotHistoryView.swift in Sources */,

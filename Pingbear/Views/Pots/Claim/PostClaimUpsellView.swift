@@ -4,16 +4,7 @@ struct PostClaimUpsellView: View {
 
     var body: some View {
         ZStack {
-            GeometryReader { geo in
-                Image("hero2")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .clipped()
-            }
-            .ignoresSafeArea()
-
-            Color.black.opacity(0.55)
+            Color(hex: "#10183C")
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
@@ -46,6 +37,10 @@ struct PostClaimUpsellView: View {
                     Spacer()
                 }
                 .padding(.horizontal, 24)
+
+                CompetitionAnimationView()
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
 
                 Spacer()
 
