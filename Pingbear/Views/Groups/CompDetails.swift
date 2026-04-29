@@ -119,11 +119,17 @@ struct CompDetails: View {
                 HStack(spacing: 10) {
                     Button(action: {
                         entryViewModel.removeListeners()
-                        showingThemeSelection = true
                         Analytics.shared.trackTap(
                             elementId: "add_photo_initiated",
                             screenName: "competition_details"
                         )
+                        checkCameraAndMicrophonePermissions { granted in
+                            if granted {
+                                joincomp()
+                            } else {
+                                self.activeAlert = .camera
+                            }
+                        }
                     }) {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 24, weight: .bold))
@@ -265,7 +271,13 @@ struct CompDetails: View {
                     } else {
                         if entryViewModel.userLeaderboard.isEmpty {
                             EmptyLeaderboardView(action: {
-                                showingThemeSelection = true
+                                checkCameraAndMicrophonePermissions { granted in
+                                    if granted {
+                                        joincomp()
+                                    } else {
+                                        self.activeAlert = .camera
+                                    }
+                                }
                                 Analytics.shared.trackTap(
                                     elementId: "add_photo_initiated",
                                     screenName: "competition_details"
@@ -422,25 +434,6 @@ struct CompDetails: View {
                 userName: selection.user.userName,
                 competitionId: selection.competitionId,
                 userProfilePictureUrl: selection.user.profilePictureUrl
-            )
-        }
-        .sheet(isPresented: $showingThemeSelection) {
-            ThemeSelectionBeforeCameraSheet(
-                viewModel: themesViewModel,
-                competitionId: competition.id,
-                selectedTheme: $selectedThemeForCapture,
-                onContinue: {
-                    showingThemeSelection = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        checkCameraAndMicrophonePermissions { granted in
-                            if granted {
-                                joincomp()
-                            } else {
-                                self.activeAlert = .camera
-                            }
-                        }
-                    }
-                }
             )
         }
         .alert(item: $activeAlert) { alertType in

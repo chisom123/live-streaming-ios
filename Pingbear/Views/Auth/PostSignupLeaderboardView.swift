@@ -6,6 +6,7 @@ struct PostSignupLeaderboardView: View {
     @StateObject private var viewModel = GlobalLeaderboardViewModel()
     @State private var navigateToHowToWin = false
     
+    var isWebUser: Bool = false
     var onContinue: () -> Void
     
     var body: some View {
@@ -253,7 +254,7 @@ struct PostSignupLeaderboardView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $navigateToHowToWin) {
-            HowToWinView(onContinue: {
+            HowToWinView(isWebUser: isWebUser, onContinue: {
                 onContinue()
             })
         }

@@ -93,9 +93,9 @@ struct WelcomeBonusView: View {
         }
         .navigationBarHidden(true)
         .fullScreenCover(isPresented: $showPostSignupLeaderboard) {
-            PostSignupLeaderboardView {
+            PostSignupLeaderboardView(isWebUser: isWebUser, onContinue: {
                 completeOnboarding()
-            }
+            })
         }
         .onAppear {
             Analytics.shared.trackScreen(name: "welcome_bonus")
@@ -114,7 +114,6 @@ struct WelcomeBonusView: View {
             if isInPot {
                 showPostSignupLeaderboard = true
             } else {
-                // Points not yet reflected — still complete onboarding gracefully
                 print("⚠️ User not in pot yet, completing onboarding normally")
                 completeOnboarding()
             }

@@ -1,12 +1,17 @@
 import SwiftUI
+import FirebaseFirestore
 
 struct AddFriendsView: View {
     
     @Environment(\.dismiss) private var dismiss
     @State private var username: String = ""
-    @StateObject var viewModel = ContactViewModel() // Using ContactViewModel for fetching contacts
+    @StateObject var viewModel = ContactViewModel()
     @ObservedObject var addFriendsModel: AddFriendsModel
     @State private var messageStatus: MessageStatus? = nil
+
+    // Optional callback — fires with (userId, userName) when a friend is added.
+    // Nil by default so existing call sites are unaffected.
+    var onFriendAdded: ((String, String) -> Void)? = nil
 
     enum MessageStatus {
         case error, success, none
@@ -23,10 +28,10 @@ struct AddFriendsView: View {
                     dismiss()
                 }) {
                     Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.white) // Your desired color
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 27, height: 27)
+                        .foregroundColor(Color.white)
                 }
                 
                 Spacer()
@@ -40,14 +45,12 @@ struct AddFriendsView: View {
                 
                 Spacer()
                 
-                Button(action: {
-                 
-                }) {
+                Button(action: {}) {
                     Image(systemName: "arrow.left")
-                        .resizable() // Allows resizing of the image
-                        .aspectRatio(contentMode: .fit) // Keeps the aspect ratio intact
-                        .frame(width: 27, height: 27) // Adjust the width and height to decrease the size
-                        .foregroundColor(Color.white) // Your desired color
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 27, height: 27)
+                        .foregroundColor(Color.white)
                 }
                 .opacity(0)
             }
@@ -68,7 +71,7 @@ struct AddFriendsView: View {
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .accentColor(.white)
                     }
-                    .frame(height: 70) // Same fixed height
+                    .frame(height: 70)
                     .background(
                         Color(hex: "#3B4374")
                             .clipShape(
@@ -86,6 +89,18 @@ struct AddFriendsView: View {
                                 messageStatus = .success
                                 username = ""
                                 hideKeyboard()
+
+                                // Fire callback if present
+                                if let onFriendAdded {
+                                    Firestore.firestore().collection("users")
+                                        .whereField("username", isEqualTo: processedUsername)
+                                        .getDocuments { snap, _ in
+                                            guard let doc = snap?.documents.first else { return }
+                                            let userId = doc.documentID
+                                            let name = doc.data()["name"] as? String ?? processedUsername
+                                            onFriendAdded(userId, name)
+                                        }
+                                }
                             } else {
                                 messageStatus = .error
                             }
@@ -161,14 +176,26 @@ struct AddFriendsView: View {
                                 
                                 if !viewModel.matchedUsers[index].isAdded {
                                     Button(action: {
-                                        addFriendsModel.addFriend(byUsername: viewModel.matchedUsers[index].username) { success, error in
+                                        let contact = viewModel.matchedUsers[index]
+                                        addFriendsModel.addFriend(byUsername: contact.username) { success, error in
                                             if success {
                                                 DispatchQueue.main.async {
                                                     viewModel.matchedUsers[index].isAdded = true
                                                     Analytics.shared.track(
                                                         event: "friend_added_from_contacts",
-                                                        properties: ["username": viewModel.matchedUsers[index].username]
+                                                        properties: ["username": contact.username]
                                                     )
+                                                }
+
+                                                // Fire callback if present
+                                                if let onFriendAdded {
+                                                    Firestore.firestore().collection("users")
+                                                        .whereField("username", isEqualTo: contact.username)
+                                                        .getDocuments { snap, _ in
+                                                            guard let doc = snap?.documents.first else { return }
+                                                            let userId = doc.documentID
+                                                            onFriendAdded(userId, contact.fullName)
+                                                        }
                                                 }
                                             } else if let error = error {
                                                 print("Error adding friend: \(error.localizedDescription)")

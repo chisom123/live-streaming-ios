@@ -410,23 +410,15 @@ struct AddThemeSheet: View {
     
     // Dynamic theme suggestions based on user's current day
     private var themeSuggestions: [String] {
-        let currentDayName = getCurrentDayName()
         return [
             "Outfit of the Day",
+            "Mood",
+            "Selfie",
+            "Food",
+            "Out n about",
             "WTF",
-            "\(currentDayName) Mood",
             "Caught in 4K",
-            "Another Late Night",
-            "Mirror Check"
         ]
-    }
-    
-    // Get current day name in user's local timezone
-    private func getCurrentDayName() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        formatter.timeZone = TimeZone.current
-        return formatter.string(from: Date())
     }
     
     var body: some View {

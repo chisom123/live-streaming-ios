@@ -106,8 +106,15 @@ struct CompetitionAnimationView: View {
         .cornerRadius(10)
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: sortedIds)
         .onAppear {
-            sortedIds = players.sorted { $0.score > $1.score }.map { $0.id }
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                sortedIds = players.sorted { $0.score > $1.score }.map { $0.id }
+            }
             startAnimation()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10) {
+                animationTimer?.invalidate()
+            }
         }
         .onDisappear { animationTimer?.invalidate() }
     }

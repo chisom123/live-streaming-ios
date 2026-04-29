@@ -107,6 +107,7 @@
 		4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */; };
 		4FB27D482DE054B300E10C8F /* PhotoInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */; };
 		4FB27D502DE50DB400E10C8F /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB27D4F2DE50DB400E10C8F /* ChatView.swift */; };
+		4FB664952F962C290085673C /* WebCompetitionPlayersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB664942F962C290085673C /* WebCompetitionPlayersView.swift */; };
 		4FCBC71A2F5D9ADA00CE3962 /* WelcomeBonusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */; };
 		4FDD66692F3517340023B145 /* PrizePoolInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD66682F3517340023B145 /* PrizePoolInfoView.swift */; };
 		4FDD666B2F3618CD0023B145 /* SlotMachineUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDD666A2F3618CD0023B145 /* SlotMachineUtils.swift */; };
@@ -221,6 +222,7 @@
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
 		4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoInteraction.swift; sourceTree = "<group>"; };
 		4FB27D4F2DE50DB400E10C8F /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		4FB664942F962C290085673C /* WebCompetitionPlayersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebCompetitionPlayersView.swift; sourceTree = "<group>"; };
 		4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeBonusView.swift; sourceTree = "<group>"; };
 		4FDD66682F3517340023B145 /* PrizePoolInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrizePoolInfoView.swift; sourceTree = "<group>"; };
 		4FDD666A2F3618CD0023B145 /* SlotMachineUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotMachineUtils.swift; sourceTree = "<group>"; };
@@ -315,6 +317,7 @@
 		4F31B8932BDBAA85007892BC /* Auth */ = {
 			isa = PBXGroup;
 			children = (
+				4FB664942F962C290085673C /* WebCompetitionPlayersView.swift */,
 				4F9439902D7F90760068AF24 /* Welcome.swift */,
 				4F3E0D532A86FA3A0068F901 /* PhoneEntry.swift */,
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
@@ -834,6 +837,7 @@
 				4FF9C1A92F11F50B000F045C /* CashOutSheet.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
+				4FB664952F962C290085673C /* WebCompetitionPlayersView.swift in Sources */,
 				4F39B2A92DD5449B00F75004 /* ThemePhotosViewModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4FF9C1952F0FD229000F045C /* GlobalLeaderboardManager.swift in Sources */,
@@ -995,7 +999,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 526;
+				CURRENT_PROJECT_VERSION = 533;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -1025,7 +1029,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 46.8;
+				MARKETING_VERSION = 47.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1045,7 +1049,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 526;
+				CURRENT_PROJECT_VERSION = 533;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1074,7 +1078,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 46.8;
+				MARKETING_VERSION = 47.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
