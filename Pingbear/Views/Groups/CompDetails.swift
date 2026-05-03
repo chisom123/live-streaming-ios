@@ -1,6 +1,6 @@
 import SwiftUI
-import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFirestore
 import AVFoundation
 
 extension CompDetails {
@@ -27,7 +27,6 @@ struct CompDetails: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isCameraPresented = false
     @State private var isEditingCompetition = false
-    @State private var unreadMessageCount = 0
     @State private var currentUserId: String = Auth.auth().currentUser?.uid ?? ""
     @State private var isLoading = true
     @StateObject private var notificationManager = PushNotificationManager.shared
@@ -39,10 +38,10 @@ struct CompDetails: View {
     @State private var hasUserPostedFirstEntry = false
     @StateObject private var myFriendsModel = MyFriendsModel()
     @StateObject private var themesViewModel = ThemesViewModel()
-    @State private var showingThemeSelection = false
     @State private var selectedThemeForCapture: Theme? = nil
     @StateObject private var raceViewModel = RaceViewModel()
-    
+    @State private var showContributeSheet = false
+
     @ObservedObject var entryViewModel: EntryViewModel
     @ObservedObject var competition: Competition
     
@@ -58,6 +57,8 @@ struct CompDetails: View {
     var body: some View {
         ZStack {
             VStack(alignment: .leading) {
+
+                // ── Header ────────────────────────────────────
                 HStack {
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -71,7 +72,7 @@ struct CompDetails: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(Color.white)
+                            .foregroundColor(.white)
                     }
                     
                     Spacer()
@@ -115,7 +116,8 @@ struct CompDetails: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                
+
+                // ── Action buttons ────────────────────────────
                 HStack(spacing: 10) {
                     Button(action: {
                         entryViewModel.removeListeners()
@@ -191,12 +193,13 @@ struct CompDetails: View {
                 .background(Color(hex: "#1A2245"))
                 .cornerRadius(10)
                 .padding(.top, 20)
-                .padding(.bottom, shouldShowRaceBar ? 0 : 20)
                 .padding(.horizontal, 20)
-                
-                // MARK: - Race Status Bar
-                if shouldShowRaceBar {
-                    VStack(spacing: 12) {
+
+                // ── Race Bar ──────────────────────────────────
+                if !isLoading {
+                    VStack(spacing: 0) {
+
+                        // Prize pool row
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Prize Pool")
@@ -204,33 +207,45 @@ struct CompDetails: View {
                                     .foregroundColor(.white.opacity(0.7))
                                     .padding(.bottom, 2)
                                 
-                                HStack(spacing: 4) {
-                                    Text(raceViewModel.hasActiveRace ? "\(raceViewModel.raceInfo?.pointsPool ?? 0)" : "Win Points")
-                                        .font(.system(size: 22, weight: .bold))
-                                        .foregroundColor(Color(hex: "#FFF"))
+                                Button {
+                                    showContributeSheet = true
                                     
-                                    Image("gem")
-                                        .resizable()
-                                        .renderingMode(.template)
-                                        .foregroundColor(.white)
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(width: 23, height: 23)
+                                    Analytics.shared.trackTap(
+                                        elementId: "add_to_prize_pool",
+                                        screenName: "competition_details"
+                                    )
+                                } label: {
+                                    HStack(spacing: 0) {
+                                        Text("$\(String(format: "%.2f", raceViewModel.raceInfo?.totalPot ?? 0.0))")
+                                            .font(.system(size: 22, weight: .bold))
+                                            .foregroundColor(Color(hex: "#FFF"))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 3)
+                                        
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 18, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 10)
+                                            .frame(maxHeight: .infinity)
+                                            .background(Color.black.opacity(0.15))
+                                    }
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .background(Color(hex: "#00AA00"))
+                                    .cornerRadius(200)
                                 }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 3)
-                                .background(Color(hex: "#6A5ACD"))
-                                .cornerRadius(12)
                             }
-                            
+
                             Spacer()
-                            
+
+                            Spacer()
+
                             VStack(alignment: .trailing, spacing: 4) {
                                 Text("Ends In")
                                     .font(.system(size: 14))
                                     .foregroundColor(.white.opacity(0.7))
                                     .padding(.bottom, 2)
-                                
-                                Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "24h")
+
+                                Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "--")
                                     .font(.system(size: 18, weight: .bold))
                                     .foregroundColor(.white)
                             }
@@ -242,146 +257,112 @@ struct CompDetails: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                 }
-                
+
+                // ── Leaderboard ───────────────────────────────
                 if isLoading {
                     Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if entryViewModel.totalMemberCount == 1 {
+                    NoPlayersView(
+                        action_player: addPlayer,
+                        onMeTapped: {
+                            let currentUserEntry = UserEntry(
+                                id: currentUserId,
+                                userName: "Me",
+                                profilePictureUrl: currentUserProfilePictureUrl,
+                                totalStars: 0
+                            )
+                            selectedUserForPhotos = UserSelection(
+                                user: currentUserEntry,
+                                competitionId: competition.id
+                            )
+                        }
+                    )
+                } else if entryViewModel.userLeaderboard.isEmpty {
+                    EmptyLeaderboardView(action: {
+                        checkCameraAndMicrophonePermissions { granted in
+                            if granted { joincomp() } else { activeAlert = .camera }
+                        }
+                    })
+                    Spacer()
                 } else {
-                    if entryViewModel.totalMemberCount == 1 {
-                        NoPlayersView(
-                            action_player: addPlayer,
-                            onMeTapped: {
-                                let currentUserEntry = UserEntry(
-                                    id: currentUserId,
-                                    userName: "Me",
-                                    profilePictureUrl: currentUserProfilePictureUrl,
-                                    totalStars: 0
-                                )
-                                
-                                selectedUserForPhotos = UserSelection(
-                                    user: currentUserEntry,
-                                    competitionId: competition.id
-                                )
-                                
-                                Analytics.shared.trackTap(
-                                    elementId: "leaderboard_user_cell",
-                                    screenName: "competition_details"
-                                )
-                            }
-                        )
-                    } else {
-                        if entryViewModel.userLeaderboard.isEmpty {
-                            EmptyLeaderboardView(action: {
-                                checkCameraAndMicrophonePermissions { granted in
-                                    if granted {
-                                        joincomp()
-                                    } else {
-                                        self.activeAlert = .camera
-                                    }
-                                }
-                                Analytics.shared.trackTap(
-                                    elementId: "add_photo_initiated",
-                                    screenName: "competition_details"
-                                )
-                            })
-                            Spacer()
-                        } else {
-                            ScrollView {
-                                // MARK: - Leaderboard
-                                VStack(spacing: 0) {
-                                    ForEach(Array(sortedLeaderboard().enumerated()), id: \.element.id) { index, userEntry in
-                                        Button(action: {
-                                            selectedUserForPhotos = UserSelection(
-                                                user: userEntry,
-                                                competitionId: competition.id
-                                            )
-                                            Analytics.shared.trackTap(
-                                                elementId: "leaderboard_user_cell",
-                                                screenName: "competition_details"
-                                            )
-                                        }) {
-                                            VStack(spacing: 0) {
-                                                HStack {
-                                                    // Position
-                                                    Text("\(index + 1)")
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(Array(sortedLeaderboard().enumerated()), id: \.element.id) { index, userEntry in
+                                Button(action: {
+                                    selectedUserForPhotos = UserSelection(
+                                        user: userEntry,
+                                        competitionId: competition.id
+                                    )
+                                }) {
+                                    VStack(spacing: 0) {
+                                        HStack {
+                                            Text("\(index + 1)")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .frame(width: 30)
+                                                .padding(.leading, 20)
+
+                                            HStack(spacing: 20) {
+                                                ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
+
+                                                VStack(alignment: .leading, spacing: 4) {
+                                                    Text(userEntry.userName)
                                                         .font(.system(size: 16, weight: .bold))
+                                                        .lineLimit(1)
+                                                        .truncationMode(.tail)
                                                         .foregroundColor(.white)
-                                                        .frame(width: 30)
-                                                        .padding(.leading, 20)
-                                                    
-                                                    HStack(spacing: 20) {
-                                                        ProfilePictureView(url: userEntry.profilePictureUrl, size: 40)
-                                                        
-                                                        VStack(alignment: .leading, spacing: 4) {
-                                                            Text(userEntry.userName)
-                                                                .font(.system(size: 16, weight: .bold))
-                                                                .lineLimit(1)
-                                                                .truncationMode(.tail)
-                                                                .foregroundColor(.white)
-                                                            
-                                                            // Projected points badge
-                                                            if let points = projectedPoints(for: userEntry), points > 0 {
-                                                                HStack(spacing: 4) {
-                                                                    Text("\(points)")
-                                                                        .font(.system(size: 14, weight: .bold))
-                                                                        .foregroundColor(.white)
-                                                                    
-                                                                    Image("gem")
-                                                                        .resizable()
-                                                                        .renderingMode(.template)
-                                                                        .foregroundColor(.white)
-                                                                        .aspectRatio(contentMode: .fit)
-                                                                        .frame(width: 15, height: 15)
-                                                                }
-                                                                .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
-                                                                .background(Color(hex: "#6A5ACD"))
-                                                                .cornerRadius(200)
-                                                            }
-                                                        }
+
+                                                    // Projected payout — only show if pot > 0
+                                                    if let payout = projectedPayout(for: userEntry), payout > 0 {
+                                                        Text("$\(String(format: "%.2f", payout))")
+                                                            .font(.system(size: 14, weight: .bold))
+                                                            .foregroundColor(.white)
+                                                            .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
+                                                            .background(Color(hex: "#00AA00"))
+                                                            .cornerRadius(200)
                                                     }
-                                                    
-                                                    Spacer()
-                                                    
-                                                    // Today's race stars
-                                                    HStack(spacing: 8) {
-                                                        Text("\(raceStars(for: userEntry))")
-                                                            .font(.system(size: 17, weight: .bold))
-                                                            .foregroundColor(Color(hex: "#FFF"))
-                                                        
-                                                        Image(systemName: "star.fill")
-                                                            .resizable()
-                                                            .scaledToFit()
-                                                            .frame(width: 18, height: 18)
-                                                            .foregroundColor(Color(hex: "#FFF"))
-                                                    }
-                                                    .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                                    .background(Color(hex: "#DAA520"))
-                                                    .cornerRadius(200)
-                                                    .padding(.trailing, 30)
-                                                }
-                                                .padding(.vertical, 25)
-                                                .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
-                                                
-                                                if index < sortedLeaderboard().count - 1 {
-                                                    Divider()
-                                                        .background(Color.white.opacity(0.2))
                                                 }
                                             }
-                                            .contentShape(Rectangle())
+
+                                            Spacer()
+
+                                            HStack(spacing: 8) {
+                                                Text("\(raceStars(for: userEntry))")
+                                                    .font(.system(size: 17, weight: .bold))
+                                                    .foregroundColor(.white)
+
+                                                Image(systemName: "star.fill")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 18, height: 18)
+                                                    .foregroundColor(.white)
+                                            }
+                                            .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
+                                            .background(Color(hex: "#DAA520"))
+                                            .cornerRadius(200)
+                                            .padding(.trailing, 30)
                                         }
-                                        .buttonStyle(PlainButtonStyle())
+                                        .padding(.vertical, 25)
+                                        .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+
+                                        if index < sortedLeaderboard().count - 1 {
+                                            Divider().background(Color.white.opacity(0.2))
+                                        }
                                     }
+                                    .contentShape(Rectangle())
                                 }
-                                .background(Color(hex: "#1A2245"))
-                                .cornerRadius(10)
-                                .padding(.horizontal, 20)
-                                .padding(.bottom, 20)
-                            }
-                            .refreshable {
-                                entryViewModel.fetchEntries(mode: .compDetailsView)
-                                entryViewModel.fetchMemberCount()
-                                raceViewModel.loadRace(competitionId: competition.id)
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
+                        .background(Color(hex: "#1A2245"))
+                        .cornerRadius(10)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 20)
+                    }
+                    .refreshable {
+                        entryViewModel.fetchEntries(mode: .compDetailsView)
+                        entryViewModel.fetchMemberCount()
+                        raceViewModel.loadRace(competitionId: competition.id)
                     }
                 }
             }
@@ -425,6 +406,18 @@ struct CompDetails: View {
         }
         .sheet(isPresented: $isEditingCompetition) {
             EditCompetitionView(competition: competition)
+        }
+        .sheet(isPresented: $showContributeSheet, onDismiss: {
+            raceViewModel.loadRace(competitionId: competition.id)
+        }) {
+            ContributeSheet(
+                competitionId: competition.id,
+                raceId: raceViewModel.raceInfo?.raceId,
+                currentPot: raceViewModel.raceInfo?.totalPot ?? 0.0,
+                onContributed: {
+                    raceViewModel.loadRace(competitionId: competition.id)
+                }
+            )
         }
         .sheet(item: $selectedUserForPhotos, onDismiss: {
             chatIndicator.refresh()
@@ -475,43 +468,34 @@ struct CompDetails: View {
     }
     
     // MARK: - Race Helpers
-    
-    /// Returns today's race stars for a given user entry
+    // ─────────────────────────────────────────────────────────────
+
     private func raceStars(for userEntry: UserEntry) -> Int {
-        return raceViewModel.participants
-            .first { $0.userId == userEntry.id }?.totalStars ?? 0
+        raceViewModel.participants.first { $0.userId == userEntry.id }?.totalStars ?? 0
     }
-    
-    /// Returns projected points for a user if they have stars in today's race
-    private func projectedPoints(for userEntry: UserEntry) -> Int? {
-        guard raceViewModel.hasActiveRace else { return nil }
-        let points = raceViewModel.participants
-            .first { $0.userId == userEntry.id }?.projectedPoints ?? 0
-        return points > 0 ? points : nil
+
+    private func projectedPayout(for userEntry: UserEntry) -> Double? {
+        guard raceViewModel.hasActiveRace,
+              let pot = raceViewModel.raceInfo?.totalPot, pot > 0 else { return nil }
+        let payout = raceViewModel.participants.first { $0.userId == userEntry.id }?.projectedPayout ?? 0
+        return payout > 0 ? payout : nil
     }
-    
-    /// Returns the leaderboard sorted by today's race stars descending
-    /// Users with 0 race stars sink to the bottom, sorted by name for consistency
+
     private func sortedLeaderboard() -> [UserEntry] {
-        return entryViewModel.userLeaderboard.sorted { a, b in
+        entryViewModel.userLeaderboard.sorted { a, b in
             let starsA = raceStars(for: a)
             let starsB = raceStars(for: b)
-            if starsA != starsB {
-                return starsA > starsB
-            }
-            // Equal stars - keep "Me" at top of tied group, otherwise alphabetical
+            if starsA != starsB { return starsA > starsB }
             if a.userName == "Me" { return true }
             if b.userName == "Me" { return false }
             return a.userName < b.userName
         }
     }
-    
-    private var shouldShowRaceBar: Bool {
-        !isLoading
-    }
-    
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Data Fetching
-    
+    // ─────────────────────────────────────────────────────────────
+
     private func fetchData() {
         isLoading = true
         
@@ -519,15 +503,11 @@ struct CompDetails: View {
             entryViewModel.fetchMemberCount()
             DispatchQueue.main.async {
                 self.isLoading = false
-                
-                let userIsOnLeaderboard = self.entryViewModel.userLeaderboard.contains { userEntry in
-                    userEntry.userName == "Me" || userEntry.id == self.currentUserId
+                let onLeaderboard = self.entryViewModel.userLeaderboard.contains {
+                    $0.userName == "Me" || $0.id == self.currentUserId
                 }
-                
-                if userIsOnLeaderboard {
-                    self.hasUserPostedFirstEntry = true
-                }
-                
+                if onLeaderboard { self.hasUserPostedFirstEntry = true }
+
                 UNUserNotificationCenter.current().getNotificationSettings { settings in
                     DispatchQueue.main.async {
                         if settings.authorizationStatus == .notDetermined {

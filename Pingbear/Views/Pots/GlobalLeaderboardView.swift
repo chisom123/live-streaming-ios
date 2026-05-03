@@ -298,7 +298,7 @@ struct GlobalLeaderboardView: View {
         }
         .onAppear {
             viewModel.loadLeaderboard()
-            walletViewModel.loadWalletData()
+//            walletViewModel.loadWalletData()
         }
     }
 }

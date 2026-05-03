@@ -9,39 +9,38 @@ class RaceViewModel: ObservableObject {
     @Published var timeRemaining = ""
     @Published var raceEnded = false
     @Published var hasActiveRace = false
-    
+
     private let db = Firestore.firestore()
     private var timer: Timer?
     private var raceListener: ListenerRegistration?
     private var participantsListener: ListenerRegistration?
-    
-    deinit {
-        stopListening()
-    }
-    
+
+    deinit { stopListening() }
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Load Race
-    
+    // ─────────────────────────────────────────────────────────────
+
     func loadRace(competitionId: String) {
         isLoading = true
-        
-        // Use real-time listener so points pool and stars update live
+
         raceListener?.remove()
         raceListener = db.collection("competition_races")
             .whereField("competition_id", isEqualTo: competitionId)
             .whereField("status", isEqualTo: "active")
             .limit(to: 1)
             .addSnapshotListener { [weak self] snapshot, error in
-                guard let self = self else { return }
-                
-                if let error = error {
-                    print("RaceViewModel: Error listening to race: \(error)")
+                guard let self else { return }
+
+                if let error {
+                    print("RaceViewModel: Error: \(error)")
                     DispatchQueue.main.async {
                         self.isLoading = false
                         self.hasActiveRace = false
                     }
                     return
                 }
-                
+
                 guard let doc = snapshot?.documents.first,
                       let endDate = (doc.data()["end_date"] as? Timestamp)?.dateValue(),
                       Date() < endDate else {
@@ -53,31 +52,33 @@ class RaceViewModel: ObservableObject {
                     }
                     return
                 }
-                
+
                 let data = doc.data()
                 let race = RaceInfo(
-                    raceId: doc.documentID,
-                    competitionId: competitionId,
-                    endDate: endDate,
+                    raceId:           doc.documentID,
+                    competitionId:    competitionId,
+                    duration:         data["duration"] as? String ?? "weekly",
+                    endDate:          endDate,
                     participantCount: data["participant_count"] as? Int ?? 0,
-                    pointsPool: data["points_pool"] as? Int ?? 0,
-                    totalStars: data["total_stars"] as? Int ?? 0
+                    totalPot:         data["total_pot"] as? Double ?? 0.0,
+                    totalStars:       data["total_stars"] as? Int ?? 0
                 )
-                
+
                 DispatchQueue.main.async {
                     self.raceInfo = race
                     self.hasActiveRace = true
                     self.isLoading = false
                     self.startTimer()
                 }
-                
-                // Load participants whenever race updates
+
                 self.listenToParticipants(raceId: doc.documentID)
             }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Listen To Participants
-    
+    // ─────────────────────────────────────────────────────────────
+
     private func listenToParticipants(raceId: String) {
         participantsListener?.remove()
         participantsListener = db.collection("competition_races")
@@ -85,83 +86,73 @@ class RaceViewModel: ObservableObject {
             .collection("race_participants")
             .order(by: "total_stars", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
-                guard let self = self else { return }
-                
-                if let error = error {
-                    print("RaceViewModel: Error listening to participants: \(error)")
+                guard let self else { return }
+                if let error {
+                    print("RaceViewModel: Participants error: \(error)")
                     return
                 }
-                
                 guard let documents = snapshot?.documents else { return }
-                
-                let rawParticipants = documents.map { doc -> (userId: String, stars: Int) in
-                    let data = doc.data()
-                    return (
-                        userId: doc.documentID,
-                        stars: data["total_stars"] as? Int ?? 0
-                    )
+
+                let raw = documents.map { doc -> (userId: String, stars: Int) in
+                    (userId: doc.documentID, stars: doc.data()["total_stars"] as? Int ?? 0)
                 }
-                
-                // Fetch user data for participants
-                self.fetchUserData(for: rawParticipants)
+                self.fetchUserData(for: raw)
             }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Fetch User Data
-    
+    // ─────────────────────────────────────────────────────────────
+
     private func fetchUserData(for rawParticipants: [(userId: String, stars: Int)]) {
         guard !rawParticipants.isEmpty else {
-            DispatchQueue.main.async {
-                self.participants = []
-            }
+            DispatchQueue.main.async { self.participants = [] }
             return
         }
-        
+
         let group = DispatchGroup()
         var displayParticipants: [RaceParticipantDisplay] = []
         let currentUserId = Auth.auth().currentUser?.uid
         let totalStars = rawParticipants.reduce(0) { $0 + $1.stars }
-        let pointsPool = raceInfo?.pointsPool ?? 0
-        
+        let totalPot = raceInfo?.totalPot ?? 0.0
+
         for participant in rawParticipants {
             group.enter()
-            
-            db.collection("users").document(participant.userId).getDocument { document, error in
-                let data = document?.data()
+            db.collection("users").document(participant.userId).getDocument { doc, _ in
+                let data = doc?.data()
                 let username = data?["name"] as? String ?? "Unknown"
                 let profilePictureUrl = data?["profilePictureUrl"] as? String
                 let isCurrentUser = participant.userId == currentUserId
-                
-                // Calculate projected points
-                let projectedPoints: Int
-                if totalStars > 0 {
-                    projectedPoints = Int(Double(participant.stars) / Double(totalStars) * Double(pointsPool))
+
+                // Projected payout in dollars based on current star share
+                let projectedPayout: Double
+                if totalStars > 0 && totalPot > 0 {
+                    projectedPayout = (Double(participant.stars) / Double(totalStars)) * totalPot
                 } else {
-                    projectedPoints = 0
+                    projectedPayout = 0.0
                 }
-                
-                let display = RaceParticipantDisplay(
-                    userId: participant.userId,
-                    username: isCurrentUser ? "Me" : username,
+
+                displayParticipants.append(RaceParticipantDisplay(
+                    userId:            participant.userId,
+                    username:          isCurrentUser ? "Me" : username,
                     profilePictureUrl: profilePictureUrl,
-                    totalStars: participant.stars,
-                    projectedPoints: projectedPoints,
-                    isCurrentUser: isCurrentUser
-                )
-                
-                displayParticipants.append(display)
+                    totalStars:        participant.stars,
+                    projectedPayout:   projectedPayout,
+                    isCurrentUser:     isCurrentUser
+                ))
                 group.leave()
             }
         }
-        
+
         group.notify(queue: .main) {
-            // Sort by stars descending
             self.participants = displayParticipants.sorted { $0.totalStars > $1.totalStars }
         }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Timer
-    
+    // ─────────────────────────────────────────────────────────────
+
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -169,33 +160,37 @@ class RaceViewModel: ObservableObject {
         }
         updateTimeRemaining()
     }
-    
+
     private func updateTimeRemaining() {
         guard let endDate = raceInfo?.endDate else { return }
-        
         let now = Date()
-        
+
         if now >= endDate {
             timeRemaining = "--"
             raceEnded = true
             timer?.invalidate()
             return
         }
-        
-        let timeInterval = endDate.timeIntervalSince(now)
-        let hours = Int(timeInterval) / 3600
-        let minutes = Int(timeInterval) / 60 % 60
-        let seconds = Int(timeInterval) % 60
-        
-        if hours > 0 {
+
+        let interval = endDate.timeIntervalSince(now)
+        let days    = Int(interval) / 86400
+        let hours   = Int(interval) / 3600 % 24
+        let minutes = Int(interval) / 60 % 60
+        let seconds = Int(interval) % 60
+
+        if days > 0 {
+            timeRemaining = "\(days)d \(hours)h \(minutes)m"
+        } else if hours > 0 {
             timeRemaining = "\(hours)h \(minutes)m"
         } else {
             timeRemaining = "\(minutes)m \(seconds)s"
         }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
     // MARK: - Cleanup
-    
+    // ─────────────────────────────────────────────────────────────
+
     func stopListening() {
         timer?.invalidate()
         raceListener?.remove()
@@ -203,14 +198,16 @@ class RaceViewModel: ObservableObject {
     }
 }
 
+// ─────────────────────────────────────────────────────────────
 // MARK: - Display Model
+// ─────────────────────────────────────────────────────────────
 
 struct RaceParticipantDisplay: Identifiable {
-    let id = UUID()
-    let userId: String
-    let username: String
+    let id               = UUID()
+    let userId:           String
+    let username:         String
     let profilePictureUrl: String?
-    let totalStars: Int
-    let projectedPoints: Int
-    let isCurrentUser: Bool
+    let totalStars:       Int
+    let projectedPayout:  Double   // estimated winnings in USD
+    let isCurrentUser:    Bool
 }

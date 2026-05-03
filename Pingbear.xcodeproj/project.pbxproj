@@ -19,6 +19,17 @@
 		4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */; };
 		4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */; };
 		4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */; };
+		4F2008D82FA3660D0039FBCB /* Withdrawal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008D72FA3660D0039FBCB /* Withdrawal.swift */; };
+		4F2008DA2FA366370039FBCB /* WalletViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008D92FA366370039FBCB /* WalletViewModel.swift */; };
+		4F2008DC2FA366720039FBCB /* TopUpViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008DB2FA366720039FBCB /* TopUpViewModel.swift */; };
+		4F2008DE2FA366B80039FBCB /* TopUpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008DD2FA366B80039FBCB /* TopUpSheet.swift */; };
+		4F2008E02FA3965C0039FBCB /* ContributeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008DF2FA3965C0039FBCB /* ContributeViewModel.swift */; };
+		4F2008E22FA396980039FBCB /* ContributeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008E12FA396980039FBCB /* ContributeSheet.swift */; };
+		4F2008E42FA3E1650039FBCB /* RaceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008E32FA3E1650039FBCB /* RaceSettingsView.swift */; };
+		4F2008E62FA3E44B0039FBCB /* RaceHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008E52FA3E44B0039FBCB /* RaceHistoryView.swift */; };
+		4F2008E82FA3E86F0039FBCB /* TransactionHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008E72FA3E86F0039FBCB /* TransactionHistoryView.swift */; };
+		4F2008EF2FA60EA40039FBCB /* PaymentClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008EE2FA60EA40039FBCB /* PaymentClient.swift */; };
+		4F2008F22FA61E8B0039FBCB /* StripeApplePay in Frameworks */ = {isa = PBXBuildFile; productRef = 4F2008F12FA61E8B0039FBCB /* StripeApplePay */; };
 		4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */; };
 		4F3359582DE5E983003EF5E1 /* ChatMessageModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */; };
 		4F33595A2DE5E9A0003EF5E1 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3359592DE5E9A0003EF5E1 /* ChatViewModel.swift */; };
@@ -127,7 +138,6 @@
 		4FF9C1A12F108902000F045C /* PotHistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A02F108902000F045C /* PotHistoryViewModel.swift */; };
 		4FF9C1A32F10892D000F045C /* PotHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A22F10892D000F045C /* PotHistoryView.swift */; };
 		4FF9C1A52F11F406000F045C /* WalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A42F11F406000F045C /* WalletView.swift */; };
-		4FF9C1A72F11F47E000F045C /* WalletViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A62F11F47E000F045C /* WalletViewModel.swift */; };
 		4FF9C1A92F11F50B000F045C /* CashOutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */; };
 /* End PBXBuildFile section */
 
@@ -161,6 +171,16 @@
 		4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionSheet.swift; sourceTree = "<group>"; };
 		4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosView.swift; sourceTree = "<group>"; };
 		4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryUploadManager.swift; sourceTree = "<group>"; };
+		4F2008D72FA3660D0039FBCB /* Withdrawal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Withdrawal.swift; sourceTree = "<group>"; };
+		4F2008D92FA366370039FBCB /* WalletViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletViewModel.swift; sourceTree = "<group>"; };
+		4F2008DB2FA366720039FBCB /* TopUpViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopUpViewModel.swift; sourceTree = "<group>"; };
+		4F2008DD2FA366B80039FBCB /* TopUpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopUpSheet.swift; sourceTree = "<group>"; };
+		4F2008DF2FA3965C0039FBCB /* ContributeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributeViewModel.swift; sourceTree = "<group>"; };
+		4F2008E12FA396980039FBCB /* ContributeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContributeSheet.swift; sourceTree = "<group>"; };
+		4F2008E32FA3E1650039FBCB /* RaceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceSettingsView.swift; sourceTree = "<group>"; };
+		4F2008E52FA3E44B0039FBCB /* RaceHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RaceHistoryView.swift; sourceTree = "<group>"; };
+		4F2008E72FA3E86F0039FBCB /* TransactionHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionHistoryView.swift; sourceTree = "<group>"; };
+		4F2008EE2FA60EA40039FBCB /* PaymentClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaymentClient.swift; sourceTree = "<group>"; };
 		4F2A809B2C7B1CBC00BF51C8 /* FinalPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinalPreview.swift; sourceTree = "<group>"; };
 		4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageModel.swift; sourceTree = "<group>"; };
 		4F3359592DE5E9A0003EF5E1 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
@@ -242,7 +262,6 @@
 		4FF9C1A02F108902000F045C /* PotHistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotHistoryViewModel.swift; sourceTree = "<group>"; };
 		4FF9C1A22F10892D000F045C /* PotHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PotHistoryView.swift; sourceTree = "<group>"; };
 		4FF9C1A42F11F406000F045C /* WalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletView.swift; sourceTree = "<group>"; };
-		4FF9C1A62F11F47E000F045C /* WalletViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletViewModel.swift; sourceTree = "<group>"; };
 		4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashOutSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -256,6 +275,7 @@
 				4F3E0D3D2A86F6BF0068F901 /* FirebaseFunctionsCombine-Community in Frameworks */,
 				4F3E0D352A86F6BF0068F901 /* FirebaseFirestore in Frameworks */,
 				4F3E0D212A86F6BF0068F901 /* FirebaseAnalyticsSwift in Frameworks */,
+				4F2008F22FA61E8B0039FBCB /* StripeApplePay in Frameworks */,
 				4F3E0D1D2A86F6BF0068F901 /* FirebaseAnalytics in Frameworks */,
 				4F3E0D1F2A86F6BF0068F901 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */,
 				4F3E0D452A86F6BF0068F901 /* FirebaseMLModelDownloader in Frameworks */,
@@ -314,6 +334,17 @@
 			path = Claim;
 			sourceTree = "<group>";
 		};
+		4F2008D62FA365EC0039FBCB /* Money */ = {
+			isa = PBXGroup;
+			children = (
+				4F2008D72FA3660D0039FBCB /* Withdrawal.swift */,
+				4F2008D92FA366370039FBCB /* WalletViewModel.swift */,
+				4F2008DB2FA366720039FBCB /* TopUpViewModel.swift */,
+				4F2008DF2FA3965C0039FBCB /* ContributeViewModel.swift */,
+			);
+			path = Money;
+			sourceTree = "<group>";
+		};
 		4F31B8932BDBAA85007892BC /* Auth */ = {
 			isa = PBXGroup;
 			children = (
@@ -360,6 +391,9 @@
 				4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */,
 				4F1146B72E2CEAF800CEAE21 /* PredictionsDetailView.swift */,
 				4F140A7E2F956D3800016EAB /*  CompetitionAnimationView.swift */,
+				4F2008E12FA396980039FBCB /* ContributeSheet.swift */,
+				4F2008E32FA3E1650039FBCB /* RaceSettingsView.swift */,
+				4F2008E52FA3E44B0039FBCB /* RaceHistoryView.swift */,
 			);
 			path = Groups;
 			sourceTree = "<group>";
@@ -369,6 +403,7 @@
 			children = (
 				4F56AB312B80DB1D005FFC96 /* PayView.swift */,
 				4FA5EE3E2E03D7E600355376 /* Unlock.swift */,
+				4F2008EE2FA60EA40039FBCB /* PaymentClient.swift */,
 			);
 			path = Payments;
 			sourceTree = "<group>";
@@ -477,6 +512,7 @@
 		4F3E0D752A95129D0068F901 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				4F2008D62FA365EC0039FBCB /* Money */,
 				4FB27D472DE054B100E10C8F /* PhotoInteraction.swift */,
 				4F3E0D802A9B7BFB0068F901 /* PayViewModel.swift */,
 				4F3E0DA52AA8A1CF0068F901 /* AddFriendsModel.swift */,
@@ -495,7 +531,6 @@
 				4F33595D2DE65507003EF5E1 /* ChatIndicatorViewModel.swift */,
 				4FF9C1992F0FDB4D000F045C /* GlobalLeaderboardViewModel.swift */,
 				4FF9C1A02F108902000F045C /* PotHistoryViewModel.swift */,
-				4FF9C1A62F11F47E000F045C /* WalletViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -576,6 +611,8 @@
 				4FF9C1A42F11F406000F045C /* WalletView.swift */,
 				4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */,
 				4FDD66682F3517340023B145 /* PrizePoolInfoView.swift */,
+				4F2008DD2FA366B80039FBCB /* TopUpSheet.swift */,
+				4F2008E72FA3E86F0039FBCB /* TransactionHistoryView.swift */,
 			);
 			path = Pots;
 			sourceTree = "<group>";
@@ -639,6 +676,7 @@
 				4F382EA82B0F89D800669A58 /* NotificationBannerSwift */,
 				4FABA1392B996A3800289489 /* PostHog */,
 				4F9439932D84E85C0068AF24 /* Kingfisher */,
+				4F2008F12FA61E8B0039FBCB /* StripeApplePay */,
 			);
 			productName = Pingbear;
 			productReference = 4F3E0CE92A846CE80068F901 /* Pingbear.app */;
@@ -720,6 +758,7 @@
 				4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */,
 				4FABA1382B996A3800289489 /* XCRemoteSwiftPackageReference "posthog-ios" */,
 				4F9439922D84E7C20068AF24 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				4F2008F02FA61E8B0039FBCB /* XCRemoteSwiftPackageReference "stripe-ios" */,
 			);
 			productRefGroup = 4F3E0CEA2A846CE80068F901 /* Products */;
 			projectDirPath = "";
@@ -766,17 +805,19 @@
 			files = (
 				4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */,
 				4F375D102B02A1320011F541 /* Entry.swift in Sources */,
+				4F2008DE2FA366B80039FBCB /* TopUpSheet.swift in Sources */,
 				4F5326DF2E0C2C3D00E6D988 /* ParlayManager.swift in Sources */,
 				4FF9C1A12F108902000F045C /* PotHistoryViewModel.swift in Sources */,
 				4F140A7F2F956D3800016EAB /*  CompetitionAnimationView.swift in Sources */,
 				4F382EA02B07CAA600669A58 /* MyComps.swift in Sources */,
 				4F78D1CD2F4F24BC004A766B /* RaceViewModel.swift in Sources */,
+				4F2008E42FA3E1650039FBCB /* RaceSettingsView.swift in Sources */,
 				4FF9C1A32F10892D000F045C /* PotHistoryView.swift in Sources */,
 				4F1C03CF2DB0E337001C9CE1 /* ThemeModel.swift in Sources */,
 				4FB27D502DE50DB400E10C8F /* ChatView.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
-				4FF9C1A72F11F47E000F045C /* WalletViewModel.swift in Sources */,
 				4F3E0D812A9B7BFB0068F901 /* PayViewModel.swift in Sources */,
+				4F2008E82FA3E86F0039FBCB /* TransactionHistoryView.swift in Sources */,
 				4FB27D482DE054B300E10C8F /* PhotoInteraction.swift in Sources */,
 				4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */,
 				4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */,
@@ -796,11 +837,13 @@
 				4FF9C19A2F0FDB4D000F045C /* GlobalLeaderboardViewModel.swift in Sources */,
 				4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */,
 				4FDD666B2F3618CD0023B145 /* SlotMachineUtils.swift in Sources */,
+				4F2008E22FA396980039FBCB /* ContributeSheet.swift in Sources */,
 				4F375D162B0651EC0011F541 /* CompetitionsModel.swift in Sources */,
 				4F3359582DE5E983003EF5E1 /* ChatMessageModel.swift in Sources */,
 				4FDD666D2F3621460023B145 /* SpinStateManager.swift in Sources */,
 				4F39B2AB2DD5CB6C00F75004 /* ModalDismisser.swift in Sources */,
 				4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */,
+				4F2008E02FA3965C0039FBCB /* ContributeViewModel.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F74805C2F420630008636AF /* PostSignupLeaderboardView.swift in Sources */,
 				4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */,
@@ -808,6 +851,7 @@
 				4FA5EE3B2DF31D3000355376 /* CustomShareSheet.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F0015932F79595300AAF18E /* PostClaimUpsellView.swift in Sources */,
+				4F2008DC2FA366720039FBCB /* TopUpViewModel.swift in Sources */,
 				4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */,
 				4F39B29D2DD3758100F75004 /* DeepLinkHandler.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
@@ -830,11 +874,15 @@
 				4F04161C2BB5B53800E3C7C0 /* MembersViewModel.swift in Sources */,
 				4F56AB322B80DB1D005FFC96 /* PayView.swift in Sources */,
 				4F78D1CB2F4F23AE004A766B /* RaceManager.swift in Sources */,
+				4F2008D82FA3660D0039FBCB /* Withdrawal.swift in Sources */,
 				4F1146B62E166F6100CEAE21 /* SharedEntryComponents.swift in Sources */,
 				4F3E0D652A8949260068F901 /* Global.swift in Sources */,
 				4F39B2A12DD3C50100F75004 /* UserPhotosViewModel.swift in Sources */,
+				4F2008E62FA3E44B0039FBCB /* RaceHistoryView.swift in Sources */,
+				4F2008DA2FA366370039FBCB /* WalletViewModel.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
 				4FF9C1A92F11F50B000F045C /* CashOutSheet.swift in Sources */,
+				4F2008EF2FA60EA40039FBCB /* PaymentClient.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4FB664952F962C290085673C /* WebCompetitionPlayersView.swift in Sources */,
@@ -999,7 +1047,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 533;
+				CURRENT_PROJECT_VERSION = 537;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -1029,7 +1077,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 47.5;
+				MARKETING_VERSION = 47.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1049,7 +1097,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 533;
+				CURRENT_PROJECT_VERSION = 537;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1078,7 +1126,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 47.5;
+				MARKETING_VERSION = 47.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1224,6 +1272,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		4F2008F02FA61E8B0039FBCB /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 25.12.0;
+			};
+		};
 		4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/Daltron/NotificationBanner";
@@ -1283,6 +1339,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4F2008F12FA61E8B0039FBCB /* StripeApplePay */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4F2008F02FA61E8B0039FBCB /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = StripeApplePay;
+		};
 		4F382EA82B0F89D800669A58 /* NotificationBannerSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4F382EA72B0F89D800669A58 /* XCRemoteSwiftPackageReference "NotificationBanner" */;

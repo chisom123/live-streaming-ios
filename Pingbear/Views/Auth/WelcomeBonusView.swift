@@ -1,41 +1,36 @@
 import SwiftUI
-import FirebaseFirestore
-import FirebaseAuth
 
 struct WelcomeBonusView: View {
-    let points: Int
-    let isWebUser: Bool
-
-    @State private var showPostSignupLeaderboard: Bool = false
-    @State private var isVerifying: Bool = false
 
     var body: some View {
         ZStack {
-            Color(hex: "#10183C")
-                .ignoresSafeArea()
+            Color(hex: "#10183C").ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()
 
+                // ── Bonus card ────────────────────────────────
                 VStack(spacing: 24) {
-                    Image("gem")
-                        .resizable()
-                        .renderingMode(.template)
-                        .foregroundColor(Color(hex: "#FFF"))
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 70, height: 70)
-                        .padding(.top, -10)
 
-                    VStack(spacing: 12) {
-                        Text(isWebUser ? "Claim Your Points" : "Welcome Bonus")
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(Color(hex: "#00AA00").opacity(0.15))
+                            .frame(width: 100, height: 100)
+
+                        Image(systemName: "gift.fill")
+                            .font(.system(size: 44))
+                            .foregroundColor(Color(hex: "#00AA00"))
+                    }
+
+                    // Title
+                    VStack(spacing: 10) {
+                        Text("Welcome Bonus")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
 
-                        Text(isWebUser
-                             ? "\(points) points you won rating an Instagram Story"
-                             : "You've been awarded 100 points to kick things off"
-                        )
+                        Text("We've added $5 to your wallet to get you started")
                             .font(.system(size: 16))
                             .foregroundColor(.white.opacity(0.7))
                             .multilineTextAlignment(.center)
@@ -44,110 +39,47 @@ struct WelcomeBonusView: View {
                             .padding(.horizontal, 10)
                     }
 
-                    // Points badge
-                    Text("+\(points)")
-                        .font(.system(size: 22, weight: .bold))
+                    // Amount badge
+                    Text("+$5")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                        .padding(EdgeInsets(top: 7, leading: 20, bottom: 7, trailing: 20))
-                        .background(Color(hex: "#6A5ACD"))
+                        .padding(EdgeInsets(top: 10, leading: 28, bottom: 10, trailing: 28))
+                        .background(Color(hex: "#00AA00"))
                         .cornerRadius(200)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 50)
                 .background(Color(hex: "#1A2245"))
-                .cornerRadius(10)
+                .cornerRadius(16)
                 .padding(.horizontal, 20)
 
                 Spacer()
 
-                // CTA button
+                // ── CTA button ────────────────────────────────
                 Button(action: {
                     Analytics.shared.trackTap(
-                        elementId: "see_my_position",
+                        elementId: "welcome_bonus_lets_go",
                         screenName: "welcome_bonus"
                     )
-                    verifyAndShowLeaderboard()
+                    completeOnboarding()
                 }) {
-                    if isVerifying {
-                        ProgressView()
-                            .tint(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 55)
-                            .background(Color(hex: "#4169E1"))
-                            .cornerRadius(200)
-                    } else {
-                        Text("Claim Points")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 55)
-                            .background(Color(hex: "#4169E1"))
-                            .cornerRadius(200)
-                    }
+                    Text("Claim Bonus")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 55)
+                        .background(Color(hex: "#4169E1"))
+                        .cornerRadius(200)
                 }
-                .disabled(isVerifying)
                 .padding(.horizontal, 40)
-                .padding(.bottom, 40)
+                .padding(.bottom, 50)
             }
         }
         .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showPostSignupLeaderboard) {
-            PostSignupLeaderboardView(isWebUser: isWebUser, onContinue: {
-                completeOnboarding()
-            })
-        }
         .onAppear {
             Analytics.shared.trackScreen(name: "welcome_bonus")
         }
-    }
-
-    private func verifyAndShowLeaderboard() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            completeOnboarding()
-            return
-        }
-
-        isVerifying = true
-        verifyUserInPot(userId: userId) { isInPot in
-            isVerifying = false
-            if isInPot {
-                showPostSignupLeaderboard = true
-            } else {
-                print("⚠️ User not in pot yet, completing onboarding normally")
-                completeOnboarding()
-            }
-        }
-    }
-
-    private func verifyUserInPot(userId: String, completion: @escaping (Bool) -> Void) {
-        let maxAttempts = 10
-        let delayBetweenAttempts: TimeInterval = 0.3
-
-        func checkPot(attempt: Int) {
-            Firestore.firestore().collection("users").document(userId).getDocument { document, error in
-                if let activePotId = document?.data()?["active_pot_id"] as? String, !activePotId.isEmpty {
-                    print("✅ Verified user in pot: \(activePotId)")
-                    DispatchQueue.main.async {
-                        completion(true)
-                    }
-                    return
-                }
-
-                if attempt < maxAttempts {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + delayBetweenAttempts) {
-                        checkPot(attempt: attempt + 1)
-                    }
-                } else {
-                    print("⚠️ Max attempts reached, user not in pot")
-                    DispatchQueue.main.async {
-                        completion(false)
-                    }
-                }
-            }
-        }
-
-        checkPot(attempt: 1)
     }
 
     private func completeOnboarding() {
@@ -157,9 +89,6 @@ struct WelcomeBonusView: View {
 
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
 
-        Analytics.shared.track(
-            event: "onboarding_completed",
-            properties: ["is_web_user": isWebUser]
-        )
+        Analytics.shared.track(event: "onboarding_completed")
     }
 }

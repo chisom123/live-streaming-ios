@@ -3,6 +3,8 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 const { google } = require('googleapis');
 const logger = require("firebase-functions/logger");
+const wallet = require('./walletFunctions');
+const race = require('./raceFunctions');
 // Stripe will be initialized in functions that need it
 const cors = require('cors')({ origin: true });
 
@@ -238,71 +240,135 @@ exports.createCheckoutSession = onRequest({
 
 // Handle Stripe webhooks
 exports.stripeWebhook = onRequest({
-  cors: ["*"],
+  cors: false,
   maxInstances: 20,
   secrets: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
 }, async (req, res) => {
-  // Initialize Stripe with secret
   const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-  
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const sig    = req.headers['stripe-signature'];
 
   let event;
-
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     logger.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    await handleSuccessfulPayment(session);
+    // Existing coin purchase flow — unchanged
+    await handleSuccessfulCoinPurchase(event.data.object);
+  }
+
+  if (event.type === 'payment_intent.succeeded') {
+    const intent = event.data.object;
+    // Only handle wallet top-ups — ignore other PaymentIntents
+    if (intent.metadata?.top_up === 'true') {
+      await handleSuccessfulTopUp(intent);
+    }
   }
 
   res.json({ received: true });
 });
 
-async function handleSuccessfulPayment(session) {
+
+// ── Existing coin purchase handler — renamed but unchanged ────
+
+async function handleSuccessfulCoinPurchase(session) {
   const { userId, competitionId, coinAmount } = session.metadata;
   const coins = parseInt(coinAmount);
-  
-  try {
-    const db = admin.firestore();
-    const memberRef = db.collection('competitions')
-                      .doc(competitionId)
-                      .collection('members')
-                      .doc(userId);
 
-    // Update member coins in a transaction
+  try {
+    const db        = admin.firestore();
+    const memberRef = db.collection('competitions')
+                       .doc(competitionId)
+                       .collection('members')
+                       .doc(userId);
+
     await db.runTransaction(async (transaction) => {
       const memberDoc = await transaction.get(memberRef);
-      
       if (!memberDoc.exists) {
-        // Create member document if it doesn't exist
         transaction.set(memberRef, {
-          coins: coins,
+          coins:    coins,
           joinedAt: admin.firestore.Timestamp.now(),
-          userId: userId
+          userId:   userId
         });
       } else {
-        // Add coins to existing total
-        const currentCoins = memberDoc.data().coins || 0;
         transaction.update(memberRef, {
-          coins: currentCoins + coins
+          coins: (memberDoc.data().coins || 0) + coins
         });
       }
     });
 
-    // Log the purchase
     await logWebPurchase(userId, competitionId, coins, session);
-    
-    logger.info(`Successfully added ${coins} coins to user ${userId} in competition ${competitionId}`);
+    logger.info(`handleSuccessfulCoinPurchase: ${coins} coins to ${userId}`);
   } catch (error) {
-    logger.error('Error handling successful payment:', error);
-    // Could implement retry logic or dead letter queue here
+    logger.error('Error handling coin purchase:', error);
+  }
+}
+
+
+// ── New wallet top-up handler ─────────────────────────────────
+
+async function handleSuccessfulTopUp(intent) {
+  const userId      = intent.metadata.user_id;
+  const amountPence = intent.amount;
+  const amount      = parseFloat((amountPence / 100).toFixed(2));
+  const intentId    = intent.id;
+
+  if (!userId) {
+    logger.error('handleSuccessfulTopUp: no user_id in metadata');
+    return;
+  }
+
+  const db       = admin.firestore();
+  const orderRef = db.collection('payment_orders').doc(intentId);
+
+  try {
+    await db.runTransaction(async (t) => {
+      // Idempotency — skip if already processed
+      const existing = await t.get(orderRef);
+      if (existing.exists) {
+        logger.info(`handleSuccessfulTopUp: ${intentId} already processed`);
+        return;
+      }
+
+      const userRef    = db.collection('users').doc(userId);
+      const userDoc    = await t.get(userRef);
+      const current    = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
+      const newBalance = parseFloat((current + amount).toFixed(2));
+
+      t.set(userRef, {
+        wallet_balance: admin.firestore.FieldValue.increment(amount)
+      }, { merge: true });
+
+      t.set(orderRef, {
+        user_id:      userId,
+        amount,
+        currency:     'USD',
+        provider:     'stripe',
+        status:       'credited',
+        processed_at: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Record wallet transaction
+      const txRef = db.collection('wallet_transactions').doc();
+      t.set(txRef, {
+        user_id:        userId,
+        type:           'credit',
+        amount,
+        reason:         'top_up',
+        competition_id: null,
+        metadata:       { payment_intent_id: intentId, provider: 'stripe' },
+        balance_before: current,
+        balance_after:  newBalance,
+        created_at:     admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+
+    logger.info(`handleSuccessfulTopUp: £${amount} credited to ${userId}`);
+  } catch (error) {
+    logger.error('handleSuccessfulTopUp error:', error);
   }
 }
 
@@ -350,648 +416,6 @@ exports.checkPurchaseStatus = onCall({
   return { coins };
 });
 
-// GLOBAL LEADERBOARD - Close pots function
-exports.closePots = onSchedule({
-  schedule: 'every 1 minutes',
-  timeZone: 'UTC',
-}, async (event) => {
-  const db = admin.firestore();
-  const now = admin.firestore.Timestamp.now();
-  
-  // Find all active pots that have ended
-  // NOTE: This query requires a composite index on (end_date, status)
-  const endedPotsSnapshot = await db.collection('global_pots')
-    .where('end_date', '<=', now)
-    .where('status', '==', 'active')
-    .get();
-  
-  if (endedPotsSnapshot.empty) {
-    logger.info('No pots to close');
-    return null;
-  }
-  
-  logger.info(`Found ${endedPotsSnapshot.size} pots to close`);
-  
-  // Process each pot
-  const promises = endedPotsSnapshot.docs.map(potDoc => 
-    closePot(potDoc.id, potDoc.data(), db)
-  );
-  
-  await Promise.all(promises);
-  logger.info('All pots processed');
-  return null;
-});
-
-async function closePot(potId, potData, db) {
-  logger.info(`Closing pot ${potId}`);
-  
-  try {
-    // Get all participants sorted by stars
-    const participantsSnapshot = await db.collection('global_pots')
-      .doc(potId)
-      .collection('participants')
-      .orderBy('total_stars', 'desc')
-      .get();
-    
-    if (participantsSnapshot.empty) {
-      logger.info(`Pot ${potId} has no participants`);
-      await db.collection('global_pots').doc(potId).update({
-        status: 'closed',
-        closed_at: admin.firestore.FieldValue.serverTimestamp(),
-        prizes_paid: false,
-        total_winners: 0
-      });
-      return;
-    }
-    
-    // Calculate ranks and prizes with tie handling
-    const participantUpdates = [];
-    const userUpdates = [];
-    let currentRank = 1;
-    let lastStarCount = null;
-    let tiedPlayers = [];
-    
-    participantsSnapshot.docs.forEach((doc, index) => {
-      const data = doc.data();
-      const userId = doc.id;
-      const stars = data.total_stars || 0;
-      
-      // Check if this is a tie with previous player
-      if (lastStarCount !== null && stars < lastStarCount) {
-        // Different score - process previous tied group first
-        if (tiedPlayers.length > 0) {
-          processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates);
-        }
-        
-        // Start new rank
-        currentRank = index + 1;
-        tiedPlayers = [{ref: doc.ref, userId, stars, rank: currentRank}];
-      } else if (lastStarCount === stars) {
-        // Same score as previous - add to tied group
-        tiedPlayers.push({ref: doc.ref, userId, stars, rank: currentRank});
-      } else {
-        // First player
-        tiedPlayers = [{ref: doc.ref, userId, stars, rank: currentRank}];
-      }
-      
-      lastStarCount = stars;
-    });
-    
-    // Don't forget to process the last group
-    if (tiedPlayers.length > 0) {
-      processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates);
-    }
-    
-    // Batch write all participant updates (max 500 per batch)
-    const participantBatches = [];
-    for (let i = 0; i < participantUpdates.length; i += 500) {
-      const batch = db.batch();
-      const chunk = participantUpdates.slice(i, i + 500);
-      chunk.forEach(update => {
-        batch.update(update.ref, update.data);
-      });
-      participantBatches.push(batch.commit());
-    }
-    await Promise.all(participantBatches);
-    
-    // Update user wallets and create transactions (max 500 per batch)
-    const userBatches = [];
-    for (let i = 0; i < userUpdates.length; i += 500) {
-      const batch = db.batch();
-      const chunk = userUpdates.slice(i, i + 500);
-      
-      chunk.forEach(update => {
-        const userRef = db.collection('users').doc(update.userId);
-        
-        // Update wallet balance, lifetime earnings, and clear active_pot_id
-        batch.update(userRef, {
-          wallet_balance: admin.firestore.FieldValue.increment(update.prize),
-          lifetime_earnings: admin.firestore.FieldValue.increment(update.prize),
-          active_pot_id: admin.firestore.FieldValue.delete()
-        });
-        
-        // Create transaction record
-        const transactionRef = userRef.collection('transactions').doc();
-        batch.set(transactionRef, {
-          type: 'winning',
-          amount: update.prize,
-          description: `Rank #${update.rank} - ${update.stars} stars`,
-          pot_id: potId,
-          rank: update.rank,
-          stars: update.stars,
-          timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
-      });
-      
-      userBatches.push(batch.commit());
-    }
-    await Promise.all(userBatches);
-    
-    // Clear active_pot_id for ALL participants (including non-winners)
-    const clearPotBatches = [];
-    for (let i = 0; i < participantsSnapshot.docs.length; i += 500) {
-      const batch = db.batch();
-      const chunk = participantsSnapshot.docs.slice(i, i + 500);
-      
-      chunk.forEach(doc => {
-        const userRef = db.collection('users').doc(doc.id);
-        batch.update(userRef, {
-          active_pot_id: admin.firestore.FieldValue.delete()
-        });
-      });
-      
-      clearPotBatches.push(batch.commit());
-    }
-    await Promise.all(clearPotBatches);
-    
-    // Mark pot as closed
-    await db.collection('global_pots').doc(potId).update({
-      status: 'closed',
-      closed_at: admin.firestore.FieldValue.serverTimestamp(),
-      prizes_paid: true,
-      total_winners: userUpdates.length
-    });
-    
-    logger.info(`Pot ${potId} closed successfully with ${participantUpdates.length} participants and ${userUpdates.length} winners`);
-  } catch (error) {
-    logger.error(`Error closing pot ${potId}:`, error);
-    throw error;
-  }
-}
-
-function calculatePrize(rank, firstPlacePrize, decayRate, minPayout) {
-  if (decayRate === 0) return rank === 1 ? firstPlacePrize : 0;
-  
-  // Use integer math for cents to avoid floating point errors
-  const prizeCents = Math.floor(firstPlacePrize * 100 * Math.pow(decayRate, rank - 1));
-  
-  if (prizeCents < minPayout * 100) return 0;
-  
-  return prizeCents / 100;
-}
-
-// Helper function to process a group of tied players
-function processTiedGroup(tiedPlayers, potData, participantUpdates, userUpdates) {
-  // Calculate base prize for this rank
-  const basePrize = calculatePrize(
-    tiedPlayers[0].rank,
-    potData.first_place_prize || 100,
-    potData.decay_rate || 0,
-    potData.min_payout || 0.01
-  );
-  
-  // Split prize evenly among tied players
-  const splitPrize = Math.floor((basePrize / tiedPlayers.length) * 100) / 100;
-  
-  logger.info(`Rank ${tiedPlayers[0].rank}: ${tiedPlayers.length} tied players, splitting $${basePrize} = $${splitPrize} each`);
-  
-  // Queue updates for each tied player
-  tiedPlayers.forEach(player => {
-    // Queue participant update
-    participantUpdates.push({
-      ref: player.ref,
-      data: {
-        final_rank: player.rank,
-        prize_amount: splitPrize,
-        tied_with: tiedPlayers.length - 1,  // Exclude self from count
-        calculated_at: admin.firestore.FieldValue.serverTimestamp()
-      }
-    });
-    
-    // If prize > 0, queue user wallet update
-    if (splitPrize > 0) {
-      userUpdates.push({
-        userId: player.userId,
-        prize: splitPrize,
-        rank: player.rank,
-        stars: player.stars
-      });
-    }
-  });
-}
-
-
-// DAILY RACE - Close races function
-exports.closeRaces = onSchedule({
-  schedule: 'every 1 minutes',
-  timeZone: 'UTC',
-}, async (event) => {
-  const db = admin.firestore();
-  const now = admin.firestore.Timestamp.now();
-  
-  const endedRacesSnapshot = await db.collection('competition_races')
-    .where('end_date', '<=', now)
-    .where('status', '==', 'active')
-    .get();
-  
-  if (endedRacesSnapshot.empty) {
-    logger.info('No races to close');
-    return null;
-  }
-  
-  logger.info(`Found ${endedRacesSnapshot.size} races to close`);
-  
-  const promises = endedRacesSnapshot.docs.map(raceDoc =>
-    closeRace(raceDoc.id, raceDoc.data(), db)
-  );
-  
-  await Promise.all(promises);
-  logger.info('All races processed');
-  return null;
-});
-
-async function closeRace(raceId, raceData, db) {
-  logger.info(`Closing race ${raceId}`);
-  
-  try {
-    // Get all participants sorted by stars
-    const participantsSnapshot = await db.collection('competition_races')
-      .doc(raceId)
-      .collection('race_participants')
-      .orderBy('total_stars', 'desc')
-      .get();
-    
-    if (participantsSnapshot.empty) {
-      logger.info(`Race ${raceId} has no participants`);
-      await db.collection('competition_races').doc(raceId).update({
-        status: 'closed',
-        closed_at: admin.firestore.FieldValue.serverTimestamp()
-      });
-      return;
-    }
-    
-    const totalStars = raceData.total_stars || 0;
-    const pointsPool = raceData.points_pool || 0;
-    
-    if (totalStars === 0 || pointsPool === 0) {
-      logger.info(`Race ${raceId} has no stars or points to distribute`);
-      await db.collection('competition_races').doc(raceId).update({
-        status: 'closed',
-        closed_at: admin.firestore.FieldValue.serverTimestamp()
-      });
-      return;
-    }
-    
-    // Calculate points for each participant
-    const participantUpdates = [];
-    
-    participantsSnapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const userId = doc.id;
-      const stars = data.total_stars || 0;
-      
-      if (stars === 0) return;
-      
-      // Proportional points: their stars / total stars × points pool
-      const points = Math.floor((stars / totalStars) * pointsPool);
-      
-      if (points > 0) {
-        participantUpdates.push({
-          ref: doc.ref,
-          userId,
-          points,
-          stars
-        });
-      }
-    });
-    
-    // Award points to global leaderboard for each participant
-    const globalLeaderboardPromises = participantUpdates.map(update =>
-      awardPointsToGlobalLeaderboard(update.userId, update.points, db)
-    );
-    
-    await Promise.all(globalLeaderboardPromises);
-    
-    // Update participant records with points awarded
-    const batch = db.batch();
-    participantUpdates.forEach(update => {
-      batch.update(update.ref, {
-        points_awarded: update.points
-      });
-    });
-    
-    // Mark race as closed
-    const raceRef = db.collection('competition_races').doc(raceId);
-    batch.update(raceRef, {
-      status: 'closed',
-      closed_at: admin.firestore.FieldValue.serverTimestamp(),
-      total_winners: participantUpdates.length
-    });
-    
-    await batch.commit();
-    
-    logger.info(`Race ${raceId} closed successfully, ${participantUpdates.length} participants awarded points`);
-  } catch (error) {
-    logger.error(`Error closing race ${raceId}:`, error);
-    throw error;
-  }
-}
-
-async function awardPointsToGlobalLeaderboard(userId, points, db) {
-  try {
-    // Check if user has an active pot
-    const userDoc = await db.collection('users').doc(userId).get();
-    const activePotId = userDoc.data()?.active_pot_id;
-    
-    if (activePotId) {
-      // Verify pot is still active
-      const potDoc = await db.collection('global_pots').doc(activePotId).get();
-      const potData = potDoc.data();
-      
-      if (potData?.status === 'active' && potData?.end_date?.toMillis() > Date.now()) {
-        // Add points to existing pot participant
-        const participantRef = db.collection('global_pots')
-          .doc(activePotId)
-          .collection('participants')
-          .doc(userId);
-        
-        const participantDoc = await participantRef.get();
-        
-        if (participantDoc.exists) {
-          await participantRef.update({
-            total_stars: admin.firestore.FieldValue.increment(points),
-            last_star_at: admin.firestore.FieldValue.serverTimestamp()
-          });
-        } else {
-          // User not yet in pot participants, add them
-          await participantRef.set({
-            user_id: userId,
-            total_stars: points,
-            last_star_at: admin.firestore.FieldValue.serverTimestamp(),
-            joined_at: admin.firestore.FieldValue.serverTimestamp()
-          });
-          
-          // Increment pot participant count
-          await db.collection('global_pots').doc(activePotId).update({
-            participant_count: admin.firestore.FieldValue.increment(1)
-          });
-        }
-        
-        logger.info(`✅ Awarded ${points} points to user ${userId} in pot ${activePotId}`);
-        return;
-      }
-    }
-    
-    // No active pot - find or create one
-    await joinPotAndAwardPoints(userId, points, db);
-    
-  } catch (error) {
-    logger.error(`Error awarding points to user ${userId}:`, error);
-    throw error;
-  }
-}
-
-async function joinPotAndAwardPoints(userId, points, db) {
-  await db.runTransaction(async (transaction) => {
-    const currentPotRef = db.collection('app_config').doc('current_pot');
-    const currentPotDoc = await transaction.get(currentPotRef);
-    
-    let potId;
-    
-    // Check if current pot exists and is valid
-    if (currentPotDoc.exists) {
-      const potData = currentPotDoc.data();
-      const potId_candidate = potData?.pot_id;
-      
-      if (potId_candidate && potData?.end_date?.toMillis() > Date.now()) {
-        const potRef = db.collection('global_pots').doc(potId_candidate);
-        const potDoc = await transaction.get(potRef);
-        const potDocData = potDoc.data();
-        
-        if (potDocData?.status === 'active' &&
-            potDocData?.participant_count < potDocData?.max_participants) {
-          potId = potId_candidate;
-          
-          // Add participant to existing pot
-          const participantRef = db.collection('global_pots')
-            .doc(potId)
-            .collection('participants')
-            .doc(userId);
-          
-          transaction.set(participantRef, {
-            user_id: userId,
-            total_stars: points,
-            last_star_at: admin.firestore.FieldValue.serverTimestamp(),
-            joined_at: admin.firestore.FieldValue.serverTimestamp()
-          });
-          
-          transaction.update(potRef, {
-            participant_count: admin.firestore.FieldValue.increment(1)
-          });
-          
-          transaction.update(currentPotRef, {
-            participant_count: admin.firestore.FieldValue.increment(1)
-          });
-          
-          transaction.update(db.collection('users').doc(userId), {
-            active_pot_id: potId
-          });
-          
-          return;
-        }
-      }
-    }
-    
-    // Create new pot
-    const now = new Date();
-    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const newPotRef = db.collection('global_pots').doc();
-    potId = newPotRef.id;
-    
-    // Get config for pot settings
-    const configDoc = await transaction.get(
-      db.collection('app_config').doc('global_leaderboard')
-    );
-    const config = configDoc.data() || {};
-    
-    transaction.set(newPotRef, {
-      pot_id: potId,
-      start_date: admin.firestore.Timestamp.fromDate(now),
-      end_date: admin.firestore.Timestamp.fromDate(endDate),
-      status: 'active',
-      max_participants: config.pot_max_participants || 1000,
-      first_place_prize: config.first_place_prize || 100.0,
-      decay_rate: config.decay_rate || 0.0,
-      min_payout: config.min_payout || 0.01,
-      participant_count: 1,
-      created_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Add participant
-    const participantRef = db.collection('global_pots')
-      .doc(potId)
-      .collection('participants')
-      .doc(userId);
-    
-    transaction.set(participantRef, {
-      user_id: userId,
-      total_stars: points,
-      last_star_at: admin.firestore.FieldValue.serverTimestamp(),
-      joined_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Update current pot reference
-    transaction.set(currentPotRef, {
-      pot_id: potId,
-      participant_count: 1,
-      end_date: admin.firestore.Timestamp.fromDate(endDate),
-      updated_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Update user
-    transaction.update(db.collection('users').doc(userId), {
-      active_pot_id: potId
-    });
-    
-    logger.info(`✅ Created new pot ${potId} and awarded ${points} points to user ${userId}`);
-  });
-}
-
-exports.awardLeaderboardPoints = onCall({
-  cors: ["*"],
-  maxInstances: 20,
-}, async (request) => {
-  if (!request.auth) {
-    throw new Error('User must be authenticated');
-  }
-
-  const { points } = request.data;
-  const userId = request.auth.uid;
-
-  const MAX_POINTS_PER_CLAIM = 1000;
-  
-  if (!Number.isInteger(points) || points <= 0 || points > MAX_POINTS_PER_CLAIM) {
-    throw new Error('Invalid points value');
-  }
-
-  const db = admin.firestore();
-
-  try {
-    await awardPointsToGlobalLeaderboard(userId, points, db);
-    logger.info(`✅ awardLeaderboardPoints: awarded ${points} to ${userId}`);
-    return { success: true, points };
-  } catch (error) {
-    logger.error('Error in awardLeaderboardPoints:', error);
-    throw new Error(error.message);
-  }
-});
-
-// Call Live Leaderboard
-
-exports.getCurrentPot = onRequest({
-  cors: ["*"],
-  maxInstances: 20,
-  minInstances: 1
-}, async (req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== 'GET') {
-      return res.status(405).send('Method not allowed');
-    }
-
-    try {
-      const db = admin.firestore();
-
-      // 1. Get current pot reference
-      const currentPotDoc = await db.collection('app_config').doc('current_pot').get();
-
-      if (!currentPotDoc.exists) {
-        return res.status(404).json({ error: 'No active pot found' });
-      }
-
-      const currentPotData = currentPotDoc.data();
-      const potId = currentPotData?.pot_id;
-
-      if (!potId) {
-        return res.status(404).json({ error: 'No pot ID in config' });
-      }
-
-      // 2. Get the pot document
-      const potDoc = await db.collection('global_pots').doc(potId).get();
-
-      if (!potDoc.exists) {
-        return res.status(404).json({ error: 'Pot document not found' });
-      }
-
-      const potData = potDoc.data();
-
-      // 3. Get all participants ordered by stars
-      const participantsSnapshot = await db
-        .collection('global_pots')
-        .doc(potId)
-        .collection('participants')
-        .orderBy('total_stars', 'desc')
-        .get();
-
-      // 4. Fetch user display data for each participant
-      const participantDocs = participantsSnapshot.docs;
-      const userIds = participantDocs.map(doc => doc.id);
-
-      // Batch fetch user documents (Firestore allows up to 10 in getAll)
-      const userRefs = userIds.map(uid => db.collection('users').doc(uid));
-      const userDocs = userRefs.length > 0 ? await db.getAll(...userRefs) : [];
-
-      const userMap = {};
-      userDocs.forEach(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-          userMap[doc.id] = {
-            name: data.name ?? 'Unknown',
-            profilePictureUrl: data.profilePictureUrl ?? null,
-          };
-        }
-      });
-
-      // 5. Build ranked participant list with tie handling
-      const participants = [];
-      let currentRank = 1;
-      let lastStars = null;
-
-      participantDocs.forEach((doc, index) => {
-        const data = doc.data();
-        const stars = data.total_stars ?? 0;
-
-        if (lastStars !== null && stars < lastStars) {
-          currentRank = index + 1;
-        }
-        lastStars = stars;
-
-        const user = userMap[doc.id] ?? { name: 'Unknown', profilePictureUrl: null };
-
-        participants.push({
-          userId: doc.id,
-          name: user.name,
-          profilePictureUrl: user.profilePictureUrl,
-          totalStars: stars,
-          rank: currentRank,
-          position: index + 1,
-          joinedAt: data.joined_at?.toMillis?.() ?? null,
-          lastStarAt: data.last_star_at?.toMillis?.() ?? null,
-        });
-      });
-
-      // 6. Return everything
-      return res.json({
-        pot: {
-          potId,
-          status: potData.status,
-          startDate: potData.start_date?.toMillis?.() ?? null,
-          endDate: potData.end_date?.toMillis?.() ?? null,
-          firstPlacePrize: potData.first_place_prize ?? 100,
-          decayRate: potData.decay_rate ?? 0,
-          minPayout: potData.min_payout ?? 0.01,
-          maxParticipants: potData.max_participants ?? 1000,
-          participantCount: potData.participant_count ?? 0,
-        },
-        participants,
-      });
-
-    } catch (error) {
-      logger.error('Error in getCurrentPot:', error);
-      return res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-});
-
 exports.saveUserProfile = onCall({
   cors: ["*"],
   maxInstances: 20,
@@ -999,21 +423,13 @@ exports.saveUserProfile = onCall({
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
-  const { winCode, phoneNumberHash, affiliateId, unseenPhotoUrl, affiliateFirstName } = request.data;
+  const { phoneNumberHash, winCode } = request.data;
   const userId = request.auth.uid;
 
-  if (!winCode) throw new Error('winCode is required');
   if (!phoneNumberHash) throw new Error('phoneNumberHash is required');
 
   const db = admin.firestore();
   const userRef = db.collection('users').doc(userId);
-
-  // Shared affiliate fields — written on every path, null values are fine
-  const affiliateFields = {
-    affiliateId: affiliateId || null,
-    unseenPhotoUrl: unseenPhotoUrl || null,
-    affiliateFirstName: affiliateFirstName || null,
-  };
 
   try {
     const userDoc = await userRef.get();
@@ -1021,33 +437,27 @@ exports.saveUserProfile = onCall({
     if (userDoc.exists) {
       const userData = userDoc.data();
 
-      // Existing user who completed onboarding — save winCode and affiliate fields
       if (userData.profileComplete === true || userData.username) {
         await userRef.update({
           winCode,
-          ...affiliateFields,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
-        logger.info(`saveUserProfile: existing user ${userId}, winCode and affiliate data saved`);
+        logger.info(`saveUserProfile: existing complete user ${userId}`);
         return { existingUser: true };
       }
 
-      // Existing web signup — update winCode, phoneNumberHash and affiliate fields
       await userRef.update({
         winCode,
         phoneNumberHash,
-        ...affiliateFields,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       logger.info(`saveUserProfile: updated existing web user ${userId}`);
       return { existingUser: false };
     }
 
-    // New user — create document with affiliate fields
     await userRef.set({
       winCode,
       phoneNumberHash,
-      ...affiliateFields,
       createdFromWeb: true,
       profileComplete: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1060,3 +470,22 @@ exports.saveUserProfile = onCall({
     throw new Error(error.message);
   }
 });
+
+// ── Wallet ────────────────────────────────────────────────────
+exports.creditWelcomeBonus = wallet.creditWelcomeBonus;
+exports.unlockBonus        = wallet.unlockBonus;
+exports.deductBalance      = wallet.deductBalance;
+exports.creditBalance      = wallet.creditBalance;
+exports.adminCreditBalance = wallet.adminCreditBalance;
+exports.requestWithdrawal  = wallet.requestWithdrawal;
+exports.approveWithdrawal  = wallet.approveWithdrawal;
+exports.rejectWithdrawal   = wallet.rejectWithdrawal;
+exports.contributeToRace   = wallet.contributeToRace; // moved from race
+exports.recordStarsEarned  = wallet.recordStarsEarned;
+exports.createTopUpIntent      = wallet.createTopUpIntent;
+exports.confirmTopUpIntent     = wallet.confirmTopUpIntent;
+
+// ── Race ──────────────────────────────────────────────────────
+exports.setRaceDuration               = race.setRaceDuration;
+exports.getOrCreateRaceForCompetition = race.getOrCreateRaceForCompetition;
+exports.closeRaces                    = race.closeRaces;
