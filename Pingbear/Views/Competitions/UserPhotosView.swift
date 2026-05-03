@@ -1,20 +1,21 @@
 import SwiftUI
+import Kingfisher
 import FirebaseAuth
 import FirebaseFirestore
-import Kingfisher
 
-struct ThemePhotosView: View {
-    let themeName: String
-    let themeId: String
+struct UserPhotosView: View {
+    let userId: String
+    let userName: String
     let competitionId: String
+    let userProfilePictureUrl: String?
     
-    @StateObject private var viewModel = ThemePhotosViewModel()
+    @StateObject private var viewModel = UserPhotosViewModel()
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedPhoto: ThemePhoto? = nil
+    @State private var selectedPhoto: UserPhoto? = nil
     
     // Predictions sheet state
     @State private var showingPredictionsView = false
-    @State private var selectedPhotoForPredictions: ThemePhoto? = nil
+    @State private var selectedPhotoForPredictions: UserPhoto? = nil
     
     // Interaction service for predictions view
     @StateObject private var interactionService = PhotoInteractionService()
@@ -24,10 +25,11 @@ struct ThemePhotosView: View {
     
     private let db = Firestore.firestore()
     
-    init(themeName: String, themeId: String, competitionId: String) {
-        self.themeName = themeName
-        self.themeId = themeId
+    init(userId: String, userName: String, competitionId: String, userProfilePictureUrl: String? = nil) {
+        self.userId = userId
+        self.userName = userName
         self.competitionId = competitionId
+        self.userProfilePictureUrl = userProfilePictureUrl
     }
     
     var body: some View {
@@ -47,18 +49,20 @@ struct ThemePhotosView: View {
                     
                     Spacer()
                     
-                    Text(themeName)
-                        .font(.system(size: 18, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .foregroundColor(.white)
-                        .truncationMode(.tail)
-                        .lineLimit(1)
-                        .padding(.horizontal)
+                    HStack(spacing: 12) {
+                        ProfilePictureView(url: userProfilePictureUrl, size: 30)
+                        
+                        Text(userName == "Me" ? "Me" : userName)
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .foregroundColor(.white)
+                            .truncationMode(.tail)
+                            .lineLimit(1)
+                    }
+                    .frame(maxWidth: 250)
                     
                     Spacer()
                     
-                    // Invisible placeholder for balance
+                    // Invisible placeholder for balance to match the arrow size
                     Image(systemName: "arrow.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -69,26 +73,25 @@ struct ThemePhotosView: View {
                 .padding(.vertical, 20)
                 .background(Color(hex: "#1A2245"))
                 
-                if viewModel.isLoading && viewModel.themePhotos.isEmpty {
+                if viewModel.isLoading && viewModel.userPhotos.isEmpty {
                     Spacer()
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                     Spacer()
-                } else if viewModel.themePhotos.isEmpty && !viewModel.isLoading {
+                } else if viewModel.userPhotos.isEmpty && !viewModel.isLoading {
                     Spacer()
                     VStack(spacing: 16) {
                         Text("No Photos Yet")
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .foregroundColor(.white)
-                            .multilineTextAlignment(.center)
                     }
                     .padding()
                     Spacer()
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 10) {
-                            ForEach(viewModel.themePhotos) { photo in
-                                ThemePhotoCard(
+                            ForEach(viewModel.userPhotos) { photo in
+                                PhotoCard(
                                     photo: photo,
                                     competitionId: competitionId,
                                     isEntryCreator: isEntryCreator(photo: photo),
@@ -99,7 +102,7 @@ struct ThemePhotosView: View {
                                         selectedPhotoForPredictions = photo
                                         loadPredictionsData(for: photo)
                                         showingPredictionsView = true
-                                        Analytics.shared.track(event: "my_predictions_button_tapped_from_theme")
+                                        Analytics.shared.track(event: "my_predictions_button_tapped_from_grid")
                                     }
                                 )
                                 .transition(.asymmetric(
@@ -110,7 +113,7 @@ struct ThemePhotosView: View {
                             
                             // Load More Section
                             if viewModel.hasMorePhotos {
-                                LoadMoreButton(
+                                LoadMoreView(
                                     isLoading: viewModel.isLoadingMore,
                                     onLoadMore: {
                                         viewModel.loadMorePhotos()
@@ -142,72 +145,29 @@ struct ThemePhotosView: View {
             .background(Color(hex: "#10183C").ignoresSafeArea())
         }
         .onAppear {
-            viewModel.fetchThemePhotos(themeId: themeId, competitionId: competitionId)
-            Analytics.shared.trackScreen(
-                name: "theme_photos",
-                properties: [
-                    "theme": themeName
-                ]
-            )
+            viewModel.fetchUserPhotos(userId: userId, competitionId: competitionId)
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
-            // Convert ThemePhoto to UserPhoto for FullScreenPhotoView
-            let userPhoto = UserPhoto(
-                id: photo.id,
-                photoUrl: photo.photoUrl,
-                stars: photo.stars,
-                isSuperstar: photo.isSuperstar,
-                creationDate: photo.creationDate,
-                themeName: photo.themeName,
-                themeId: photo.themeId,
-                overlayText: photo.overlayText,
-                overlayVerticalPosition: photo.overlayVerticalPosition,
-                isFromCamera: photo.isFromCamera,
-                userId: photo.userId,
-                parlayStatus: photo.parlayStatus,
-                parlayPredictions: photo.parlayPredictions,
-                parlayPayout: photo.parlayPayout,
-                parlayStake: photo.parlayStake
-            )
-            
-            // Check if the photo belongs to the current user
-            let currentUserId = Auth.auth().currentUser?.uid
-            let displayUserName = (photo.userId == currentUserId) ? "Me" : photo.userName
-            
             FullScreenPhotoView(
-                photo: userPhoto,
-                userName: displayUserName,
+                photo: photo,
+                userName: userName,
                 competitionId: competitionId,
-                userProfilePictureUrl: photo.profilePictureUrl,
+                userProfilePictureUrl: userProfilePictureUrl,
                 onDismiss: { updatedStarCount in
-                    // Update the star count for this specific photo
                     viewModel.updatePhotoStars(photoId: photo.id, newStarCount: updatedStarCount)
                 }
             )
-        }
-        .sheet(isPresented: $showingPredictionsView) {
-            if let photo = selectedPhotoForPredictions {
-                PredictionsDetailView(
-                    parlayStatus: photo.parlayStatus ?? "",
-                    parlayPredictions: photo.parlayPredictions ?? [:],
-                    parlayPayout: photo.parlayPayout ?? 0,
-                    parlayStake: photo.parlayStake ?? 0,
-                    pendingUserProfiles: pendingUserProfiles,
-                    interactionService: interactionService,
-                    onDismiss: { showingPredictionsView = false }
-                )
-            }
         }
     }
     
     // MARK: - Helper Methods
     
-    private func isEntryCreator(photo: ThemePhoto) -> Bool {
+    private func isEntryCreator(photo: UserPhoto) -> Bool {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
         return photo.userId == currentUserId
     }
     
-    private func loadPredictionsData(for photo: ThemePhoto) {
+    private func loadPredictionsData(for photo: UserPhoto) {
         // Load interaction data for the selected photo
         interactionService.loadRatingData(
             competitionId: competitionId,
@@ -244,9 +204,9 @@ struct ThemePhotosView: View {
     }
 }
 
-// MARK: - Theme Photo Card Component
-struct ThemePhotoCard: View {
-    let photo: ThemePhoto
+// MARK: - Photo Card Component
+struct PhotoCard: View {
+    let photo: UserPhoto
     let competitionId: String
     let isEntryCreator: Bool
     let onTap: () -> Void
@@ -262,7 +222,6 @@ struct ThemePhotoCard: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Make only the image tappable
             KFImage(URL(string: photo.photoUrl))
                 .placeholder {
                     Rectangle()
@@ -300,24 +259,9 @@ struct ThemePhotoCard: View {
                 .onTapGesture {
                     onTap()
                 }
-
             
-            // Stats section - NOT TAPPABLE
+            // Stats section
             HStack(spacing: 8) {
-                // Profile picture and username on the left
-                HStack(spacing: 12) {
-                    ProfilePictureView(url: photo.profilePictureUrl, size: 30)
-                    
-                    Text(photo.userId == Auth.auth().currentUser?.uid ? "Me" : photo.userName)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .truncationMode(.tail)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                // Star count
                 HStack(spacing: 6) {
                     Text("\(photo.stars)")
                         .font(.system(size: 16, weight: .bold))
@@ -333,6 +277,17 @@ struct ThemePhotoCard: View {
                 .padding(.vertical, 5)
                 .background(Color(hex: "#DAA520"))
                 .cornerRadius(20)
+                
+                if let themeName = photo.themeName, let themeId = photo.themeId {
+                    ThemeBadgeClickable(
+                        themeName: themeName,
+                        themeId: themeId,
+                        competitionId: competitionId
+                    )
+                    .layoutPriority(-1)
+                }
+                
+                Spacer()
                 
                 // My Predictions Button (Only for entry creator with parlay)
 //                if isEntryCreator && photo.parlayStatus != nil {
@@ -354,6 +309,7 @@ struct ThemePhotoCard: View {
 //                        .cornerRadius(20)
 //                    }
 //                }
+            
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)
@@ -390,8 +346,8 @@ struct ThemePhotoCard: View {
     }
 }
 
-// MARK: - Load More Button Component
-struct LoadMoreButton: View {
+// MARK: - Load More View Component
+struct LoadMoreView: View {
     let isLoading: Bool
     let onLoadMore: () -> Void
     

@@ -154,26 +154,11 @@ struct PingbearApp: App {
                     CompDetails(competition: competition)
                 }
             }
-            .fullScreenCover(
-                isPresented: Binding(
-                    get: { deepLinkHandler.pendingRedeemCode != nil },
-                    set: { if !$0 { deepLinkHandler.pendingRedeemCode = nil } }
-                ),
-                onDismiss: {
-                    deepLinkHandler.pendingRedeemCode = nil
-                }
-            ) {
-                RedeemWinCodeView(prefilledCode: deepLinkHandler.pendingRedeemCode)
-            }
             .onChange(of: deepLinkHandler.pendingDeepLink) { _ in
                 processPendingDeepLinks()
             }
             .onReceive(NotificationCenter.default.publisher(for: .authStateDidChange)) { _ in
                 isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("DismissToMyComps"))) { _ in
-                deepLinkHandler.pendingRedeemCode = nil
-                selectedTab = 0
             }
         }
     }

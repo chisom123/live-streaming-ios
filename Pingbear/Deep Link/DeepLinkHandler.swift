@@ -5,7 +5,6 @@ import FirebaseFirestore
 
 enum DeepLinkType: Equatable {
     case competition(String)
-    case redeem(String)
     case unknown
 }
 
@@ -14,7 +13,6 @@ class DeepLinkHandler: ObservableObject {
     
     @Published var pendingDeepLink: DeepLinkType?
     @Published var isProcessingDeepLink = false
-    @Published var pendingRedeemCode: String? = nil
     
     private let db = Firestore.firestore()
     private var deepLinkQueue: [URL] = []
@@ -107,18 +105,6 @@ class DeepLinkHandler: ObservableObject {
             }
         }
         
-        // Handle redeem deep links: socialstar://redeem/<code>
-        if urlString.contains("redeem/") {
-            let components = urlString.components(separatedBy: "redeem/")
-            if components.count > 1 {
-                let code = components[1]
-                print("Found redeem code: \(code)")
-                pendingDeepLink = .redeem(code)
-                completion(true)
-                return
-            }
-        }
-        
         print("URL doesn't match any known deep link path")
         pendingDeepLink = .unknown
         completion(false)
@@ -173,13 +159,6 @@ class DeepLinkHandler: ObservableObject {
                         completion(competition)
                     }
                 }
-                
-            case .redeem(let code):
-                // Surface the code via pendingRedeemCode so PingbearApp can present RedeemWinCodeView
-                self?.pendingRedeemCode = code
-                self?.isProcessingDeepLink = false
-                self?.pendingDeepLink = nil
-                completion(nil)
                 
             case .unknown:
                 self?.isProcessingDeepLink = false
@@ -314,7 +293,6 @@ class DeepLinkHandler: ObservableObject {
     func reset() {
         deepLinkQueue.removeAll()
         pendingDeepLink = nil
-        pendingRedeemCode = nil
         isProcessingDeepLink = false
         isProcessingQueue = false
         retryTimer?.invalidate()

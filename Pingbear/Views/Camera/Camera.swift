@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+
 struct CameraView: View {
     @StateObject private var cameraModel = CameraViewModel()
     var competition: Competition
@@ -12,15 +13,6 @@ struct CameraView: View {
     @StateObject private var themesViewModel = ThemesViewModel()
     @State private var showingThemeSelection = false
     
-    // Simulator detection
-    private var isSimulator: Bool {
-        #if targetEnvironment(simulator)
-        return true
-        #else
-        return false
-        #endif
-    }
-    
     enum ImageSource {
         case camera
         case gallery
@@ -30,33 +22,11 @@ struct CameraView: View {
         ZStack {
             // MARK: Camera View - Show placeholder in simulator
             if isViewAppeared {
-                if isSimulator {
-                    // Placeholder view for simulator
-                    ZStack {
-                        Color.gray.opacity(0.3)
-                            .ignoresSafeArea()
-                        
-                        VStack(spacing: 20) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(.white.opacity(0.7))
-                            
-                            Text("Simulator Mode")
-                                .font(.title2)
-                                .foregroundColor(.white)
-                            
-                            Text("Camera preview unavailable\nTap button to capture test image")
-                                .font(.subheadline)
-                                .foregroundColor(.white.opacity(0.8))
-                                .multilineTextAlignment(.center)
-                        }
-                    }
-                } else {
-                    CameraInitView()
-                        .environmentObject(cameraModel)
-                        .ignoresSafeArea()
-                }
+                CameraInitView()
+                    .environmentObject(cameraModel)
+                    .ignoresSafeArea()
             } else {
+                // Show a loading placeholder until view appears
                 Color.black
                     .ignoresSafeArea()
             }
@@ -65,9 +35,7 @@ struct CameraView: View {
             VStack {
                 HStack {
                     Button {
-                        if !isSimulator {
-                            cameraModel.stopSession()
-                        }
+                        cameraModel.stopSession()
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
@@ -107,39 +75,33 @@ struct CameraView: View {
                     
                     Spacer()
                     
-                    if !isSimulator {
-                        Button(action: {
-                            cameraModel.toggleCamera()
-                        }) {
-                            Image(systemName: "arrow.2.circlepath")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .padding(5)
-                                .shadow(radius: 10)
-                        }
+                    Button(action: {
+                        cameraModel.toggleCamera()
+                    }) {
+                        Image(systemName: "arrow.2.circlepath")
+                            .font(.system(size: 30))
+                            .foregroundColor(.white)
+                            .padding(5)
+                            .shadow(radius: 10)
                     }
                 }
                 .padding(.top, 5)
                 .padding(20)
                 
-                if !isSimulator {
-                    HStack {
-                        Spacer()
-                        FlashButton(cameraModel: cameraModel)
-                    }
-                    .padding(.trailing, 20)
+                HStack {
+                    Spacer()
+                    FlashButton(cameraModel: cameraModel)
                 }
+                .padding(.trailing, 20)
                 
                 Spacer()
+
                 // Bottom Controls
                 HStack(spacing: 0) {
+                    // Camera Button
                     Button(action: {
                         imageSource = .camera
-                        if isSimulator {
-                            captureSimulatorImage()
-                        } else {
-                            cameraModel.capturePhotoWithFlash()
-                        }
+                        cameraModel.capturePhotoWithFlash()
                     }) {
                         Circle()
                             .fill(Color.clear)
@@ -150,7 +112,7 @@ struct CameraView: View {
                                     .stroke(Color.white, lineWidth: 8)
                             )
                     }
-                    .disabled(!isSimulator && cameraModel.isTakingPhoto)
+                    .disabled(cameraModel.isTakingPhoto)
                 }
                 .padding(.bottom, 50)
             }
@@ -187,72 +149,33 @@ struct CameraView: View {
             )
         }
         .onAppear {
+            // Optimization: Mark the view as appeared first, then request camera setup
+            // This allows UI to render immediately while camera initializes in background
             DispatchQueue.main.async {
                 self.isViewAppeared = true
+                // Camera permission check will be triggered by CameraInitView
                 
-                if !isSimulator {
-                    // Only initialize camera on real device
-                }
-                
+                // Load themes when view appears
                 themesViewModel.loadThemes(for: competition.id)
             }
         }
         .onDisappear {
-            if !isSimulator {
-                cameraModel.resetFlash()
-                cameraModel.stopSession()
-            }
+            // Clean up resources when view disappears
+            cameraModel.resetFlash()
+            cameraModel.stopSession()
         }
-    }
-    
-    // Generate a test image for simulator
-    private func captureSimulatorImage() {
-        let size = CGSize(width: 1080, height: 1920)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        
-        let testImage = renderer.image { context in
-            // Create a gradient background
-            let colors = [UIColor.systemBlue.cgColor, UIColor.systemPurple.cgColor]
-            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                     colors: colors as CFArray,
-                                     locations: [0.0, 1.0])!
-            
-            context.cgContext.drawLinearGradient(gradient,
-                                                 start: CGPoint(x: 0, y: 0),
-                                                 end: CGPoint(x: size.width, y: size.height),
-                                                 options: [])
-            
-            // Add some text
-            let text = "Test Photo"
-            let attributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.boldSystemFont(ofSize: 60),
-                .foregroundColor: UIColor.white
-            ]
-            
-            let textSize = text.size(withAttributes: attributes)
-            let textRect = CGRect(x: (size.width - textSize.width) / 2,
-                                 y: (size.height - textSize.height) / 2,
-                                 width: textSize.width,
-                                 height: textSize.height)
-            
-            text.draw(in: textRect, withAttributes: attributes)
-        }
-        
-        cameraModel.capturedImage = testImage
-        cameraModel.showPreview = true
     }
     
     private func resetCamera() {
         cameraModel.capturedImage = nil
-        if !isSimulator {
-            cameraModel.resetFlash()
-            cameraModel.checkPermission()
-        }
+        cameraModel.resetFlash()
+        cameraModel.checkPermission()
         imageSource = .camera
         selectedItem = nil
         selectedImage = nil
     }
 }
+
 // MARK: - Flash Button Component
 struct FlashButton: View {
     @ObservedObject var cameraModel: CameraViewModel
@@ -267,7 +190,7 @@ struct FlashButton: View {
                 .padding(5)
                 .shadow(radius: 10)
         }
+        // Always enabled for front camera, and conditionally for back camera
         .opacity(cameraModel.isFlashAvailable ? 1.0 : 0.5)
     }
 }
-
