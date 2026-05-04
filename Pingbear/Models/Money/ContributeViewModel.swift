@@ -12,6 +12,7 @@ struct RaceContributor: Identifiable {
     let userId:   String
     let username: String
     let amount:   Double
+    let profilePictureUrl: String?  // Added this field
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -33,9 +34,6 @@ class ContributeViewModel: ObservableObject {
     private var balanceListener: ListenerRegistration?
 
     // ── Load wallet balance ───────────────────────────────────
-    // Starts a real-time listener so the balance shown in the
-    // sheet is always accurate. Stops when sheet dismisses.
-
     func startBalanceListener() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         isLoadingBalance = true
@@ -54,11 +52,6 @@ class ContributeViewModel: ObservableObject {
     }
 
     // ── Contribute to race pot ────────────────────────────────
-    // Calls contributeToRace Cloud Function which deducts from
-    // wallet and adds to race total_pot atomically.
-    // The server always does the final balance check —
-    // client-side check is just for UX.
-
     func contribute(competitionId: String, amount: Double) async -> Bool {
         isLoading = true
         errorMessage = nil
@@ -77,14 +70,11 @@ class ContributeViewModel: ObservableObject {
     }
 
     // ── Can afford a given amount ─────────────────────────────
-    // Client-side check for UI only. Server is the real gatekeeper.
-
     func canAfford(_ amount: Double) -> Bool {
         walletBalance >= amount
     }
 
     // ── Load contributors ─────────────────────────────────────
-
     func loadContributors(raceId: String) {
         db.collection("competition_races")
             .document(raceId)
@@ -113,11 +103,15 @@ class ContributeViewModel: ObservableObject {
                 for (userId, total) in totals {
                     group.enter()
                     self.db.collection("users").document(userId).getDocument { doc, _ in
-                        let name = doc?.data()?["name"] as? String ?? "Unknown"
+                        let data = doc?.data()
+                        let name = data?["name"] as? String ?? "Unknown"
+                        let profileUrl = data?["profilePictureUrl"] as? String
+                        
                         result.append(RaceContributor(
                             userId:   userId,
                             username: userId == currentUserId ? "Me" : name,
-                            amount:   total
+                            amount:   total,
+                            profilePictureUrl: profileUrl  // Include profile URL
                         ))
                         group.leave()
                     }
