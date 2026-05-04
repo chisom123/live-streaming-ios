@@ -9,6 +9,7 @@ struct TopUpSheet: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = TopUpViewModel()
     @State private var displayAmount: String = ""
+    @FocusState private var isAmountFocused: Bool
 
     var body: some View {
         ZStack {
@@ -52,14 +53,6 @@ struct TopUpSheet: View {
 
                         // ── Enter Amount ─────────────────────────
                         VStack(spacing: 0) {
-                            Text("Enter Amount")
-                                .font(.system(size: 15))
-                                .foregroundColor(.white.opacity(0.7))
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.horizontal, 20)
-                                .padding(.top, 16)
-                                .padding(.bottom, 8)
-                            
                             TextField("$0.00", text: $displayAmount)
                                 .textFieldStyle(.plain)
                                 .keyboardType(.decimalPad)
@@ -67,7 +60,8 @@ struct TopUpSheet: View {
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
                                 .tint(.white)
-                                .padding(.vertical, 20)
+                                .focused($isAmountFocused)
+                                .frame(height: 80)
                                 .padding(.horizontal, 20)
                                 .onChange(of: displayAmount) { newValue in
                                     // If the field is just "$" or empty, clear everything
@@ -108,7 +102,6 @@ struct TopUpSheet: View {
                                     viewModel.customAmount = cleaned
                                 }
                         }
-                        .padding(.bottom, 8)
                         .background(Color(hex: "#1A2245"))
                         .cornerRadius(12)
                         .padding(.horizontal, 20)
@@ -132,9 +125,6 @@ struct TopUpSheet: View {
                                     let wholeAmount = Int(amount)
                                     displayAmount = "$\(wholeAmount)"
                                     viewModel.customAmount = "\(wholeAmount)"
-                                    Task {
-                                        await viewModel.initiateTopUp(amount: amount)
-                                    }
                                 } label: {
                                     Text("$\(Int(amount))")
                                         .font(.system(size: 16, weight: .semibold))
@@ -186,6 +176,10 @@ struct TopUpSheet: View {
             // Sync display amount with view model if needed
             if !viewModel.customAmount.isEmpty {
                 displayAmount = "$\(viewModel.customAmount)"
+            }
+            // Auto-focus the amount field to open keyboard
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isAmountFocused = true
             }
         }
         .alert("Error", isPresented: Binding(

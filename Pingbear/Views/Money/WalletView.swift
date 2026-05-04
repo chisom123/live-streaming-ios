@@ -54,9 +54,6 @@ struct WalletView: View {
                             }
                             .padding(.bottom, 40)
                         }
-                        .refreshable {
-                            await viewModel.loadTransactions()
-                        }
                     }
                 }
             }
