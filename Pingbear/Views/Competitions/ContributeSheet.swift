@@ -32,6 +32,37 @@ struct ContributeSheet: View {
         }
         return nil
     }
+    
+    // Smart quick-fill amount that adapts to user's balance
+    private var smartQuickFillAmount: (label: String, amount: Double)? {
+        let balance = viewModel.walletBalance
+        
+        // Must have at least $0.50 to contribute
+        guard balance >= 0.50 else { return nil }
+        
+        // If balance is $20 or under, suggest full balance
+        if balance <= 20 {
+            return ("$\(String(format: "%.2f", balance))", balance)
+        }
+        
+        // For balances over $20, use tiered suggestions
+        if balance >= 100 {
+            // High rollers: $20 is meaningful but not too much
+            let amount = min(20.0, round(balance * 0.2 * 100) / 100)
+            return ("$\(String(format: "%.0f", amount))", amount)
+        } else if balance >= 50 {
+            // Mid-high: $10 feels right
+            let amount = min(10.0, round(balance * 0.2 * 100) / 100)
+            return ("$\(String(format: "%.0f", amount))", amount)
+        } else if balance >= 25 {
+            // Medium balance: $5 is a solid contribution
+            return ("$5", 5.0)
+        } else {
+            // Between $20-25: $3 or 1/3 of balance
+            let amount = min(3.0, round(balance / 3 * 100) / 100)
+            return ("$\(String(format: "%.2f", amount))", amount)
+        }
+    }
 
     var body: some View {
         ZStack {
@@ -113,6 +144,33 @@ struct ContributeSheet: View {
                             .cornerRadius(12)
                             .padding(.horizontal, 20)
 
+                            // Smart Quick Fill Button
+                            if let quickFill = smartQuickFillAmount {
+                                Button {
+                                    customAmount = String(format: "%.2f", quickFill.amount)
+                                    isAmountFocused = false
+                                    
+                                    Analytics.shared.trackTap(
+                                        elementId: "smart_quick_fill",
+                                        screenName: "contribute_sheet"
+                                    )
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "bolt.fill")
+                                            .font(.system(size: 12))
+                                        Text("Quick Add \(quickFill.label)")
+                                            .font(.system(size: 14, weight: .semibold))
+                                    }
+                                    .foregroundColor(.white.opacity(0.9))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(Color(hex: "#4169E1").opacity(0.3))
+                                    .cornerRadius(20)
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.top, 12)
+                            }
+                            
                             if let error = customAmountError {
                                 Text(error)
                                     .font(.system(size: 15, weight: .bold))
