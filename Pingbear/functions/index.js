@@ -418,8 +418,7 @@ exports.checkPurchaseStatus = onCall({
 
 exports.saveUserProfile = onCall({
   cors: ["*"],
-  maxInstances: 20,
-  minInstances: 1,
+  maxInstances: 20
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
