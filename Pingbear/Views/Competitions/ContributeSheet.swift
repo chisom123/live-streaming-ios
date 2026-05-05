@@ -41,6 +41,10 @@ struct ContributeSheet: View {
                 // Custom Header
                 HStack {
                     Button(action: {
+                        Analytics.shared.trackTap(
+                            elementId: "back_button",
+                            screenName: "contribute_sheet"
+                        )
                         dismiss()
                     }) {
                         Image(systemName: "arrow.left")
@@ -55,6 +59,9 @@ struct ContributeSheet: View {
                     Text("Add to Prize Pool")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
+                        .onAppear {
+                            Analytics.shared.trackScreen(name: "contribute_sheet")
+                        }
                     
                     Spacer()
                     
@@ -141,7 +148,16 @@ struct ContributeSheet: View {
                 // ── Add button (pinned to bottom) ──────
                 VStack {
                     Button {
-                        if let amount = parsedAmount {
+                        if let amount = parsedAmount, customAmountIsValid {
+                            // Track analytics only when button is valid and tapped
+                            Analytics.shared.track(
+                                event: "added_money_to_prize_pool",
+                                properties: [
+                                    "amount_added": String(format: "%.2f", amount),
+                                    "screen_name": "contribute_sheet"
+                                ]
+                            )
+                            
                             Task {
                                 let success = await viewModel.contribute(
                                     competitionId: competitionId,

@@ -585,7 +585,8 @@ async function refundContributors(raceId, raceRef, competitionId, db) {
 // indirectly via a Cloud Function call when a photo is posted
 exports.getOrCreateRaceForCompetition = onCall({
   cors: ['*'],
-  maxInstances: 50
+  maxInstances: 50,
+  minInstances: 1,
 }, async (request) => {
   if (!request.auth) {
     throw new Error('User must be authenticated');

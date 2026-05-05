@@ -289,6 +289,10 @@ struct CompDetails: View {
                         VStack(spacing: 0) {
                             ForEach(Array(sortedLeaderboard().enumerated()), id: \.element.id) { index, userEntry in
                                 Button(action: {
+                                    Analytics.shared.trackTap(
+                                        elementId: "leaderboard_cell",
+                                        screenName: "competition_details"
+                                    )
                                     selectedUserForPhotos = UserSelection(
                                         user: userEntry,
                                         competitionId: competition.id

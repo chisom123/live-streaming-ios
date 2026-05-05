@@ -33,6 +33,9 @@ struct TopUpSheet: View {
                     Text("Top Up")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
+                        .onAppear {
+                            Analytics.shared.trackScreen(name: "top_up_sheet")
+                        }
                     
                     Spacer()
                     

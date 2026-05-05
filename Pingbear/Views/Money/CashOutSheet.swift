@@ -52,6 +52,9 @@ struct CashOutSheet: View {
                     Text("Cash Out")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.white)
+                        .onAppear {
+                            Analytics.shared.trackScreen(name: "cash_out_sheet")
+                        }
                     
                     Spacer()
                     
