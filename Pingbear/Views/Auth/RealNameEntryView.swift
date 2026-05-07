@@ -1,4 +1,3 @@
-// RealNameEntryView.swift
 import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
@@ -12,117 +11,66 @@ struct RealNameEntryView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#10183C")
-                .ignoresSafeArea()
-
+            AppTheme.pageBackground.ignoresSafeArea()
             VStack {
                 Spacer()
-                
                 VStack {
-                    Text("What's your name?")
+                    Text("What\'s your name?")
                         .font(.system(size: 18, weight: .bold, design: .default))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(10)
-                        .foregroundColor(.white)
-                        .padding(.top, 20)
-                        .padding(.bottom, 25)
-                        .onAppear {
-                            Analytics.shared.trackScreen(name: "real_name_entry")
-                        }
-                    
+                        .multilineTextAlignment(.center).lineSpacing(10)
+                        .foregroundColor(AppTheme.primaryText)
+                        .padding(.top, 20).padding(.bottom, 25)
+                        .onAppear { Analytics.shared.trackScreen(name: "real_name_entry") }
+
                     TextField("Enter your name", text: $fullName)
-                        .padding()
-                        .frame(height: 60)
-                        .background(
-                            Color(hex: "#3B4374")
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        )
-                        .foregroundColor(.white)
+                        .padding().frame(height: 60)
+                        .background(AppTheme.inputBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
+                        .foregroundColor(AppTheme.primaryText)
                         .font(.system(size: 16, weight: .bold, design: .default))
                         .autocapitalization(.words)
-                    
+                        .tint(AppTheme.accent)
+
                     if let error = errorMessage {
-                        Text(error)
-                            .foregroundColor(Color(hex: "#FF0000"))
-                            .font(.system(size: 16, weight: .bold, design: .default))
-                            .multilineTextAlignment(.center)
-                            .lineSpacing(10)
-                            .padding(.top, 20)
-                            .padding(.horizontal)
-                            .onAppear {
-                                Analytics.shared.track(
-                                    event: "name_entry_error",
-                                    properties: ["error": error]
-                                )
-                            }
+                        Text(error).foregroundColor(.red).font(.system(size: 16, weight: .bold, design: .default))
+                            .multilineTextAlignment(.center).lineSpacing(10).padding(.top, 20).padding(.horizontal)
+                            .onAppear { Analytics.shared.track(event: "name_entry_error", properties: ["error": error]) }
                     }
-                    
+
                     if isLoading {
-                        ProgressView()
-                            .padding(.vertical, 20)
-                            .tint(.white)
+                        ProgressView().padding(.vertical, 20).tint(AppTheme.primaryText)
                     } else {
-                        Button(action: {
-                            self.hideKeyboard()
-                            self.validateAndContinue()
-                        }) {
-                            Text("Continue")
-                                .frame(maxWidth: .infinity, minHeight: 44)
+                        Button(action: { self.hideKeyboard(); self.validateAndContinue() }) {
+                            Text("Continue").frame(maxWidth: .infinity, minHeight: 44)
                                 .font(.system(size: 18, weight: .bold, design: .default))
                                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color(hex: "#4169E1"))
-                                .foregroundColor(Color(hex: "#fff"))
-                                .cornerRadius(200)
+                                .background(AppTheme.accent).foregroundColor(.white).cornerRadius(200)
                         }
                         .padding(.vertical, 20)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .background(Color(hex: "#1A2245"))
-                .cornerRadius(10)
-                .padding(.horizontal, 20)
-                
-                NavigationLink(destination: NameEntryView(phoneNumber: phoneNumber, fullName: fullName), isActive: $navigateToUsernameEntry) {
-                    EmptyView()
-                }.isDetailLink(false)
-                
+                .frame(maxWidth: .infinity).padding(20)
+                .background(AppTheme.cardBackground).cornerRadius(10).padding(.horizontal, 20)
+
+                NavigationLink(destination: NameEntryView(phoneNumber: phoneNumber, fullName: fullName), isActive: $navigateToUsernameEntry) { EmptyView() }.isDetailLink(false)
                 Spacer()
             }
         }
         .navigationBarHidden(true)
     }
-    
+
     func validateAndContinue() {
         errorMessage = nil
-        
         let trimmedName = String(fullName.drop(while: { $0.isWhitespace }))
-        
         guard !trimmedName.isEmpty else {
             errorMessage = "Please enter your name"
-            Analytics.shared.track(
-                event: "name_validation_failed",
-                properties: ["error": "Name empty"]
-            )
-            return
+            Analytics.shared.track(event: "name_validation_failed", properties: ["error": "Name empty"]); return
         }
-        
         guard trimmedName.count >= 2 else {
             errorMessage = "Name must be at least 2 characters"
-            Analytics.shared.track(
-                event: "name_validation_failed",
-                properties: ["error": "Name too short"]
-            )
-            return
+            Analytics.shared.track(event: "name_validation_failed", properties: ["error": "Name too short"]); return
         }
-        
         fullName = trimmedName
-        
-        Analytics.shared.track(
-            event: "name_entered",
-            properties: ["name_length": trimmedName.count]
-        )
-        
+        Analytics.shared.track(event: "name_entered", properties: ["name_length": trimmedName.count])
         navigateToUsernameEntry = true
     }
 }

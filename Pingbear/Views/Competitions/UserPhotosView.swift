@@ -13,14 +13,11 @@ struct UserPhotosView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedPhoto: UserPhoto? = nil
     
-    // Predictions sheet state
     @State private var showingPredictionsView = false
     @State private var selectedPhotoForPredictions: UserPhoto? = nil
     
-    // Interaction service for predictions view
     @StateObject private var interactionService = PhotoInteractionService()
     
-    // Cache for pending user profiles
     @State private var pendingUserProfiles: [String: (username: String, profilePictureUrl: String?)] = [:]
     
     private let db = Firestore.firestore()
@@ -44,7 +41,7 @@ struct UserPhotosView: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
                     
                     Spacer()
@@ -54,7 +51,7 @@ struct UserPhotosView: View {
                         
                         Text(userName == "Me" ? "Me" : userName)
                             .font(.system(size: 18, weight: .bold, design: .default))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
                             .truncationMode(.tail)
                             .lineLimit(1)
                     }
@@ -62,7 +59,6 @@ struct UserPhotosView: View {
                     
                     Spacer()
                     
-                    // Invisible placeholder for balance to match the arrow size
                     Image(systemName: "arrow.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -71,19 +67,19 @@ struct UserPhotosView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
+                .background(AppTheme.cardBackground)
                 
                 if viewModel.isLoading && viewModel.userPhotos.isEmpty {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.primaryText))
                     Spacer()
                 } else if viewModel.userPhotos.isEmpty && !viewModel.isLoading {
                     Spacer()
                     VStack(spacing: 16) {
                         Text("No Photos Yet")
                             .font(.system(size: 18, weight: .bold, design: .default))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
                     }
                     .padding()
                     Spacer()
@@ -111,7 +107,6 @@ struct UserPhotosView: View {
                                 ))
                             }
                             
-                            // Load More Section
                             if viewModel.hasMorePhotos {
                                 LoadMoreView(
                                     isLoading: viewModel.isLoadingMore,
@@ -127,7 +122,6 @@ struct UserPhotosView: View {
                     }
                 }
                 
-                // Error handling
                 if let errorMessage = viewModel.errorMessage {
                     VStack {
                         Text(errorMessage)
@@ -142,7 +136,7 @@ struct UserPhotosView: View {
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
-            .background(Color(hex: "#10183C").ignoresSafeArea())
+            .background(AppTheme.pageBackground.ignoresSafeArea())
         }
         .onAppear {
             viewModel.fetchUserPhotos(userId: userId, competitionId: competitionId)
@@ -168,7 +162,6 @@ struct UserPhotosView: View {
     }
     
     private func loadPredictionsData(for photo: UserPhoto) {
-        // Load interaction data for the selected photo
         interactionService.loadRatingData(
             competitionId: competitionId,
             entryId: photo.id
@@ -179,7 +172,6 @@ struct UserPhotosView: View {
             entryId: photo.id
         )
         
-        // Load user profiles for pending predictions
         if let predictions = photo.parlayPredictions {
             for userId in predictions.keys {
                 if !interactionService.interactions.contains(where: { $0.userId == userId }) {
@@ -194,7 +186,7 @@ struct UserPhotosView: View {
         
         db.collection("users").document(userId).getDocument { document, error in
             if let data = document?.data(),
-               let username = data["name"] as? String {  // Changed from "username"
+               let username = data["name"] as? String {
                 let profilePictureUrl = data["profilePictureUrl"] as? String
                 DispatchQueue.main.async {
                     self.pendingUserProfiles[userId] = (username: username, profilePictureUrl: profilePictureUrl)
@@ -214,9 +206,9 @@ struct PhotoCard: View {
     
     private var parlayStatusColor: Color {
         switch photo.parlayStatus {
-        case "won": return Color(hex: "#00FF00")
-        case "lost": return Color(hex: "#FF4444")
-        default: return Color(hex: "#FFD700")
+        case "won": return AppTheme.green
+        case "lost": return Color.red
+        default: return AppTheme.gold
         }
     }
     
@@ -225,11 +217,11 @@ struct PhotoCard: View {
             KFImage(URL(string: photo.photoUrl))
                 .placeholder {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(AppTheme.cardHighlight)
                         .frame(height: 180)
                         .overlay(
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.secondaryText))
                         )
                 }
                 .onFailure { _ in }
@@ -275,7 +267,7 @@ struct PhotoCard: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(Color(hex: "#DAA520"))
+                .background(AppTheme.gold)
                 .cornerRadius(20)
                 
                 if let themeName = photo.themeName, let themeId = photo.themeId {
@@ -288,33 +280,12 @@ struct PhotoCard: View {
                 }
                 
                 Spacer()
-                
-                // My Predictions Button (Only for entry creator with parlay)
-//                if isEntryCreator && photo.parlayStatus != nil {
-//                    Button(action: onPredictionsTap) {
-//                        HStack(spacing: 6) {
-//                            Circle()
-//                                .fill(parlayStatusColor)
-//                                .frame(width: 10, height: 10)
-//                            
-//                            Text("Predictions")
-//                                .font(.system(size: 16, weight: .bold))
-//                                .foregroundColor(.white)
-//                                .truncationMode(.tail)
-//                                .lineLimit(1)
-//                        }
-//                        .padding(.horizontal, 10)
-//                        .padding(.vertical, 5)
-//                        .background(parlayStatusColor.opacity(0.15))
-//                        .cornerRadius(20)
-//                    }
-//                }
-            
             }
             .padding(.horizontal, 15)
             .padding(.vertical, 12)
+            .background(AppTheme.cardBackground)
         }
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(10)
     }
     
@@ -357,7 +328,7 @@ struct LoadMoreView: View {
                 if isLoading {
                     ProgressView()
                         .scaleEffect(0.8)
-                        .tint(.white)
+                        .tint(AppTheme.primaryText)
                     Text("Loading...")
                 } else {
                     Image(systemName: "arrow.down.circle")
@@ -366,12 +337,12 @@ struct LoadMoreView: View {
                 }
             }
             .font(.system(size: 14, weight: .medium))
-            .foregroundColor(.white)
+            .foregroundColor(AppTheme.primaryText)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(hex: "#3B4374"))
+                    .fill(AppTheme.cardHighlight)
             )
         }
         .disabled(isLoading)

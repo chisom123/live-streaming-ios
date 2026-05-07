@@ -19,15 +19,15 @@ struct MyCompsView: View {
 
                 Spacer()
 
-                Image("Logo-T")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 30, height: 30)
-                    .offset(y: -1.5)
+                Text("Home")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(AppTheme.primaryText)
+                    .onAppear {
+                        Analytics.shared.trackScreen(name: "mycomps_view")
+                    }
 
                 Spacer()
 
-                // Plus button – directly creates a new competition
                 Button(action: {
                     if !isCreatingCompetition {
                         createNewCompetition()
@@ -37,7 +37,7 @@ struct MyCompsView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 30, height: 30)
-                        .foregroundColor(isCreatingCompetition ? Color.white.opacity(0.5) : Color.white)
+                        .foregroundColor(isCreatingCompetition ? AppTheme.iconColor.opacity(0.3) : AppTheme.iconColor)
                 }
                 .disabled(isCreatingCompetition)
             }
@@ -48,7 +48,7 @@ struct MyCompsView: View {
 
             if isLoading {
                 ProgressView()
-                    .tint(.white)
+                    .tint(AppTheme.primaryText)
                 Spacer()
             } else if viewModel.competitions.isEmpty {
                 EmptyCompsView(
@@ -84,7 +84,7 @@ struct MyCompsView: View {
                             })
                         }
                     }
-                    .background(Color(hex: "#1A2245"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
@@ -92,7 +92,7 @@ struct MyCompsView: View {
             }
         }
         .navigationBarHidden(true)
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .background(
             EmptyView()
                 .navigationDestination(
@@ -170,7 +170,6 @@ struct MyCompsView: View {
 
         let db = Firestore.firestore()
 
-        // Fetch the user's document (username, etc.)
         db.collection("users").document(userID).getDocument { (document, error) in
             if let error = error {
                 print("Failed to fetch user data: \(error.localizedDescription)")
@@ -251,15 +250,13 @@ struct EmptyCompsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
             Text("No Competitions Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primaryText)
                 .padding(.top, 30)
                 .padding(.bottom, 30)
-            
-            // Button container - fixed width for consistency
-            VStack() {
+
+            VStack {
                 Button(action: newCompAction) {
                     HStack {
                         Text("New Competition")
@@ -267,7 +264,7 @@ struct EmptyCompsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(isCreating ? Color(hex: "#4169E1").opacity(0.5) : Color(hex: "#4169E1"))
+                    .background(isCreating ? AppTheme.accent.opacity(0.5) : AppTheme.accent)
                     .foregroundColor(isCreating ? .white.opacity(0.6) : .white)
                     .cornerRadius(25)
                 }
@@ -278,7 +275,7 @@ struct EmptyCompsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(14)
         .padding(.horizontal, 20)
     }
@@ -300,14 +297,14 @@ struct CompetitionCellContent: View {
                     .font(.system(size: 16, weight: .bold))
                     .lineLimit(2)
                     .lineSpacing(9)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppTheme.primaryText)
                     .truncationMode(.tail)
                     .padding(.leading, 30)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(Color(hex: "#D3D3D3"))
+                    .foregroundColor(AppTheme.secondaryText)
                     .font(.system(size: 15, weight: .bold))
                     .padding(.trailing, 30)
             }
@@ -319,7 +316,6 @@ struct CompetitionCellContent: View {
                 } label: {
                     Label("Leave Competition", systemImage: "rectangle.portrait.and.arrow.right")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
                 }
             }
             .onLongPressGesture(minimumDuration: 0.5) {
@@ -331,7 +327,7 @@ struct CompetitionCellContent: View {
 
             if !isLast {
                 Divider()
-                    .background(Color.white.opacity(0.2))
+                    .background(AppTheme.divider)
             }
         }
     }

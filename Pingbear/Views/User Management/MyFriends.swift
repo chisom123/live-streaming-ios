@@ -5,38 +5,36 @@ struct MyFriendsView: View {
     @ObservedObject var viewModel: MyFriendsModel
     @State private var showActionSheet: Bool = false
     @State private var friendToManage: String? = nil
-    
+
     var body: some View {
         ZStack {
             VStack {
                 HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(Color.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("My Friends")
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.primaryText)
                         .padding(.horizontal)
-                    
+
                     Spacer()
-                    
+
                     Button(action: {}) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(Color.white)
+                            .foregroundColor(.clear)
                     }
                     .opacity(0)
                 }
@@ -54,44 +52,44 @@ struct MyFriendsView: View {
                                     HStack {
                                         HStack(spacing: 20) {
                                             ProfilePictureView(url: friend.profileImageUrl, size: 40)
-                                            
+
                                             Text(friend.name)
                                                 .font(.system(size: 16, weight: .bold))
                                                 .lineLimit(1)
                                                 .lineSpacing(9)
-                                                .foregroundColor(.white)
+                                                .foregroundColor(AppTheme.primaryText)
                                                 .truncationMode(.tail)
                                                 .frame(maxWidth: .infinity, alignment: .leading)
                                         }
                                         .padding(.leading, 5)
-                                        
+
                                         Spacer()
-                                        
+
                                         Image(systemName: "chevron.right")
-                                            .foregroundColor(Color(hex: "#D3D3D3"))
+                                            .foregroundColor(AppTheme.secondaryText)
                                             .font(.system(size: 15, weight: .bold))
                                             .padding(.trailing, 5)
                                     }
                                     .padding(.vertical, 20)
                                     .padding(.horizontal, 20)
-                                    .background(Color(hex: "#1A2245"))
+                                    .background(AppTheme.cardBackground)
                                     .contentShape(Rectangle())
                                 }
                                 .buttonStyle(PlainButtonStyle())
 
                                 if friend.id != viewModel.friends.last?.id {
                                     Divider()
-                                        .background(Color.white.opacity(0.2))
+                                        .background(AppTheme.divider)
                                 }
                             }
                         }
                     }
-                    .background(Color(hex: "#1A2245"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
                 }
             }
-            .background(Color(hex: "#10183C"))
+            .background(AppTheme.pageBackground)
             .onAppear {
                 viewModel.fetchFriends()
                 Analytics.shared.trackScreen(name: "my_friends")

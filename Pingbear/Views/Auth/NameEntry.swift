@@ -7,7 +7,6 @@ import CryptoKit
 struct NameEntryView: View {
     let phoneNumber: String
     let fullName: String
-
     @State private var username: String = ""
     @State private var errorMessage: String? = nil
     @State private var isLoading: Bool = false
@@ -15,75 +14,44 @@ struct NameEntryView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#10183C").ignoresSafeArea()
-
+            AppTheme.pageBackground.ignoresSafeArea()
             VStack {
                 Spacer()
-
                 VStack {
                     Text("Create a username")
                         .font(.system(size: 18, weight: .bold))
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(.white)
-                        .padding(.top, 20)
-                        .padding(.bottom, 25)
-                        .onAppear {
-                            Analytics.shared.trackScreen(name: "username_entry")
-                        }
+                        .multilineTextAlignment(.center).foregroundColor(AppTheme.primaryText)
+                        .padding(.top, 20).padding(.bottom, 25)
+                        .onAppear { Analytics.shared.trackScreen(name: "username_entry") }
 
                     TextField("Enter your username", text: $username)
-                        .padding()
-                        .frame(height: 60)
-                        .background(
-                            Color(hex: "#3B4374")
-                                .clipShape(RoundedRectangle(cornerRadius: 10))
-                        )
-                        .foregroundColor(.white)
-                        .font(.system(size: 16, weight: .bold))
-                        .autocapitalization(.none)
+                        .padding().frame(height: 60)
+                        .background(AppTheme.inputBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
+                        .foregroundColor(AppTheme.primaryText)
+                        .font(.system(size: 16, weight: .bold)).autocapitalization(.none)
+                        .tint(AppTheme.accent)
 
                     if let error = errorMessage {
-                        Text(error)
-                            .foregroundColor(Color(hex: "#FF0000"))
-                            .font(.system(size: 16, weight: .bold))
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 20)
-                            .padding(.horizontal)
+                        Text(error).foregroundColor(.red).font(.system(size: 16, weight: .bold))
+                            .multilineTextAlignment(.center).padding(.top, 20).padding(.horizontal)
                     }
 
                     if isLoading {
-                        ProgressView()
-                            .padding(.vertical, 20)
-                            .tint(.white)
+                        ProgressView().padding(.vertical, 20).tint(AppTheme.primaryText)
                     } else {
-                        Button(action: {
-                            self.hideKeyboard()
-                            self.checkUsernameAndSave()
-                        }) {
-                            Text("Continue")
-                                .frame(maxWidth: .infinity, minHeight: 44)
+                        Button(action: { self.hideKeyboard(); self.checkUsernameAndSave() }) {
+                            Text("Continue").frame(maxWidth: .infinity, minHeight: 44)
                                 .font(.system(size: 18, weight: .bold))
                                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                                .background(Color(hex: "#4169E1"))
-                                .foregroundColor(.white)
-                                .cornerRadius(200)
+                                .background(AppTheme.accent).foregroundColor(.white).cornerRadius(200)
                         }
                         .padding(.vertical, 20)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .background(Color(hex: "#1A2245"))
-                .cornerRadius(10)
-                .padding(.horizontal, 20)
+                .frame(maxWidth: .infinity).padding(20)
+                .background(AppTheme.cardBackground).cornerRadius(10).padding(.horizontal, 20)
 
-                NavigationLink(
-                    destination: WelcomeBonusView(),
-                    isActive: $navigateToWelcomeBonus
-                ) {
-                    EmptyView()
-                }.isDetailLink(false)
-
+                NavigationLink(destination: WelcomeBonusView(), isActive: $navigateToWelcomeBonus) { EmptyView() }.isDetailLink(false)
                 Spacer()
             }
         }

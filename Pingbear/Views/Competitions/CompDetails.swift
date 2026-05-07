@@ -72,7 +72,7 @@ struct CompDetails: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
                     
                     Spacer()
@@ -87,7 +87,7 @@ struct CompDetails: View {
                         Text(competition.description == "Competition" ? "Add Competition Name" : competition.description)
                             .font(.system(size: 18, weight: .bold, design: .default))
                             .lineLimit(1)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
                             .padding(.horizontal)
                             .onAppear {
                                 Analytics.shared.trackCompetition(
@@ -104,7 +104,7 @@ struct CompDetails: View {
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 32, height: 32)
-                            .foregroundColor(Color.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
                     .simultaneousGesture(TapGesture().onEnded {
                         entryViewModel.removeListeners()
@@ -133,12 +133,13 @@ struct CompDetails: View {
                             }
                         }
                     }) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 24, weight: .bold))
+                        Image("camera")
+                            .resizable()
+                            .renderingMode(.template)
+                            .foregroundColor(AppTheme.iconColor)
+                            .frame(width: 32, height: 32)
                             .frame(width: 45, height: 45)
                             .padding(6)
-                            .foregroundColor(.white)
-                            .clipShape(Circle())
                     }
 
                     NavigationLink(destination: EntryView(competitionId: competition.id, competition: competition)) {
@@ -146,8 +147,8 @@ struct CompDetails: View {
                             .frame(maxWidth: .infinity, minHeight: 45)
                             .font(.system(size: 20, weight: .bold, design: .default))
                             .padding(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                            .background(entryViewModel.hasEntriesToVoteOn ? Color(hex: "#4169E1") : Color(hex: "#D3D3D3").opacity(0.2))
-                            .foregroundColor(entryViewModel.hasEntriesToVoteOn ? Color.white : Color(hex: "#D3D3D3").opacity(0.2))
+                            .background(entryViewModel.hasEntriesToVoteOn ? AppTheme.accent : AppTheme.disabledBackground)
+                            .foregroundColor(entryViewModel.hasEntriesToVoteOn ? Color.white : AppTheme.disabledText)
                             .cornerRadius(200)
                     }
                     .disabled(!entryViewModel.hasEntriesToVoteOn)
@@ -165,12 +166,13 @@ struct CompDetails: View {
                     
                     NavigationLink(destination: ChatView(competition: competition)) {
                         ZStack {
-                            Image(systemName: "message.fill")
-                                .font(.system(size: 24, weight: .bold))
+                            Image("message-circle")
+                                .resizable()
+                                .renderingMode(.template)
+                                .foregroundColor(AppTheme.iconColor)
+                                .frame(width: 27, height: 27)
                                 .frame(width: 45, height: 45)
                                 .padding(6)
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
                             
                             if chatIndicator.hasUnreadMessages {
                                 Text(chatIndicator.displayCount)
@@ -179,7 +181,7 @@ struct CompDetails: View {
                                     .frame(minWidth: 20, minHeight: 20)
                                     .background(Color.red)
                                     .clipShape(Circle())
-                                    .offset(x: 12, y: -12)
+                                    .offset(x: 11, y: -11)
                             }
                         }
                     }
@@ -190,7 +192,7 @@ struct CompDetails: View {
                 }
                 .padding(.vertical, 20)
                 .padding(.horizontal, 10)
-                .background(Color(hex: "#1A2245"))
+                .background(AppTheme.cardBackground)
                 .cornerRadius(10)
                 .padding(.top, 20)
                 .padding(.horizontal, 20)
@@ -198,18 +200,15 @@ struct CompDetails: View {
                 // ── Race Bar ──────────────────────────────────
                 if !isLoading {
                     VStack(spacing: 0) {
-
-                        // Prize pool row
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Prize Pool")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(AppTheme.secondaryText)
                                     .padding(.bottom, 2)
                                 
                                 Button {
                                     showContributeSheet = true
-                                    
                                     Analytics.shared.trackTap(
                                         elementId: "add_to_prize_pool",
                                         screenName: "competition_details"
@@ -218,7 +217,7 @@ struct CompDetails: View {
                                     HStack(spacing: 0) {
                                         Text("$\(String(format: "%.2f", raceViewModel.raceInfo?.totalPot ?? 0.0))")
                                             .font(.system(size: 22, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
+                                            .foregroundColor(.white)
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 3)
                                         
@@ -227,32 +226,30 @@ struct CompDetails: View {
                                             .foregroundColor(.white)
                                             .padding(.horizontal, 10)
                                             .frame(maxHeight: .infinity)
-                                            .background(Color.black.opacity(0.15))
+                                            .background(Color.black.opacity(0.12))
                                     }
                                     .fixedSize(horizontal: false, vertical: true)
-                                    .background(Color(hex: "#00AA00"))
+                                    .background(AppTheme.green)
                                     .cornerRadius(200)
                                 }
                             }
 
                             Spacer()
 
-                            Spacer()
-
                             VStack(alignment: .trailing, spacing: 4) {
                                 Text("Ends In")
                                     .font(.system(size: 14))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(AppTheme.secondaryText)
                                     .padding(.bottom, 2)
 
                                 Text(raceViewModel.hasActiveRace ? raceViewModel.timeRemaining : "--")
                                     .font(.system(size: 18, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primaryText)
                             }
                         }
                     }
                     .padding(20)
-                    .background(Color(hex: "#1A2245"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(12)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
@@ -302,7 +299,7 @@ struct CompDetails: View {
                                         HStack {
                                             Text("\(index + 1)")
                                                 .font(.system(size: 16, weight: .bold))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(AppTheme.primaryText)
                                                 .frame(width: 30)
                                                 .padding(.leading, 20)
 
@@ -314,15 +311,14 @@ struct CompDetails: View {
                                                         .font(.system(size: 16, weight: .bold))
                                                         .lineLimit(1)
                                                         .truncationMode(.tail)
-                                                        .foregroundColor(.white)
+                                                        .foregroundColor(AppTheme.primaryText)
 
-                                                    // Projected payout — only show if pot > 0
                                                     if let payout = projectedPayout(for: userEntry), payout > 0 {
                                                         Text("$\(String(format: "%.2f", payout))")
                                                             .font(.system(size: 14, weight: .bold))
                                                             .foregroundColor(.white)
                                                             .padding(EdgeInsets(top: 2, leading: 8, bottom: 2, trailing: 8))
-                                                            .background(Color(hex: "#00AA00"))
+                                                            .background(AppTheme.green)
                                                             .cornerRadius(200)
                                                     }
                                                 }
@@ -342,15 +338,16 @@ struct CompDetails: View {
                                                     .foregroundColor(.white)
                                             }
                                             .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                            .background(Color(hex: "#DAA520"))
+                                            .background(AppTheme.gold)
                                             .cornerRadius(200)
                                             .padding(.trailing, 30)
                                         }
                                         .padding(.vertical, 25)
-                                        .background(userEntry.userName == "Me" ? Color(hex: "#2A3255") : Color.clear)
+                                        .background(userEntry.userName == "Me" ? AppTheme.cardHighlight : AppTheme.cardBackground)
 
                                         if index < sortedLeaderboard().count - 1 {
-                                            Divider().background(Color.white.opacity(0.2))
+                                            Divider()
+                                                .background(AppTheme.divider)
                                         }
                                     }
                                     .contentShape(Rectangle())
@@ -358,7 +355,7 @@ struct CompDetails: View {
                                 .buttonStyle(PlainButtonStyle())
                             }
                         }
-                        .background(Color(hex: "#1A2245"))
+                        .background(AppTheme.cardBackground)
                         .cornerRadius(10)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
@@ -371,7 +368,7 @@ struct CompDetails: View {
                 }
             }
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .navigationBarHidden(true)
         .onAppear {
             fetchData()
@@ -472,7 +469,6 @@ struct CompDetails: View {
     }
     
     // MARK: - Race Helpers
-    // ─────────────────────────────────────────────────────────────
 
     private func raceStars(for userEntry: UserEntry) -> Int {
         raceViewModel.participants.first { $0.userId == userEntry.id }?.totalStars ?? 0
@@ -496,9 +492,7 @@ struct CompDetails: View {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
     // MARK: - Data Fetching
-    // ─────────────────────────────────────────────────────────────
 
     private func fetchData() {
         isLoading = true
@@ -581,20 +575,20 @@ struct CompDetails: View {
     }
 }
 
-// MARK: - Empty / No Players Views (unchanged)
+// MARK: - Empty / No Players Views
 
 struct EmptyLeaderboardView: View {
     var action: () -> Void
-    
+
     var body: some View {
         VStack {
             Text("No Activity Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primaryText)
                 .padding(.top, 20)
                 .padding(.bottom, 20)
             
-            VStack() {
+            VStack {
                 Button(action: action) {
                     HStack {
                         Text("New Photo")
@@ -602,7 +596,7 @@ struct EmptyLeaderboardView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(hex: "#4169E1"))
+                    .background(AppTheme.accent)
                     .foregroundColor(.white)
                     .cornerRadius(200)
                 }
@@ -612,7 +606,7 @@ struct EmptyLeaderboardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(10)
         .padding(.horizontal, 20)
     }
@@ -623,20 +617,18 @@ struct NoPlayersView: View {
     var onMeTapped: () -> Void
     @State private var currentUserProfileUrl: String?
     private let db = Firestore.firestore()
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(Array(["Me", "Player 2", "Player 3", "Player 4"].enumerated()), id: \.element) { index, userName in
+                ForEach(Array(["Me", "Player 2", "Player 3"].enumerated()), id: \.element) { index, userName in
                     VStack(spacing: 0) {
                         if userName == "Me" {
-                            Button(action: {
-                                onMeTapped()
-                            }) {
+                            Button(action: { onMeTapped() }) {
                                 HStack {
                                     Text("\(index + 1)")
                                         .font(.system(size: 16, weight: .bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.primaryText)
                                         .frame(width: 30)
                                         .padding(.leading, 20)
                                     
@@ -647,7 +639,7 @@ struct NoPlayersView: View {
                                             .font(.system(size: 16, weight: .bold))
                                             .lineLimit(1)
                                             .truncationMode(.tail)
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppTheme.primaryText)
                                     }
 
                                     Spacer()
@@ -655,28 +647,28 @@ struct NoPlayersView: View {
                                     HStack(spacing: 6.5) {
                                         Text("0")
                                             .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#FFF"))
+                                            .foregroundColor(.white)
                                         
                                         Image(systemName: "star.fill")
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 18, height: 18)
-                                            .foregroundColor(Color(hex: "#FFF"))
+                                            .foregroundColor(.white)
                                     }
                                     .frame(width: 70, height: 30)
-                                    .background(Color(hex: "#DAA520"))
+                                    .background(AppTheme.gold)
                                     .cornerRadius(200)
                                     .padding(.trailing, 30)
                                 }
                                 .padding(.vertical, 25)
-                                .background(Color(hex: "#2A3255"))
+                                .background(AppTheme.cardHighlight)
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
                             HStack {
                                 Text("\(index + 1)")
                                     .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primaryText)
                                     .frame(width: 30)
                                     .padding(.leading, 20)
                                 
@@ -687,7 +679,7 @@ struct NoPlayersView: View {
                                         .font(.system(size: 16, weight: .bold))
                                         .lineLimit(1)
                                         .truncationMode(.tail)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.primaryText)
                                 }
 
                                 Spacer()
@@ -695,25 +687,25 @@ struct NoPlayersView: View {
                                 Button(action: action_player) {
                                     Text("Add")
                                         .font(.system(size: 17, weight: .bold))
-                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .foregroundColor(.white)
                                         .frame(width: 70, height: 30)
-                                        .background(Color(hex: "#4169E1"))
+                                        .background(AppTheme.accent)
                                         .cornerRadius(200)
                                 }
                                 .padding(.trailing, 30)
                             }
                             .padding(.vertical, 25)
-                            .background(Color.clear)
+                            .background(AppTheme.cardBackground)
                         }
                         
-                        if userName != "Player 4" {
+                        if userName != "Player 3" {
                             Divider()
-                                .background(Color.white.opacity(0.2))
+                                .background(AppTheme.divider)
                         }
                     }
                 }
             }
-            .background(Color(hex: "#1A2245"))
+            .background(AppTheme.cardBackground)
             .cornerRadius(10)
             .padding(.horizontal, 20)
         }

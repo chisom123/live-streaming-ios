@@ -13,33 +13,30 @@ struct TopUpSheet: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#10183C").ignoresSafeArea()
-            
+            AppTheme.pageBackground.ignoresSafeArea()
+
             VStack(spacing: 0) {
-                // Custom Header
+                // ── Header ────────────────────────────────────
                 HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Top Up")
                         .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.primaryText)
                         .onAppear {
                             Analytics.shared.trackScreen(name: "top_up_sheet")
                         }
-                    
+
                     Spacer()
-                    
-                    // Invisible placeholder for balance
+
                     Image(systemName: "arrow.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -48,67 +45,58 @@ struct TopUpSheet: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
-                
-                // Content
+                .background(AppTheme.cardBackground)
+
+                // ── Content ───────────────────────────────────
                 ScrollView {
                     VStack(spacing: 28) {
 
-                        // ── Enter Amount ─────────────────────────
+                        // ── Enter Amount ─────────────────────
                         VStack(spacing: 0) {
                             TextField("$0.00", text: $displayAmount)
                                 .textFieldStyle(.plain)
                                 .keyboardType(.decimalPad)
                                 .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(AppTheme.primaryText)
                                 .multilineTextAlignment(.center)
-                                .tint(.white)
+                                .tint(AppTheme.accent)
                                 .focused($isAmountFocused)
                                 .frame(height: 80)
                                 .padding(.horizontal, 20)
                                 .onChange(of: displayAmount) { newValue in
-                                    // If the field is just "$" or empty, clear everything
                                     if newValue.isEmpty || newValue == "$" {
                                         displayAmount = ""
                                         viewModel.customAmount = ""
                                         return
                                     }
-                                    
-                                    // Remove dollar sign if user pastes something with it
+
                                     var cleaned = newValue.replacingOccurrences(of: "$", with: "")
-                                    
-                                    // Filter out any non-numeric characters except decimal point
                                     cleaned = cleaned.filter { "0123456789.".contains($0) }
-                                    
-                                    // Ensure only one decimal point
+
                                     let components = cleaned.components(separatedBy: ".")
                                     if components.count > 2 {
                                         cleaned = components[0] + "." + components[1]
                                     }
-                                    
-                                    // If cleaning resulted in empty string, clear everything
+
                                     if cleaned.isEmpty {
                                         displayAmount = ""
                                         viewModel.customAmount = ""
                                         return
                                     }
-                                    
-                                    // Add dollar sign prefix if it doesn't have one
+
                                     if !newValue.hasPrefix("$") {
                                         displayAmount = "$\(cleaned)"
                                     } else if cleaned != newValue.replacingOccurrences(of: "$", with: "") {
-                                        // Update if cleaning changed the value
                                         displayAmount = "$\(cleaned)"
                                     }
-                                    
-                                    // Update the view model with clean number
+
                                     viewModel.customAmount = cleaned
                                 }
                         }
-                        .background(Color(hex: "#1A2245"))
+                        .background(AppTheme.cardBackground)
                         .cornerRadius(12)
                         .padding(.horizontal, 20)
-                        
+
                         if !viewModel.customAmount.isEmpty && !viewModel.customAmountIsValid {
                             Text("Minimum top-up is $1.00")
                                 .font(.system(size: 15, weight: .bold))
@@ -116,7 +104,7 @@ struct TopUpSheet: View {
                                 .padding(.horizontal, 20)
                         }
 
-                        // ── Quick tap amounts ─────────────────────
+                        // ── Quick tap amounts ─────────────────
                         LazyVGrid(columns: [
                             GridItem(.flexible()),
                             GridItem(.flexible()),
@@ -131,10 +119,10 @@ struct TopUpSheet: View {
                                 } label: {
                                     Text("$\(Int(amount))")
                                         .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.primaryText)
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
-                                        .background(Color(hex: "#1A2245"))
+                                        .background(AppTheme.cardBackground)
                                         .cornerRadius(12)
                                 }
                             }
@@ -144,8 +132,8 @@ struct TopUpSheet: View {
                     .padding(.top, 24)
                     .padding(.bottom, 20)
                 }
-                
-                // ── Continue button (fixed at bottom) ───────────
+
+                // ── Continue button ───────────────────────────
                 Button {
                     if let amount = viewModel.parsedCustomAmount {
                         Task {
@@ -159,28 +147,26 @@ struct TopUpSheet: View {
                         .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                         .background(
                             viewModel.customAmountIsValid && !viewModel.isLoading
-                                ? Color(hex: "#4169E1")
-                                : Color(hex: "#D3D3D3").opacity(0.2)
+                                ? AppTheme.accent
+                                : AppTheme.disabledBackground
                         )
                         .foregroundColor(
                             viewModel.customAmountIsValid && !viewModel.isLoading
-                                ? Color(hex: "#FFF")
-                                : Color(hex: "#D3D3D3").opacity(0.2)
+                                ? .white
+                                : AppTheme.disabledText
                         )
                         .cornerRadius(200)
                 }
                 .disabled(!viewModel.customAmountIsValid || viewModel.isLoading)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
-                .background(Color(hex: "#10183C"))
+                .background(AppTheme.pageBackground)
             }
         }
         .onAppear {
-            // Sync display amount with view model if needed
             if !viewModel.customAmount.isEmpty {
                 displayAmount = "$\(viewModel.customAmount)"
             }
-            // Auto-focus the amount field to open keyboard
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isAmountFocused = true
             }

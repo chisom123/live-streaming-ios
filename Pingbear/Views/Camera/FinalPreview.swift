@@ -3,13 +3,9 @@ import FirebaseAuth
 import FirebaseStorage
 import FirebaseFirestore
 
-// Add this extension to UIImage for image optimization
 extension UIImage {
     func optimizedForUpload(maxDimension: CGFloat = 1200.0, compressionQuality: CGFloat = 0.4) -> Data? {
-        // Step 1: Resize the image if needed
         let resizedImage = self.resizeIfNeeded(maxDimension: maxDimension)
-        
-        // Step 2: Apply progressive compression until we get a reasonable file size
         return resizedImage.compressedData(compressionQuality: compressionQuality)
     }
     
@@ -44,19 +40,13 @@ extension UIImage {
     }
     
     private func compressedData(compressionQuality: CGFloat) -> Data? {
-        // Start with the specified compression quality
         var quality = compressionQuality
         var data = self.jpegData(compressionQuality: quality)
-        
-        // Target size: 500KB for average mobile uploads
         let targetSize: Int = 500 * 1024
-        
-        // Try progressively lower quality if needed, with a minimum threshold
         while let imageData = data, imageData.count > targetSize && quality > 0.1 {
             quality -= 0.1
             data = self.jpegData(compressionQuality: quality)
         }
-        
         return data
     }
 }
@@ -86,8 +76,6 @@ struct CustomTextView: UIViewRepresentable {
         } else if !isEditingText && uiView.isFirstResponder {
             uiView.resignFirstResponder()
         }
-        
-        // Adjust the height of the text view based on its content
         let fixedWidth = uiView.frame.size.width
         let newSize = uiView.sizeThatFits(CGSize(width: fixedWidth, height: CGFloat.greatestFiniteMagnitude))
         uiView.frame.size = CGSize(width: max(newSize.width, fixedWidth), height: newSize.height)
@@ -109,8 +97,6 @@ struct CustomTextView: UIViewRepresentable {
                 textView.text = String(textView.text.prefix(parent.characterLimit))
             }
             parent.text = textView.text
-            
-            // Adjust the height of the text view based on its content
             let fixedWidth = textView.frame.size.width
             let newSize = textView.sizeThatFits(CGSize(width: fixedWidth, height: CGFloat.greatestFiniteMagnitude))
             textView.frame.size = CGSize(width: max(newSize.width, fixedWidth), height: newSize.height)
@@ -239,7 +225,7 @@ struct FinalPreview: View {
                                  }
                                  .padding(.horizontal, 12)
                                  .padding(.vertical, 10)
-                                 .background(Color(hex: "#4169E1"))
+                                 .background(AppTheme.accent)
                                  .cornerRadius(200)
                              }
                          }
@@ -281,7 +267,7 @@ struct FinalPreview: View {
                              .frame(maxWidth: .infinity, minHeight: 44)
                              .font(.system(size: 18, weight: .bold, design: .default))
                              .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                             .background(Color(hex: "#4169E1"))
+                             .background(AppTheme.accent)
                              .foregroundColor(.white)
                              .cornerRadius(200)
                      }
@@ -338,15 +324,6 @@ struct FinalPreview: View {
             .document(userId)
         
         memberRef.getDocument { (document, error) in
-            var superstar = false
-            if let document = document, document.exists {
-                if let boostExpiration = document.data()?["boostExpiration"] as? Timestamp {
-                    let now = Timestamp(date: Date())
-                    superstar = boostExpiration.compare(now) == .orderedDescending
-                }
-            }
-            
-            // Navigate based on superstar status
             DispatchQueue.main.async {
                 self.showUnlockView = true
             }

@@ -4,16 +4,16 @@ import FirebaseAuth
 // MARK: - Empty State View
 struct ThemeEmptyStateView: View {
     var action: () -> Void
-    
+
     var body: some View {
         VStack {
             Text("No Themes Yet")
                 .font(.system(size: 21, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primaryText)
                 .padding(.top, 20)
                 .padding(.bottom, 20)
-            
-            VStack() {
+
+            VStack {
                 Button(action: action) {
                     HStack {
                         Text("New Theme")
@@ -21,7 +21,7 @@ struct ThemeEmptyStateView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color(hex: "#4169E1"))
+                    .background(AppTheme.accent)
                     .foregroundColor(.white)
                     .cornerRadius(200)
                 }
@@ -31,13 +31,13 @@ struct ThemeEmptyStateView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(10)
         .padding(.horizontal, 20)
     }
 }
 
-// MARK: - Theme Selection Before Camera Sheet (Required)
+// MARK: - Theme Selection Before Camera Sheet
 struct ThemeSelectionBeforeCameraSheet: View {
     @ObservedObject var viewModel: ThemesViewModel
     let competitionId: String
@@ -46,85 +46,72 @@ struct ThemeSelectionBeforeCameraSheet: View {
     @State private var isAddingNewTheme: Bool = false
     @State private var searchText: String = ""
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         ZStack {
-            Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
-            
+            AppTheme.pageBackground.edgesIgnoringSafeArea(.all)
+
             VStack(spacing: 0) {
-                // Header
                 HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Pick a Theme")
                         .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                    
+                        .foregroundColor(AppTheme.primaryText)
+
                     Spacer()
-                    
-                    Button(action: {
-                        isAddingNewTheme = true
-                    }) {
+
+                    Button(action: { isAddingNewTheme = true }) {
                         Image(systemName: "plus")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 23, height: 23)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
-                
-                // Search bar (only show when themes exist)
+                .background(AppTheme.cardBackground)
+
                 if !viewModel.themes.isEmpty {
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white.opacity(0.7))
-                        
+                            .foregroundColor(AppTheme.secondaryText)
+
                         TextField("Search Themes", text: $searchText)
-                            .foregroundColor(.white)
-                            .accentColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
+                            .tint(AppTheme.accent)
                             .font(.system(size: 16, weight: .bold))
-                        
+
                         if !searchText.isEmpty {
-                            Button(action: {
-                                searchText = ""
-                            }) {
+                            Button(action: { searchText = "" }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(AppTheme.secondaryText)
                             }
                         }
                     }
                     .padding()
-                    .background(Color(hex: "#3B4374"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
                     .padding(.vertical)
                 }
-                
-                // Content
+
                 if viewModel.isLoading {
                     Spacer()
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(1.2)
+                    ProgressView().tint(AppTheme.primaryText).scaleEffect(1.2)
                     Spacer()
                 } else if viewModel.themes.isEmpty {
                     Spacer()
-                    ThemeEmptyStateView {
-                        isAddingNewTheme = true
-                    }
+                    ThemeEmptyStateView { isAddingNewTheme = true }
                     Spacer()
                 } else {
                     ScrollView {
@@ -133,62 +120,45 @@ struct ThemeSelectionBeforeCameraSheet: View {
                                 VStack(spacing: 0) {
                                     Button(action: {
                                         selectedTheme = theme
-                                        
-                                        // Track analytics first
                                         Analytics.shared.track(
                                             event: "theme_selected_before_camera",
-                                            properties: [
-                                                "theme_name": theme.name,
-                                                "theme_id": theme.id,
-                                                "competition_id": competitionId
-                                            ]
+                                            properties: ["theme_name": theme.name, "theme_id": theme.id, "competition_id": competitionId]
                                         )
-                                        
-                                        // Haptic feedback for selection
                                         let generator = UIImpactFeedbackGenerator(style: .medium)
                                         generator.impactOccurred()
                                         onContinue()
                                     }) {
                                         HStack {
                                             Text(theme.name)
-                                                .foregroundColor(.white)
+                                                .foregroundColor(AppTheme.primaryText)
                                                 .font(.system(size: 16, weight: .bold))
                                                 .padding(.leading, 10)
                                                 .truncationMode(.tail)
                                                 .lineLimit(1)
-                                            
                                             Spacer()
                                         }
                                         .padding(.vertical, 22)
                                         .padding(.horizontal, 15)
                                     }
-                                    
-                                    Divider()
-                                        .background(Color.white.opacity(0.2))
+                                    Divider().background(AppTheme.divider)
                                 }
                             }
-                            
-                            // Add New Theme button at bottom of list
-                            Button(action: {
-                                isAddingNewTheme = true
-                            }) {
+
+                            Button(action: { isAddingNewTheme = true }) {
                                 HStack {
                                     Spacer()
-                                    
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .foregroundColor(AppTheme.accent)
                                         .font(.system(size: 20))
-                                    
                                     Text("Add New Theme")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.accent)
                                         .font(.system(size: 16, weight: .bold))
-                                    
                                     Spacer()
                                 }
                                 .padding(.vertical, 22)
                             }
                         }
-                        .background(Color(hex: "#1A2245"))
+                        .background(AppTheme.cardBackground)
                         .cornerRadius(10)
                         .padding(.horizontal, 20)
                     }
@@ -196,176 +166,140 @@ struct ThemeSelectionBeforeCameraSheet: View {
             }
         }
         .sheet(isPresented: $isAddingNewTheme) {
-            AddThemeSheet(
-                competitionId: competitionId,
-                viewModel: viewModel,
-                isPresented: $isAddingNewTheme
-            )
+            AddThemeSheet(competitionId: competitionId, viewModel: viewModel, isPresented: $isAddingNewTheme)
         }
         .onAppear {
             viewModel.loadThemes(for: competitionId)
             Analytics.shared.trackScreen(name: "theme_selection_before_camera")
         }
     }
-    
+
     private var filteredThemes: [Theme] {
-        if searchText.isEmpty {
-            return viewModel.themes
-        } else {
-            return viewModel.themes.filter { $0.name.lowercased().contains(searchText.lowercased()) }
-        }
+        searchText.isEmpty ? viewModel.themes : viewModel.themes.filter { $0.name.lowercased().contains(searchText.lowercased()) }
     }
 }
 
-// MARK: - Updated Theme Selection Sheet
+// MARK: - Theme Selection Sheet
 struct ThemeSelectionSheet: View {
     @ObservedObject var viewModel: ThemesViewModel
     let competitionId: String
     @Binding var selectedTheme: Theme?
-    @State private var newThemeName: String = ""
     @State private var isAddingNewTheme: Bool = false
     @State private var searchText: String = ""
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         ZStack {
-            Color(hex: "#10183C").edgesIgnoringSafeArea(.all)
-            
+            AppTheme.pageBackground.edgesIgnoringSafeArea(.all)
+
             VStack(spacing: 0) {
-                // Header with plus button
                 HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
+                    Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Pick a Theme")
                         .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                    
+                        .foregroundColor(AppTheme.primaryText)
+
                     Spacer()
-                    
-                    // Plus button to add a new theme
-                    Button(action: {
-                        isAddingNewTheme = true
-                    }) {
+
+                    Button(action: { isAddingNewTheme = true }) {
                         Image(systemName: "plus")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 23, height: 23)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
-                
-                // Only show search bar when there are themes
+                .background(AppTheme.cardBackground)
+
                 if !viewModel.themes.isEmpty {
-                    // Search bar
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white.opacity(0.7))
-                        
+                            .foregroundColor(AppTheme.secondaryText)
+
                         TextField("Search Themes", text: $searchText)
-                            .foregroundColor(.white)
-                            .accentColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
+                            .tint(AppTheme.accent)
                             .font(.system(size: 16, weight: .bold))
-                        
+
                         if !searchText.isEmpty {
-                            Button(action: {
-                                searchText = ""
-                            }) {
+                            Button(action: { searchText = "" }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(AppTheme.secondaryText)
                             }
                         }
                     }
                     .padding()
-                    .background(Color(hex: "#3B4374"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
                     .padding(.horizontal, 20)
                     .padding(.vertical)
                 }
-                
-                // Content area
+
                 if viewModel.isLoading {
                     Spacer()
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(1.2)
+                    ProgressView().tint(AppTheme.primaryText).scaleEffect(1.2)
                     Spacer()
                 } else if viewModel.themes.isEmpty {
-                    // Empty state
                     Spacer()
-                    ThemeEmptyStateView {
-                        isAddingNewTheme = true
-                    }
+                    ThemeEmptyStateView { isAddingNewTheme = true }
                     Spacer()
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
                             ForEach(Array(filteredThemes.enumerated()), id: \.element.id) { index, theme in
                                 VStack(spacing: 0) {
-                                    Button(action: {
-                                        selectedTheme = theme
-                                        dismiss()
-                                    }) {
+                                    Button(action: { selectedTheme = theme; dismiss() }) {
                                         HStack {
                                             Text(theme.name)
-                                                .foregroundColor(.white)
+                                                .foregroundColor(AppTheme.primaryText)
                                                 .font(.system(size: 16, weight: .bold))
                                                 .padding(.leading, 10)
                                                 .truncationMode(.tail)
                                                 .lineLimit(1)
-                                            
+
                                             Spacer()
-                                            
+
                                             if selectedTheme?.id == theme.id {
                                                 Image(systemName: "checkmark")
                                                     .bold()
-                                                    .foregroundColor(Color(hex: "#FFF"))
+                                                    .foregroundColor(AppTheme.accent)
                                                     .padding(.trailing, 10)
                                             }
                                         }
                                         .padding(.vertical, 22)
                                         .padding(.horizontal, 15)
-                                        .background(selectedTheme?.id == theme.id ? Color(hex: "#2A3255") : Color.clear)
+                                        .background(selectedTheme?.id == theme.id ? AppTheme.cardHighlight : Color.clear)
                                     }
-                                    
-                                    Divider()
-                                        .background(Color.white.opacity(0.2))
+                                    Divider().background(AppTheme.divider)
                                 }
                             }
-                            
-                            // Add New Theme button at bottom of list
-                            Button(action: {
-                                isAddingNewTheme = true
-                            }) {
+
+                            Button(action: { isAddingNewTheme = true }) {
                                 HStack {
                                     Spacer()
-                                    
                                     Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .foregroundColor(AppTheme.accent)
                                         .font(.system(size: 20))
-                                    
                                     Text("Add New Theme")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.accent)
                                         .font(.system(size: 16, weight: .bold))
-                                    
                                     Spacer()
                                 }
                                 .padding(.vertical, 22)
                             }
                         }
-                        .background(Color(hex: "#1A2245"))
+                        .background(AppTheme.cardBackground)
                         .cornerRadius(10)
                         .padding(.horizontal, 20)
                     }
@@ -373,27 +307,18 @@ struct ThemeSelectionSheet: View {
             }
         }
         .sheet(isPresented: $isAddingNewTheme) {
-            AddThemeSheet(
-                competitionId: competitionId,
-                viewModel: viewModel,
-                isPresented: $isAddingNewTheme
-            )
+            AddThemeSheet(competitionId: competitionId, viewModel: viewModel, isPresented: $isAddingNewTheme)
         }
         .onAppear {
             viewModel.loadThemes(for: competitionId)
             Analytics.shared.trackScreen(name: "theme_selection")
         }
-        .accentColor(.white)
+        .tint(AppTheme.accent)
         .edgesIgnoringSafeArea(.top)
     }
-    
-    // Filter themes based on search text
+
     private var filteredThemes: [Theme] {
-        if searchText.isEmpty {
-            return viewModel.themes
-        } else {
-            return viewModel.themes.filter { $0.name.lowercased().contains(searchText.lowercased()) }
-        }
+        searchText.isEmpty ? viewModel.themes : viewModel.themes.filter { $0.name.lowercased().contains(searchText.lowercased()) }
     }
 }
 
@@ -407,114 +332,92 @@ struct AddThemeSheet: View {
     @State private var isSaving: Bool = false
     @State private var selectedSuggestionIndex: Int? = nil
     @FocusState private var isThemeNameFocused: Bool
-    
-    // Dynamic theme suggestions based on user's current day
+
     private var themeSuggestions: [String] {
-        return [
-            "Outfit of the Day",
-            "Mood",
-            "Selfie",
-            "Food",
-            "Out n about",
-            "WTF",
-            "Caught in 4K",
-        ]
+        ["Outfit of the Day", "Mood", "Selfie", "Food", "Out n about", "WTF", "Caught in 4K"]
     }
-    
+
     var body: some View {
         ZStack {
-            Color(hex: "#10183C").ignoresSafeArea()
-            
+            AppTheme.pageBackground.ignoresSafeArea()
+
             VStack(spacing: 0) {
-                // Header
                 HStack {
-                    Button(action: {
-                        isPresented = false
-                    }) {
+                    Button(action: { isPresented = false }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text("Add New Theme")
                         .font(.system(size: 18, weight: .bold, design: .default))
-                        .foregroundColor(.white)
-                    
+                        .foregroundColor(AppTheme.primaryText)
+
                     Spacer()
-                    
-                    Button(action: {
-                        isSaving = true
-                        createTheme()
-                    }) {
+
+                    Button(action: { isSaving = true; createTheme() }) {
                         Text("Save")
                             .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(themeName.isEmpty ? Color.white.opacity(0.5) : Color.white)
+                            .foregroundColor(themeName.isEmpty ? AppTheme.disabledText : AppTheme.accent)
                     }
                     .disabled(themeName.isEmpty || isSaving)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
-                .background(Color(hex: "#1A2245"))
-                
+                .background(AppTheme.cardBackground)
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        // Theme name input field
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Theme Name")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color.white.opacity(0.8))
+                                .foregroundColor(AppTheme.secondaryText)
                                 .padding(.bottom, 5)
-                            
+
                             TextField("Enter theme name", text: $themeName)
                                 .padding()
                                 .frame(height: 60)
-                                .background(Color(hex: "#3B4374"))
-                                .foregroundColor(.white)
+                                .background(AppTheme.cardBackground)
+                                .foregroundColor(AppTheme.primaryText)
                                 .cornerRadius(10)
                                 .font(.system(size: 16, weight: .bold))
+                                .tint(AppTheme.accent)
                                 .focused($isThemeNameFocused)
-                                .onChange(of: themeName) { _ in
-                                    selectedSuggestionIndex = nil
-                                }
+                                .onChange(of: themeName) { _ in selectedSuggestionIndex = nil }
                         }
-                        
+
                         if let error = errorMessage {
                             Text(error)
-                                .foregroundColor(Color(hex: "#FF0000"))
+                                .foregroundColor(.red)
                                 .font(.system(size: 16, weight: .bold, design: .default))
                                 .multilineTextAlignment(.leading)
                                 .padding(.bottom, 5)
                         }
-                        
-                        // Show suggestions only when text field is empty AND not focused
+
                         if themeName.isEmpty && !isThemeNameFocused {
                             Text("Suggested Themes")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color.white.opacity(0.8))
+                                .foregroundColor(AppTheme.secondaryText)
                                 .padding(.top, 10)
-                            
-                            suggestionsGrid
-                                .padding(.top, 5)
+
+                            suggestionsGrid.padding(.top, 5)
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
                     .padding(.bottom, 30)
                 }
-                .background(Color(hex: "#10183C"))
+                .background(AppTheme.pageBackground)
             }
         }
-        .accentColor(.white)
-        .onAppear {
-            Analytics.shared.trackScreen(name: "add_new_theme")
-        }
+        .tint(AppTheme.accent)
+        .onAppear { Analytics.shared.trackScreen(name: "add_new_theme") }
     }
-    
-    // Theme suggestions grid layout
+
     private var suggestionsGrid: some View {
         VStack(spacing: 0) {
             ForEach(Array(themeSuggestions.enumerated()), id: \.offset) { index, theme in
@@ -526,12 +429,10 @@ struct AddThemeSheet: View {
                     HStack {
                         Text(theme)
                             .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                        
+                            .foregroundColor(AppTheme.primaryText)
                         Spacer()
-                        
                         Image(systemName: "plus")
-                            .foregroundColor(Color.white.opacity(1))
+                            .foregroundColor(AppTheme.accent)
                             .font(.system(size: 19))
                             .fontWeight(.bold)
                     }
@@ -540,17 +441,16 @@ struct AddThemeSheet: View {
                     .background(Color.clear)
                     .contentShape(Rectangle())
                 }
-                
+
                 if index < themeSuggestions.count - 1 {
-                    Divider()
-                        .background(Color.white.opacity(0.2))
+                    Divider().background(AppTheme.divider)
                 }
             }
         }
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(10)
     }
-    
+
     private func createTheme() {
         errorMessage = nil
         
@@ -585,32 +485,24 @@ struct AddThemeSheet: View {
     }
 }
 
-
 // MARK: - Theme Badge
 struct ThemeBadgeClickable: View {
     let themeName: String
     let themeId: String?
     let competitionId: String
-    
     @State private var isShowingThemeView = false
-    
-    // Add convenience initializer for backward compatibility
+
     init(themeName: String, themeId: String?, competitionId: String) {
         self.themeName = themeName
         self.themeId = themeId
         self.competitionId = competitionId
     }
-    
+
     var body: some View {
         Button(action: {
             if themeId != nil {
                 isShowingThemeView = true
-                Analytics.shared.track(
-                    event: "theme_badge_clicked",
-                    properties: [
-                        "theme_name": themeName
-                    ]
-                )
+                Analytics.shared.track(event: "theme_badge_clicked", properties: ["theme_name": themeName])
             }
         }) {
             HStack(spacing: 6) {
@@ -619,7 +511,7 @@ struct ThemeBadgeClickable: View {
                     .scaledToFit()
                     .frame(width: 16, height: 16)
                     .foregroundColor(.white)
-                
+
                 Text(themeName)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
@@ -628,7 +520,7 @@ struct ThemeBadgeClickable: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
-            .background(Color(hex: "#4169E1"))
+            .background(AppTheme.accent)
             .cornerRadius(20)
         }
         .fullScreenCover(isPresented: $isShowingThemeView) {

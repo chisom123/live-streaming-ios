@@ -2,86 +2,74 @@ import SwiftUI
 import FirebaseFirestore
 
 struct AddFriendsView: View {
-    
+
     @Environment(\.dismiss) private var dismiss
     @State private var username: String = ""
     @StateObject var viewModel = ContactViewModel()
     @ObservedObject var addFriendsModel: AddFriendsModel
     @State private var messageStatus: MessageStatus? = nil
 
-    // Optional callback — fires with (userId, userName) when a friend is added.
-    // Nil by default so existing call sites are unaffected.
     var onFriendAdded: ((String, String) -> Void)? = nil
 
     enum MessageStatus {
         case error, success, none
     }
-    
+
     func processUsername(_ username: String) -> String {
         return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     }
-    
+
     var body: some View {
         VStack {
             HStack {
-                Button(action: {
-                    dismiss()
-                }) {
+                Button(action: { dismiss() }) {
                     Image(systemName: "arrow.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
+                        .foregroundColor(AppTheme.iconColor)
                 }
-                
+
                 Spacer()
-                
+
                 Text("Add Friends")
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .multilineTextAlignment(.center)
                     .lineSpacing(10)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppTheme.primaryText)
                     .padding(.horizontal)
-                
+
                 Spacer()
-                
-                Button(action: {}) {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(Color.white)
-                }
-                .opacity(0)
+
+                Image(systemName: "arrow.left")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 27, height: 27)
+                    .foregroundColor(.clear)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
-            
+
             VStack {
                 HStack(alignment: .center, spacing: 0) {
                     HStack {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(AppTheme.secondaryText)
                             .padding(.leading, 15)
-                        
+
                         TextField("Enter Username", text: $username)
                             .padding(.vertical)
                             .padding(.leading, 5)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
                             .font(.system(size: 16, weight: .bold, design: .default))
-                            .accentColor(.white)
+                            .tint(AppTheme.accent)
                     }
                     .frame(height: 70)
                     .background(
-                        Color(hex: "#3B4374")
-                            .clipShape(
-                                RoundedCorner(
-                                    radius: 10,
-                                    corners: [.topLeft, .bottomLeft]
-                                )
-                            )
+                        AppTheme.cardBackground
+                            .clipShape(RoundedCorner(radius: 10, corners: [.topLeft, .bottomLeft]))
                     )
-                    
+
                     Button(action: {
                         let processedUsername = processUsername(username)
                         addFriendsModel.addFriend(byUsername: processedUsername) { (success, error) in
@@ -90,7 +78,6 @@ struct AddFriendsView: View {
                                 username = ""
                                 hideKeyboard()
 
-                                // Fire callback if present
                                 if let onFriendAdded {
                                     Firestore.firestore().collection("users")
                                         .whereField("username", isEqualTo: processedUsername)
@@ -111,33 +98,27 @@ struct AddFriendsView: View {
                             .frame(width: 60, height: 70)
                             .foregroundColor(.white)
                             .background(
-                                Color(hex: username.isEmpty ? "#323862" : "#4169E1")
-                                    .clipShape(
-                                        RoundedCorner(
-                                            radius: 10,
-                                            corners: [.topRight, .bottomRight]
-                                        )
-                                    )
+                                (username.isEmpty ? AppTheme.disabledBackground : AppTheme.accent)
+                                    .clipShape(RoundedCorner(radius: 10, corners: [.topRight, .bottomRight]))
                             )
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 30)
-                
+
                 if let status = messageStatus {
                     switch status {
                     case .error:
                         Text("Failed to add friend")
-                            .foregroundColor(Color(hex: "#FF0000"))
+                            .foregroundColor(.red)
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
                             .padding(.bottom, 30)
                             .padding(.horizontal)
-                                    
                     case .success:
                         Text("Friend added successfully")
-                            .foregroundColor(Color(hex: "#FFF"))
+                            .foregroundColor(AppTheme.green)
                             .font(.system(size: 16, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                             .lineSpacing(10)
@@ -148,7 +129,7 @@ struct AddFriendsView: View {
                     }
                 }
             }
-            
+
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(viewModel.matchedUsers.indices, id: \.self) { index in
@@ -156,24 +137,24 @@ struct AddFriendsView: View {
                             HStack {
                                 ProfilePictureView(url: viewModel.matchedUsers[index].profileImageUrl, size: 40)
                                     .padding(.leading, 25)
-                                
+
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text(viewModel.matchedUsers[index].fullName)
                                         .font(.system(size: 16, weight: .bold, design: .default))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppTheme.primaryText)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
-                                    
+
                                     Text(viewModel.matchedUsers[index].username)
                                         .font(.system(size: 14, weight: .bold, design: .default))
-                                        .foregroundColor(Color(hex: "#D3D3D3"))
+                                        .foregroundColor(AppTheme.secondaryText)
                                         .lineLimit(1)
                                         .truncationMode(.tail)
                                 }
                                 .padding(.leading, 10)
-                                
+
                                 Spacer()
-                                
+
                                 if !viewModel.matchedUsers[index].isAdded {
                                     Button(action: {
                                         let contact = viewModel.matchedUsers[index]
@@ -187,7 +168,6 @@ struct AddFriendsView: View {
                                                     )
                                                 }
 
-                                                // Fire callback if present
                                                 if let onFriendAdded {
                                                     Firestore.firestore().collection("users")
                                                         .whereField("username", isEqualTo: contact.username)
@@ -202,50 +182,48 @@ struct AddFriendsView: View {
                                             }
                                         }
                                     }) {
-                                        HStack(spacing: 8) {
-                                            Text("Add")
-                                                .font(.system(size: 17, weight: .bold))
-                                                .foregroundColor(Color(hex: "#FFF"))
-                                        }
-                                        .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                        .background(Color(hex: "#4169E1"))
-                                        .cornerRadius(200)
+                                        Text("Add")
+                                            .font(.system(size: 17, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
+                                            .background(AppTheme.accent)
+                                            .cornerRadius(200)
                                     }
                                     .padding(.trailing, 30)
                                 } else {
                                     HStack(spacing: 8) {
                                         Text("Added")
                                             .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(Color(hex: "#DAA520"))
-                                        
+                                            .foregroundColor(.white)
+
                                         Image(systemName: "checkmark.circle.fill")
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 18, height: 18)
-                                            .foregroundColor(Color(hex: "#DAA520"))
+                                            .foregroundColor(.white)
                                     }
                                     .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(Color(hex: "#4169E1"))
+                                    .background(AppTheme.green)
                                     .cornerRadius(200)
                                     .padding(.trailing, 30)
                                     .opacity(0)
                                 }
                             }
                             .padding(.vertical, 25)
-                            
+
                             if index != viewModel.matchedUsers.count - 1 {
                                 Divider()
-                                    .background(Color.white.opacity(0.2))
+                                    .background(AppTheme.divider)
                             }
                         }
                     }
                 }
-                .background(Color(hex: "#1A2245"))
+                .background(AppTheme.cardBackground)
                 .cornerRadius(10)
                 .padding(.horizontal)
             }
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .onAppear {
             viewModel.requestContactAccess()
             Analytics.shared.trackScreen(name: "add_friends")

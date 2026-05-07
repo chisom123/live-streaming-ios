@@ -28,18 +28,18 @@ struct ChangeNameView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            Color(hex: "#10183C").ignoresSafeArea()
+            AppTheme.pageBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
 
-                // MARK: - Nav bar
+                // ── Nav bar ───────────────────────────────────
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.iconColor)
                     }
 
                     Spacer()
@@ -48,12 +48,11 @@ struct ChangeNameView: View {
                         .font(.system(size: 18, weight: .bold, design: .default))
                         .multilineTextAlignment(.center)
                         .lineSpacing(10)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.primaryText)
                         .padding(.horizontal)
 
                     Spacer()
 
-                    // Balance spacer
                     Image(systemName: "arrow.left")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
@@ -63,7 +62,7 @@ struct ChangeNameView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
 
-                // MARK: - Avatar
+                // ── Avatar ────────────────────────────────────
                 VStack(spacing: 8) {
                     ProfilePictureView(
                         url: profileManager.currentProfileUrl ?? profilePictureUrl,
@@ -81,12 +80,12 @@ struct ChangeNameView: View {
 
                     Text("Tap to change photo")
                         .font(.system(size: 14, weight: .bold, design: .default))
-                        .foregroundColor(Color.white.opacity(0.4))
+                        .foregroundColor(AppTheme.secondaryText)
                 }
                 .padding(.bottom, 24)
                 .padding(.top, 10)
 
-                // MARK: - Form card
+                // ── Form card ─────────────────────────────────
                 ScrollView {
                     VStack(spacing: 0) {
                         VStack(alignment: .leading, spacing: 20) {
@@ -95,16 +94,16 @@ struct ChangeNameView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Name")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color.white.opacity(0.5))
+                                    .foregroundColor(AppTheme.secondaryText)
 
                                 TextField("Enter your name", text: $updatedFullName)
                                     .padding(.horizontal, 16)
                                     .frame(height: 58)
-                                    .background(Color(hex: "#3B4374"))
+                                    .background(AppTheme.cardBackground)
                                     .cornerRadius(12)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primaryText)
                                     .font(.system(size: 16, weight: .bold, design: .default))
-                                    .accentColor(.white)
+                                    .tint(AppTheme.accent)
                                     .autocapitalization(.words)
                             }
 
@@ -112,33 +111,31 @@ struct ChangeNameView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Username")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color.white.opacity(0.5))
+                                    .foregroundColor(AppTheme.secondaryText)
 
-                                TextField("username", text: $updatedName)
+                                TextField("Username", text: $updatedName)
                                     .padding(.horizontal, 16)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(AppTheme.primaryText)
                                     .font(.system(size: 16, weight: .bold, design: .default))
-                                    .accentColor(.white)
+                                    .tint(AppTheme.accent)
                                     .autocapitalization(.none)
                                     .disableAutocorrection(true)
                                     .frame(height: 58)
-                                    .background(Color(hex: "#3B4374"))
+                                    .background(AppTheme.cardBackground)
                                     .cornerRadius(12)
                             }
 
-                            // Hint / status
+                            // Status message
                             if let status = messageStatus {
                                 switch status {
                                 case .error:
                                     Text(errorMessage ?? "An error occurred")
-                                        .foregroundColor(Color(hex: "#FF0000"))
+                                        .foregroundColor(.red)
                                         .font(.system(size: 16, weight: .bold, design: .default))
-
                                 case .success:
                                     Text("Changes saved successfully")
-                                        .foregroundColor(Color(hex: "#FFF"))
+                                        .foregroundColor(AppTheme.green)
                                         .font(.system(size: 16, weight: .bold, design: .default))
-
                                 case .none:
                                     EmptyView()
                                 }
@@ -146,21 +143,19 @@ struct ChangeNameView: View {
                         }
                         .padding(20)
 
-                        // Bottom padding so content clears the sticky button
                         Spacer().frame(height: 100)
                     }
                 }
             }
-            
-            Button(action: {
-                saveChanges()
-            }) {
+
+            // ── Save button ───────────────────────────────────
+            Button(action: { saveChanges() }) {
                 Text("Save Changes")
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .font(.system(size: 18, weight: .bold, design: .default))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .background(hasChanges ? Color(hex: "#4169E1") : Color(hex: "#D3D3D3").opacity(0.2))
-                    .foregroundColor(hasChanges ? Color(hex: "#FFF") : Color(hex: "#D3D3D3").opacity(0.2))
+                    .background(hasChanges ? AppTheme.accent : AppTheme.disabledBackground)
+                    .foregroundColor(hasChanges ? .white : AppTheme.disabledText)
                     .cornerRadius(200)
             }
             .padding(.top, 10)
@@ -168,7 +163,7 @@ struct ChangeNameView: View {
             .disabled(!hasChanges)
             .padding(.horizontal)
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .onAppear {
             fetchUserData()
             Analytics.shared.trackScreen(name: "change_name")
@@ -264,8 +259,6 @@ struct ChangeNameView: View {
             }
         }
     }
-
-    // MARK: - Helpers
 
     private func showError(_ message: String, event: String) {
         messageStatus = .error

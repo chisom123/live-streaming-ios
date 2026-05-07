@@ -12,26 +12,22 @@ struct CameraView: View {
     @Binding var preselectedTheme: Theme?
     @StateObject private var themesViewModel = ThemesViewModel()
     @State private var showingThemeSelection = false
-    
+
     enum ImageSource {
         case camera
         case gallery
     }
-    
+
     var body: some View {
         ZStack {
-            // MARK: Camera View - Show placeholder in simulator
             if isViewAppeared {
                 CameraInitView()
                     .environmentObject(cameraModel)
                     .ignoresSafeArea()
             } else {
-                // Show a loading placeholder until view appears
-                Color.black
-                    .ignoresSafeArea()
+                Color.black.ignoresSafeArea()
             }
-            
-            // Controls overlay
+
             VStack {
                 HStack {
                     Button {
@@ -44,17 +40,15 @@ struct CameraView: View {
                             .padding(5)
                             .shadow(radius: 10)
                     }
-                    
+
                     Spacer()
-                    
-                    Button(action: {
-                        showingThemeSelection = true
-                    }) {
+
+                    Button(action: { showingThemeSelection = true }) {
                         HStack(spacing: 5) {
                             Image(systemName: "tag.fill")
                                 .font(.system(size: 18))
                                 .foregroundColor(.white)
-                            
+
                             if let theme = preselectedTheme {
                                 Text(theme.name)
                                     .font(.system(size: 16, weight: .bold))
@@ -69,10 +63,10 @@ struct CameraView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(Color(hex: "#4169E1"))
+                        .background(AppTheme.accent)
                         .cornerRadius(200)
                     }
-                    
+
                     Spacer()
                     
                     Button(action: {
@@ -96,9 +90,7 @@ struct CameraView: View {
                 
                 Spacer()
 
-                // Bottom Controls
                 HStack(spacing: 0) {
-                    // Camera Button
                     Button(action: {
                         imageSource = .camera
                         cameraModel.capturePhotoWithFlash()
@@ -128,7 +120,7 @@ struct CameraView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $cameraModel.showPreview, content: {
+        .fullScreenCover(isPresented: $cameraModel.showPreview) {
             if let image = cameraModel.capturedImage {
                 FinalPreview(
                     image: image,
@@ -140,7 +132,7 @@ struct CameraView: View {
                     isFromCamera: imageSource == .camera
                 )
             }
-        })
+        }
         .sheet(isPresented: $showingThemeSelection) {
             ThemeSelectionSheet(
                 viewModel: themesViewModel,
@@ -149,23 +141,17 @@ struct CameraView: View {
             )
         }
         .onAppear {
-            // Optimization: Mark the view as appeared first, then request camera setup
-            // This allows UI to render immediately while camera initializes in background
             DispatchQueue.main.async {
                 self.isViewAppeared = true
-                // Camera permission check will be triggered by CameraInitView
-                
-                // Load themes when view appears
                 themesViewModel.loadThemes(for: competition.id)
             }
         }
         .onDisappear {
-            // Clean up resources when view disappears
             cameraModel.resetFlash()
             cameraModel.stopSession()
         }
     }
-    
+
     private func resetCamera() {
         cameraModel.capturedImage = nil
         cameraModel.resetFlash()
@@ -179,7 +165,7 @@ struct CameraView: View {
 // MARK: - Flash Button Component
 struct FlashButton: View {
     @ObservedObject var cameraModel: CameraViewModel
-    
+
     var body: some View {
         Button(action: {
             cameraModel.toggleFlashMode()
@@ -190,7 +176,6 @@ struct FlashButton: View {
                 .padding(5)
                 .shadow(radius: 10)
         }
-        // Always enabled for front camera, and conditionally for back camera
         .opacity(cameraModel.isFlashAvailable ? 1.0 : 0.5)
     }
 }

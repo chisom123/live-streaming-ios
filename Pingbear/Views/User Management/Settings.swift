@@ -9,10 +9,10 @@ struct SettingsView: View {
     @State private var activeSheet: ActiveSheet?
     @StateObject private var myFriendsModel = MyFriendsModel()
     @Environment(\.didLogOut) private var didLogOut: PassthroughSubject<Void, Never>
-    
+
     enum ActiveSheet: Identifiable {
         case addFriends, myFriends, myAccount
-        
+
         var id: Int {
             switch self {
             case .addFriends: return 0
@@ -21,7 +21,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     func signOut() {
         do {
             try Auth.auth().signOut()
@@ -34,30 +34,28 @@ struct SettingsView: View {
             print("Error signing out: \(error)")
         }
     }
-    
+
     var body: some View {
         VStack {
-            // Top Navigation Bar
             HStack {
-                Color.clear
-                    .frame(width: 30, height: 30)
-                
+                Color.clear.frame(width: 30, height: 30)
+
                 Spacer()
-                
+
                 Text("Settings")
                     .font(.system(size: 18, weight: .bold, design: .default))
-                    .foregroundColor(.white)
-                
+                    .foregroundColor(AppTheme.primaryText)
+
                 Spacer()
-                
-                Color.clear
-                    .frame(width: 30, height: 30)
+
+                Color.clear.frame(width: 30, height: 30)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
-            
+
             ScrollView {
                 VStack(spacing: 50) {
+
                     // Account Settings Section
                     VStack(spacing: 0) {
                         ForEach(["Add Friends", "My Friends", "My Account"], id: \.self) { text in
@@ -70,19 +68,19 @@ struct SettingsView: View {
                                     default: break
                                     }
                                 }) {
-                                    SettingsRow(text: text, color: .white)
+                                    SettingsRow(text: text, color: AppTheme.primaryText)
                                 }
-                                
+
                                 if text != "My Account" {
                                     Divider()
-                                        .background(Color.white.opacity(0.2))
+                                        .background(AppTheme.divider)
                                 }
                             }
                         }
                     }
-                    .background(Color(hex: "#1A2245"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
-                    
+
                     // Support & Account Actions Section
                     VStack(spacing: 0) {
                         ForEach(["Contact Us", "Log Out", "Delete Account"], id: \.self) { text in
@@ -102,24 +100,27 @@ struct SettingsView: View {
                                     default: break
                                     }
                                 }) {
-                                    SettingsRow(text: text, color: Color(hex: "#D3D3D3"))
+                                    SettingsRow(
+                                        text: text,
+                                        color: AppTheme.primaryText
+                                    )
                                 }
-                                
+
                                 if text != "Delete Account" {
                                     Divider()
-                                        .background(Color.white.opacity(0.2))
+                                        .background(AppTheme.divider)
                                 }
                             }
                         }
                     }
-                    .background(Color(hex: "#1A2245"))
+                    .background(AppTheme.cardBackground)
                     .cornerRadius(10)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .fullScreenCover(item: $activeSheet) { sheet in
             switch sheet {
             case .addFriends:
@@ -132,15 +133,11 @@ struct SettingsView: View {
         }
         .alert("Are you sure?", isPresented: $showSignOutAlert) {
             Button("Cancel", role: .cancel) { }
-            Button("Yes", role: .destructive) {
-                signOut()
-            }
+            Button("Yes", role: .destructive) { signOut() }
         }
         .alert("Are you sure?", isPresented: $showDeleteAccountAlert) {
             Button("Cancel", role: .cancel) { }
-            Button("Yes", role: .destructive) {
-                signOut()
-            }
+            Button("Yes", role: .destructive) { signOut() }
         }
         .onAppear {
             Analytics.shared.trackScreen(name: "settings")
@@ -151,7 +148,7 @@ struct SettingsView: View {
 struct SettingsRow: View {
     let text: String
     let color: Color
-    
+
     var body: some View {
         HStack {
             Text(text)
@@ -159,7 +156,7 @@ struct SettingsRow: View {
                 .foregroundColor(color)
             Spacer()
             Image(systemName: "chevron.right")
-                .foregroundColor(Color(hex: "#D3D3D3"))
+                .foregroundColor(AppTheme.secondaryText)
                 .font(.system(size: 15, weight: .bold))
         }
         .padding([.top, .bottom], 30)

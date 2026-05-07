@@ -198,13 +198,13 @@ struct ProfilePictureSelector: View {
 struct ProfilePictureView: View {
     let url: String?
     let size: CGFloat
-
+ 
     var body: some View {
         if let urlString = url, let imageUrl = URL(string: urlString) {
             KFImage(imageUrl)
                 .placeholder {
                     Circle()
-                        .fill(Color(hex: "#10183C"))
+                        .fill(AppTheme.cardHighlight)
                         .frame(width: size, height: size)
                 }
                 .onFailure { _ in }
@@ -213,10 +213,13 @@ struct ProfilePictureView: View {
                 .frame(width: size, height: size)
                 .clipShape(Circle())
         } else {
-            Image("user")
+            Image("user-new")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: size, height: size)  // Make image slightly smaller than circle
+                .frame(width: size * 0.6, height: size * 0.6)
+                .frame(width: size, height: size)
+                .background(AppTheme.cardHighlight)
+                .clipShape(Circle())
         }
     }
 }

@@ -12,7 +12,7 @@ struct WalletView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#10183C").ignoresSafeArea()
+                AppTheme.pageBackground.ignoresSafeArea()
 
                 VStack(spacing: 0) {
 
@@ -24,7 +24,7 @@ struct WalletView: View {
 
                         Text("Wallet")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppTheme.primaryText)
                             .onAppear {
                                 Analytics.shared.trackScreen(name: "wallet_view")
                             }
@@ -38,7 +38,7 @@ struct WalletView: View {
 
                     if viewModel.isLoading {
                         Spacer()
-                        ProgressView().tint(.white)
+                        ProgressView().tint(AppTheme.primaryText)
                         Spacer()
                     } else {
                         ScrollView {
@@ -104,11 +104,11 @@ struct BalanceCard: View {
 
             Text("Available Balance")
                 .font(.system(size: 15))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(AppTheme.secondaryText)
 
             Text("$\(String(format: "%.2f", viewModel.balance))")
                 .font(.system(size: 48, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primaryText)
 
             // ── Action buttons ────────────────────────────────
             HStack(spacing: 12) {
@@ -124,7 +124,7 @@ struct BalanceCard: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color(hex: "#00AA00"))
+                        .background(AppTheme.green)
                         .cornerRadius(200)
                 }
 
@@ -137,10 +137,10 @@ struct BalanceCard: View {
                 } label: {
                     Text("Cash Out")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(canCashOut ? .white : Color.white.opacity(0.3))
+                        .foregroundColor(canCashOut ? .white : AppTheme.disabledText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(canCashOut ? Color(hex: "#4169E1") : Color.white.opacity(0.1))
+                        .background(canCashOut ? AppTheme.accent : AppTheme.disabledBackground)
                         .cornerRadius(200)
                 }
                 .disabled(!canCashOut)
@@ -149,18 +149,18 @@ struct BalanceCard: View {
             if viewModel.bonusCredited && !viewModel.bonusUnlocked {
                 Text("Cash out unlocks after your first competition")
                     .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(AppTheme.secondaryText)
                     .padding(.top)
             } else if viewModel.balance > 0 && viewModel.balance < 5.0 {
                 Text("Minimum cash out is $5.00")
                     .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(AppTheme.secondaryText)
                     .padding(.top)
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(Color(hex: "#1A2245"))
+        .background(AppTheme.cardBackground)
         .cornerRadius(12)
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -184,7 +184,7 @@ struct ActivitySection: View {
 
             Text("Recent Activity")
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(AppTheme.primaryText)
                 .padding(.horizontal, 20)
 
             VStack(spacing: 0) {
@@ -193,11 +193,11 @@ struct ActivitySection: View {
 
                     if index < transactions.count - 1 {
                         Divider()
-                            .background(Color.white.opacity(0.1))
+                            .background(AppTheme.divider)
                     }
                 }
             }
-            .background(Color(hex: "#1A2245"))
+            .background(AppTheme.cardBackground)
             .cornerRadius(12)
             .padding(.horizontal, 20)
         }
@@ -231,11 +231,11 @@ struct ActivityRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.primaryText)
 
                     Text(subtitle)
                         .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(AppTheme.secondaryText)
                         .lineLimit(1)
                 }
 
@@ -245,9 +245,8 @@ struct ActivityRow: View {
                 VStack(alignment: .trailing, spacing: 6) {
                     Text("\(transaction.type == "credit" ? "+" : "-")$\(String(format: "%.2f", transaction.amount))")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(transaction.type == "credit" ? Color(hex: "#00AA00") : .white)
+                        .foregroundColor(transaction.type == "credit" ? AppTheme.green : AppTheme.primaryText)
 
-                    // Withdrawal status badge
                     if transaction.reason == "withdrawal_request",
                        let status = transaction.withdrawalStatus {
                         withdrawalBadge(status)
@@ -257,7 +256,6 @@ struct ActivityRow: View {
             }
             .padding(.vertical, 16)
 
-            // Rejection reason if applicable
             if transaction.reason == "withdrawal_request",
                transaction.withdrawalStatus == "rejected",
                let reason = transaction.withdrawalRejectionReason {
@@ -299,7 +297,7 @@ struct ActivityRow: View {
                 .foregroundColor(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(Color(hex: "#00AA00"))
+                .background(AppTheme.green)
                 .cornerRadius(200)
         case "rejected":
             Text("Rejected")
@@ -332,7 +330,7 @@ struct ActivityRow: View {
         }
     }
 
-    // ── Subtitle — date + competition name if available ───────
+    // ── Subtitle ──────────────────────────────────────────────
 
     private var subtitle: String {
         let formatter = DateFormatter()
@@ -368,27 +366,27 @@ struct ActivityRow: View {
 
     private var iconColor: Color {
         switch transaction.reason {
-        case "top_up", "simulated_top_up": return Color(hex: "#00AA00")
-        case "race_win":                   return Color(hex: "#FFD700")
-        case "race_contribution":          return .white
+        case "top_up", "simulated_top_up": return AppTheme.green
+        case "race_win":                   return AppTheme.gold
+        case "race_contribution":          return AppTheme.secondaryText
         case "race_refund":                return .orange
-        case "withdrawal_request":         return .white
-        case "withdrawal_rejected":        return Color(hex: "#00AA00")
-        case "welcome_bonus":              return Color(hex: "#00AA00")
-        default:                           return .white
+        case "withdrawal_request":         return AppTheme.secondaryText
+        case "withdrawal_rejected":        return AppTheme.green
+        case "welcome_bonus":              return AppTheme.green
+        default:                           return AppTheme.secondaryText
         }
     }
 
     private var iconBackground: Color {
         switch transaction.reason {
-        case "top_up", "simulated_top_up": return Color(hex: "#00AA00").opacity(0.15)
-        case "race_win":                   return Color(hex: "#FFD700").opacity(0.15)
-        case "race_contribution":          return Color.white.opacity(0.08)
-        case "race_refund":                return Color.orange.opacity(0.15)
-        case "withdrawal_request":         return Color.white.opacity(0.08)
-        case "withdrawal_rejected":        return Color(hex: "#00AA00").opacity(0.15)
-        case "welcome_bonus":              return Color(hex: "#00AA00").opacity(0.15)
-        default:                           return Color.white.opacity(0.08)
+        case "top_up", "simulated_top_up": return AppTheme.green.opacity(0.12)
+        case "race_win":                   return AppTheme.gold.opacity(0.12)
+        case "race_contribution":          return AppTheme.cardHighlight
+        case "race_refund":                return Color.orange.opacity(0.12)
+        case "withdrawal_request":         return AppTheme.cardHighlight
+        case "withdrawal_rejected":        return AppTheme.green.opacity(0.12)
+        case "welcome_bonus":              return AppTheme.green.opacity(0.12)
+        default:                           return AppTheme.cardHighlight
         }
     }
 }

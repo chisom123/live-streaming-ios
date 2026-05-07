@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct MembersView: View {
-
     var competition: Competition
     @StateObject private var viewModel = MembersViewModel()
     @StateObject private var myFriendsModel = MyFriendsModel()
@@ -14,109 +13,61 @@ struct MembersView: View {
     var body: some View {
         ZStack {
             VStack {
-
-                // ── Header ────────────────────────────────────
                 HStack {
                     Button(action: { dismiss() }) {
-                        Image(systemName: "arrow.left")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 27, height: 27)
-                            .foregroundColor(.white)
+                        Image(systemName: "arrow.left").resizable().aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27).foregroundColor(AppTheme.primaryText)
                     }
-
                     Button(action: { dismiss() }) {
-                        Text(competition.description)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .lineLimit(1)
+                        Text(competition.description).font(.system(size: 16, weight: .bold))
+                            .foregroundColor(AppTheme.primaryText).padding(.horizontal, 10).lineLimit(1)
                     }
-
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 20)
+                .padding(.horizontal, 20).padding(.vertical, 20)
 
-                // ── Combined Action Buttons ───────────────────
                 VStack(spacing: 0) {
-
-                    // Add Players
                     Button(action: { showingJoinSelectView = true }) {
                         HStack {
-                            Text("Add Players")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.leading, 10)
+                            Text("Add Players").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(Color(hex: "#D3D3D3"))
-                                .font(.system(size: 15, weight: .bold))
-                                .padding(.trailing, 10)
+                            Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
+                                .font(.system(size: 15, weight: .bold)).padding(.trailing, 10)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(20)
-                        .padding(.vertical, 5)
+                        .frame(maxWidth: .infinity).padding(20).padding(.vertical, 5)
                     }
-
-                    Divider().background(Color.white.opacity(0.1))
-
-                    // Race History
+                    Divider().background(AppTheme.divider)
                     Button(action: { showingRaceHistory = true }) {
                         HStack {
-                            Text("History")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.leading, 10)
+                            Text("History").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(Color(hex: "#D3D3D3"))
-                                .font(.system(size: 15, weight: .bold))
-                                .padding(.trailing, 10)
+                            Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
+                                .font(.system(size: 15, weight: .bold)).padding(.trailing, 10)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(20)
-                        .padding(.vertical, 5)
+                        .frame(maxWidth: .infinity).padding(20).padding(.vertical, 5)
                     }
-
-                    Divider().background(Color.white.opacity(0.1))
-
-                    // Race Settings
+                    Divider().background(AppTheme.divider)
                     Button(action: { showingRaceSettings = true }) {
                         HStack {
-                            Text("Duration")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.leading, 10)
+                            Text("Duration").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
                             Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(Color(hex: "#D3D3D3"))
-                                .font(.system(size: 15, weight: .bold))
-                                .padding(.trailing, 10)
+                            Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
+                                .font(.system(size: 15, weight: .bold)).padding(.trailing, 10)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(20)
-                        .padding(.vertical, 5)
+                        .frame(maxWidth: .infinity).padding(20).padding(.vertical, 5)
                     }
                 }
-                .background(Color(hex: "#1A2245"))
-                .cornerRadius(10)
-                .padding(.horizontal, 20)
+                .background(AppTheme.cardBackground).cornerRadius(10).padding(.horizontal, 20)
 
-                // ── Members header ────────────────────────────
                 HStack {
-                    Text("Players")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
+                    Text("Players").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
                     Spacer()
                 }
-                .padding(20)
-                .padding(.top, 5)
+                .padding(20).padding(.top, 5)
 
-                // ── Members list ──────────────────────────────
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(viewModel.members) { member in
@@ -124,79 +75,47 @@ struct MembersView: View {
                                 HStack {
                                     HStack(spacing: 20) {
                                         ProfilePictureView(url: member.profileurl, size: 40)
-                                        Text(member.username)
-                                            .font(.system(size: 16, weight: .bold))
-                                            .lineLimit(1)
+                                        Text(member.username).font(.system(size: 16, weight: .bold)).lineLimit(1)
                                             .frame(maxWidth: .infinity, alignment: .leading)
-                                            .foregroundColor(.white)
-                                            .truncationMode(.tail)
+                                            .foregroundColor(AppTheme.primaryText).truncationMode(.tail)
                                     }
                                     .padding(.leading, 30)
-
                                     if member.id != viewModel.currentUserId && !member.isAdded {
-                                        Button(action: {
-                                            viewModel.addFriend(member: member) { _, _ in }
-                                        }) {
-                                            Text("Add")
-                                                .font(.system(size: 17, weight: .bold))
-                                                .foregroundColor(.white)
+                                        Button(action: { viewModel.addFriend(member: member) { _, _ in } }) {
+                                            Text("Add").font(.system(size: 17, weight: .bold)).foregroundColor(.white)
                                                 .padding(EdgeInsets(top: 3, leading: 15, bottom: 3, trailing: 15))
-                                                .background(Color(hex: "#4169E1"))
-                                                .cornerRadius(200)
+                                                .background(AppTheme.accent).cornerRadius(200)
                                         }
                                         .padding(.trailing, 30)
                                     } else if member.justAdded {
                                         HStack(spacing: 8) {
-                                            Text("Added")
-                                                .font(.system(size: 17, weight: .bold))
-                                                .foregroundColor(.white)
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 18, height: 18)
-                                                .foregroundColor(.white)
+                                            Text("Added").font(.system(size: 17, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                                            Image(systemName: "checkmark.circle.fill").resizable().scaledToFit()
+                                                .frame(width: 18, height: 18).foregroundColor(AppTheme.primaryText)
                                         }
                                         .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                        .background(Color(hex: "#00FF00"))
-                                        .cornerRadius(200)
-                                        .padding(.trailing, 30)
-                                        .opacity(0)
+                                        .background(AppTheme.green).cornerRadius(200).padding(.trailing, 30).opacity(0)
                                     }
                                 }
                                 .padding(.vertical, 20)
-
                                 if member.id != viewModel.members.last?.id {
-                                    Divider().background(Color.white.opacity(0.2))
+                                    Divider().background(AppTheme.divider)
                                 }
                             }
                         }
                     }
-                    .background(Color(hex: "#1A2245"))
-                    .cornerRadius(10)
-                    .padding(.horizontal, 20)
+                    .background(AppTheme.cardBackground).cornerRadius(10).padding(.horizontal, 20)
                 }
             }
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .navigationBarHidden(true)
-        .onAppear {
-            if viewModel.members.isEmpty {
-                viewModel.fetchMembersDetails(for: competition)
-            }
-        }
-        .sheet(isPresented: $isEditingCompetition) {
-            EditCompetitionView(competition: competition)
-        }
-        .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: {
-            viewModel.fetchMembersDetails(for: competition)
-        }) {
+        .onAppear { if viewModel.members.isEmpty { viewModel.fetchMembersDetails(for: competition) } }
+        .sheet(isPresented: $isEditingCompetition) { EditCompetitionView(competition: competition) }
+        .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: { viewModel.fetchMembersDetails(for: competition) }) {
             JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
-        .navigationDestination(isPresented: $showingRaceHistory) {
-            RaceHistoryView(competition: competition)
-        }
-        .navigationDestination(isPresented: $showingRaceSettings) {
-            RaceSettingsView(competition: competition)
-        }
+        .navigationDestination(isPresented: $showingRaceHistory) { RaceHistoryView(competition: competition) }
+        .navigationDestination(isPresented: $showingRaceSettings) { RaceSettingsView(competition: competition) }
     }
 }

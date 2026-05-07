@@ -2,162 +2,88 @@ import SwiftUI
 
 struct WelcomeView: View {
     @State private var showPhoneEntry = false
-    // Use a StateObject for the animation controller to ensure continuous animation
     @StateObject private var animationController = AnimationController()
-    
+
     var body: some View {
         ZStack {
-            // Background with animated elements
-            Color(hex: "#10183C")
-                .edgesIgnoringSafeArea(.all)
-            
-            // Animated background elements
+            AppTheme.pageBackground.edgesIgnoringSafeArea(.all)
+
             ZStack {
-                // Animated light beams
                 ForEach(0..<3) { index in
                     RoundedRectangle(cornerRadius: 100)
-                        .fill(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    Color(hex: "#4169E1").opacity(0.3),
-                                    Color(hex: "#3B4374").opacity(0.1)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(LinearGradient(
+                            gradient: Gradient(colors: [AppTheme.accent.opacity(0.3), AppTheme.cardHighlight.opacity(0.1)]),
+                            startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(width: 300, height: 300)
                         .rotationEffect(.degrees(Double(index * 45) + animationController.rotationAngle))
                         .offset(x: CGFloat(index * 40) - 100, y: CGFloat(index * 20) - 200)
                         .blur(radius: 70)
                 }
-                
-                // Glowing orbs with smooth sine wave animations
                 Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "#4169E1").opacity(0.4),
-                                Color(hex: "#10183C").opacity(0)
-                            ]),
-                            center: .center,
-                            startRadius: 50,
-                            endRadius: 200
-                        )
-                    )
+                    .fill(RadialGradient(gradient: Gradient(colors: [AppTheme.accent.opacity(0.4), AppTheme.pageBackground.opacity(0)]),
+                        center: .center, startRadius: 50, endRadius: 200))
                     .scaleEffect(1.0 + sin(animationController.sineWaveValue) * 0.3)
-                    .position(x: UIScreen.main.bounds.width * 0.8,
-                             y: UIScreen.main.bounds.height * 0.2)
+                    .position(x: UIScreen.main.bounds.width * 0.8, y: UIScreen.main.bounds.height * 0.2)
                     .blur(radius: 40)
-                
                 Circle()
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color(hex: "#3B4374").opacity(0.4),
-                                Color(hex: "#10183C").opacity(0)
-                            ]),
-                            center: .center,
-                            startRadius: 50,
-                            endRadius: 200
-                        )
-                    )
+                    .fill(RadialGradient(gradient: Gradient(colors: [AppTheme.cardHighlight.opacity(0.4), AppTheme.pageBackground.opacity(0)]),
+                        center: .center, startRadius: 50, endRadius: 200))
                     .scaleEffect(1.0 + cos(animationController.sineWaveValue) * 0.3)
-                    .position(x: UIScreen.main.bounds.width * 0.2,
-                             y: UIScreen.main.bounds.height * 0.7)
+                    .position(x: UIScreen.main.bounds.width * 0.2, y: UIScreen.main.bounds.height * 0.7)
                     .blur(radius: 40)
             }
-            .onAppear {
-                // Start the continuous animations
-                animationController.startAnimations()
-            }
-            
-            // Content
+            .onAppear { animationController.startAnimations() }
+
             VStack(spacing: 0) {
                 Spacer()
+                Image("Logo-T").resizable().aspectRatio(contentMode: .fit).frame(width: 65, height: 65)
                 
-                // Logo
-                Image("Logo-T")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 70, height: 70)
-                    .shadow(color: Color(hex: "#4169E1").opacity(0.5), radius: 15, x: 0, y: 0)
-                
-                // Title and tagline
                 Text("Welcome to SocialStar")
                     .font(.system(size: 30, weight: .bold, design: .default))
-                    .foregroundColor(.white)
-                    .padding(.vertical, 30)
-                
-                // Disclaimer
+                    .foregroundColor(AppTheme.primaryText).padding(.vertical, 30)
                 DisclaimerText()
-                
-                // CTA Button
                 Button(action: {
-                    Analytics.shared.trackTap (
-                        elementId: "welcome_cta",
-                        screenName: "welcome"
-                    )
+                    Analytics.shared.trackTap(elementId: "welcome_cta", screenName: "welcome")
                     showPhoneEntry = true
                 }) {
-                    Text("Agree & Continue")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(Color(hex: "#4169E1"))
-                        .cornerRadius(200)
+                    Text("Agree & Continue").font(.system(size: 18, weight: .bold))
+                        .foregroundColor(.white).frame(maxWidth: .infinity).padding(.vertical, 18)
+                        .background(AppTheme.accent).cornerRadius(200)
                 }
-                .padding(.horizontal, 25)
-                .padding(.bottom, 30)
-                
+                .padding(.horizontal, 25).padding(.bottom, 30)
                 Spacer()
             }
             .padding(.horizontal, 20)
-            .onAppear {
-                Analytics.shared.trackScreen(name: "welcome")
-            }
-            
-            NavigationLink(destination: PhoneEntryView(), isActive: $showPhoneEntry) {
-                EmptyView()
-            }.isDetailLink(false)
+            .onAppear { Analytics.shared.trackScreen(name: "welcome") }
+
+            NavigationLink(destination: PhoneEntryView(), isActive: $showPhoneEntry) { EmptyView() }.isDetailLink(false)
         }
     }
 }
 
-// Animation controller to manage smooth continuous animations
 class AnimationController: ObservableObject {
     @Published var rotationAngle: Double = 0
     @Published var sineWaveValue: Double = 0
-    
     private var rotationTimer: Timer?
     private var sineWaveTimer: Timer?
-    
+
     func startAnimations() {
-        // Create timer for rotation at 60fps
         rotationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            // Increment by small amount for smooth rotation (full 360° rotation in 8 seconds)
-            self.rotationAngle = (self.rotationAngle + 0.75) .truncatingRemainder(dividingBy: 360)
+            self.rotationAngle = (self.rotationAngle + 0.75).truncatingRemainder(dividingBy: 360)
         }
-        
-        // Create timer for sine wave animation at 60fps
         sineWaveTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] _ in
             guard let self = self else { return }
-            // Small increment for smooth sine wave (completes a cycle in about 4 seconds)
-            self.sineWaveValue = (self.sineWaveValue + 0.025) .truncatingRemainder(dividingBy: 2 * Double.pi)
+            self.sineWaveValue = (self.sineWaveValue + 0.025).truncatingRemainder(dividingBy: 2 * Double.pi)
         }
     }
-    
-    deinit {
-        rotationTimer?.invalidate()
-        sineWaveTimer?.invalidate()
-    }
+
+    deinit { rotationTimer?.invalidate(); sineWaveTimer?.invalidate() }
 }
 
 struct DisclaimerText: View {
     @State private var showingActionSheet = false
-    
+
     var body: some View {
         VStack {
             let youMustBe18Text = Text("You must be at least 18 years old to use this app. ")
@@ -166,37 +92,23 @@ struct DisclaimerText: View {
             let andText = Text(" and ")
             let privacyText = Text("Privacy Policy").underline()
             let periodText = Text(".")
-            
             (youMustBe18Text + byTappingText + termsText + andText + privacyText + periodText)
                 .font(.system(size: 14, weight: .semibold, design: .default))
-                .foregroundColor(.white)
-                .padding(.bottom, 30)
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-                .onTapGesture {
-                    showingActionSheet = true
-                }
+                .foregroundColor(AppTheme.primaryText).padding(.bottom, 30)
+                .multilineTextAlignment(.center).lineSpacing(4)
+                .onTapGesture { showingActionSheet = true }
                 .actionSheet(isPresented: $showingActionSheet) {
-                    ActionSheet(
-                        title: Text("Choose Document"),
-                        message: Text("Which document would you like to view?"),
+                    ActionSheet(title: Text("Choose Document"), message: Text("Which document would you like to view?"),
                         buttons: [
-                            .default(Text("Terms of Use")) {
-                                openURL("https://www.notion.so/Terms-of-Use-2aaae3bec803804b83c4fa30721168d8")
-                            },
-                            .default(Text("Privacy Policy")) {
-                                openURL("https://www.notion.so/Privacy-Policy-2aaae3bec80380838551eb321015a92f")
-                            },
+                            .default(Text("Terms of Use")) { openURL("https://www.notion.so/Terms-of-Use-2aaae3bec803804b83c4fa30721168d8") },
+                            .default(Text("Privacy Policy")) { openURL("https://www.notion.so/Privacy-Policy-2aaae3bec80380838551eb321015a92f") },
                             .cancel()
-                        ]
-                    )
+                        ])
                 }
         }
     }
-    
+
     private func openURL(_ urlString: String) {
-        if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
-        }
+        if let url = URL(string: urlString) { UIApplication.shared.open(url) }
     }
 }

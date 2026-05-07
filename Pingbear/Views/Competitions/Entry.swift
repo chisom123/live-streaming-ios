@@ -73,7 +73,7 @@ struct EntryView: View {
             // Slot Machine Footer
             slotMachineFooter
         }
-        .background(Color(hex: "#10183C"))
+        .background(AppTheme.pageBackground)
         .sheet(isPresented: $currentEntryState.showingMessageComposer) {
             if let entry = currentEntry {
                 MessageComposerView(
@@ -154,13 +154,8 @@ private extension EntryView {
             Spacer()
             
             VStack(spacing: 20) {
-                // Instruction Text
-                Text(instructionText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                
-                // Spin Results Display
+                Text(instructionText).font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(AppTheme.primaryText).multilineTextAlignment(.center)
                 HStack(spacing: 15) {
                     ForEach(0..<3, id: \.self) { index in
                         spinSlotView(index: index)
@@ -184,7 +179,7 @@ private extension EntryView {
             }
             .padding(20)
             .padding(.bottom, 20)
-            .background(Color(hex: "#1A2245"))
+            .background(AppTheme.cardBackground)
             .clipShape(
                 RoundedCorner(
                     radius: 20,
@@ -195,7 +190,7 @@ private extension EntryView {
                 VStack(spacing: 0) {
                     Color.clear
                         .frame(height: 20)
-                    Color(hex: "#1A2245")
+                    AppTheme.cardBackground
                 }
             )
         }
@@ -211,14 +206,8 @@ private extension EntryView {
             VStack(spacing: 2) {
                 if index < spinResults.count {
                     let result = spinResults[index]
-                    
-                    Text("\(result.stars)")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
-                    
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white)
+                    Text("\(result.stars)").font(.system(size: 24, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                    Image(systemName: "star.fill").font(.system(size: 14)).foregroundColor(AppTheme.gold)
                 } else {
                     Text("")
                         .font(.system(size: 24, weight: .bold))
@@ -238,51 +227,23 @@ private extension EntryView {
     }
     
     var instructionText: String {
-        if isLoadingSpinState {
-            return "Loading..."
-        } else if !hasStartedSpinning {
-            return "Tap spin"
-        } else if isSpinning {
-            return "Spinning..."
-        } else if selectedRatingIndex != nil {
-            return "Submitting..."
-        } else if hasStartedSpinning && spinsRemaining == 0 {
-            return "Pick a rating"
-        } else {
-            return "Submitting..."
-        }
+        if isLoadingSpinState { return "Loading..." }
+        else if !hasStartedSpinning { return "Tap spin" }
+        else if isSpinning { return "Spinning..." }
+        else if selectedRatingIndex != nil { return "Submitting..." }
+        else if hasStartedSpinning && spinsRemaining == 0 { return "Pick a rating" }
+        else { return "Submitting..." }
     }
-    
-    var spinButtonText: String {
-        if isSpinning {
-            return "Spinning..."
-        } else {
-            return "Spin"
-        }
-    }
-    
-    var spinButtonColor: Color {
-        canSpin ? Color(hex: "#4169E1") : Color(hex: "#666666")
-    }
-    
-    var canSpin: Bool {
-        return !isSpinning && !isLoadingSpinState && spinsRemaining > 0 && !currentEntryState.hasVoted
-    }
-    
+    var spinButtonText: String { isSpinning ? "Spinning..." : "Spin" }
+    var spinButtonColor: Color { canSpin ? AppTheme.accent : AppTheme.disabledBackground }
+    var canSpin: Bool { !isSpinning && !isLoadingSpinState && spinsRemaining > 0 && !currentEntryState.hasVoted }
+
     func slotBackgroundColor(index: Int) -> Color {
-        if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
-            return Color(hex: "#2A3A6B")
-        } else {
-            return Color(hex: "#2A3A6B").opacity(0.6)
-        }
+        hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil ? AppTheme.cardHighlight : AppTheme.cardHighlight.opacity(0.6)
     }
     
     func slotBorderColor(index: Int) -> Color {
-        if hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil {
-            return Color.white.opacity(0.3)
-        } else {
-            return .clear
-        }
+        hasStartedSpinning && spinsRemaining == 0 && selectedRatingIndex == nil ? AppTheme.divider : .clear
     }
 }
 
