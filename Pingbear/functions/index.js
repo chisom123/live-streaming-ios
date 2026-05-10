@@ -5,6 +5,7 @@ const { google } = require('googleapis');
 const logger = require("firebase-functions/logger");
 const wallet = require('./walletFunctions');
 const race = require('./raceFunctions');
+const challenge = require('./challengeFunctions');
 // Stripe will be initialized in functions that need it
 const cors = require('cors')({ origin: true });
 
@@ -417,55 +418,63 @@ exports.checkPurchaseStatus = onCall({
 });
 
 exports.saveUserProfile = onCall({
-  cors: ["*"],
-  maxInstances: 20
+  cors: ['*'],
+  maxInstances: 20,
+  minInstances: 1
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
-
-  const { phoneNumberHash, winCode } = request.data;
+ 
+  const { phoneNumberHash, linkId, fingerprint } = request.data;
   const userId = request.auth.uid;
-
+ 
   if (!phoneNumberHash) throw new Error('phoneNumberHash is required');
-
+ 
   const db = admin.firestore();
   const userRef = db.collection('users').doc(userId);
-
+ 
   try {
     const userDoc = await userRef.get();
-
+ 
     if (userDoc.exists) {
-      const userData = userDoc.data();
-
-      if (userData.profileComplete === true || userData.username) {
-        await userRef.update({
-          winCode,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        logger.info(`saveUserProfile: existing complete user ${userId}`);
-        return { existingUser: true };
-      }
-
-      await userRef.update({
-        winCode,
+      // ── Existing user — update attribution fields ──────────
+      // Always overwrite webRatingLinkId so every new web rating
+      // gets a fresh attribution opportunity (last touch)
+      await userRef.set({
+        userId,
         phoneNumberHash,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt:              admin.firestore.FieldValue.serverTimestamp(),
+        ...(linkId && fingerprint && {
+          webRatingLinkId:      linkId,
+          webFingerprint:       fingerprint,
+          webRatingOpenedApp:   false,
+          webRatingAttributedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+      }, { merge: true });
+ 
+      logger.info(`saveUserProfile: updated existing user ${userId}`);
+    } else {
+      // ── New user ───────────────────────────────────────────
+      await userRef.set({
+        userId,
+        phoneNumberHash,
+        createdFromWeb:         true,
+        createdAt:              admin.firestore.FieldValue.serverTimestamp(),
+        lastActiveAt:           admin.firestore.FieldValue.serverTimestamp(),
+        ...(linkId && fingerprint && {
+          webRatingLinkId:      linkId,
+          webFingerprint:       fingerprint,
+          webRatingOpenedApp:   false,
+          webRatingAttributedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
       });
-      logger.info(`saveUserProfile: updated existing web user ${userId}`);
-      return { existingUser: false };
+ 
+      logger.info(`saveUserProfile: created new user ${userId}`);
     }
-
-    await userRef.set({
-      winCode,
-      phoneNumberHash,
-      createdFromWeb: true,
-      profileComplete: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    logger.info(`saveUserProfile: created new web user ${userId}`);
-    return { existingUser: false };
-
+ 
+    return { success: true, userId };
+ 
   } catch (error) {
-    logger.error('Error in saveUserProfile:', error);
+    logger.error('saveUserProfile: error', { error: error.message, userId });
     throw new Error(error.message);
   }
 });
@@ -479,7 +488,7 @@ exports.adminCreditBalance = wallet.adminCreditBalance;
 exports.requestWithdrawal  = wallet.requestWithdrawal;
 exports.approveWithdrawal  = wallet.approveWithdrawal;
 exports.rejectWithdrawal   = wallet.rejectWithdrawal;
-exports.contributeToRace   = wallet.contributeToRace; // moved from race
+exports.contributeToRace   = wallet.contributeToRace;
 exports.recordStarsEarned  = wallet.recordStarsEarned;
 exports.createTopUpIntent      = wallet.createTopUpIntent;
 exports.confirmTopUpIntent     = wallet.confirmTopUpIntent;
@@ -488,3 +497,6 @@ exports.confirmTopUpIntent     = wallet.confirmTopUpIntent;
 exports.setRaceDuration               = race.setRaceDuration;
 exports.getOrCreateRaceForCompetition = race.getOrCreateRaceForCompetition;
 exports.closeRaces                    = race.closeRaces;
+
+// ── Challenges ──────────────────────────────────────────────────────
+exports.assignChallenge               = challenge.assignChallenge;

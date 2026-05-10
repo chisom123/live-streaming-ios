@@ -13,6 +13,8 @@
 		4F1146B62E166F6100CEAE21 /* SharedEntryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */; };
 		4F1C03CF2DB0E337001C9CE1 /* ThemeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */; };
 		4F1C03D32DB107D7001C9CE1 /* ThemeSelectionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */; };
+		4F1D49022FAF44B7004A0124 /* ChallengeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1D49012FAF44B7004A0124 /* ChallengeManager.swift */; };
+		4F1D49042FAF6804004A0124 /* AttributionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1D49032FAF6804004A0124 /* AttributionManager.swift */; };
 		4F1E364F2DD28CBF003100DA /* UserPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */; };
 		4F1F6CDD2DB0255200083C42 /* EntryUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */; };
 		4F2008D82FA3660D0039FBCB /* Withdrawal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2008D72FA3660D0039FBCB /* Withdrawal.swift */; };
@@ -151,6 +153,8 @@
 		4F1146B52E166F6100CEAE21 /* SharedEntryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedEntryComponents.swift; sourceTree = "<group>"; };
 		4F1C03CE2DB0E336001C9CE1 /* ThemeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeModel.swift; sourceTree = "<group>"; };
 		4F1C03D22DB107D7001C9CE1 /* ThemeSelectionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSelectionSheet.swift; sourceTree = "<group>"; };
+		4F1D49012FAF44B7004A0124 /* ChallengeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChallengeManager.swift; sourceTree = "<group>"; };
+		4F1D49032FAF6804004A0124 /* AttributionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributionManager.swift; sourceTree = "<group>"; };
 		4F1E364E2DD28CBF003100DA /* UserPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPhotosView.swift; sourceTree = "<group>"; };
 		4F1F6CDC2DB0255200083C42 /* EntryUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryUploadManager.swift; sourceTree = "<group>"; };
 		4F2008D72FA3660D0039FBCB /* Withdrawal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Withdrawal.swift; sourceTree = "<group>"; };
@@ -463,6 +467,7 @@
 				4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */,
 				4F3E0D642A8949260068F901 /* Global.swift */,
 				4FF146412FAC97900081A477 /* AppTheme.swift */,
+				4F1D49032FAF6804004A0124 /* AttributionManager.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -487,6 +492,7 @@
 				4F3359572DE5E983003EF5E1 /* ChatMessageModel.swift */,
 				4F3359592DE5E9A0003EF5E1 /* ChatViewModel.swift */,
 				4F33595D2DE65507003EF5E1 /* ChatIndicatorViewModel.swift */,
+				4F1D49012FAF44B7004A0124 /* ChallengeManager.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -784,6 +790,7 @@
 				4FDD666D2F3621460023B145 /* SpinStateManager.swift in Sources */,
 				4F39B2AB2DD5CB6C00F75004 /* ModalDismisser.swift in Sources */,
 				4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */,
+				4F1D49022FAF44B7004A0124 /* ChallengeManager.swift in Sources */,
 				4F2008E02FA3965C0039FBCB /* ContributeViewModel.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F2A809C2C7B1CBC00BF51C8 /* FinalPreview.swift in Sources */,
@@ -819,6 +826,7 @@
 				4F2008E62FA3E44B0039FBCB /* RaceHistoryView.swift in Sources */,
 				4F2008DA2FA366370039FBCB /* WalletViewModel.swift in Sources */,
 				4F375D122B02A1FC0011F541 /* EntryViewModel.swift in Sources */,
+				4F1D49042FAF6804004A0124 /* AttributionManager.swift in Sources */,
 				4FF9C1A92F11F50B000F045C /* CashOutSheet.swift in Sources */,
 				4F2008EF2FA60EA40039FBCB /* PaymentClient.swift in Sources */,
 				4F375D0B2AF444B70011F541 /* Camera.swift in Sources */,
@@ -983,7 +991,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 545;
+				CURRENT_PROJECT_VERSION = 546;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -1013,7 +1021,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 48.5;
+				MARKETING_VERSION = 48.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -1033,7 +1041,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 545;
+				CURRENT_PROJECT_VERSION = 546;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1062,7 +1070,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 48.5;
+				MARKETING_VERSION = 48.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

@@ -5,6 +5,7 @@ import FirebaseFirestore
 
 enum DeepLinkType: Equatable {
     case competition(String)
+    case webAttribution
     case unknown
 }
 
@@ -104,8 +105,16 @@ class DeepLinkHandler: ObservableObject {
                 return
             }
         }
-        
-        print("URL doesn't match any known deep link path")
+
+        // ── Web attribution deep link: socialstar://web-attribution ──
+        if urlString.contains("web-attribution") {
+            print("DeepLinkHandler: Web attribution deep link received")
+            pendingDeepLink = .webAttribution
+            completion(true)
+            return
+        }
+
+        print("DeepLinkHandler: URL doesn't match any known deep link path")
         pendingDeepLink = .unknown
         completion(false)
     }
@@ -159,7 +168,14 @@ class DeepLinkHandler: ObservableObject {
                         completion(competition)
                     }
                 }
-                
+
+            case .webAttribution:
+                // Fire attribution and return — no UI navigation needed
+                AttributionManager.shared.checkAndRecord()
+                self?.isProcessingDeepLink = false
+                self?.pendingDeepLink = nil
+                completion(nil)
+
             case .unknown:
                 self?.isProcessingDeepLink = false
                 self?.pendingDeepLink = nil

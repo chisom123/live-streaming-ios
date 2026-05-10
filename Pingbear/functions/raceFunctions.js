@@ -78,6 +78,51 @@ const RACE_DURATIONS = {
 
 const DEFAULT_DURATION = 'weekly';
 
+function evaluateConditions(conditions, userData) {
+  for (const [field, condition] of Object.entries(conditions)) {
+    const userValue = userData[field] ?? 0;
+    const { operator, value } = condition;
+    switch (operator) {
+      case 'lt':  if (!(userValue <  value)) return false; break;
+      case 'gt':  if (!(userValue >  value)) return false; break;
+      case 'eq':  if (!(userValue == value)) return false; break;
+      case 'gte': if (!(userValue >= value)) return false; break;
+      case 'lte': if (!(userValue <= value)) return false; break;
+      default: return false;
+    }
+  }
+  return true;
+}
+
+async function checkAndCompleteChallenge(db, userId, newTotalWinnings) {
+  try {
+    const challengeDoc = await db.collection('user_challenges').doc(userId).get();
+    if (!challengeDoc.exists) return;
+
+    const challenge = challengeDoc.data();
+    if (challenge.status !== 'accepted') return;
+    if (challenge.completionTrigger !== 'race_win') return;
+
+    const updateData = { currentValue: newTotalWinnings };
+
+    if (newTotalWinnings >= challenge.targetValue) {
+      updateData.status      = 'completed';
+      updateData.completedAt = admin.firestore.FieldValue.serverTimestamp();
+
+      await db.collection('users').doc(userId).set({
+        challengeTier: admin.firestore.FieldValue.increment(1)
+      }, { merge: true });
+
+      logger.info(`checkAndCompleteChallenge: completed for ${userId} — tier incremented`);
+    }
+
+    await challengeDoc.ref.update(updateData);
+  } catch (error) {
+    logger.error(`checkAndCompleteChallenge: error for ${userId}:`, error);
+    // Non-fatal — race payout already succeeded
+  }
+}
+
 // ─────────────────────────────────────────────────────────────
 // HELPER — unlock welcome bonus for participants who earned stars
 // Called after each race closes
@@ -495,15 +540,19 @@ async function closeRace(raceId, raceData, db) {
 
 async function creditWinner(userId, amount, stars, totalStars, raceId, competitionId, db) {
   const userRef = db.collection('users').doc(userId);
+  let newTotalWinnings = 0;
 
   await db.runTransaction(async (t) => {
     const userDoc = await t.get(userRef);
-    const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance = parseFloat((currentBalance + amount).toFixed(2));
+    const currentBalance  = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
+    const currentWinnings = userDoc.exists ? (userDoc.data().totalWinnings  ?? 0) : 0;
+    const newBalance      = parseFloat((currentBalance  + amount).toFixed(2));
+    newTotalWinnings      = parseFloat((currentWinnings + amount).toFixed(2));
 
     // Credit wallet
     t.set(userRef, {
-      wallet_balance: admin.firestore.FieldValue.increment(amount)
+      wallet_balance: admin.firestore.FieldValue.increment(amount),
+      totalWinnings:  admin.firestore.FieldValue.increment(amount)
     }, { merge: true });
 
     // Audit trail
@@ -526,7 +575,10 @@ async function creditWinner(userId, amount, stars, totalStars, raceId, competiti
     });
   });
 
-  logger.info(`creditWinner: $${amount} credited to user ${userId} (${stars}/${totalStars} stars)`);
+  logger.info(`creditWinner: $${amount} credited to ${userId} — totalWinnings now $${newTotalWinnings}`);
+
+  // ── Check challenge completion after payout ──
+  await checkAndCompleteChallenge(db, userId, newTotalWinnings);
 }
 
 

@@ -169,6 +169,7 @@ struct PingbearApp: App {
             window.overrideUserInterfaceStyle = .light
         }
         EntryUploadManager.shared.initialize()
+        AttributionManager.shared.checkAndRecord()
     }
     
     private func processLoginPendingDeepLink() {

@@ -110,7 +110,10 @@ struct NameEntryView: View {
         db.collection("users").document(userID).setData([
             "username":        username,
             "phoneNumberHash": hashedPhone,
-            "name":            fullName
+            "name":            fullName,
+            "userId":          userID,
+            "createdAt":       FieldValue.serverTimestamp(),
+            "lastActiveAt":    FieldValue.serverTimestamp()
         ], merge: true) { error in
             if let error {
                 self.isLoading = false

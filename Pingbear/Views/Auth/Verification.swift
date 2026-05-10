@@ -26,7 +26,9 @@ struct VerificationView: View {
                     Spacer()
                 }
                 .padding(20)
+
                 Spacer()
+
                 VStack {
                     Text("Enter the verification code sent to \(phoneNumber)")
                         .font(.system(size: 18, weight: .bold, design: .default))
@@ -77,22 +79,47 @@ struct VerificationView: View {
         .navigationBarBackButtonHidden(true)
     }
 
+    // MARK: - Verify Code
+
     func verifyCode() {
         isLoading = true
-        let credential = PhoneAuthProvider.provider().credential(withVerificationID: verificationID, verificationCode: verificationCode)
+        let credential = PhoneAuthProvider.provider().credential(
+            withVerificationID: verificationID,
+            verificationCode: verificationCode
+        )
+
         Auth.auth().signIn(with: credential) { (authResult, error) in
             if let error = error {
-                self.isLoading = false; self.errorMessage = error.localizedDescription
-                Analytics.shared.track(event: "verification_failed", properties: ["error": error.localizedDescription]); return
+                self.isLoading = false
+                self.errorMessage = error.localizedDescription
+                Analytics.shared.track(
+                    event: "verification_failed",
+                    properties: ["error": error.localizedDescription]
+                )
+                return
             }
-            guard let userID = Auth.auth().currentUser?.uid else { self.isLoading = false; self.errorMessage = "Error fetching user ID"; return }
+
+            guard let userID = Auth.auth().currentUser?.uid else {
+                self.isLoading = false
+                self.errorMessage = "Error fetching user ID"
+                return
+            }
+
             Analytics.shared.identify(userId: userID)
+
+            // ── Attribution — fire and forget ──────────────────
+            // Covers both new and returning users coming from web flow.
+            // checkAndRecord is idempotent — returns immediately if
+            // already attributed or no web rating exists on user doc.
+            AttributionManager.shared.checkAndRecord()
+
             let db = Firestore.firestore()
             db.collection("users").document(userID).getDocument { (document, error) in
                 if let document = document, document.exists {
                     let data = document.data() ?? [:]
+
                     if data["username"] != nil {
-                        if let winCode = data["winCode"] as? String { claimWinCodeInBackground(winCode: winCode, userID: userID) }
+                        // ── Returning user ─────────────────────
                         DispatchQueue.main.async {
                             self.isLoading = false
                             UserDefaults.standard.set(true, forKey: "isLoggedIn")
@@ -101,46 +128,40 @@ struct VerificationView: View {
                             NotificationCenter.default.post(name: .authStateDidChange, object: nil)
                         }
                         Analytics.shared.track(event: "returning_user_signed_in")
-                    } else { self.isLoading = false; self.navigateToNameEntry = true; Analytics.shared.track(event: "new_user_registration_started") }
-                } else { self.isLoading = false; self.navigateToNameEntry = true; Analytics.shared.track(event: "user_document_not_found") }
+                    } else {
+                        // ── New user — continue onboarding ─────
+                        self.isLoading = false
+                        self.navigateToNameEntry = true
+                        Analytics.shared.track(event: "new_user_registration_started")
+                    }
+                } else {
+                    // ── No user doc yet — new user ─────────────
+                    self.isLoading = false
+                    self.navigateToNameEntry = true
+                    Analytics.shared.track(event: "user_document_not_found")
+                }
             }
         }
     }
 
-    private func claimWinCodeInBackground(winCode: String, userID: String) {
-        let cloudFunctionURL = URL(string: "https://claimwincode-vt3x7ykt4a-uc.a.run.app")!
-        var request = URLRequest(url: cloudFunctionURL)
-        request.httpMethod = "POST"; request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let requestBody: [String: Any] = ["data": ["code": winCode, "swiftUserId": userID]]
-        guard let httpBody = try? JSONSerialization.data(withJSONObject: requestBody) else { return }
-        request.httpBody = httpBody
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            guard let data = data, error == nil else { return }
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let result = json["result"] as? [String: Any],
-                   let success = result["success"] as? Bool, success,
-                   let points = result["points"] as? Int {
-                    Functions.functions().httpsCallable("awardLeaderboardPoints").call(["points": points]) { _, error in
-                        if error == nil {
-                            Firestore.firestore().collection("users").document(userID).updateData(["winCode": FieldValue.delete()])
-                            Analytics.shared.track(event: "web_win_code_claimed_background", properties: ["user_id": userID, "points": points])
-                        }
-                    }
-                }
-            } catch {}
-        }.resume()
-    }
+    // MARK: - Resend Code
 
     func resendVerificationCode() {
         isResending = true
-        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { (newVerificationID, error) in
+        PhoneAuthProvider.provider().verifyPhoneNumber(phoneNumber, uiDelegate: nil) { (_, error) in
             self.isResending = false
             if let error = error {
                 self.errorMessage = "Failed to resend code: \(error.localizedDescription)"
-                Analytics.shared.track(event: "verification_code_resend_failed", properties: ["error": error.localizedDescription]); return
+                Analytics.shared.track(
+                    event: "verification_code_resend_failed",
+                    properties: ["error": error.localizedDescription]
+                )
+                return
             }
-            Analytics.shared.track(event: "verification_code_resent", properties: ["phone_number": self.phoneNumber])
+            Analytics.shared.track(
+                event: "verification_code_resent",
+                properties: ["phone_number": self.phoneNumber]
+            )
         }
     }
 }
