@@ -26,8 +26,8 @@ const templates = [
   {
     id: "win_2",
     data: {
-      title: "Win $2 in a competition",
-      description: "Post a photo, get rated, and win your first $2 across competitions",
+      title: "Win $2 in a photo competition",
+      description: "Can you win $2 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 2,
       priority: 1,
@@ -40,8 +40,8 @@ const templates = [
   {
     id: "win_5",
     data: {
-      title: "Win $5 in competitions",
-      description: "Keep competing and grow your total winnings to $5",
+      title: "Win $5 in a photo competition",
+      description: "Can you win $5 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 5,
       priority: 2,
@@ -54,8 +54,8 @@ const templates = [
   {
     id: "win_10",
     data: {
-      title: "Win $10 in competitions",
-      description: "You're finding your rhythm — push your total winnings to $10",
+      title: "Win $10 in a photo competition",
+      description: "Can you win $10 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 10,
       priority: 3,
@@ -68,8 +68,8 @@ const templates = [
   {
     id: "win_20",
     data: {
-      title: "Win $20 in competitions",
-      description: "A serious competitor — reach $20 in total competition winnings",
+      title: "Win $20 in a photo competition",
+      description: "Can you win $20 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 20,
       priority: 4,
@@ -82,8 +82,8 @@ const templates = [
   {
     id: "win_50",
     data: {
-      title: "Win $50 in competitions",
-      description: "Elite level — accumulate $50 in total competition winnings",
+      title: "Win $50 in a photo competition",
+      description: "Can you win $50 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 50,
       priority: 5,
@@ -96,8 +96,8 @@ const templates = [
   {
     id: "win_75",
     data: {
-      title: "Win $75 in competitions",
-      description: "Top tier — reach $75 in total competition winnings",
+      title: "Win $75 in a photo competition",
+      description: "Can you win $75 in a photo competition?",
       completionTrigger: "race_win",
       targetValue: 75,
       priority: 6,
