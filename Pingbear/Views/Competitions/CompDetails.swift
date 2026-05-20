@@ -356,7 +356,7 @@ struct CompDetails: View {
                                             .foregroundColor(.white)
                                     }
                                     .padding(EdgeInsets(top: 2.75, leading: 10, bottom: 2.75, trailing: 10))
-                                    .background(AppTheme.disabledBackground)
+                                    .background(AppTheme.gold)
                                     .cornerRadius(200)
                                     .padding(.trailing, 30)
                                 }
@@ -552,7 +552,7 @@ struct NoPlayersView: View {
                         .foregroundColor(.white)
                 }
                 .frame(width: 70, height: 30)
-                .background(AppTheme.disabledBackground)
+                .background(AppTheme.gold)
                 .cornerRadius(200)
                 .padding(.trailing, 30)
             }
