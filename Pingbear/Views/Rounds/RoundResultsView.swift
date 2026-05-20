@@ -178,13 +178,16 @@ struct RoundResultsView: View {
         let isMe = submission.userId == currentUserId
         let score = submission.aiScore ?? 0.0
 
-        return VStack(spacing: 0) {
-            HStack(spacing: 12) {
+        return HStack(spacing: 10) {
 
-                Text("\(rank)")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(isWinner ? AppTheme.gold : AppTheme.secondaryText)
-                    .frame(width: 24)
+            // ── Rank (outside the card) ──────────────────────────────
+            Text("\(rank)")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(isWinner ? AppTheme.gold : AppTheme.secondaryText)
+                .frame(width: 24)
+
+            // ── Card ─────────────────────────────────────────────────
+            HStack(spacing: 12) {
 
                 AsyncImage(url: URL(string: submission.photoUrl)) { phase in
                     switch phase {
@@ -216,17 +219,14 @@ struct RoundResultsView: View {
                         Rectangle().fill(AppTheme.pageBackground)
                     }
                 }
-                .frame(width: 64, height: 80)
+                .frame(width: 80, height: 100)
                 .clipped()
-                .cornerRadius(8)
+                .cornerRadius(12)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text(profile?.username ?? "...")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppTheme.primaryText)
-                        Spacer()
-                    }
+                    Text(profile?.username ?? "...")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
 
                     if let reason = submission.aiReason {
                         Text(reason)
@@ -247,6 +247,8 @@ struct RoundResultsView: View {
                     }
                 }
 
+                Spacer()
+
                 VStack(spacing: 0) {
                     Text(String(format: "%.1f", score))
                         .font(.system(size: 20, weight: .black))
@@ -258,8 +260,8 @@ struct RoundResultsView: View {
                 .frame(width: 48)
             }
             .padding(14)
+            .background(AppTheme.cardBackground)
+            .cornerRadius(12)
         }
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
     }
 }
