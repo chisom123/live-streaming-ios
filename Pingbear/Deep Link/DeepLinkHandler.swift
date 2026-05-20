@@ -250,8 +250,7 @@ class DeepLinkHandler: ObservableObject {
             .collection("members").document(userId)
         
         memberRef.setData([
-            "userId": userId,
-            "coins": 1000
+            "userId": userId
         ]) { [weak self] error in
             if let error = error {
                 print("Error adding member: \(error)")

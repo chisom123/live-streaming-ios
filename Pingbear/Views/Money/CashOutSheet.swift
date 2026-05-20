@@ -2,10 +2,12 @@ import SwiftUI
 
 struct CashOutSheet: View {
 
-    let balance:         Double
-    let maxWithdrawable: Double
-    let bonusCredited:   Bool
-    let bonusUnlocked:   Bool
+    let balance:            Double
+    let maxWithdrawable:    Double
+    let bonusCredited:      Bool
+    let bonusUnlocked:      Bool
+    let totalLockedCredits: Double
+    let stakingRemaining:   Double
     let onCashOut: (String, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -88,10 +90,10 @@ struct CashOutSheet: View {
                                     .font(.system(size: 15))
                                     .foregroundColor(AppTheme.green)
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("$\(String(format: "%.2f", lockedAmount)) welcome bonus")
+                                    Text("$\(String(format: "%.2f", lockedAmount)) locked")
                                         .font(.system(size: 13, weight: .bold))
                                         .foregroundColor(AppTheme.primaryText)
-                                    Text("Unlocks after your first competition")
+                                    Text("Enter $\(String(format: "%.2f", stakingRemaining)) more into competition rounds to unlock your bonus")
                                         .font(.system(size: 12))
                                         .foregroundColor(AppTheme.secondaryText)
                                 }
@@ -194,8 +196,9 @@ struct CashOutSheet: View {
                         }
                         .padding(.horizontal, 20)
 
+                        // ── Bottom hint when fully locked ─────
                         if maxWithdrawable < 5.0 && bonusLocked {
-                            Text("Top up your wallet or complete your first competition to unlock your welcome bonus.")
+                            Text("Stake $\(String(format: "%.2f", stakingRemaining)) in rounds to unlock your bonus and start withdrawing.")
                                 .font(.system(size: 13))
                                 .foregroundColor(AppTheme.secondaryText)
                                 .multilineTextAlignment(.center)

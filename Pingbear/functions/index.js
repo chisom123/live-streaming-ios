@@ -4,8 +4,10 @@ const admin = require("firebase-admin");
 const { google } = require('googleapis');
 const logger = require("firebase-functions/logger");
 const wallet = require('./walletFunctions');
-const race = require('./raceFunctions');
-const challenge = require('./challengeFunctions');
+const round = require('./roundFunctions');
+const livekit = require('./liveKitFunctions');
+const callkit = require('./callKitFunctions');
+
 // Stripe will be initialized in functions that need it
 const cors = require('cors')({ origin: true });
 
@@ -419,8 +421,7 @@ exports.checkPurchaseStatus = onCall({
 
 exports.saveUserProfile = onCall({
   cors: ['*'],
-  maxInstances: 20,
-  minInstances: 1
+  maxInstances: 20
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
  
@@ -481,22 +482,27 @@ exports.saveUserProfile = onCall({
 
 // ── Wallet ────────────────────────────────────────────────────
 exports.creditWelcomeBonus = wallet.creditWelcomeBonus;
-exports.unlockBonus        = wallet.unlockBonus;
 exports.deductBalance      = wallet.deductBalance;
 exports.creditBalance      = wallet.creditBalance;
 exports.adminCreditBalance = wallet.adminCreditBalance;
 exports.requestWithdrawal  = wallet.requestWithdrawal;
 exports.approveWithdrawal  = wallet.approveWithdrawal;
 exports.rejectWithdrawal   = wallet.rejectWithdrawal;
-exports.contributeToRace   = wallet.contributeToRace;
-exports.recordStarsEarned  = wallet.recordStarsEarned;
 exports.createTopUpIntent      = wallet.createTopUpIntent;
 exports.confirmTopUpIntent     = wallet.confirmTopUpIntent;
 
-// ── Race ──────────────────────────────────────────────────────
-exports.setRaceDuration               = race.setRaceDuration;
-exports.getOrCreateRaceForCompetition = race.getOrCreateRaceForCompetition;
-exports.closeRaces                    = race.closeRaces;
+// ── Rounds ──────────────────────────────────────────────────────
+exports.createRound      = round.createRound;
+exports.updateRoundTheme = round.updateRoundTheme;
+exports.joinRound        = round.joinRound;
+exports.leaveRound       = round.leaveRound;
+exports.startRound       = round.startRound;
+exports.sendRoundNudge   = round.sendRoundNudge;
 
-// ── Challenges ──────────────────────────────────────────────────────
-exports.assignChallenge               = challenge.assignChallenge;
+// ── Phone Calls ──────────────────────────────────────────────────────
+exports.getLiveKitToken  = livekit.getLiveKitToken;
+exports.notifyCallJoined = livekit.notifyCallJoined;
+
+// ── Live Calls ──────────────────────────────────────────────────────
+exports.sendCallInvite = callkit.sendCallInvite;
+exports.sendCallEnded  = callkit.sendCallEnded;

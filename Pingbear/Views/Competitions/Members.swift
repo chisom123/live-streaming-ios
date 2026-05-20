@@ -5,9 +5,6 @@ struct MembersView: View {
     @StateObject private var viewModel = MembersViewModel()
     @StateObject private var myFriendsModel = MyFriendsModel()
     @State private var showingJoinSelectView = false
-    @State private var isEditingCompetition = false
-    @State private var showingRaceSettings = false
-    @State private var showingRaceHistory = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -30,28 +27,6 @@ struct MembersView: View {
                     Button(action: { showingJoinSelectView = true }) {
                         HStack {
                             Text("Add Players").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
-                                .font(.system(size: 15, weight: .bold)).padding(.trailing, 10)
-                        }
-                        .frame(maxWidth: .infinity).padding(20).padding(.vertical, 5)
-                    }
-                    Divider().background(AppTheme.divider)
-                    Button(action: { showingRaceHistory = true }) {
-                        HStack {
-                            Text("History").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
-                                .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
-                                .font(.system(size: 15, weight: .bold)).padding(.trailing, 10)
-                        }
-                        .frame(maxWidth: .infinity).padding(20).padding(.vertical, 5)
-                    }
-                    Divider().background(AppTheme.divider)
-                    Button(action: { showingRaceSettings = true }) {
-                        HStack {
-                            Text("Duration").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
                                 .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10)
                             Spacer()
                             Image(systemName: "chevron.right").foregroundColor(AppTheme.secondaryText)
@@ -111,11 +86,8 @@ struct MembersView: View {
         .background(AppTheme.pageBackground)
         .navigationBarHidden(true)
         .onAppear { if viewModel.members.isEmpty { viewModel.fetchMembersDetails(for: competition) } }
-        .sheet(isPresented: $isEditingCompetition) { EditCompetitionView(competition: competition) }
         .fullScreenCover(isPresented: $showingJoinSelectView, onDismiss: { viewModel.fetchMembersDetails(for: competition) }) {
             JoinSelectView(competition: competition, viewModel: myFriendsModel)
         }
-        .navigationDestination(isPresented: $showingRaceHistory) { RaceHistoryView(competition: competition) }
-        .navigationDestination(isPresented: $showingRaceSettings) { RaceSettingsView(competition: competition) }
     }
 }

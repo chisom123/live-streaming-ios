@@ -17,19 +17,17 @@ struct Entry: Identifiable {
     let isFromCamera: Bool
     let themeId: String?
     let themeName: String?
-    
-    // Add these parlay properties
     let parlayStatus: String?
     let parlayPredictions: [String: Any]?
     let parlayPayout: Int?
     let parlayStake: Int?
-    
+
     init(id: String, photoUrl: String, userName: String, stars: Int, userProfilePictureUrl: String?,
          isCurrentUser: Bool, userId: String, isSuperstar: Bool, creationDate: Date, overlayText: String?,
          overlayVerticalPosition: CGFloat, isFromCamera: Bool, themeId: String? = nil, themeName: String? = nil,
          parlayStatus: String? = nil, parlayPredictions: [String: Any]? = nil,
          parlayPayout: Int? = nil, parlayStake: Int? = nil) {
-        
+
         self.id = id
         self.photoUrl = photoUrl
         self.userName = userName
@@ -51,11 +49,21 @@ struct Entry: Identifiable {
     }
 }
 
+// ─────────────────────────────────────────────────────────────
+// MARK: - UserEntry
+//
+// Updated to carry rounds_won and total_round_winnings
+// fetched from user documents for the leaderboard.
+// totalStars kept for backwards compatibility with EntryView.
+// ─────────────────────────────────────────────────────────────
+
 struct UserEntry: Identifiable {
     let id: String
     let userName: String
     let profilePictureUrl: String?
     var totalStars: Int
+    var roundsWon: Int          // from user doc: rounds_won
+    var totalRoundWinnings: Double  // from user doc: total_round_winnings
 }
 
 class EntryViewModel: ObservableObject {
@@ -65,13 +73,13 @@ class EntryViewModel: ObservableObject {
     var competitionId: String
     @Published var currentIndex: Int = 0
     @Published var totalMemberCount: Int = 0
-    
+
     private var allEntryIds: Set<String> = Set()
     private var votedEntryIds: Set<String> = Set()
     private var mode: FetchEntriesMode
-    
+
     private let db = Firestore.firestore()
-    
+
     enum FetchEntriesMode {
         case entryView
         case compDetailsView
@@ -81,27 +89,22 @@ class EntryViewModel: ObservableObject {
         self.competitionId = competitionId
         self.mode = mode
         fetchEntries(mode: mode)
-        
-        // Only setup listeners for CompDetails view
+
         if mode == .compDetailsView {
             setupListeners()
             fetchMemberCount()
         }
     }
-    
+
     deinit {
         if mode == .compDetailsView {
             removeListeners()
         }
     }
-    
+
     func setupListeners() {
         guard mode == .compDetailsView else { return }
-        
-        // Remove existing listeners first to avoid duplicates
         removeListeners()
-        
-        // Then setup fresh listeners
         setupEntriesListener()
         setupVotesListener()
     }
@@ -113,17 +116,17 @@ class EntryViewModel: ObservableObject {
             print("Could not get current user ID.")
             return
         }
-        
+
         let query = db.collection("competitions")
             .document(competitionId)
             .collection("entries")
             .whereField("userId", isNotEqualTo: currentUserId)
-        
+
         FirestoreListenerManager.shared.addQueryListener(for: query, path: entriesPath) { [weak self] changes in
             let newEntryIds = Set(changes
                 .filter { $0.type == .added }
                 .map { $0.document.documentID })
-            
+
             self?.allEntryIds.formUnion(newEntryIds)
             self?.updateVoteStatus()
         }
@@ -156,7 +159,6 @@ class EntryViewModel: ObservableObject {
             "competitions/\(competitionId)/entries",
             getVotesPath()
         ]
-
         paths.forEach { path in
             FirestoreListenerManager.shared.removeListener(for: path)
         }
@@ -168,7 +170,7 @@ class EntryViewModel: ObservableObject {
         }
         return "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
     }
-    
+
     func fetchEntries(mode: FetchEntriesMode, completion: (() -> Void)? = nil) {
         if mode == .entryView {
             fetchFullEntriesForVoting(completion: completion)
@@ -177,52 +179,42 @@ class EntryViewModel: ObservableObject {
         }
     }
 
-    // Optimized method for CompDetailsView - only fetches what's needed for leaderboard
+    // ─────────────────────────────────────────────────────────────
+    // MARK: - Fetch Leaderboard Data
+    //
+    // Updated to read rounds_won and total_round_winnings from
+    // user documents rather than aggregating stars from entries.
+    //
+    // Flow:
+    //   1. Get all unique userIds from competition entries
+    //   2. Batch fetch user documents for those userIds
+    //   3. Read rounds_won and total_round_winnings from each
+    //   4. Build UserEntry with full round stats
+    // ─────────────────────────────────────────────────────────────
+
     private func fetchLeaderboardData(completion: (() -> Void)? = nil) {
         let currentUserId = Auth.auth().currentUser?.uid
-        
-        // Only fetch userId and stars fields - no need for full entry data
+
+        // Step 1 — get unique member userIds from entries
         db.collection("competitions")
             .document(competitionId)
             .collection("entries")
-            .getDocuments { [weak self] (snapshot, error) in
-                guard let self = self else {
+            .getDocuments { [weak self] snapshot, error in
+                guard let self else { completion?(); return }
+
+                if let error {
+                    print("EntryViewModel: Error getting entries: \(error)")
                     completion?()
                     return
                 }
-                
-                if let error = error {
-                    print("Error getting entries: \(error)")
-                    completion?()
-                    return
-                }
-                
-                guard let documents = snapshot?.documents else {
-                    DispatchQueue.main.async {
-                        self.userLeaderboard = []
-                        completion?()
-                    }
-                    return
-                }
-                
-                // Extract unique userIds and aggregate stars
-                var userStarsDict = [String: (stars: Int, isCurrentUser: Bool)]()
-                
-                for document in documents {
-                    let userId = document.data()["userId"] as? String ?? ""
-                    let stars = document.data()["stars"] as? Int ?? 0
-                    let isCurrentUser = userId == currentUserId
-                    
-                    if let existing = userStarsDict[userId] {
-                        userStarsDict[userId] = (stars: existing.stars + stars, isCurrentUser: isCurrentUser)
-                    } else {
-                        userStarsDict[userId] = (stars: stars, isCurrentUser: isCurrentUser)
-                    }
-                }
-                
-                // Fetch user data only for userIds we need
-                let uniqueUserIds = Array(userStarsDict.keys)
-                
+
+                // Extract unique userIds from entries
+                let uniqueUserIds = Array(Set(
+                    snapshot?.documents.compactMap {
+                        $0.data()["userId"] as? String
+                    } ?? []
+                ))
+
                 if uniqueUserIds.isEmpty {
                     DispatchQueue.main.async {
                         self.userLeaderboard = []
@@ -230,86 +222,128 @@ class EntryViewModel: ObservableObject {
                     }
                     return
                 }
-                
-                // Batch fetch user data
-                self.db.collection("users")
-                    .whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
-                    .getDocuments { (userSnapshot, error) in
-                        if let error = error {
-                            print("Error fetching user documents: \(error)")
-                            completion?()
-                            return
-                        }
-                        
-                        var userEntries = [UserEntry]()
-                        
-                        userSnapshot?.documents.forEach { document in
-                            let userId = document.documentID
-                            let data = document.data()
-                            let name = data["name"] as? String ?? "Unknown"
-                            let profilePictureUrl = data["profilePictureUrl"] as? String
-                            
-                            if let userStats = userStarsDict[userId] {
-                                let displayName = userStats.isCurrentUser ? "Me" : name
-                                userEntries.append(UserEntry(
-                                    id: userId,
-                                    userName: displayName,
-                                    profilePictureUrl: profilePictureUrl,
-                                    totalStars: userStats.stars
-                                ))
-                            }
-                        }
-                        
-                        DispatchQueue.main.async {
-                            self.userLeaderboard = userEntries.sorted { $0.totalStars > $1.totalStars }
-                            // Don't populate entries array for CompDetails
-                            if self.mode == .compDetailsView {
-                                self.entries = []
-                            }
-                            completion?()
-                        }
-                    }
+
+                // Step 2 — batch fetch user documents
+                // Firestore 'in' limit is 30 — chunk if needed
+                self.batchFetchUsersForLeaderboard(
+                    userIds: uniqueUserIds,
+                    currentUserId: currentUserId,
+                    completion: completion
+                )
             }
     }
 
-    // Full fetch for EntryView - gets all entry details needed for voting
+    private func batchFetchUsersForLeaderboard(
+        userIds: [String],
+        currentUserId: String?,
+        completion: (() -> Void)?
+    ) {
+        let chunkSize = 30
+        let chunks = stride(from: 0, to: userIds.count, by: chunkSize).map {
+            Array(userIds[$0..<min($0 + chunkSize, userIds.count)])
+        }
+
+        var allUserEntries: [UserEntry] = []
+        let group = DispatchGroup()
+
+        for chunk in chunks {
+            group.enter()
+            db.collection("users")
+                .whereField(FieldPath.documentID(), in: chunk)
+                .getDocuments { snapshot, error in
+                    defer { group.leave() }
+
+                    if let error {
+                        print("EntryViewModel: Error fetching user docs: \(error)")
+                        return
+                    }
+
+                    snapshot?.documents.forEach { doc in
+                        let data = doc.data()
+                        let userId = doc.documentID
+                        let isCurrentUser = userId == currentUserId
+
+                        let name = data["name"] as? String ?? "Unknown"
+                        let profilePictureUrl = data["profilePictureUrl"] as? String
+
+                        // ── Round stats ───────────────────────────
+                        // rounds_won: written by startRound CF on each win
+                        // total_round_winnings: written by startRound CF on each win
+                        let roundsWon = data["rounds_won"] as? Int ?? 0
+                        let totalRoundWinnings = data["total_round_winnings"] as? Double ?? 0.0
+
+                        // totalStars kept for EntryView compatibility
+                        // Not used for leaderboard sorting anymore
+                        let totalStars = data["total_stars"] as? Int ?? 0
+
+                        allUserEntries.append(UserEntry(
+                            id:                  userId,
+                            userName:            isCurrentUser ? "Me" : name,
+                            profilePictureUrl:   profilePictureUrl,
+                            totalStars:          totalStars,
+                            roundsWon:           roundsWon,
+                            totalRoundWinnings:  totalRoundWinnings
+                        ))
+                    }
+                }
+        }
+
+        group.notify(queue: .main) { [weak self] in
+            guard let self else { completion?(); return }
+
+            // Sort by rounds won desc, then total winnings desc
+            self.userLeaderboard = allUserEntries.sorted {
+                if $0.roundsWon != $1.roundsWon {
+                    return $0.roundsWon > $1.roundsWon
+                }
+                return $0.totalRoundWinnings > $1.totalRoundWinnings
+            }
+
+            if self.mode == .compDetailsView {
+                self.entries = []
+            }
+
+            completion?()
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // MARK: - Fetch Full Entries For Voting (EntryView — unchanged)
+    // ─────────────────────────────────────────────────────────────
+
     private func fetchFullEntriesForVoting(completion: (() -> Void)? = nil) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No current user ID found.")
             completion?()
             return
         }
-        
+
         let query = db.collection("competitions")
             .document(competitionId)
             .collection("entries")
-        
-        query.getDocuments { [weak self] (snapshot, error) in
-            guard let self = self else {
-                completion?()
-                return
-            }
-            
-            if let error = error {
+
+        query.getDocuments { [weak self] snapshot, error in
+            guard let self else { completion?(); return }
+
+            if let error {
                 print("Error getting entries: \(error)")
                 completion?()
                 return
             }
 
-            // Fetch voted entries
             let votesCollection = db.collection("groupMemberships")
                 .document(currentUserId)
                 .collection("competitions")
                 .document(self.competitionId)
                 .collection("votes")
-            
-            votesCollection.getDocuments { (votesSnapshot, error) in
-                if let error = error {
+
+            votesCollection.getDocuments { votesSnapshot, error in
+                if let error {
                     print("Error getting votes info: \(error)")
                     completion?()
                     return
                 }
-                
+
                 let votedEntries = votesSnapshot?.documents.map { $0.documentID } ?? []
                 self.processEntriesForVoting(
                     snapshot: snapshot,
@@ -321,8 +355,12 @@ class EntryViewModel: ObservableObject {
         }
     }
 
-    // Process entries for voting (EntryView)
-    private func processEntriesForVoting(snapshot: QuerySnapshot?, currentUserId: String, votedEntries: [String], completion: (() -> Void)? = nil) {
+    private func processEntriesForVoting(
+        snapshot: QuerySnapshot?,
+        currentUserId: String,
+        votedEntries: [String],
+        completion: (() -> Void)? = nil
+    ) {
         guard let documents = snapshot?.documents else {
             DispatchQueue.main.async {
                 self.entries = []
@@ -330,17 +368,15 @@ class EntryViewModel: ObservableObject {
             }
             return
         }
-        
-        // Filter out current user's entries and voted entries
+
         let eligibleDocuments = documents.filter { document in
             let userId = document.data()["userId"] as? String ?? ""
             let documentId = document.documentID
             return userId != currentUserId && !votedEntries.contains(documentId)
         }
-        
-        // Get unique userIds
+
         let uniqueUserIds = Set(eligibleDocuments.compactMap { $0.data()["userId"] as? String })
-        
+
         if uniqueUserIds.isEmpty {
             DispatchQueue.main.async {
                 self.entries = []
@@ -348,25 +384,21 @@ class EntryViewModel: ObservableObject {
             }
             return
         }
-        
-        // Batch fetch user data
+
         db.collection("users")
             .whereField(FieldPath.documentID(), in: Array(uniqueUserIds))
-            .getDocuments { [weak self] (userSnapshot, error) in
-                guard let self = self else {
-                    completion?()
-                    return
-                }
-                
-                if let error = error {
+            .getDocuments { [weak self] userSnapshot, error in
+                guard let self else { completion?(); return }
+
+                if let error {
                     print("Error fetching user documents: \(error)")
                     completion?()
                     return
                 }
-                
+
                 var userNames: [String: String] = [:]
                 var userProfilePictures: [String: String] = [:]
-                
+
                 userSnapshot?.documents.forEach { document in
                     let data = document.data()
                     if let name = data["name"] as? String {
@@ -376,15 +408,14 @@ class EntryViewModel: ObservableObject {
                         userProfilePictures[document.documentID] = profilePictureUrl
                     }
                 }
-                
-                // Build entries array with all details needed for voting
+
                 var localEntries = [Entry]()
-                
+
                 for document in eligibleDocuments {
                     let data = document.data()
                     let userId = data["userId"] as? String ?? ""
                     let documentId = document.documentID
-                    
+
                     let imageUrl = data["imageUrl"] as? String ?? ""
                     let stars = data["stars"] as? Int ?? 0
                     let isSuperstar = data["superstar"] as? Bool ?? false
@@ -401,14 +432,14 @@ class EntryViewModel: ObservableObject {
                     let parlayPredictions = data["predictions"] as? [String: Any]
                     let parlayPayout = data["potentialPayout"] as? Int
                     let parlayStake = data["entryCost"] as? Int
-                    
+
                     let entry = Entry(
                         id: documentId,
                         photoUrl: imageUrl,
                         userName: userName,
                         stars: stars,
                         userProfilePictureUrl: profilePictureUrl,
-                        isCurrentUser: false, // Already filtered out current user
+                        isCurrentUser: false,
                         userId: userId,
                         isSuperstar: isSuperstar,
                         creationDate: creationDate,
@@ -422,13 +453,12 @@ class EntryViewModel: ObservableObject {
                         parlayPayout: parlayPayout,
                         parlayStake: parlayStake
                     )
-                    
+
                     localEntries.append(entry)
                 }
-                
+
                 DispatchQueue.main.async {
                     self.entries = localEntries.sorted { $0.creationDate < $1.creationDate }
-                    // Don't populate userLeaderboard for EntryView
                     if self.mode == .entryView {
                         self.userLeaderboard = []
                     }
@@ -437,17 +467,21 @@ class EntryViewModel: ObservableObject {
             }
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // MARK: - Update Star Rating (EntryView — unchanged)
+    // ─────────────────────────────────────────────────────────────
+
     func updateStarRating(for entryId: String, with stars: Int) {
         guard let currentUserId = Auth.auth().currentUser?.uid else {
             print("Error: No authenticated user found.")
             return
         }
-        
+
         let entryRef = db.collection("competitions").document(competitionId).collection("entries").document(entryId)
         let voteRef = db.collection("groupMemberships").document(currentUserId)
-                         .collection("competitions").document(competitionId)
-                         .collection("votes").document(entryId)
-        
+            .collection("competitions").document(competitionId)
+            .collection("votes").document(entryId)
+
         let interactionRef = db.collection("competitions")
             .document(competitionId)
             .collection("entries")
@@ -457,26 +491,23 @@ class EntryViewModel: ObservableObject {
 
         let batch = db.batch()
 
-        entryRef.getDocument { [weak self] (document, error) in
-            if let error = error {
+        entryRef.getDocument { [weak self] document, error in
+            if let error {
                 print("Error fetching entry: \(error)")
                 return
             }
-            
-            guard let document = document, let data = document.data() else {
+
+            guard document != nil, document?.data() != nil else {
                 print("Entry data not found")
                 return
             }
-            
-            let ownerId = data["userId"] as? String ?? ""
-            let starIncrement = stars
-            
+
             batch.setData(["entryId": entryId], forDocument: voteRef, merge: true)
-            batch.updateData(["stars": FieldValue.increment(Int64(starIncrement))], forDocument: entryRef)
+            batch.updateData(["stars": FieldValue.increment(Int64(stars))], forDocument: entryRef)
             batch.setData(["rating": stars, "userId": currentUserId], forDocument: interactionRef, merge: true)
 
             batch.commit { err in
-                if let err = err {
+                if let err {
                     print("Batch commit failed: \(err)")
                 } else {
                     print("Batch commit succeeded!")
@@ -484,46 +515,51 @@ class EntryViewModel: ObservableObject {
             }
         }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
+    // MARK: - Fetch Member Count
+    // ─────────────────────────────────────────────────────────────
+
     func fetchMemberCount() {
         db.collection("competitions")
             .document(competitionId)
             .collection("members")
             .getDocuments { [weak self] snapshot, error in
-                if let error = error {
+                if let error {
                     print("Error fetching member count: \(error)")
                     return
                 }
-                
                 DispatchQueue.main.async {
                     self?.totalMemberCount = snapshot?.documents.count ?? 0
                 }
             }
     }
-    
+
+    // ─────────────────────────────────────────────────────────────
+    // MARK: - Refresh Vote Status
+    // ─────────────────────────────────────────────────────────────
+
     func refreshVoteStatus() {
         guard mode == .compDetailsView,
               let currentUserId = Auth.auth().currentUser?.uid else { return }
-        
-        // Only fetch the votes, not all entries
+
         let votesPath = "groupMemberships/\(currentUserId)/competitions/\(competitionId)/votes"
-        
+
         db.collection(votesPath)
             .getDocuments { [weak self] snapshot, error in
-                guard let self = self else { return }
-                
-                if let error = error {
+                guard let self else { return }
+
+                if let error {
                     print("Error refreshing vote status: \(error)")
                     return
                 }
-                
+
                 let votedIds = snapshot?.documents.map { $0.documentID } ?? []
-                
+
                 DispatchQueue.main.async {
                     self.votedEntryIds = Set(votedIds)
                     self.updateVoteStatus()
                 }
             }
     }
-
 }

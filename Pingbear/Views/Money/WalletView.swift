@@ -8,6 +8,8 @@ import FirebaseFirestore
 struct WalletView: View {
 
     @StateObject private var viewModel = WalletViewModel()
+    
+    var onDismiss: (() -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -18,7 +20,17 @@ struct WalletView: View {
 
                     // ── Header ────────────────────────────────
                     HStack {
-                        Color.clear.frame(width: 30, height: 30)
+                        if let onDismiss {
+                            Button(action: onDismiss) {
+                                Image(systemName: "arrow.left")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 30, height: 30)
+                                    .foregroundColor(AppTheme.iconColor)
+                            }
+                        } else {
+                            Color.clear.frame(width: 30, height: 30)
+                        }
 
                         Spacer()
 
@@ -64,10 +76,12 @@ struct WalletView: View {
             }
             .sheet(isPresented: $viewModel.showCashOutSheet) {
                 CashOutSheet(
-                    balance:         viewModel.balance,
-                    maxWithdrawable: viewModel.maxWithdrawable,
-                    bonusCredited:   viewModel.bonusCredited,
-                    bonusUnlocked:   viewModel.bonusUnlocked,
+                    balance:            viewModel.balance,
+                    maxWithdrawable:    viewModel.maxWithdrawable,
+                    bonusCredited:      viewModel.bonusCredited,
+                    bonusUnlocked:      viewModel.bonusUnlocked,
+                    totalLockedCredits: viewModel.totalLockedCredits,
+                    stakingRemaining:   viewModel.stakingRemaining,
                     onCashOut: { email, amount in
                         Task {
                             let success = await viewModel.requestWithdrawal(
@@ -146,12 +160,14 @@ struct BalanceCard: View {
                 .disabled(!canCashOut)
             }
 
+            // ── Hint text ─────────────────────────────────────
             if viewModel.bonusCredited && !viewModel.bonusUnlocked {
-                Text("Cash out unlocks after your first competition")
+                Text("Enter $\(String(format: "%.2f", viewModel.stakingRemaining)) more into competition rounds to unlock your bonus")
                     .font(.system(size: 14))
                     .foregroundColor(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
                     .padding(.top)
-            } else if viewModel.balance > 0 && viewModel.balance < 5.0 {
+            } else if viewModel.maxWithdrawable > 0 && viewModel.maxWithdrawable < 5.0 {
                 Text("Minimum cash out is $5.00")
                     .font(.system(size: 14))
                     .foregroundColor(AppTheme.secondaryText)
@@ -316,17 +332,19 @@ struct ActivityRow: View {
 
     private var title: String {
         switch transaction.reason {
-        case "top_up":                return "Top Up"
-        case "simulated_top_up":      return "Top Up (Test)"
-        case "race_win":              return "Prize Win"
-        case "race_contribution":     return "Prize Contribution"
-        case "race_refund":           return "Prize Refund"
-        case "withdrawal_request":    return "Withdrawal"
-        case "withdrawal_rejected":   return "Withdrawal Returned"
-        case "welcome_bonus":         return "Welcome Bonus"
-        default:                      return transaction.reason
-            .replacingOccurrences(of: "_", with: " ")
-            .capitalized
+        case "top_up":               return "Top Up"
+        case "simulated_top_up":     return "Top Up (Test)"
+        case "round_win":            return "Round Win"
+        case "round_entry_fee":      return "Round Entry"
+        case "round_entry_refund":   return "Round Refund"
+        case "withdrawal_request":   return "Withdrawal"
+        case "withdrawal_rejected":  return "Withdrawal Returned"
+        case "welcome_bonus":        return "Welcome Bonus"
+        case "promo_credit":         return "Bonus Credit"
+        default:
+            return transaction.reason
+                .replacingOccurrences(of: "_", with: " ")
+                .capitalized
         }
     }
 
@@ -349,43 +367,50 @@ struct ActivityRow: View {
         return dateStr
     }
 
-    // ── Icon ──────────────────────────────────────────────────
+    // ── Icon name ─────────────────────────────────────────────
 
     private var iconName: String {
         switch transaction.reason {
         case "top_up", "simulated_top_up": return "plus.circle.fill"
-        case "race_win":                   return "trophy.fill"
-        case "race_contribution":          return "arrow.right.circle.fill"
-        case "race_refund":                return "arrow.counterclockwise.circle.fill"
+        case "round_win":                  return "trophy.fill"
+        case "round_entry_fee":            return "arrow.right.circle.fill"
+        case "round_entry_refund":         return "arrow.counterclockwise.circle.fill"
         case "withdrawal_request":         return "arrow.up.circle.fill"
         case "withdrawal_rejected":        return "arrow.down.circle.fill"
         case "welcome_bonus":              return "gift.fill"
+        case "promo_credit":               return "gift.fill"
         default:                           return "dollarsign"
         }
     }
 
+    // ── Icon colour ───────────────────────────────────────────
+
     private var iconColor: Color {
         switch transaction.reason {
         case "top_up", "simulated_top_up": return AppTheme.green
-        case "race_win":                   return AppTheme.gold
-        case "race_contribution":          return AppTheme.secondaryText
-        case "race_refund":                return .orange
+        case "round_win":                  return AppTheme.gold
+        case "round_entry_fee":            return AppTheme.secondaryText
+        case "round_entry_refund":         return .orange
         case "withdrawal_request":         return AppTheme.secondaryText
         case "withdrawal_rejected":        return AppTheme.green
         case "welcome_bonus":              return AppTheme.green
+        case "promo_credit":               return AppTheme.green
         default:                           return AppTheme.secondaryText
         }
     }
 
+    // ── Icon background ───────────────────────────────────────
+
     private var iconBackground: Color {
         switch transaction.reason {
         case "top_up", "simulated_top_up": return AppTheme.green.opacity(0.12)
-        case "race_win":                   return AppTheme.gold.opacity(0.12)
-        case "race_contribution":          return AppTheme.cardHighlight
-        case "race_refund":                return Color.orange.opacity(0.12)
+        case "round_win":                  return AppTheme.gold.opacity(0.12)
+        case "round_entry_fee":            return AppTheme.cardHighlight
+        case "round_entry_refund":         return Color.orange.opacity(0.12)
         case "withdrawal_request":         return AppTheme.cardHighlight
         case "withdrawal_rejected":        return AppTheme.green.opacity(0.12)
         case "welcome_bonus":              return AppTheme.green.opacity(0.12)
+        case "promo_credit":               return AppTheme.green.opacity(0.12)
         default:                           return AppTheme.cardHighlight
         }
     }
