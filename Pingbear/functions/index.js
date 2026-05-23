@@ -7,6 +7,7 @@ const wallet = require('./walletFunctions');
 const round = require('./roundFunctions');
 const livekit = require('./liveKitFunctions');
 const callkit = require('./callKitFunctions');
+const webBattle = require('./saveUserProfile');
 
 // Stripe will be initialized in functions that need it
 const cors = require('cors')({ origin: true });
@@ -419,67 +420,6 @@ exports.checkPurchaseStatus = onCall({
   return { coins };
 });
 
-exports.saveUserProfile = onCall({
-  cors: ['*'],
-  maxInstances: 20
-}, async (request) => {
-  if (!request.auth) throw new Error('User must be authenticated');
- 
-  const { phoneNumberHash, linkId, fingerprint } = request.data;
-  const userId = request.auth.uid;
- 
-  if (!phoneNumberHash) throw new Error('phoneNumberHash is required');
- 
-  const db = admin.firestore();
-  const userRef = db.collection('users').doc(userId);
- 
-  try {
-    const userDoc = await userRef.get();
- 
-    if (userDoc.exists) {
-      // ── Existing user — update attribution fields ──────────
-      // Always overwrite webRatingLinkId so every new web rating
-      // gets a fresh attribution opportunity (last touch)
-      await userRef.set({
-        userId,
-        phoneNumberHash,
-        updatedAt:              admin.firestore.FieldValue.serverTimestamp(),
-        ...(linkId && fingerprint && {
-          webRatingLinkId:      linkId,
-          webFingerprint:       fingerprint,
-          webRatingOpenedApp:   false,
-          webRatingAttributedAt: admin.firestore.FieldValue.serverTimestamp()
-        })
-      }, { merge: true });
- 
-      logger.info(`saveUserProfile: updated existing user ${userId}`);
-    } else {
-      // ── New user ───────────────────────────────────────────
-      await userRef.set({
-        userId,
-        phoneNumberHash,
-        createdFromWeb:         true,
-        createdAt:              admin.firestore.FieldValue.serverTimestamp(),
-        lastActiveAt:           admin.firestore.FieldValue.serverTimestamp(),
-        ...(linkId && fingerprint && {
-          webRatingLinkId:      linkId,
-          webFingerprint:       fingerprint,
-          webRatingOpenedApp:   false,
-          webRatingAttributedAt: admin.firestore.FieldValue.serverTimestamp()
-        })
-      });
- 
-      logger.info(`saveUserProfile: created new user ${userId}`);
-    }
- 
-    return { success: true, userId };
- 
-  } catch (error) {
-    logger.error('saveUserProfile: error', { error: error.message, userId });
-    throw new Error(error.message);
-  }
-});
-
 // ── Wallet ────────────────────────────────────────────────────
 exports.creditWelcomeBonus = wallet.creditWelcomeBonus;
 exports.deductBalance      = wallet.deductBalance;
@@ -506,3 +446,6 @@ exports.notifyCallJoined = livekit.notifyCallJoined;
 // ── Live Calls ──────────────────────────────────────────────────────
 exports.sendCallInvite = callkit.sendCallInvite;
 exports.sendCallEnded  = callkit.sendCallEnded;
+
+// ── Web Battle ───────────────────────────────────────────────
+exports.saveUserProfile = webBattle.saveUserProfile;

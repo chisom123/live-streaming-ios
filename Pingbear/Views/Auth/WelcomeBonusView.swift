@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct WelcomeBonusView: View {
+
+    @State private var navigateToHowItWorks = false
+
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -14,7 +17,7 @@ struct WelcomeBonusView: View {
                     VStack(spacing: 10) {
                         Text("Welcome Bonus").font(.system(size: 28, weight: .bold))
                             .foregroundColor(AppTheme.primaryText).multilineTextAlignment(.center)
-                        Text("We\'ve added $5 to your wallet to get you started")
+                        Text("We've added $5 to your wallet to get you started")
                             .font(.system(size: 16)).foregroundColor(AppTheme.secondaryText)
                             .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                             .lineSpacing(4).padding(.horizontal, 10)
@@ -29,8 +32,8 @@ struct WelcomeBonusView: View {
                 Spacer()
 
                 Button(action: {
-                    Analytics.shared.trackTap(elementId: "welcome_bonus_lets_go", screenName: "welcome_bonus")
-                    completeOnboarding()
+                    Analytics.shared.trackTap(elementId: "welcome_bonus_continue", screenName: "welcome_bonus")
+                    navigateToHowItWorks = true
                 }) {
                     Text("Continue").font(.system(size: 20, weight: .bold)).foregroundColor(.white)
                         .frame(maxWidth: .infinity).frame(height: 55)
@@ -38,21 +41,21 @@ struct WelcomeBonusView: View {
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
+
+                NavigationLink(destination: HowItWorksView(onComplete: {
+                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                    UserDefaults.standard.set(true, forKey: "isFriendActivated")
+                    UserDefaults.standard.synchronize()
+                    NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                    Analytics.shared.track(event: "onboarding_completed")
+                }), isActive: $navigateToHowItWorks) {
+                    EmptyView()
+                }.isDetailLink(false)
             }
         }
         .navigationBarHidden(true)
         .onAppear {
             Analytics.shared.trackScreen(name: "welcome_bonus")
         }
-    }
-
-    private func completeOnboarding() {
-        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-        UserDefaults.standard.set(true, forKey: "isFriendActivated")
-        UserDefaults.standard.synchronize()
-
-        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
-
-        Analytics.shared.track(event: "onboarding_completed")
     }
 }

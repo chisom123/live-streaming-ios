@@ -86,6 +86,7 @@
 		4F515AC42C0B5CCA003FE588 /* FirestoreListenerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F515AC32C0B5CCA003FE588 /* FirestoreListenerManager.swift */; };
 		4F5C2C3A2BB49D2F0081CB59 /* JoinSelect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */; };
 		4F6D6EA82D42F7860040F26F /* EditCompetitionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */; };
+		4F8877912FC1BBDB006FDCAE /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
 		4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */; };
@@ -186,6 +187,7 @@
 		4F5C2C392BB49D2F0081CB59 /* JoinSelect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JoinSelect.swift; sourceTree = "<group>"; };
 		4F6D6EA72D42F7860040F26F /* EditCompetitionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCompetitionView.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
+		4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		4FA5EE3A2DF31D3000355376 /* CustomShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomShareSheet.swift; sourceTree = "<group>"; };
@@ -317,6 +319,7 @@
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
 				4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */,
+				4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -739,6 +742,7 @@
 				4FD164A52FB8CF2E003C9CE0 /* ThemePickerSheet.swift in Sources */,
 				4F39B29D2DD3758100F75004 /* DeepLinkHandler.swift in Sources */,
 				4F1D495C2FB5D1A3004A0124 /* RoundResultsView.swift in Sources */,
+				4F8877912FC1BBDB006FDCAE /* HowItWorksView.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4FBB91282FB6259F0055CAF8 /* VoiceCallManager.swift in Sources */,
 				4FE9999C2F190A7B00B59DCC /* RealNameEntryView.swift in Sources */,
@@ -927,7 +931,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 551;
+				CURRENT_PROJECT_VERSION = 552;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -958,7 +962,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 48.9;
+				MARKETING_VERSION = 49.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -978,7 +982,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 551;
+				CURRENT_PROJECT_VERSION = 552;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1008,7 +1012,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 48.9;
+				MARKETING_VERSION = 49.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
