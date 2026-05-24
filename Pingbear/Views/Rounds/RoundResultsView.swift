@@ -247,9 +247,6 @@ struct RoundResultsView: View {
                     Text(String(format: "%.1f", score))
                         .font(.system(size: 20, weight: .black))
                         .foregroundColor(isWinner ? AppTheme.gold : AppTheme.primaryText)
-                    Text("/ 9.9")
-                        .font(.system(size: 10))
-                        .foregroundColor(AppTheme.secondaryText)
                 }
                 .frame(width: 48)
             }

@@ -394,9 +394,6 @@ private struct ResultsStage: View {
                                 Text(String(format: "%.1f", scores[i]))
                                     .font(.system(size: 17, weight: .black))
                                     .foregroundColor(i == 0 ? AppTheme.gold : AppTheme.primaryText)
-                                Text("/ 9.9")
-                                    .font(.system(size: 9))
-                                    .foregroundColor(AppTheme.secondaryText)
                             }
                         }
                         .padding(8)
