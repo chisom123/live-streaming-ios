@@ -344,9 +344,6 @@ private struct ResultsStage: View {
         VStack(spacing: 0) {
 
             VStack(spacing: 6) {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(AppTheme.gold)
                 Text("You won!")
                     .font(.system(size: 18, weight: .black))
                     .foregroundColor(AppTheme.primaryText)
@@ -363,6 +360,7 @@ private struct ResultsStage: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
+            .padding(.top)
             .background(AppTheme.pageBackground)
 
             VStack(spacing: 6) {

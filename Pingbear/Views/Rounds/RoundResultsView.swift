@@ -131,12 +131,6 @@ struct RoundResultsView: View {
                 Spacer()
             }
 
-            Image("trophy")
-                .resizable()
-                .renderingMode(.template)
-                .foregroundColor(AppTheme.gold)
-                .frame(width: 56, height: 56)
-
             if currentUserIsWinner {
                 Text(isTie ? "You tied for the win!" : "You won!")
                     .font(.system(size: 28, weight: .black))
