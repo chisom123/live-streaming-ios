@@ -14,25 +14,32 @@
  *   APNS_VOIP_CERT_PASSWORD  — .p12 certificate password
  *   APNS_BUNDLE_ID           — com.pordio.Chay
  *   APNS_TEAM_ID             — 27J5KH92LA
+ *   APNS_SANDBOX             — "true" for dev builds, "false" for App Store
  *
- * NOTE: sandbox = true for development builds.
- * Change to false before submitting to App Store.
+ * Set sandbox mode via:
+ *   firebase functions:secrets:set APNS_SANDBOX
+ *   > true          ← development / TestFlight
+ *   > false         ← App Store production
+ *
+ * No code changes needed when switching environments.
  *
  * ─────────────────────────────────────────────────────────────
  * SELF-NOTIFICATION PREVENTION
  * ─────────────────────────────────────────────────────────────
  *
- * The caller is always excluded from the recipient list server-side.
- * This is the primary guard — it means the push is never sent to
- * the caller's device at all, regardless of client-side auth state.
+ * The caller's userId is never in the friendIds list they pass in,
+ * so self-notification cannot happen server-side.
+ * The client-side guards in CallKitManager.swift remain as a
+ * secondary defence for edge cases.
  *
- * A per-caller cooldown (INVITE_COOLDOWN_MS) is also enforced so
- * rapid reconnects (LiveKit drop + rejoin) can't spam the group
- * with repeated CallKit banners.
+ * ─────────────────────────────────────────────────────────────
+ * INVITE MODEL
+ * ─────────────────────────────────────────────────────────────
  *
- * getVoipTokensForMembers already accepts excludeUserId — the
- * caller's uid is passed here explicitly, matching the existing
- * nudge pattern in liveKitFunctions.js.
+ * The caller selects friends on the home screen and taps call.
+ * The client passes the selected friendIds explicitly.
+ * This is simpler and more intentional than looking up all
+ * competition members — you ring exactly who you chose.
  */
 
 const { onCall } = require('firebase-functions/v2/https');
@@ -49,10 +56,8 @@ const getDb = () => {
 
 const APNS_VOIP_HOST_PROD = 'api.push.apple.com';
 const APNS_VOIP_HOST_DEV  = 'api.sandbox.push.apple.com';
+const INVITE_COOLDOWN_MS  = 5000;
 
-// Cooldown between call invites from the same caller in the same competition.
-// Prevents a rapid LiveKit drop+rejoin from ringing everyone's phones twice.
-const INVITE_COOLDOWN_MS = 5000; // 5 seconds
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — load p12 cert and extract PEM key + cert
@@ -62,9 +67,7 @@ function loadP12Credentials() {
   const base64Cert = process.env.APNS_VOIP_CERT_BASE64;
   const password   = process.env.APNS_VOIP_CERT_PASSWORD;
 
-  if (!base64Cert || !password) {
-    throw new Error('APNS credentials not configured');
-  }
+  if (!base64Cert || !password) throw new Error('APNS credentials not configured');
 
   const p12Buffer = Buffer.from(base64Cert, 'base64');
   const p12Asn1   = forge.asn1.fromDer(p12Buffer.toString('binary'));
@@ -86,12 +89,10 @@ function loadP12Credentials() {
     }
   }
 
-  if (!certPem || !keyPem) {
-    throw new Error('Could not extract cert or key from p12');
-  }
-
+  if (!certPem || !keyPem) throw new Error('Could not extract cert or key from p12');
   return { certPem, keyPem };
 }
+
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — send a single VoIP push via APNs HTTP/2
@@ -101,10 +102,7 @@ async function sendVoipPush({ deviceToken, payload, bundleId, certPem, keyPem, s
   const host = sandbox ? APNS_VOIP_HOST_DEV : APNS_VOIP_HOST_PROD;
 
   return new Promise((resolve, reject) => {
-    const client = http2.connect(`https://${host}`, {
-      cert: certPem,
-      key:  keyPem
-    });
+    const client = http2.connect(`https://${host}`, { cert: certPem, key: keyPem });
 
     client.on('error', (err) => {
       reject(new Error(`APNs connection error: ${err.message}`));
@@ -129,14 +127,8 @@ async function sendVoipPush({ deviceToken, payload, bundleId, certPem, keyPem, s
     let responseData   = '';
     let responseStatus = 0;
 
-    req.on('response', (responseHeaders) => {
-      responseStatus = responseHeaders[':status'];
-    });
-
-    req.on('data', (chunk) => {
-      responseData += chunk;
-    });
-
+    req.on('response', (responseHeaders) => { responseStatus = responseHeaders[':status']; });
+    req.on('data', (chunk) => { responseData += chunk; });
     req.on('end', () => {
       client.close();
       if (responseStatus === 200) {
@@ -145,7 +137,6 @@ async function sendVoipPush({ deviceToken, payload, bundleId, certPem, keyPem, s
         reject(new Error(`APNs error ${responseStatus}: ${responseData}`));
       }
     });
-
     req.on('error', (err) => {
       client.close();
       reject(new Error(`APNs request error: ${err.message}`));
@@ -156,32 +147,22 @@ async function sendVoipPush({ deviceToken, payload, bundleId, certPem, keyPem, s
   });
 }
 
+
 // ─────────────────────────────────────────────────────────────
-// HELPER — fetch VoIP push tokens for competition members
+// HELPER — fetch VoIP tokens for a specific list of user IDs
 //
-// excludeUserId is always the caller — they are excluded here
-// server-side so the push is never delivered to their device,
-// regardless of what the client-side auth state is at push
-// receipt time. This is the primary self-notification guard.
+// The caller passes friendIds explicitly — no member list lookup.
+// This means you ring exactly who you selected, nothing more.
 // ─────────────────────────────────────────────────────────────
 
-async function getVoipTokensForMembers(db, competitionId, excludeUserId) {
-  const membersSnap = await db
-    .collection('competitions').doc(competitionId)
-    .collection('members')
-    .get();
-
-  const memberIds = membersSnap.docs
-    .map(doc => doc.id)
-    .filter(id => id !== excludeUserId); // caller always excluded
-
-  if (memberIds.length === 0) return [];
+async function getVoipTokensForUsers(db, userIds) {
+  if (userIds.length === 0) return [];
 
   const chunkSize = 30;
   const tokens    = [];
 
-  for (let i = 0; i < memberIds.length; i += chunkSize) {
-    const chunk     = memberIds.slice(i, i + chunkSize);
+  for (let i = 0; i < userIds.length; i += chunkSize) {
+    const chunk     = userIds.slice(i, i + chunkSize);
     const usersSnap = await db.collection('users')
       .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
       .get();
@@ -191,8 +172,7 @@ async function getVoipTokensForMembers(db, competitionId, excludeUserId) {
       if (token) {
         tokens.push({
           userId:      doc.id,
-          deviceToken: token,
-          username:    doc.data()?.name ?? 'Someone'
+          deviceToken: token
         });
       }
     });
@@ -201,41 +181,54 @@ async function getVoipTokensForMembers(db, competitionId, excludeUserId) {
   return tokens;
 }
 
+
 // ─────────────────────────────────────────────────────────────
 // HELPER — enforce per-caller invite cooldown
-//
-// Returns true if the cooldown has not elapsed (caller should
-// be rate-limited). Returns false if the invite can proceed,
-// and updates the timestamp as a side effect.
-//
-// Key: call_invite_{callerId}_{competitionId}
-// Stored in the rate_limits collection, consistent with
-// the pattern used in liveKitFunctions.js (notifyCallJoined).
 // ─────────────────────────────────────────────────────────────
 
-async function isInviteCooldownActive(db, callerId, competitionId) {
-  const key     = `call_invite_${callerId}_${competitionId}`;
-  const ref     = db.collection('rate_limits').doc(key);
-  const doc     = await ref.get();
+async function isInviteCooldownActive(db, callerId, sessionId) {
+  const key = `call_invite_${callerId}_${sessionId}`;
+  const ref = db.collection('rate_limits').doc(key);
 
-  if (doc.exists) {
-    const lastSent = doc.data()?.sent_at?.toMillis() ?? 0;
-    if (Date.now() - lastSent < INVITE_COOLDOWN_MS) {
-      logger.info(`sendCallInvite: cooldown active for ${callerId} in ${competitionId}`);
-      return true;
-    }
+  // Use a transaction so concurrent invocations can't both pass the check.
+  // Without this, two simultaneous calls both read "no doc exists",
+  // both write the timestamp, and both send the push — causing duplicates.
+  try {
+    const cooldownActive = await db.runTransaction(async (t) => {
+      const doc = await t.get(ref);
+
+      if (doc.exists) {
+        const lastSent = doc.data()?.sent_at?.toMillis() ?? 0;
+        if (Date.now() - lastSent < INVITE_COOLDOWN_MS) {
+          logger.info(`sendCallInvite: cooldown active for ${callerId}`);
+          return true; // blocked
+        }
+      }
+
+      // Claim the slot atomically
+      t.set(ref, { sent_at: admin.firestore.FieldValue.serverTimestamp() });
+      return false; // allowed
+    });
+
+    return cooldownActive;
+  } catch (err) {
+    logger.warn(`sendCallInvite: cooldown transaction failed: ${err.message}`);
+    return false; // allow on error to avoid blocking legitimate calls
   }
-
-  // Update timestamp — fire-and-forget, don't block the send
-  ref.set({ sent_at: admin.firestore.FieldValue.serverTimestamp() }).catch(err => {
-    logger.warn(`sendCallInvite: failed to write cooldown for ${callerId}: ${err.message}`);
-  });
-
-  return false;
 }
+
 
 // ─────────────────────────────────────────────────────────────
 // sendCallInvite
+//
+// Called from Swift immediately after createSession.
+// Rings exactly the friends the caller selected — no more, no less.
+//
+// Usage from Swift:
+//   Functions.functions().httpsCallable("sendCallInvite").call([
+//     "sessionId": "abc123",
+//     "friendIds": ["uid1", "uid2"]
+//   ])
 // ─────────────────────────────────────────────────────────────
 
 exports.sendCallInvite = onCall({
@@ -246,33 +239,34 @@ exports.sendCallInvite = onCall({
     'APNS_VOIP_CERT_BASE64',
     'APNS_VOIP_CERT_PASSWORD',
     'APNS_BUNDLE_ID',
-    'APNS_TEAM_ID'
+    'APNS_TEAM_ID',
   ]
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
   const userId = request.auth.uid;
-  const { competitionId, competitionName, roomName } = request.data;
+  const { sessionId, friendIds } = request.data;
 
-  if (!competitionId) throw new Error('competitionId is required');
+  if (!sessionId)                           throw new Error('sessionId is required');
+  if (!Array.isArray(friendIds) || friendIds.length === 0) throw new Error('friendIds is required');
+
+  const sandbox = false; // true = sandbox (dev), false = production (App Store)
+
+  // Safety — caller can never be in their own friendIds list,
+  // but filter just in case
+  const recipientIds = friendIds.filter(id => id !== userId);
+  if (recipientIds.length === 0) return { success: true, sent: 0 };
 
   const db = getDb();
 
-  // ── Per-caller cooldown ───────────────────────────────────
-  // Suppresses duplicate invites from rapid LiveKit drop+rejoin.
-  const rateLimited = await isInviteCooldownActive(db, userId, competitionId);
-  if (rateLimited) {
-    return { success: true, sent: 0, reason: 'cooldown' };
-  }
+  const rateLimited = await isInviteCooldownActive(db, userId, sessionId);
+  if (rateLimited) return { success: true, sent: 0, reason: 'cooldown' };
 
+  // Fetch caller name for the CallKit banner
   const callerDoc  = await db.collection('users').doc(userId).get();
   const callerName = callerDoc.data()?.name ?? 'Someone';
 
-  // ── Fetch tokens, excluding the caller server-side ────────
-  // userId (the caller) is passed as excludeUserId so they
-  // never receive their own CallKit invite regardless of
-  // client-side auth state at push receipt time.
-  const memberTokens = await getVoipTokensForMembers(db, competitionId, userId);
+  const memberTokens = await getVoipTokensForUsers(db, recipientIds);
 
   if (memberTokens.length === 0) {
     return { success: true, sent: 0, reason: 'no_voip_tokens' };
@@ -281,17 +275,11 @@ exports.sendCallInvite = onCall({
   const { certPem, keyPem } = loadP12Credentials();
   const bundleId            = process.env.APNS_BUNDLE_ID;
 
-  // true = sandbox (development builds)
-  // Change to false before submitting to App Store
-  const sandbox = false
-
   const payload = {
-    competitionId:   competitionId,
-    competitionName: competitionName ?? 'Your Competition',
-    roomName:        roomName ?? competitionId,
-    callerName:      callerName,
-    callerId:        userId,
-    action:          'call_invite'
+    sessionId,
+    callerName,
+    callerId: userId,
+    action:   'call_invite'
   };
 
   let sent   = 0;
@@ -308,12 +296,23 @@ exports.sendCallInvite = onCall({
     }
   }));
 
-  logger.info(`sendCallInvite: ${sent} sent, ${failed} failed for competition ${competitionId}`);
+  logger.info(`sendCallInvite: ${sent} sent, ${failed} failed for session ${sessionId}`);
   return { success: true, sent, failed };
 });
 
+
 // ─────────────────────────────────────────────────────────────
 // sendCallEnded
+//
+// Called when the last person leaves the call.
+// Sends a VoIP push to dismiss the CallKit UI on any devices
+// that are still showing the incoming call screen.
+//
+// Usage from Swift:
+//   Functions.functions().httpsCallable("sendCallEnded").call([
+//     "sessionId": "abc123",
+//     "friendIds": ["uid1", "uid2"]
+//   ])
 // ─────────────────────────────────────────────────────────────
 
 exports.sendCallEnded = onCall({
@@ -324,34 +323,29 @@ exports.sendCallEnded = onCall({
     'APNS_VOIP_CERT_BASE64',
     'APNS_VOIP_CERT_PASSWORD',
     'APNS_BUNDLE_ID',
-    'APNS_TEAM_ID'
+    'APNS_TEAM_ID',
   ]
 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
-  const userId          = request.auth.uid;
-  const { competitionId } = request.data;
+  const userId = request.auth.uid;
+  const { sessionId, friendIds } = request.data;
 
-  if (!competitionId) throw new Error('competitionId is required');
+  if (!sessionId) throw new Error('sessionId is required');
+
+  const sandbox = false; // true = sandbox (dev), false = production (App Store)
+  const recipientIds = (friendIds ?? []).filter(id => id !== userId);
+  if (recipientIds.length === 0) return { success: true, sent: 0 };
 
   const db           = getDb();
-  const memberTokens = await getVoipTokensForMembers(db, competitionId, userId);
+  const memberTokens = await getVoipTokensForUsers(db, recipientIds);
 
-  if (memberTokens.length === 0) {
-    return { success: true, sent: 0 };
-  }
+  if (memberTokens.length === 0) return { success: true, sent: 0 };
 
   const { certPem, keyPem } = loadP12Credentials();
   const bundleId            = process.env.APNS_BUNDLE_ID;
 
-  // true = sandbox (development builds)
-  // Change to false before submitting to App Store
-  const sandbox = false
-
-  const payload = {
-    competitionId: competitionId,
-    action:        'call_ended'
-  };
+  const payload = { sessionId, action: 'call_ended' };
 
   let sent = 0;
 

@@ -5,21 +5,6 @@ import Combine
 import AVFoundation
 import UserNotifications
 
-extension AppDelegate {
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        print("AppDelegate received URL: \(url)")
-
-        if Auth.auth().canHandle(url) { return true }
-
-        if url.scheme == "socialstar" {
-            DeepLinkHandler.shared.handleURL(url)
-            return true
-        }
-
-        return false
-    }
-}
-
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     private let callKitManager = CallKitManager.shared
@@ -72,17 +57,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             object: nil
         )
 
-        // ── Audio session for voice calls ─────────────────────────
-        do {
-            try AVAudioSession.sharedInstance().setCategory(
-                .playAndRecord,
-                mode: .voiceChat,
-                options: [.allowBluetoothHFP, .mixWithOthers]
-            )
-            try AVAudioSession.sharedInstance().setActive(true)
-        } catch {
-            print("AppDelegate: Failed to configure audio session: \(error)")
-        }
+        // Audio session is managed entirely by CallKitManager + LiveKit.
+        // Do not configure AVAudioSession here — it fights with CallKit.
 
         return true
     }
@@ -126,11 +102,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             return
         }
 
-        if let deepLink = userInfo["deepLink"] as? String,
-           let url = URL(string: deepLink) {
-            DeepLinkHandler.shared.handleURL(url)
-        }
-
         completionHandler(.newData)
     }
 }
@@ -139,8 +110,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 struct PingbearApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     @State private var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn")
-    @StateObject private var deepLinkHandler = DeepLinkHandler.shared
-    @State private var selectedCompetition: Competition?
     @State private var pendingLoginDeepLink: URL?
     @State private var selectedTab: Int = 0
 
@@ -150,51 +119,32 @@ struct PingbearApp: App {
 
     var body: some Scene {
         WindowGroup {
-            VStack(spacing: 0) {
-
-                // ── Call pill — sits above all content in normal flow ──
-                CallPillBanner()
-
-                // ── Main app content ──────────────────────────────────
-                ZStack {
-                    if isLoggedIn && Auth.auth().currentUser != nil {
-                        NavigationStack {
-                            MainTabView(selectedTab: $selectedTab)
-                                .navigationBarHidden(true)
-                        }
-                        .onAppear {
-                            setupApp()
-                            processLoginPendingDeepLink()
-                        }
-                        .environment(\.didLogOut, didLogOut)
-                        .onReceive(didLogOut) { _ in
-                            isLoggedIn = false
-                            deepLinkHandler.reset()
-                            callManager.leaveCall()
-                        }
-                        .onOpenURL { url in handleOpenURL(url) }
-
-                    } else {
-                        NavigationView {
-                            WelcomeView()
-                                .onAppear { setupApp() }
-                                .environment(\.didLogOut, didLogOut)
-                                .onReceive(didLogOut) { _ in isLoggedIn = false }
-                        }
-                        .accentColor(.white)
-                        .onOpenURL { url in handleOpenURL(url) }
+            ZStack {
+                if isLoggedIn && Auth.auth().currentUser != nil {
+                    NavigationStack {
+                        MainTabView(selectedTab: $selectedTab)
+                            .navigationBarHidden(true)
                     }
+                    .onAppear {
+                        setupApp()
+                    }
+                    .environment(\.didLogOut, didLogOut)
+                    .onReceive(didLogOut) { _ in
+                        isLoggedIn = false
+                        callManager.leaveCall()
+                    }
+
+                } else {
+                    NavigationView {
+                        WelcomeView()
+                            .onAppear { setupApp() }
+                            .environment(\.didLogOut, didLogOut)
+                            .onReceive(didLogOut) { _ in isLoggedIn = false }
+                    }
+                    .accentColor(.white)
                 }
             }
             .background(AppTheme.pageBackground)
-            .fullScreenCover(item: $selectedCompetition) { competition in
-                NavigationStack {
-                    CompDetails(competition: competition)
-                }
-            }
-            .onChange(of: deepLinkHandler.pendingDeepLink) { _ in
-                processPendingDeepLinks()
-            }
             .onReceive(NotificationCenter.default.publisher(for: .authStateDidChange)) { _ in
                 isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
             }
@@ -207,40 +157,5 @@ struct PingbearApp: App {
             window.overrideUserInterfaceStyle = .light
         }
         AttributionManager.shared.checkAndRecord()
-    }
-
-    private func processLoginPendingDeepLink() {
-        if let pendingUrl = pendingLoginDeepLink {
-            deepLinkHandler.handleURL(pendingUrl)
-            pendingLoginDeepLink = nil
-        }
-    }
-
-    private func handleOpenURL(_ url: URL) {
-        print("PingbearApp received URL via onOpenURL: \(url)")
-
-        if !isLoggedIn || Auth.auth().currentUser == nil {
-            pendingLoginDeepLink = url
-            return
-        }
-
-        ModalDismisser.dismissAllModals {
-            self.selectedCompetition = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                self.deepLinkHandler.handleURL(url)
-            }
-        }
-    }
-
-    private func processPendingDeepLinks() {
-        ModalDismisser.dismissAllModals {
-            self.deepLinkHandler.processPendingDeepLink { competition in
-                if let competition = competition {
-                    DispatchQueue.main.async {
-                        self.selectedCompetition = competition
-                    }
-                }
-            }
-        }
     }
 }

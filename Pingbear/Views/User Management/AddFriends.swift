@@ -19,6 +19,21 @@ struct AddFriendsView: View {
         return username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private func inviteViaiMessage() {
+        let appStoreURL = "https://apps.apple.com/app/socialstar-photo-competitions/id6473705189"
+        let message = "Come play with me! Download the app here: \(appStoreURL)"
+        
+        // URL encode the message
+        guard let encodedMessage = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "sms:&body=\(encodedMessage)") else {
+            return
+        }
+        
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url)
+        }
+    }
+
     var body: some View {
         VStack {
             HStack {
@@ -128,6 +143,25 @@ struct AddFriendsView: View {
                         EmptyView()
                     }
                 }
+
+                Button(action: {
+                    inviteViaiMessage()
+                    Analytics.shared.trackTap(elementId: "invite_friends", screenName: "add_friends_view")
+                }) {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 16))
+                        Text("Invite friends to play")
+                            .font(.system(size: 16, weight: .bold, design: .default))
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(AppTheme.accent)
+                    .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 20)
             }
 
             ScrollView {

@@ -7,7 +7,7 @@ struct MainTabView: View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
                 TabView(selection: $selectedTab) {
-                    MyCompsView()
+                    HomeView()
                         .tag(0)
  
                     WalletView()

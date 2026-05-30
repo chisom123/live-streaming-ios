@@ -56,7 +56,7 @@ const CURRENCY             = 'USD';
 
 async function recordTransaction(t, {
   userId, type, amount, reason,
-  competitionId, metadata, balanceBefore, balanceAfter
+  sessionId, metadata, balanceBefore, balanceAfter
 }) {
   const db = getDb();
   const txRef = db.collection('wallet_transactions').doc();
@@ -65,7 +65,7 @@ async function recordTransaction(t, {
     type,
     amount,
     reason,
-    competition_id: competitionId ?? null,
+    session_id:     sessionId ?? null,
     metadata:       metadata ?? {},
     balance_before: balanceBefore,
     balance_after:  balanceAfter,
@@ -137,7 +137,7 @@ exports.deductBalance = onCall({
   if (!request.auth) throw new Error('User must be authenticated');
 
   const userId = request.auth.uid;
-  const { amount, reason, competitionId, metadata } = request.data;
+  const { amount, reason, sessionId, metadata } = request.data;
 
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
@@ -155,7 +155,7 @@ exports.deductBalance = onCall({
 
     const newBalance = parseFloat((currentBalance - amount).toFixed(2));
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(-amount) }, { merge: true });
-    await recordTransaction(t, { userId, type: 'debit', amount, reason, competitionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
+    await recordTransaction(t, { userId, type: 'debit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
     return { success: true, new_balance: newBalance };
   });
 
@@ -175,7 +175,7 @@ exports.creditBalance = onCall({
   if (!request.auth) throw new Error('User must be authenticated');
 
   const userId = request.auth.uid;
-  const { amount, reason, competitionId, metadata } = request.data;
+  const { amount, reason, sessionId, metadata } = request.data;
 
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
@@ -188,7 +188,7 @@ exports.creditBalance = onCall({
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
     const newBalance = parseFloat((currentBalance + amount).toFixed(2));
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
-    await recordTransaction(t, { userId, type: 'credit', amount, reason, competitionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
+    await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
 
   logger.info(`creditBalance: $${amount} to ${userId}`);
@@ -206,7 +206,7 @@ exports.adminCreditBalance = onCall({
 }, async (request) => {
   if (!request.auth?.token?.admin) throw new Error('Admin access required');
 
-  const { userId, amount, reason, competitionId, metadata } = request.data;
+  const { userId, amount, reason, sessionId, metadata } = request.data;
   if (!userId) throw new Error('userId is required');
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
@@ -219,7 +219,7 @@ exports.adminCreditBalance = onCall({
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
     const newBalance = parseFloat((currentBalance + amount).toFixed(2));
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
-    await recordTransaction(t, { userId, type: 'credit', amount, reason, competitionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
+    await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
 
   logger.info(`adminCreditBalance: $${amount} to ${userId}`);
@@ -257,15 +257,13 @@ exports.requestWithdrawal = onCall({
   const userSnap = await userRef.get();
   const userData = userSnap.data();
 
-  const currentBalance   = userData?.wallet_balance        ?? 0;
-  const bonusCredited    = userData?.bonus_credited        === true;
-  const bonusUnlocked    = userData?.welcome_bonus_unlocked === true;
-  const bonusLocked      = bonusCredited && !bonusUnlocked;
-  const totalLocked      = userData?.total_locked_credits  ?? (bonusCredited ? WELCOME_BONUS_AMOUNT : 0);
-  const stakedSoFar      = userData?.total_round_staked    ?? 0;
+  const currentBalance = userData?.wallet_balance         ?? 0;
+  const bonusCredited  = userData?.bonus_credited         === true;
+  const bonusUnlocked  = userData?.welcome_bonus_unlocked === true;
+  const bonusLocked    = bonusCredited && !bonusUnlocked;
+  const totalLocked    = userData?.total_locked_credits   ?? (bonusCredited ? WELCOME_BONUS_AMOUNT : 0);
+  const stakedSoFar    = userData?.total_round_staked     ?? 0;
 
-  // Only hold back the outstanding locked amount (what they still need to stake),
-  // not the full total_locked_credits which can exceed balance after playing.
   const outstanding     = Math.max(0, parseFloat((totalLocked - stakedSoFar).toFixed(2)));
   const effectiveLocked = Math.min(outstanding, currentBalance);
   const maxWithdrawable = bonusLocked
@@ -378,7 +376,7 @@ exports.approveWithdrawal = onCall({
     approved_by:  request.auth.uid
   });
 
-  logger.info(`approveWithdrawal: ${withdrawalId} approved by ${request.auth.uid} — manual PayPal payment required to ${withdrawal.paypal_email} for $${withdrawal.amount}`);
+  logger.info(`approveWithdrawal: ${withdrawalId} approved by ${request.auth.uid}`);
 
   return {
     success:      true,

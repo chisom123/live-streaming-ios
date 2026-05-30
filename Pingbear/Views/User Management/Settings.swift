@@ -25,7 +25,6 @@ struct SettingsView: View {
     func signOut() {
         do {
             try Auth.auth().signOut()
-            FirestoreListenerManager.shared.removeAllListeners()
             Analytics.shared.track(event: "user_logged_out")
             Analytics.shared.reset()
             UserDefaults.standard.set(false, forKey: "isLoggedIn")

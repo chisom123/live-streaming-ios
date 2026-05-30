@@ -3,15 +3,12 @@ import LiveKit
 import FirebaseFunctions
 import FirebaseAuth
 import SwiftUI
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - Call State
-// ─────────────────────────────────────────────────────────────
+import CallKit
 
 enum CallState: Equatable {
     case idle
-    case answering      // CallKit answered, waiting for LiveKit
-    case connecting     // joinCall initiated by user tap
+    case connecting
+    case answering
     case connected
     case disconnecting
 }
@@ -25,30 +22,15 @@ struct CallParticipant: Identifiable {
     var isCurrentUser: Bool
 }
 
-// ─────────────────────────────────────────────────────────────
-// MARK: - Call Lifecycle Actor
-//
-// Serializes all state transitions so concurrent calls to
-// joinCall / leaveCall / answerCall cannot race each other.
-// ─────────────────────────────────────────────────────────────
-
 private actor CallLifecycle {
     private var busy = false
-
-    /// Returns true if the transition was accepted (we were idle).
-    /// Returns false if already busy — caller should bail out.
     func tryBegin() -> Bool {
         guard !busy else { return false }
         busy = true
         return true
     }
-
     func end() { busy = false }
 }
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - VoiceCallManager
-// ─────────────────────────────────────────────────────────────
 
 class VoiceCallManager: NSObject, ObservableObject {
     static let shared = VoiceCallManager()
@@ -58,136 +40,116 @@ class VoiceCallManager: NSObject, ObservableObject {
     @Published var participants: [CallParticipant] = []
     @Published var errorMessage: String? = nil
 
-    var isConnected: Bool  { callState == .connected }
+    var isConnected:  Bool { callState == .connected }
     var isConnecting: Bool { callState == .connecting || callState == .answering }
 
-    private(set) var currentCompetitionId: String? = nil
+    private(set) var currentSessionId: String? = nil
 
     private let room      = Room()
     private let functions = Functions.functions()
     private let lifecycle = CallLifecycle()
-
-    // Tracks whether we've sent an invite for the current session.
-    // Prevents duplicate invites on reconnect within the same session.
-    private var inviteSent = false
+    private var isReconnecting = false
 
     private override init() {
         super.init()
+        AppLogger.audio("VoiceCallManager init — disabling automatic audio config")
+        AudioManager.shared.audioSession.isAutomaticConfigurationEnabled = false
+        try? AudioManager.shared.setEngineAvailability(.none)
         room.add(delegate: self)
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Answer (called from CallKit delegate)
-    //
-    // Transitions to .answering immediately (sync) so CallKit
-    // can fulfill() with no async delay.
-    // sendInvite = false — we are the one answering, not calling.
-    // ─────────────────────────────────────────────────────────
-
-    func answerCall(competitionId: String, competitionName: String) {
-        Task {
-            let accepted = await lifecycle.tryBegin()
-            guard accepted else {
-                print("VoiceCallManager: answerCall ignored — already busy")
-                return
-            }
-
-            await MainActor.run {
-                self.callState = .answering
-                self.currentCompetitionId = competitionId
-                self.inviteSent = false
-            }
-
-            await connectToRoom(
-                competitionId:   competitionId,
-                competitionName: competitionName,
-                sendInvite:      false
-            )
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Join (called from UI button tap)
-    //
-    // sendInvite is only true when the room is empty — i.e. we
-    // are the first person in. If others are already present
-    // (detected via room.remoteParticipants after connect) we
-    // joined silently and don't need to ring anyone.
-    //
-    // This is the core fix for the rejoin-rings-own-phone bug:
-    // Phone B leaves, rejoins, connects to a room where Phone A
-    // is already present → remoteParticipants.count > 0 →
-    // sendInvite stays false → no VoIP push sent → no self-ring.
+    // MARK: - Outgoing Call
     // ─────────────────────────────────────────────────────────
 
     func joinCall(
-        competitionId: String,
-        competitionName: String,
+        sessionId: String,
+        displayName: String = "Call",
         completion: @escaping (Bool) -> Void
     ) {
         Task {
-            // Already in this exact room and connected — nothing to do
-            if currentCompetitionId == competitionId, callState == .connected {
+            AppLogger.call("joinCall START — sessionId=\(sessionId) state=\(callState) isReconnecting=\(isReconnecting)")
+
+            if currentSessionId == sessionId, callState == .connected {
+                AppLogger.call("joinCall — already connected to this session")
                 completion(true)
                 return
             }
 
-            // In any other state — leave cleanly first
             if callState != .idle {
+                AppLogger.call("joinCall — leaving existing call first")
+                isReconnecting = true
                 await leaveCallAsync()
+                isReconnecting = false
+                AppLogger.call("joinCall — leave complete, state=\(callState)")
             }
 
             let accepted = await lifecycle.tryBegin()
             guard accepted else {
-                print("VoiceCallManager: joinCall ignored — already busy")
+                AppLogger.call("joinCall BLOCKED — lifecycle busy")
                 completion(false)
                 return
             }
+            AppLogger.call("joinCall — lifecycle accepted")
 
             await MainActor.run {
-                self.callState = .connecting
-                self.inviteSent = false
+                self.callState        = .connecting
+                self.currentSessionId = sessionId
             }
 
-            let success = await connectToRoom(
-                competitionId:   competitionId,
-                competitionName: competitionName,
-                // sendInvite intent — connectToRoom will check whether
-                // anyone else is already in the room before actually sending
-                sendInvite:      true
-            )
+            AppLogger.call("joinCall — reporting outgoing call to CallKit")
+            CallKitManager.shared.reportOutgoingCall(sessionId: sessionId, displayName: displayName)
+
+            AppLogger.livekit("joinCall — starting room connection")
+            let success = await connectToRoom(sessionId: sessionId)
+            AppLogger.call("joinCall END — success=\(success) state=\(callState)")
             completion(success)
         }
     }
 
     // ─────────────────────────────────────────────────────────
+    // MARK: - Incoming Call
+    // ─────────────────────────────────────────────────────────
+
+    func answerCall(sessionId: String) {
+        Task {
+            AppLogger.ring("answerCall START — sessionId=\(sessionId) state=\(callState)")
+
+            let accepted = await lifecycle.tryBegin()
+            guard accepted else {
+                AppLogger.ring("answerCall BLOCKED — lifecycle busy")
+                return
+            }
+
+            await MainActor.run {
+                self.callState        = .answering
+                self.currentSessionId = sessionId
+            }
+
+            AppLogger.livekit("answerCall — starting room connection")
+            let success = await connectToRoom(sessionId: sessionId)
+            AppLogger.ring("answerCall END — success=\(success) state=\(callState)")
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // MARK: - Core Connect
-    //
-    // The invite is sent AFTER:
-    //   1. The mic track is confirmed published (so the caller
-    //      is audible the moment others join)
-    //   2. We confirm the room was empty when we joined (so
-    //      rejoining a call that already has participants never
-    //      sends a new VoIP push)
     // ─────────────────────────────────────────────────────────
 
     @discardableResult
-    private func connectToRoom(
-        competitionId: String,
-        competitionName: String,
-        sendInvite: Bool
-    ) async -> Bool {
+    private func connectToRoom(sessionId: String) async -> Bool {
+        AppLogger.livekit("connectToRoom — fetching token for sessionId=\(sessionId)")
 
-        // ── Fetch LiveKit token ───────────────────────────────
-        let tokenResult = await fetchToken(competitionId: competitionId)
+        let tokenResult = await fetchToken(sessionId: sessionId)
         guard case .success(let (token, url)) = tokenResult else {
             if case .failure(let error) = tokenResult {
+                AppLogger.livekit("connectToRoom — token fetch FAILED: \(error.localizedDescription)")
                 await handleConnectFailure(error: error.localizedDescription)
             }
             return false
         }
+        AppLogger.livekit("connectToRoom — token OK, url=\(url)")
 
-        // ── Connect to LiveKit room ───────────────────────────
         do {
             let connectOptions = ConnectOptions(autoSubscribe: true)
             let roomOptions = RoomOptions(
@@ -200,91 +162,50 @@ class VoiceCallManager: NSObject, ObservableObject {
                 defaultAudioPublishOptions: AudioPublishOptions(dtx: true)
             )
 
-            try await room.connect(
-                url:            url,
-                token:          token,
-                connectOptions: connectOptions,
-                roomOptions:    roomOptions
-            )
+            AppLogger.livekit("connectToRoom — calling room.connect()")
+            try await room.connect(url: url, token: token, connectOptions: connectOptions, roomOptions: roomOptions)
+            AppLogger.livekit("connectToRoom — room.connect() succeeded")
         } catch {
+            AppLogger.livekit("connectToRoom — room.connect() FAILED: \(error.localizedDescription)")
             await handleConnectFailure(error: error.localizedDescription)
             return false
         }
 
-        // ── Check if others are already in the room ───────────
-        //
-        // This is the key rejoin check. After connect(), LiveKit
-        // has already synced room state. remoteParticipants is
-        // populated if anyone else is present.
-        //
-        // - Empty room → we are first in → send invite to ring others
-        // - Non-empty room → others are already here → join silently,
-        //   no VoIP push, no one's phone rings unnecessarily
-        let roomWasEmpty = room.remoteParticipants.isEmpty
+        AppLogger.audio("connectToRoom — activating audio engine")
+        CallKitManager.shared.activateAudioEngineIfNeeded()
 
-        // ── Enable microphone ─────────────────────────────────
-        // Done AFTER the empty-room check so the check reflects
-        // remote participants only, not ourselves.
-        // Done BEFORE sendInvite so we're audible when others join.
+        AppLogger.livekit("connectToRoom — enabling microphone")
         do {
             try await room.localParticipant.setMicrophone(enabled: true)
+            AppLogger.livekit("connectToRoom — microphone enabled ✅")
         } catch {
-            print("VoiceCallManager: mic enable failed: \(error.localizedDescription)")
+            AppLogger.livekit("connectToRoom — mic enable FAILED: \(error.localizedDescription)")
         }
 
-        // ── Update published state ────────────────────────────
         await MainActor.run {
             self.callState = .connected
-            self.isMuted = false
-            self.currentCompetitionId = competitionId
+            self.isMuted   = false
             self.rebuildParticipants()
         }
 
-        // ── Send invite only if we were first in ─────────────
-        //
-        // sendInvite (caller intent) AND roomWasEmpty (reality check)
-        // AND !inviteSent (dedup within session) must all be true.
-        //
-        // Scenarios:
-        //  • First ever join into empty room → all three true → rings others ✅
-        //  • Answerer joining → sendInvite=false → no ring ✅
-        //  • Rejoin after leave, others still present → roomWasEmpty=false → no ring ✅
-        //  • Rejoin into genuinely empty room (everyone left) → rings again ✅
-        if sendInvite && roomWasEmpty && !inviteSent {
-            inviteSent = true
-            CallKitManager.shared.sendCallInvite(
-                competitionId:   competitionId,
-                competitionName: competitionName
-            )
-        }
-
-        print("VoiceCallManager: connected to \(competitionId). roomWasEmpty=\(roomWasEmpty) inviteSent=\(inviteSent)")
+        AppLogger.livekit("connectToRoom ✅ — fully connected to session=\(sessionId) participants=\(participants.count)")
         return true
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Connect Failure
-    // ─────────────────────────────────────────────────────────
-
     private func handleConnectFailure(error: String) async {
+        AppLogger.livekit("handleConnectFailure — \(error)")
         await lifecycle.end()
         await MainActor.run {
-            self.callState = .idle
-            self.currentCompetitionId = nil
-            self.errorMessage = error
+            self.callState        = .idle
+            self.currentSessionId = nil
+            self.errorMessage     = error
             CallKitManager.shared.endActiveCall(reason: .failed)
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Fetch Token
-    // ─────────────────────────────────────────────────────────
-
-    private func fetchToken(competitionId: String) async -> Result<(String, String), Error> {
+    private func fetchToken(sessionId: String) async -> Result<(String, String), Error> {
         await withCheckedContinuation { continuation in
-            functions.httpsCallable("getLiveKitToken").call([
-                "competitionId": competitionId
-            ]) { result, error in
+            functions.httpsCallable("getLiveKitToken").call(["sessionId": sessionId]) { result, error in
                 if let error {
                     continuation.resume(returning: .failure(error))
                     return
@@ -306,10 +227,7 @@ class VoiceCallManager: NSObject, ObservableObject {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Leave Call (public — UI / CallKit)
-    //
-    // Safe to call multiple times. If already disconnecting or
-    // idle the call is a no-op.
+    // MARK: - Leave Call
     // ─────────────────────────────────────────────────────────
 
     func leaveCall(completion: (() -> Void)? = nil) {
@@ -319,27 +237,31 @@ class VoiceCallManager: NSObject, ObservableObject {
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Leave Call (async — internal)
-    //
-    // Awaitable so joinCall can do leave→rejoin sequentially.
-    // ─────────────────────────────────────────────────────────
-
     func leaveCallAsync() async {
-        guard callState != .idle && callState != .disconnecting else { return }
+        AppLogger.call("leaveCallAsync — state=\(callState) isReconnecting=\(isReconnecting)")
+        guard callState != .idle && callState != .disconnecting else {
+            AppLogger.call("leaveCallAsync — skipped (already \(callState))")
+            return
+        }
 
         await MainActor.run { self.callState = .disconnecting }
+        AppLogger.livekit("leaveCallAsync — disconnecting room")
 
         await room.disconnect()
         await lifecycle.end()
+        AppLogger.livekit("leaveCallAsync — room disconnected")
 
         await MainActor.run {
-            self.callState            = .idle
-            self.isMuted              = false
-            self.participants         = []
-            self.currentCompetitionId = nil
-            self.errorMessage         = nil
-            self.inviteSent           = false
+            if !self.isReconnecting {
+                self.callState = .idle
+                AppLogger.call("leaveCallAsync — state → idle")
+            } else {
+                AppLogger.call("leaveCallAsync — suppressed .idle (reconnecting)")
+            }
+            self.isMuted          = false
+            self.participants     = []
+            self.currentSessionId = nil
+            self.errorMessage     = nil
         }
     }
 
@@ -349,6 +271,7 @@ class VoiceCallManager: NSObject, ObservableObject {
 
     func toggleMute() {
         let newMuted = !isMuted
+        AppLogger.audio("toggleMute — muted=\(newMuted)")
         Task {
             try? await room.localParticipant.setMicrophone(enabled: !newMuted)
             await MainActor.run {
@@ -359,7 +282,7 @@ class VoiceCallManager: NSObject, ObservableObject {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Rebuild Participants
+    // MARK: - Participants
     // ─────────────────────────────────────────────────────────
 
     private func rebuildParticipants() {
@@ -413,20 +336,21 @@ class VoiceCallManager: NSObject, ObservableObject {
 extension VoiceCallManager: RoomDelegate {
 
     func room(_ room: Room, didUpdateConnectionState state: ConnectionState, from old: ConnectionState) {
-        print("VoiceCallManager: \(old) → \(state)")
+        AppLogger.livekit("room state \(old) → \(state)")
         Task { @MainActor in
             switch state {
             case .disconnected:
-                // Only wipe if WE initiated — unexpected drops let LiveKit reconnect
-                if self.callState == .disconnecting {
+                if self.callState == .disconnecting && !self.isReconnecting {
                     self.callState    = .idle
                     self.participants = []
+                    AppLogger.livekit("room disconnected → callState=idle")
                 }
-            case .reconnecting:
-                break // stay visually connected
             case .connected:
                 self.callState = .connected
                 self.rebuildParticipants()
+                AppLogger.livekit("room connected — participants=\(self.participants.count)")
+            case .reconnecting:
+                AppLogger.livekit("room reconnecting...")
             default:
                 break
             }
@@ -434,10 +358,12 @@ extension VoiceCallManager: RoomDelegate {
     }
 
     func room(_ room: Room, participantDidConnect participant: RemoteParticipant) {
+        AppLogger.livekit("participant joined — id=\(participant.identity?.stringValue ?? "?") total=\(room.remoteParticipants.count + 1)")
         Task { @MainActor in self.rebuildParticipants() }
     }
 
     func room(_ room: Room, participantDidDisconnect participant: RemoteParticipant) {
+        AppLogger.livekit("participant left — id=\(participant.identity?.stringValue ?? "?") remaining=\(room.remoteParticipants.count)")
         Task { @MainActor in self.rebuildParticipants() }
     }
 
@@ -451,6 +377,7 @@ extension VoiceCallManager: RoomDelegate {
 
     func room(_ room: Room, participant: RemoteParticipant,
               didUpdatePublication publication: RemoteTrackPublication, muted: Bool) {
+        AppLogger.audio("participant \(participant.identity?.stringValue ?? "?") audio muted=\(muted)")
         Task { @MainActor in self.rebuildParticipants() }
     }
 }

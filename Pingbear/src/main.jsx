@@ -1,258 +1,395 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken } from 'firebase/auth';
 
-// Your Firebase config - replace with your actual config
-const firebaseConfig = {
-    apiKey: "AIzaSyBOi9UCGqF9Ex1VPvzEP7c8nlB3IVrMv5w",
-    authDomain: "pingbear-96b4c.firebaseapp.com",
-    projectId: "pingbear-96b4c",
-    storageBucket: "pingbear-96b4c.appspot.com",
-    messagingSenderId: "958676880670",
-    appId: "1:958676880670:web:7d69e799c05bd6004a0d0f",
-    measurementId: "G-PRPFKVFXBJ"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-// Router component to handle different pages
 function App() {
-  const [currentPage, setCurrentPage] = useState('');
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const path = window.location.pathname;
-    const search = window.location.search;
-    
-    if (path === '/success') {
-      setCurrentPage('success');
-    } else if (path === '/cancel') {
-      setCurrentPage('cancel');
-    } else if (search.includes('token=')) {
-      setCurrentPage('purchase');
-    } else {
-      setCurrentPage('error');
-    }
-  }, []);
-
-  switch (currentPage) {
-    case 'purchase':
-      return <PurchasePage />;
-    case 'success':
-      return <SuccessPage />;
-    case 'cancel':
-      return <CancelPage />;
-    default:
-      return <ErrorPage />;
-  }
-}
-
-// Main Purchase Page Component
-function PurchasePage() {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [error, setError] = useState('');
-  const [userInfo, setUserInfo] = useState(null);
-  const [redirecting, setRedirecting] = useState(false);
-
-  useEffect(() => {
-    authenticateUser();
-  }, []);
-
-  const authenticateUser = async () => {
-    try {
-      // Get token and sessionId from URL params
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      const sessionId = urlParams.get('sessionId');
-
-      if (!token || !sessionId) {
-        setError('Invalid access. Please return to the app and try again.');
-        setLoading(false);
-        return;
-      }
-
-      // Get session data from Firestore
-      const { getFirestore, doc, getDoc } = await import('firebase/firestore');
-      const db = getFirestore();
-      
-      const sessionDoc = await getDoc(doc(db, 'purchaseSessions', sessionId));
-      
-      if (!sessionDoc.exists()) {
-        setError('Invalid purchase session. Please try again.');
-        setLoading(false);
-        return;
-      }
-      
-      const sessionData = sessionDoc.data();
-      
-      // Check if session has expired
-      if (sessionData.expiresAt.toMillis() < Date.now()) {
-        setError('Purchase session has expired. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      // Validate token
-      const expectedTokenPrefix = sessionId + '.';
-      if (!token.startsWith(expectedTokenPrefix)) {
-        setError('Invalid access token. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      setUserInfo({
-        coinAmount: sessionData.coinAmount,
-        competitionId: sessionData.competitionId,
-        sessionId: sessionId,
-        userId: sessionData.userId,
-        token: token,
-        price: (sessionData.coinAmount * 0.01).toFixed(2)
-      });
-
-      setAuthenticated(true);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    setTimeout(() => {
       setLoading(false);
-
-      // Immediately redirect to Stripe
-      redirectToStripe(token, sessionId);
-
-    } catch (error) {
-      console.error('Authentication failed:', error);
-      setError('Authentication failed. Please try again.');
-      setLoading(false);
-    }
+      setSubmitted(true);
+    }, 1200);
   };
 
-  const redirectToStripe = async (token, sessionId) => {
-    if (redirecting) return;
-    
-    setRedirecting(true);
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap');
 
-    try {
-      const response = await fetch('https://us-central1-pingbear-96b4c.cloudfunctions.net/createCheckoutSession', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, sessionId }),
-      });
+        :root {
+          --bg: #F8F8F6; --card: #EFEEEB; --card-alt: #E8E7E3;
+          --text: #3F3F3C; --muted: #8A8A86;
+          --accent: #C15F3C; --accent-dk: #A34E2F;
+          --green: #2A9D5C; --divider: rgba(0,0,0,0.07);
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Payment setup failed: ${response.status}`);
-      }
+        nav {
+          position: sticky; top: 0; z-index: 100; background: var(--bg);
+          border-bottom: 1px solid var(--divider); padding: 0 24px; height: 60px;
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .nav-brand span { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+        .nav-cta {
+          background: var(--accent); color: white; text-decoration: none;
+          padding: 9px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; transition: background 0.2s; border: none; cursor: pointer;
+        }
+        .nav-cta:hover { background: var(--accent-dk); }
 
-      const responseData = await response.json();
-      const { url } = responseData;
-      
-      if (!url) {
-        throw new Error('Payment setup failed');
-      }
-      
-      // Redirect to Stripe Checkout
-      window.location.href = url;
+        .hero { padding: 72px 24px 80px; text-align: center; max-width: 680px; margin: 0 auto; }
+        .hero-badge {
+          display: inline-flex; align-items: center; gap: 7px;
+          background: var(--card); border: 1px solid var(--divider); border-radius: 100px;
+          padding: 6px 14px; font-size: 13px; color: var(--muted); font-weight: 500;
+          margin-bottom: 28px; animation: fadeUp 0.5s ease both;
+        }
+        .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+        .hero h1 {
+          font-size: clamp(48px, 10vw, 80px);
+          font-weight: 800; line-height: 1.05; letter-spacing: -2.5px; color: var(--text);
+          margin-bottom: 24px; animation: fadeUp 0.5s 0.1s ease both;
+        }
+        .hero h1 em { font-style: italic; color: var(--accent); }
+        .hero p {
+          font-size: 18px; color: var(--muted); line-height: 1.65; max-width: 440px;
+          margin: 0 auto 40px; font-weight: 400; animation: fadeUp 0.5s 0.2s ease both;
+        }
 
-    } catch (error) {
-      console.error('Checkout error:', error);
-      setError('Failed to start payment. Please try again.');
-      setRedirecting(false);
-    }
-  };
+        .waitlist-form { animation: fadeUp 0.5s 0.3s ease both; max-width: 420px; margin: 0 auto; }
+        .waitlist-row { display: flex; gap: 8px; }
+        .waitlist-input {
+          flex: 1; padding: 14px 18px; border-radius: 100px;
+          border: 1.5px solid var(--divider); background: white;
+          font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text);
+          outline: none; transition: border-color 0.2s;
+        }
+        .waitlist-input:focus { border-color: var(--accent); }
+        .waitlist-input::placeholder { color: var(--muted); }
+        .btn-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: var(--accent); color: white; border: none; cursor: pointer;
+          padding: 14px 24px; border-radius: 100px; font-size: 15px; font-weight: 600;
+          font-family: 'DM Sans', sans-serif; transition: background 0.2s, transform 0.15s;
+          white-space: nowrap;
+        }
+        .btn-primary:hover { background: var(--accent-dk); transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
+        .waitlist-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-          <div className="relative w-14 h-14 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-white border-opacity-20 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        .success-state {
+          display: flex; flex-direction: column; align-items: center; gap: 10px;
+          animation: fadeUp 0.4s ease both;
+        }
+        .success-icon {
+          width: 48px; height: 48px; border-radius: 50%; background: var(--green);
+          display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;
+        }
+        .success-title { font-size: 22px; font-weight: 700; color: var(--text); }
+        .success-sub { font-size: 15px; color: var(--muted); }
+
+        .mockup-strip { width: 100%; overflow: hidden; padding: 0 24px 80px; }
+        .mockup-inner { max-width: 680px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .mockup-card { background: var(--card); border-radius: 20px; overflow: hidden; aspect-ratio: 9/16; position: relative; border: 1px solid var(--divider); animation: fadeUp 0.6s ease both; }
+        .mockup-card:nth-child(2) { animation-delay: 0.1s; }
+        .mockup-card:nth-child(3) { animation-delay: 0.2s; }
+        .mockup-card .screen-header { padding: 16px 14px 10px; border-bottom: 1px solid var(--divider); }
+        .screen-title { font-size: 11px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; }
+        .screen-sub { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+        .mockup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 10px 0; }
+        .mock-photo { border-radius: 10px; aspect-ratio: 3/4; display: flex; flex-direction: column; justify-content: flex-end; padding: 6px; position: relative; overflow: hidden; }
+        .mock-photo-bg { position: absolute; inset: 0; border-radius: 10px; }
+        .mock-photo-label { position: relative; font-size: 8px; font-weight: 700; color: white; }
+        .mock-fee { position: relative; font-size: 7px; font-weight: 700; color: white; background: var(--green); border-radius: 100px; padding: 2px 5px; align-self: flex-end; margin-top: 2px; display: inline-block; }
+        .mock-add-card { border-radius: 10px; aspect-ratio: 3/4; border: 1.5px dashed; border-color: rgba(193,95,60,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .mock-add-icon { width: 18px; height: 18px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; line-height: 1; }
+        .mock-add-text { font-size: 8px; font-weight: 600; color: var(--accent); }
+        .mock-bottom-bar { padding: 8px 10px 10px; display: flex; justify-content: flex-end; }
+        .mock-start-btn { background: var(--accent); color: white; font-size: 8px; font-weight: 700; border-radius: 100px; padding: 5px 12px; }
+
+        .judging-screen { background: var(--accent); height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; }
+        .judging-rings { position: relative; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; background: transparent; }
+        .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); }
+        .ring-1 { width: 70px; height: 70px; }
+        .ring-2 { width: 48px; height: 48px; }
+        .ring-3 { width: 26px; height: 26px; }
+        .ring-core { width: 22px; height: 22px; background: rgba(255,255,255,0.95); border-radius: 50%; }
+        .judging-label { color: white; font-size: 11px; font-weight: 600; text-align: center; }
+        .judging-sub { color: rgba(255,255,255,0.65); font-size: 9px; text-align: center; }
+        .judging-dots { display: flex; gap: 4px; }
+        .judging-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+        .judging-dot:nth-child(1) { background: white; }
+
+        .results-screen { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .result-winner-banner { background: var(--card-alt); border-radius: 10px; padding: 8px 10px; text-align: center; }
+        .result-winner-text { font-size: 10px; font-weight: 700; color: var(--text); }
+        .result-payout { font-size: 9px; font-weight: 700; color: var(--green); background: rgba(42,157,92,0.1); border-radius: 100px; padding: 2px 8px; display: inline-block; margin-top: 3px; }
+        .result-row { display: flex; align-items: center; gap: 6px; background: var(--card); border-radius: 10px; padding: 7px 8px; }
+        .result-rank { font-size: 9px; font-weight: 700; color: var(--muted); width: 12px; }
+        .result-rank.gold { color: #DAA520; }
+        .result-thumb { width: 26px; height: 32px; border-radius: 5px; flex-shrink: 0; }
+        .result-info { flex: 1; min-width: 0; }
+        .result-name { font-size: 8px; font-weight: 700; color: var(--text); }
+        .result-reason { font-size: 7px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .result-score { font-size: 13px; font-weight: 900; color: #DAA520; }
+
+        .how { padding: 80px 24px; max-width: 680px; margin: 0 auto; }
+        .section-label { font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+        .section-heading { font-size: clamp(30px, 6vw, 46px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; color: var(--text); margin-bottom: 48px; }
+        .steps { display: flex; flex-direction: column; gap: 2px; }
+        .step { display: flex; gap: 20px; align-items: flex-start; padding: 28px 0; border-bottom: 1px solid var(--divider); }
+        .step:last-child { border-bottom: none; }
+        .step-num { width: 40px; height: 40px; border-radius: 12px; background: var(--card); border: 1px solid var(--divider); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+        .step-body { flex: 1; }
+        .step-title { font-size: 17px; font-weight: 600; color: var(--text); margin-bottom: 6px; letter-spacing: -0.2px; }
+        .step-desc { font-size: 15px; color: var(--muted); line-height: 1.6; }
+
+        .final-cta { background: var(--accent); margin: 0 16px 80px; border-radius: 24px; padding: 56px 32px; text-align: center; overflow: hidden; position: relative; }
+        .final-cta::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+        .final-cta::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.05); }
+        .final-cta h2 { font-size: clamp(28px, 7vw, 46px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; color: white; margin-bottom: 14px; position: relative; z-index: 1; }
+        .final-cta p { font-size: 16px; color: rgba(255,255,255,0.75); margin-bottom: 32px; position: relative; z-index: 1; }
+        .final-cta .waitlist-form { position: relative; z-index: 1; }
+        .final-cta .waitlist-input { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); color: white; }
+        .final-cta .waitlist-input::placeholder { color: rgba(255,255,255,0.6); }
+        .final-cta .waitlist-input:focus { border-color: white; }
+        .final-cta .btn-primary { background: white; color: var(--accent); }
+        .final-cta .btn-primary:hover { background: rgba(255,255,255,0.92); }
+        .final-cta .waitlist-note { color: rgba(255,255,255,0.55); }
+        .final-cta .success-title { color: white; }
+        .final-cta .success-sub { color: rgba(255,255,255,0.75); }
+        .final-cta .success-icon { background: rgba(255,255,255,0.2); }
+
+        footer { border-top: 1px solid var(--divider); padding: 28px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+        .footer-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .footer-brand span { font-size: 15px; font-weight: 700; color: var(--text); }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+        .footer-links a:hover { color: var(--text); }
+        .footer-right { font-size: 12px; color: var(--muted); }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 500px) {
+          .hero { padding: 52px 20px 56px; }
+          .mockup-inner { gap: 8px; }
+          .waitlist-row { flex-direction: column; }
+          .how { padding: 56px 20px; }
+          .final-cta { margin: 0 12px 60px; padding: 44px 24px; }
+          footer { flex-direction: column; align-items: flex-start; }
+          .footer-links { gap: 14px; }
+        }
+      `}</style>
+
+      <nav>
+        <a href="#" className="nav-brand"><img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '32px', height: '32px'}} /></a>
+        <button className="nav-cta" onClick={() => document.getElementById('waitlist').focus()}>Join waitlist</button>
+      </nav>
+
+      <section className="hero">
+        <div className="hero-badge"><span className="dot"></span>Coming soon</div>
+        <h1>Photo comps<br />with your <em>crew</em></h1>
+        <p>Pick a theme, submit your shot, let AI pick the winner. Bragging rights and real prizes in minutes.</p>
+
+        <div className="waitlist-form">
+          {submitted ? (
+            <div className="success-state">
+              <div className="success-icon">✓</div>
+              <div className="success-title">You're on the list!</div>
+              <div className="success-sub">We'll let you know the moment SocialStar launches.</div>
+            </div>
+          ) : (
+            <>
+              <form className="waitlist-row" onSubmit={handleSubmit}>
+                <input
+                  id="waitlist"
+                  className="waitlist-input"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+                <button className="btn-primary" type="submit" disabled={loading}>
+                  {loading ? 'Joining…' : 'Join waitlist'}
+                </button>
+              </form>
+              <div className="waitlist-note">No spam. Just a heads-up when we launch.</div>
+            </>
+          )}
+        </div>
+      </section>
+
+      <div className="mockup-strip">
+        <div className="mockup-inner">
+          <div className="mockup-card">
+            <div className="screen-header">
+              <div className="screen-title">Lobby</div>
+              <div className="screen-sub">Outfit of the Day · $2.00</div>
+            </div>
+            <div className="mockup-grid">
+              <div className="mock-photo">
+                <div className="mock-photo-bg" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F97509ae7fcd7ffedfbe7c010f1602d0c-min.jpg?alt=media&token=fe79998e-8a9f-45f2-8d42-c2f9677131fb)', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                <span className="mock-photo-label">You</span>
+                <span className="mock-fee">$1.00</span>
+              </div>
+              <div className="mock-photo">
+                <div className="mock-photo-bg" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F9f0efe5a61c7e766838c49e18d70dfd0-2-min.jpg?alt=media&token=72aaa156-75f9-4117-84f1-6f969bb3e657)', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                <span className="mock-photo-label">Jamie</span>
+                <span className="mock-fee">$1.00</span>
+              </div>
+              <div className="mock-photo">
+                <div className="mock-photo-bg" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F00e95ee3819ad001f7455d3e34e085c6-2-min.jpg?alt=media&token=3f34b56d-03b0-442c-abcc-6b6bd907e94e)', backgroundSize: 'cover', backgroundPosition: 'center'}}></div>
+                <span className="mock-photo-label">Sarah</span>
+                <span className="mock-fee">$1.00</span>
+              </div>
+              <div className="mock-add-card">
+                <div className="mock-add-icon">+</div>
+                <span className="mock-add-text">Join Round</span>
+              </div>
+            </div>
+            <div className="mock-bottom-bar">
+              <div className="mock-start-btn">Start Round</div>
+            </div>
           </div>
-      </div>
-    );
-  }
 
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-        <div className="backdrop-blur-sm border border-white border-opacity-10 rounded-2xl p-8 max-w-sm w-full text-center" style={{backgroundColor: '#1A2245'}}>
-          <h1 className="text-white text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="text-white text-opacity-80 leading-relaxed">{error}</p>
+          <div className="mockup-card">
+            <div className="judging-screen">
+              <div className="judging-rings">
+                <svg width="70" height="70" viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="35" cy="35" r="34" stroke="rgba(255,255,255,0.2)" strokeWidth="1"/>
+                  <circle cx="35" cy="35" r="23" stroke="rgba(255,255,255,0.25)" strokeWidth="1"/>
+                  <circle cx="35" cy="35" r="11" fill="rgba(255,255,255,0.95)"/>
+                </svg>
+              </div>
+              <div className="judging-label">AI is judging</div>
+              <div className="judging-sub">Outfit of the Day</div>
+              <div className="judging-dots">
+                <div className="judging-dot"></div>
+                <div className="judging-dot"></div>
+                <div className="judging-dot"></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mockup-card">
+            <div className="screen-header">
+              <div className="screen-title">Results</div>
+              <div className="screen-sub">Outfit of the Day</div>
+            </div>
+            <div className="results-screen">
+              <div className="result-winner-banner">
+                <div className="result-winner-text">Jamie wins! 🏆</div>
+                <div className="result-payout">+$2.70</div>
+              </div>
+              <div className="result-row">
+                <div className="result-rank gold">1</div>
+                <div className="result-thumb" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F9f0efe5a61c7e766838c49e18d70dfd0-2-min.jpg?alt=media&token=72aaa156-75f9-4117-84f1-6f969bb3e657)', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '5px'}}></div>
+                <div className="result-info">
+                  <div className="result-name">Jamie</div>
+                  <div className="result-reason">Clean fit, great colours</div>
+                </div>
+                <div className="result-score">9.1</div>
+              </div>
+              <div className="result-row">
+                <div className="result-rank">2</div>
+                <div className="result-thumb" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F97509ae7fcd7ffedfbe7c010f1602d0c-min.jpg?alt=media&token=fe79998e-8a9f-45f2-8d42-c2f9677131fb)', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '5px'}}></div>
+                <div className="result-info">
+                  <div className="result-name">You</div>
+                  <div className="result-reason">Solid effort, good theme fit</div>
+                </div>
+                <div className="result-score" style={{color: 'var(--muted)', fontSize: '11px', fontWeight: 700}}>7.4</div>
+              </div>
+              <div className="result-row">
+                <div className="result-rank">3</div>
+                <div className="result-thumb" style={{backgroundImage: 'url(https://firebasestorage.googleapis.com/v0/b/ss-web-rate.firebasestorage.app/o/compress%2F00e95ee3819ad001f7455d3e34e085c6-2-min.jpg?alt=media&token=3f34b56d-03b0-442c-abcc-6b6bd907e94e)', backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: '5px'}}></div>
+                <div className="result-info">
+                  <div className="result-name">Sarah</div>
+                  <div className="result-reason">Off theme, nice pic though</div>
+                </div>
+                <div className="result-score" style={{color: 'var(--muted)', fontSize: '11px', fontWeight: 700}}>5.2</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-      <div className="backdrop-blur-sm border border-white border-opacity-10 rounded-2xl p-8 max-w-sm w-full text-center" style={{backgroundColor: '#1A2245'}}>
-        <div className="text-center">
-          <div className="relative w-14 h-14 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-white border-opacity-20 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      <section className="how">
+        <div className="section-label">How it works</div>
+        <div className="section-heading">Three steps.<br />Endless bragging rights.</div>
+        <div className="steps">
+          <div className="step">
+            <div className="step-num">1</div>
+            <div className="step-body">
+              <div className="step-title">Pick a theme</div>
+              <div className="step-desc">Choose from your group's saved themes — outfits, selfies, food, vibes — or create a new one on the fly. Everyone knows the brief.</div>
+            </div>
           </div>
-          
-          <div className="text-white text-opacity-80 mb-6">
-            Redirecting to secure payment...
+          <div className="step">
+            <div className="step-num">2</div>
+            <div className="step-body">
+              <div className="step-title">Submit your shot</div>
+              <div className="step-desc">Snap a fresh one or dig out a gem from your camera roll. Add an optional entry fee to the prize pot — more skin in the game, more fun.</div>
+            </div>
           </div>
-          
-          <button
-            onClick={() => redirectToStripe(userInfo?.token, userInfo?.sessionId)}
-            className="w-full text-white py-3 px-6 rounded-full font-semibold transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
-            style={{backgroundColor: '#4169E1'}}
-            disabled={redirecting}
-          >
-            {redirecting ? 'Redirecting...' : 'Continue to Payment'}
-          </button>
+          <div className="step">
+            <div className="step-num">3</div>
+            <div className="step-body">
+              <div className="step-title">AI judges the winner</div>
+              <div className="step-desc">Gemini scores every photo on theme fit and quality. Honest, fast, and nobody can accuse their mate of bias. Winnings go straight to your wallet.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="final-cta">
+        <h2>Be first to play.</h2>
+        <p>Drop your email and we'll ping you the moment we launch.</p>
+        <div className="waitlist-form">
+          {submitted ? (
+            <div className="success-state">
+              <div className="success-icon">✓</div>
+              <div className="success-title">You're on the list!</div>
+              <div className="success-sub">We'll let you know the moment SocialStar launches.</div>
+            </div>
+          ) : (
+            <>
+              <form className="waitlist-row" onSubmit={handleSubmit}>
+                <input
+                  className="waitlist-input"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                />
+                <button className="btn-primary" type="submit" disabled={loading}>
+                  {loading ? 'Joining…' : 'Notify me'}
+                </button>
+              </form>
+              <div className="waitlist-note">No spam. Just a heads-up when we launch.</div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+
+      <footer>
+        <a href="#" className="footer-brand"><img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '24px', height: '24px'}} /></a>
+        <div className="footer-links">
+          <a href="mailto:info@socialstarapp.com">Contact</a>
+        </div>
+        <div className="footer-right">© 2026 SocialStar</div>
+      </footer>
+    </>
   );
 }
 
-// Success Page Component
-function SuccessPage() {
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-      <div className="backdrop-blur-sm border border-white border-opacity-10 rounded-2xl p-8 max-w-sm w-full text-center" style={{backgroundColor: '#1A2245'}}>
-        <h1 className="text-white text-2xl font-bold mb-4">Purchase Complete!</h1>
-        <p className="text-white text-opacity-80 leading-relaxed">
-          Your coins have been added to your balance. Return to the app to continue.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Cancel Page Component
-function CancelPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-      <div className="backdrop-blur-sm border border-white border-opacity-10 rounded-2xl p-8 max-w-sm w-full text-center" style={{backgroundColor: '#1A2245'}}>
-        <h1 className="text-white text-3xl font-bold mb-4">Purchase Cancelled</h1>
-        <p className="text-white text-opacity-80 leading-relaxed">
-          Your purchase was cancelled. No charges were made to your account.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Error Page Component
-function ErrorPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{backgroundColor: '#10183C'}}>
-      <div className="backdrop-blur-sm border border-white border-opacity-10 rounded-2xl p-8 max-w-sm w-full text-center" style={{backgroundColor: '#1A2245'}}>
-        <h1 className="text-white text-3xl font-bold mb-4">Invalid Access</h1>
-        <p className="text-white text-opacity-80 leading-relaxed">
-          This page can only be accessed from the app. Please return to the app and try again.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// Initialize React app
-const container = document.getElementById('root');
-const root = createRoot(container);
+const root = createRoot(document.getElementById('root'));
 root.render(<App />);
