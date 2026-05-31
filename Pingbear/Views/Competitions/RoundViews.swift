@@ -153,56 +153,74 @@ struct RoundResultsView: View {
         let isWinner = round.winnerIds.contains(submission.userId)
         let score    = submission.aiScore ?? 0.0
 
-        return HStack(spacing: 10) {
-            Text("\(rank)")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(isWinner ? AppTheme.gold : AppTheme.secondaryText)
-                .frame(width: 24)
-
-            HStack(spacing: 12) {
+        return HStack(spacing: 12) {
+            ZStack(alignment: .topLeading) {
                 AsyncImage(url: URL(string: submission.photoUrl)) { phase in
                     switch phase {
                     case .empty:
                         Rectangle()
                             .fill(AppTheme.pageBackground)
+                            .frame(width: 110, height: 140)
                             .overlay(ProgressView())
                     case .success(let image):
                         image.resizable().scaledToFill()
+                            .frame(width: 110, height: 140).clipped()
                     case .failure:
                         Rectangle()
                             .fill(AppTheme.pageBackground)
+                            .frame(width: 110, height: 140)
                             .overlay(Image(systemName: "exclamationmark.triangle")
                                 .foregroundColor(AppTheme.secondaryText))
                     @unknown default:
                         Rectangle().fill(AppTheme.pageBackground)
-                    }
-                }
-                .frame(width: 80, height: 100)
-                .clipped()
-                .cornerRadius(12)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(profile?.name ?? "...")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-
-                    if let reason = submission.aiReason {
-                        Text(reason)
-                            .font(.system(size: 12))
-                            .foregroundColor(AppTheme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(width: 110, height: 140)
                     }
                 }
 
-                Spacer()
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [.black.opacity(0.4), .clear],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(height: 140 * 0.35)
+                    Spacer()
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.4)],
+                        startPoint: .top, endPoint: .bottom
+                    )
+                    .frame(height: 140 * 0.35)
+                }
+                .frame(width: 110, height: 140)
 
-                Text(String(format: "%.1f", score))
-                    .font(.system(size: 20, weight: .black))
-                    .foregroundColor(isWinner ? AppTheme.gold : AppTheme.primaryText)
-                    .frame(width: 48)
+                Text(profile?.name ?? "...")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 9)
             }
-            .padding(14)
+            .frame(width: 110, height: 140)
+            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                if let reason = submission.aiReason {
+                    Text(reason)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppTheme.primaryText)
+                        .lineSpacing(1)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer()
+
+            Text(String(format: "%.1f", score))
+                .font(.system(size: 20, weight: .black))
+                .foregroundColor(isWinner ? AppTheme.gold : AppTheme.primaryText)
+                .frame(width: 48)
         }
+        .padding(14)
     }
 }
 
