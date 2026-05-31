@@ -68,7 +68,6 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
-		4F8877912FC1BBDB006FDCAE /* HowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
 		4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */; };
@@ -156,7 +155,6 @@
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
-		4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowItWorksView.swift; sourceTree = "<group>"; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
 		4FA1D3B02F61BE930099E033 /* CustomTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBar.swift; sourceTree = "<group>"; };
 		4FACC9DF2C33EE52003BF013 /* ContactAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactAccess.swift; sourceTree = "<group>"; };
@@ -287,7 +285,6 @@
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
 				4FCBC7192F5D9ADA00CE3962 /* WelcomeBonusView.swift */,
-				4F8877902FC1BBDB006FDCAE /* HowItWorksView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -687,7 +684,6 @@
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
 				4F2008DC2FA366720039FBCB /* TopUpViewModel.swift in Sources */,
 				4FB73FB22FC78A2A005DF768 /* SessionViewModel.swift in Sources */,
-				4F8877912FC1BBDB006FDCAE /* HowItWorksView.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
 				4FB73FC02FC899B2005DF768 /* DebugSessionView.swift in Sources */,
 				4FBB91282FB6259F0055CAF8 /* VoiceCallManager.swift in Sources */,

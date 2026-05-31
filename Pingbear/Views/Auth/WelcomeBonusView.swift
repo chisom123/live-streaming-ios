@@ -2,8 +2,6 @@ import SwiftUI
 
 struct WelcomeBonusView: View {
 
-    @State private var navigateToHowItWorks = false
-
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -33,7 +31,11 @@ struct WelcomeBonusView: View {
 
                 Button(action: {
                     Analytics.shared.trackTap(elementId: "welcome_bonus_continue", screenName: "welcome_bonus")
-                    navigateToHowItWorks = true
+                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
+                    UserDefaults.standard.set(true, forKey: "isFriendActivated")
+                    UserDefaults.standard.synchronize()
+                    NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+                    Analytics.shared.track(event: "onboarding_completed")
                 }) {
                     Text("Continue").font(.system(size: 20, weight: .bold)).foregroundColor(.white)
                         .frame(maxWidth: .infinity).frame(height: 55)
@@ -41,16 +43,6 @@ struct WelcomeBonusView: View {
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
-
-                NavigationLink(destination: HowItWorksView(onComplete: {
-                    UserDefaults.standard.set(true, forKey: "isLoggedIn")
-                    UserDefaults.standard.set(true, forKey: "isFriendActivated")
-                    UserDefaults.standard.synchronize()
-                    NotificationCenter.default.post(name: .authStateDidChange, object: nil)
-                    Analytics.shared.track(event: "onboarding_completed")
-                }), isActive: $navigateToHowItWorks) {
-                    EmptyView()
-                }.isDetailLink(false)
             }
         }
         .navigationBarHidden(true)
