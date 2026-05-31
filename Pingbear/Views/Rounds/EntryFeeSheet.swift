@@ -23,7 +23,7 @@ struct EntryFeeSheet: View {
     let onJoin: (String, Double) -> Void   // (photoUrl, fee)
     let onCancel: () -> Void
 
-    @State private var selectedFee: Double   = 0.00
+    @State private var selectedFee: Double   = 1.00
     @State private var uploadProgress: Double = 0
     @State private var isUploading           = false
     @State private var uploadError: String?  = nil
@@ -65,7 +65,10 @@ struct EntryFeeSheet: View {
         }
         .animation(.easeInOut(duration: 0.2), value: hasEnoughBalance)
         .onAppear {
-            Analytics.shared.trackScreen(name: "entry_fee_sheet")
+            Analytics.shared.trackScreen(name: "entry_fee_sheet", properties: [
+                "session_id": sessionId,
+                "is_from_camera": isFromCamera
+            ])
             fetchBalance()
         }
         .alert("Upload Failed", isPresented: Binding(
@@ -87,7 +90,16 @@ struct EntryFeeSheet: View {
 
     private var header: some View {
         HStack {
-            Button(action: { if !isUploading { onCancel() } }) {
+            Button(action: {
+                if !isUploading {
+                    Analytics.shared.trackTap(
+                        elementId: "entry_fee_back",
+                        screenName: "entry_fee_sheet",
+                        properties: ["selected_fee": selectedFee]
+                    )
+                    onCancel()
+                }
+            }) {
                 Image(systemName: "arrow.left")
                     .resizable().aspectRatio(contentMode: .fit)
                     .frame(width: 22, height: 22)
@@ -140,18 +152,23 @@ struct EntryFeeSheet: View {
                 Button {
                     guard affordable && !isUploading else { return }
                     selectedFee = fee
+                    Analytics.shared.track(event: "entry_fee_selected", properties: [
+                        "fee": fee,
+                        "session_id": sessionId,
+                        "wallet_balance": walletBalance
+                    ])
                 } label: {
                     Text(fee == 0 ? "Free" : "$\(String(format: "%.2f", fee))")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(
-                            !affordable   ? AppTheme.disabledText :
+                            !affordable        ? AppTheme.disabledText :
                             selectedFee == fee ? .white :
                             AppTheme.primaryText
                         )
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
                         .background(
-                            !affordable   ? AppTheme.disabledBackground :
+                            !affordable        ? AppTheme.disabledBackground :
                             selectedFee == fee ? AppTheme.accent :
                             AppTheme.cardBackground
                         )
@@ -168,7 +185,17 @@ struct EntryFeeSheet: View {
     // ─────────────────────────────────────────────────────────
 
     private var topUpPrompt: some View {
-        Button { showingWallet = true } label: {
+        Button {
+            Analytics.shared.trackTap(
+                elementId: "entry_fee_top_up_prompt",
+                screenName: "entry_fee_sheet",
+                properties: [
+                    "selected_fee": selectedFee,
+                    "wallet_balance": walletBalance
+                ]
+            )
+            showingWallet = true
+        } label: {
             HStack(spacing: 6) {
                 Image(systemName: "exclamationmark.circle.fill")
                     .font(.system(size: 14, weight: .bold))
@@ -225,7 +252,7 @@ struct EntryFeeSheet: View {
     }
 
     private var buttonLabel: String {
-        if isUploading  { return "Uploading \(Int(uploadProgress * 100))%..." }
+        if isUploading       { return "Uploading \(Int(uploadProgress * 100))%..." }
         if !hasEnoughBalance { return "Insufficient Balance" }
         return selectedFee == 0 ? "Join Free" : "Add $\(String(format: "%.2f", selectedFee)) to Pot"
     }
@@ -250,10 +277,20 @@ struct EntryFeeSheet: View {
     private func confirmTapped() {
         guard !isUploading, hasEnoughBalance else { return }
 
-        // Snapshot the fee at tap time — can't change during upload
         let fee = selectedFee
-        isUploading     = true
-        uploadProgress  = 0
+        isUploading    = true
+        uploadProgress = 0
+
+        Analytics.shared.trackTap(
+            elementId: "entry_fee_confirm",
+            screenName: "entry_fee_sheet",
+            properties: [
+                "fee": fee,
+                "is_from_camera": isFromCamera,
+                "session_id": sessionId,
+                "wallet_balance": walletBalance
+            ]
+        )
 
         Task {
             do {
@@ -261,20 +298,19 @@ struct EntryFeeSheet: View {
                     image: image,
                     sessionId: sessionId,
                     onProgress: { progress in
-                        // Already @MainActor thanks to the upload manager
                         self.uploadProgress = progress
                     }
                 )
-                // Upload done — hand off to parent. The sheet will be
-                // dismissed by the parent changing phase.
                 onJoin(url, fee)
-                // Don't set isUploading = false here — we want the spinner
-                // to stay visible until the sheet is actually dismissed.
-                // If join fails, the parent will re-show the sheet.
             } catch {
                 AppLogger.upload("[EntryFee] upload failed: \(error)")
-                self.uploadError = error.localizedDescription
-                self.isUploading = false
+                Analytics.shared.track(event: "entry_fee_upload_failed", properties: [
+                    "fee": fee,
+                    "session_id": sessionId,
+                    "error": error.localizedDescription
+                ])
+                self.uploadError    = error.localizedDescription
+                self.isUploading    = false
                 self.uploadProgress = 0
             }
         }

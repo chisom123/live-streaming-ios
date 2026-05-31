@@ -67,6 +67,10 @@ struct HomeView: View {
                     activeSessionId  = item.id
                 },
                 onCancel: {
+                    Analytics.shared.track(event: "call_cancelled", properties: [
+                        "session_id": item.id,
+                        "friend_count": calledFriends.count
+                    ])
                     // End CallKit call so UUID is cleaned up for next call
                     CallKitManager.shared.endActiveCall(reason: .remoteEnded)
                     // Stop ringing on all invited friends' phones
@@ -96,6 +100,9 @@ struct HomeView: View {
             if state == .connected, let sessionId = callManager.currentSessionId {
                 if activeSessionId == nil && callingSessionId == nil {
                     AppLogger.nav("[HomeView] incoming call → opening SessionView sessionId=\(sessionId)")
+                    Analytics.shared.track(event: "incoming_call_received", properties: [
+                        "session_id": sessionId
+                    ])
                     activeSessionId = sessionId
                 } else {
                     AppLogger.nav("[HomeView] .connected — CallingView handling transition")
@@ -203,7 +210,10 @@ struct HomeView: View {
                     .foregroundColor(AppTheme.secondaryText)
                     .padding(.bottom, 28)
 
-                Button(action: { showingAddFriends = true }) {
+                Button(action: {
+                    Analytics.shared.trackTap(elementId: "add_friends_empty_state", screenName: "home")
+                    showingAddFriends = true
+                }) {
                     Text("Add Friends")
                         .font(.system(size: 17, weight: .bold))
                         .foregroundColor(.white)
@@ -284,9 +294,17 @@ struct HomeView: View {
     private func toggleSelection(_ id: String) {
         if selectedFriendIds.contains(id) {
             selectedFriendIds.remove(id)
+            Analytics.shared.track(event: "friend_deselected", properties: [
+                "friend_id": id,
+                "selected_count": selectedFriendIds.count
+            ])
         } else {
             selectedFriendIds.insert(id)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            Analytics.shared.track(event: "friend_selected", properties: [
+                "friend_id": id,
+                "selected_count": selectedFriendIds.count
+            ])
         }
     }
 
@@ -304,7 +322,12 @@ struct HomeView: View {
         selectedFriendIds = []
 
         viewModel.startCall(friendIds: friendIds) { sessionId in
-            guard let sessionId else { return }
+            guard let sessionId else {
+                Analytics.shared.track(event: "call_start_failed", properties: [
+                    "friend_count": friendIds.count
+                ])
+                return
+            }
             DispatchQueue.main.async {
                 // Show CallingView immediately before joining LiveKit
                 // so the user sees the ringing screen straight away
@@ -313,6 +336,10 @@ struct HomeView: View {
             }
             VoiceCallManager.shared.joinCall(sessionId: sessionId) { success in
                 if !success {
+                    Analytics.shared.track(event: "call_join_failed", properties: [
+                        "session_id": sessionId,
+                        "friend_count": friendIds.count
+                    ])
                     DispatchQueue.main.async {
                         self.callingSessionId = nil
                         self.calledFriends    = []

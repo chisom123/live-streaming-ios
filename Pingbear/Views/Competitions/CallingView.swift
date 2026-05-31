@@ -37,6 +37,14 @@ struct CallingView: View {
                 Spacer()
 
                 Button(action: {
+                    Analytics.shared.trackTap(
+                        elementId: "cancel_call",
+                        screenName: "calling",
+                        properties: [
+                            "elapsed_seconds": elapsed,
+                            "friend_count": calledFriends.count
+                        ]
+                    )
                     stopTimer()
                     onCancel()
                 }) {
@@ -56,6 +64,10 @@ struct CallingView: View {
             }
         }
         .onAppear {
+            Analytics.shared.trackScreen(name: "calling", properties: [
+                "friend_count": calledFriends.count,
+                "session_id": sessionId
+            ])
             pulsing = true
             startTimer()
         }
@@ -70,6 +82,11 @@ struct CallingView: View {
             AppLogger.call("[CallingView] participants=\(count) callState=\(callManager.callState)")
             if count > 1 {
                 AppLogger.call("[CallingView] first answer → transitioning to lobby ✅")
+                Analytics.shared.track(event: "call_answered", properties: [
+                    "session_id": sessionId,
+                    "elapsed_seconds": elapsed,
+                    "friend_count": calledFriends.count
+                ])
                 stopTimer()
                 onFirstAnswer()
             }
@@ -144,17 +161,20 @@ struct CallingView: View {
     }
 
     private func startTimer() {
-        // Haptic pulse on start
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             elapsed += 1
-            // Gentle haptic pulse every 2 seconds to mimic ringing
             if elapsed % 2 == 0 {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
             if elapsed >= timeout {
                 AppLogger.call("[CallingView] no answer after \(timeout)s — cancelling")
+                Analytics.shared.track(event: "call_timed_out", properties: [
+                    "session_id": sessionId,
+                    "friend_count": calledFriends.count,
+                    "timeout_seconds": timeout
+                ])
                 stopTimer()
                 onCancel()
             }

@@ -58,13 +58,19 @@ struct RoundCameraView: View {
                         await MainActor.run {
                             isLoadingFromLibrary = false
                             cameraModel.stopSession()
+                            Analytics.shared.track(event: "photo_picked_from_library")
                             onPhotoSelected(image, false)
                         }
                     } else {
                         await MainActor.run { isLoadingFromLibrary = false }
                     }
                 } catch {
-                    await MainActor.run { isLoadingFromLibrary = false }
+                    await MainActor.run {
+                        isLoadingFromLibrary = false
+                        Analytics.shared.track(event: "photo_library_load_failed", properties: [
+                            "error": error.localizedDescription
+                        ])
+                    }
                 }
             }
         }
@@ -72,6 +78,7 @@ struct RoundCameraView: View {
             guard isShowing, let image = cameraModel.capturedImage else { return }
             cameraModel.showPreview = false
             cameraModel.stopSession()
+            Analytics.shared.track(event: "photo_taken")
             onPhotoSelected(image, true)
         }
         .onAppear {
@@ -82,10 +89,16 @@ struct RoundCameraView: View {
             case .notDetermined:
                 AVCaptureDevice.requestAccess(for: .video) { granted in
                     DispatchQueue.main.async {
-                        granted ? (isViewAppeared = true) : (showingPermissionAlert = true)
+                        if granted {
+                            isViewAppeared = true
+                        } else {
+                            Analytics.shared.track(event: "camera_permission_denied")
+                            showingPermissionAlert = true
+                        }
                     }
                 }
             default:
+                Analytics.shared.track(event: "camera_permission_denied")
                 showingPermissionAlert = true
             }
         }
@@ -95,9 +108,13 @@ struct RoundCameraView: View {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
+                Analytics.shared.trackTap(elementId: "camera_permission_open_settings", screenName: "round_camera")
                 onCancel()
             }
-            Button("Cancel", role: .cancel) { onCancel() }
+            Button("Cancel", role: .cancel) {
+                Analytics.shared.trackTap(elementId: "camera_permission_cancel", screenName: "round_camera")
+                onCancel()
+            }
         } message: {
             Text("Camera access is required to take photos. Please enable it in Settings.")
         }
@@ -110,6 +127,7 @@ struct RoundCameraView: View {
     private var topBar: some View {
         HStack(alignment: .top) {
             Button {
+                Analytics.shared.trackTap(elementId: "camera_close", screenName: "round_camera")
                 cameraModel.stopSession()
                 onCancel()
             } label: {
@@ -125,7 +143,10 @@ struct RoundCameraView: View {
             VStack(spacing: 4) {
                 FlashButton(cameraModel: cameraModel)
 
-                Button { cameraModel.toggleCamera() } label: {
+                Button {
+                    Analytics.shared.trackTap(elementId: "camera_flip", screenName: "round_camera")
+                    cameraModel.toggleCamera()
+                } label: {
                     Image(systemName: "arrow.2.circlepath")
                         .font(.system(size: 30))
                         .foregroundColor(.white)
@@ -159,10 +180,14 @@ struct RoundCameraView: View {
                         .foregroundColor(.white)
                 }
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                Analytics.shared.trackTap(elementId: "camera_open_library", screenName: "round_camera")
+            })
             .frame(maxWidth: .infinity)
 
             Button {
                 guard !cameraModel.isTakingPhoto else { return }
+                Analytics.shared.trackTap(elementId: "camera_shutter", screenName: "round_camera")
                 cameraModel.capturePhotoWithFlash()
             } label: {
                 Circle()
@@ -204,7 +229,14 @@ struct RoundPhotoPreview: View {
 
                 VStack {
                     HStack {
-                        Button(action: onRetake) {
+                        Button {
+                            Analytics.shared.trackTap(
+                                elementId: "photo_preview_retake",
+                                screenName: "photo_preview",
+                                properties: ["is_from_camera": isFromCamera]
+                            )
+                            onRetake()
+                        } label: {
                             Image(systemName: "arrow.left")
                                 .font(.system(size: 30))
                                 .foregroundColor(.white)
@@ -218,7 +250,14 @@ struct RoundPhotoPreview: View {
 
                     Spacer()
 
-                    Button { onConfirm(image) } label: {
+                    Button {
+                        Analytics.shared.trackTap(
+                            elementId: "photo_preview_confirm",
+                            screenName: "photo_preview",
+                            properties: ["is_from_camera": isFromCamera]
+                        )
+                        onConfirm(image)
+                    } label: {
                         Text("Continue")
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .font(.system(size: 18, weight: .bold))
@@ -234,6 +273,11 @@ struct RoundPhotoPreview: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            Analytics.shared.trackScreen(name: "photo_preview", properties: [
+                "is_from_camera": isFromCamera
+            ])
+        }
     }
 }
 
@@ -255,7 +299,14 @@ extension View {
 struct FlashButton: View {
     @ObservedObject var cameraModel: CameraViewModel
     var body: some View {
-        Button { cameraModel.toggleFlashMode() } label: {
+        Button {
+            cameraModel.toggleFlashMode()
+            Analytics.shared.trackTap(
+                elementId: "camera_flash_toggle",
+                screenName: "round_camera",
+                properties: ["flash_mode": cameraModel.flashMode.iconName]
+            )
+        } label: {
             Image(systemName: cameraModel.flashMode.iconName)
                 .font(.system(size: 30))
                 .foregroundColor(.white)
@@ -290,8 +341,17 @@ struct SubmissionFullScreenView: View {
                 .frame(width: geo.size.width, height: geo.size.height)
             }
             .contentShape(Rectangle())
-            .onTapGesture { dismiss() }
+            .onTapGesture {
+                Analytics.shared.trackTap(elementId: "submission_fullscreen_dismiss", screenName: "submission_fullscreen")
+                dismiss()
+            }
         }
         .ignoresSafeArea()
+        .onAppear {
+            Analytics.shared.trackScreen(name: "submission_fullscreen", properties: [
+                "is_from_camera": submission.isFromCamera,
+                "entry_fee": submission.entryFee
+            ])
+        }
     }
 }

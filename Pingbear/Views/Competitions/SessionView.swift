@@ -211,7 +211,10 @@ struct SessionView: View {
 
     private var topBar: some View {
         HStack {
-            Button { showingWallet = true } label: {
+            Button {
+                Analytics.shared.trackTap(elementId: "wallet_opened", screenName: "session")
+                showingWallet = true
+            } label: {
                 Image(systemName: "dollarsign.circle.fill")
                     .font(.system(size: 18))
                     .foregroundColor(AppTheme.primaryText)
@@ -274,6 +277,9 @@ struct SessionView: View {
 
         return Button {
             guard let round = vm.currentRound, round.isWaiting, !isJoining else { return }
+            Analytics.shared.trackTap(elementId: "join_round", screenName: "session", properties: [
+                "session_id": sessionId
+            ])
             vm.openCamera()
         } label: {
             VStack(spacing: 10) {
@@ -350,7 +356,13 @@ struct SessionView: View {
         if let round = vm.currentRound, round.isWaiting {
             HStack(spacing: 12) {
                 if case .joined = vm.phase {
-                    Button { vm.leaveRound() } label: {
+                    Button {
+                        Analytics.shared.trackTap(elementId: "leave_round", screenName: "session", properties: [
+                            "session_id": sessionId,
+                            "submission_count": vm.submissions.count
+                        ])
+                        vm.leaveRound()
+                    } label: {
                         Text(vm.isLeavingRound ? "Leaving..." : "Leave")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(AppTheme.secondaryText)
@@ -367,7 +379,13 @@ struct SessionView: View {
 
                 Spacer()
 
-                Button { vm.startRound() } label: {
+                Button {
+                    Analytics.shared.trackTap(elementId: "start_round", screenName: "session", properties: [
+                        "session_id": sessionId,
+                        "submission_count": vm.submissions.count
+                    ])
+                    vm.startRound()
+                } label: {
                     HStack(spacing: 6) {
                         if vm.isStartingRound {
                             ProgressView()
@@ -523,6 +541,9 @@ struct CallSheet: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 28)
                     .padding(.bottom, 20)
+                    .onAppear {
+                        Analytics.shared.trackScreen(name: "call_sheet")
+                    }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
@@ -533,11 +554,21 @@ struct CallSheet: View {
                         ForEach(sessionVM.pendingParticipantIds, id: \.self) { userId in
                             PendingParticipantBubble(
                                 profile: sessionVM.profile(for: userId),
-                                onRingAgain: { sessionVM.inviteMore(friendIds: [userId]) }
+                                onRingAgain: {
+                                    Analytics.shared.trackTap(
+                                        elementId: "ring_again",
+                                        screenName: "call_sheet",
+                                        properties: ["user_id": userId]
+                                    )
+                                    sessionVM.inviteMore(friendIds: [userId])
+                                }
                             )
                         }
 
-                        Button { showingInviteMore = true } label: {
+                        Button {
+                            Analytics.shared.trackTap(elementId: "invite_more_opened", screenName: "call_sheet")
+                            showingInviteMore = true
+                        } label: {
                             VStack(spacing: 6) {
                                 ZStack {
                                     Circle()
@@ -571,7 +602,14 @@ struct CallSheet: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 20)
 
-                Button { callManager.toggleMute() } label: {
+                Button {
+                    Analytics.shared.trackTap(
+                        elementId: "mute_toggled",
+                        screenName: "call_sheet",
+                        properties: ["is_muted": callManager.isMuted]
+                    )
+                    callManager.toggleMute()
+                } label: {
                     HStack(spacing: 14) {
                         ZStack {
                             Circle()
@@ -785,6 +823,11 @@ struct InviteMoreSheet: View {
 
                 if !selectedIds.isEmpty {
                     Button {
+                        Analytics.shared.trackTap(
+                            elementId: "invite_more_called",
+                            screenName: "invite_more_sheet",
+                            properties: ["friend_count": selectedIds.count]
+                        )
                         sessionVM.inviteMore(friendIds: Array(selectedIds))
                         isPresented = false
                     } label: {
@@ -808,7 +851,10 @@ struct InviteMoreSheet: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: selectedIds.isEmpty)
-        .onAppear { friendsVM.fetchFriends() }
+        .onAppear {
+            Analytics.shared.trackScreen(name: "invite_more_sheet")
+            friendsVM.fetchFriends()
+        }
     }
 }
 
@@ -826,7 +872,17 @@ struct SubmissionCard: View {
     @State private var showingFullScreen = false
 
     var body: some View {
-        Button { showingFullScreen = true } label: {
+        Button {
+            Analytics.shared.trackTap(
+                elementId: "submission_viewed",
+                screenName: "session",
+                properties: [
+                    "is_current_user": isCurrentUser,
+                    "entry_fee": submission.entryFee
+                ]
+            )
+            showingFullScreen = true
+        } label: {
             ZStack(alignment: .topLeading) {
                 AsyncImage(url: URL(string: submission.photoUrl)) { image in
                     image.resizable().scaledToFill()
@@ -837,7 +893,7 @@ struct SubmissionCard: View {
                         .frame(width: width, height: imageHeight)
                         .overlay(ProgressView())
                 }
-                .id(submission.photoUrl) // force fresh view when URL changes (e.g. after leave + rejoin)
+                .id(submission.photoUrl)
 
                 // Gradient overlays
                 VStack(spacing: 0) {
