@@ -307,6 +307,7 @@ struct SessionView: View {
                     .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6]))
                     .foregroundColor(AppTheme.accent.opacity(0.4))
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(isJoining)
@@ -944,6 +945,7 @@ struct SubmissionCard: View {
             .frame(width: width, height: imageHeight)
             .cornerRadius(12)
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .fullScreenCover(isPresented: $showingFullScreen) {
