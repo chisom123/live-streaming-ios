@@ -58,12 +58,11 @@ struct NameEntryView: View {
         .navigationBarHidden(true)
     }
 
-    // ── Validate username ─────────────────────────────────────
+    // MARK: - Validate username
 
     func checkUsernameAndSave() {
         isLoading = true
-        let processedUsername = username.lowercased()
-            .replacingOccurrences(of: " ", with: "")
+        let processedUsername = username.lowercased().replacingOccurrences(of: " ", with: "")
 
         let validation = isValidUsername(processedUsername)
         guard validation.isValid else {
@@ -73,27 +72,22 @@ struct NameEntryView: View {
         }
 
         let db = Firestore.firestore()
-
-        db.collection("users")
-            .whereField("username", isEqualTo: processedUsername)
-            .getDocuments { snapshot, error in
-                if let error {
-                    self.isLoading = false
-                    self.errorMessage = "Error checking username: \(error.localizedDescription)"
-                    return
-                }
-
-                guard snapshot?.documents.isEmpty == true else {
-                    self.isLoading = false
-                    self.errorMessage = "This username is already taken"
-                    return
-                }
-
-                self.saveUser(username: processedUsername)
+        db.collection("users").whereField("username", isEqualTo: processedUsername).getDocuments { snapshot, error in
+            if let error {
+                self.isLoading = false
+                self.errorMessage = "Error checking username: \(error.localizedDescription)"
+                return
             }
+            guard snapshot?.documents.isEmpty == true else {
+                self.isLoading = false
+                self.errorMessage = "This username is already taken"
+                return
+            }
+            self.saveUser(username: processedUsername)
+        }
     }
 
-    // ── Save user then credit welcome bonus ───────────────────
+    // MARK: - Save user
 
     func saveUser(username: String) {
         guard let user = Auth.auth().currentUser else {
@@ -102,11 +96,10 @@ struct NameEntryView: View {
             return
         }
 
-        let userID = user.uid
-        let db = Firestore.firestore()
+        let userID      = user.uid
+        let db          = Firestore.firestore()
         let hashedPhone = hashPhoneNumber(phoneNumber)
 
-        // Step 1 — save username to Firestore
         db.collection("users").document(userID).setData([
             "username":        username,
             "phoneNumberHash": hashedPhone,
@@ -126,27 +119,85 @@ struct NameEntryView: View {
                 properties: ["user_id": userID, "username": username]
             )
 
-            // Step 2 — force token refresh so Functions SDK has
-            // a valid auth token before calling creditWelcomeBonus
-            user.getIDTokenForcingRefresh(true) { _, _ in
-                Functions.functions()
-                    .httpsCallable("creditWelcomeBonus")
-                    .call([:]) { _, error in
+            // Resolve any invite groups — non-fatal, never blocks signup
+            self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) {
+                user.getIDTokenForcingRefresh(true) { _, _ in
+                    Functions.functions().httpsCallable("creditWelcomeBonus").call([:]) { _, error in
                         DispatchQueue.main.async {
                             self.isLoading = false
-
                             if let error {
-                                print("⚠️ creditWelcomeBonus failed: \(error.localizedDescription)")
+                                print("creditWelcomeBonus failed: \(error.localizedDescription)")
                             }
-
                             self.navigateToWelcomeBonus = true
                         }
                     }
+                }
             }
         }
     }
 
-    // ── Hash phone number ─────────────────────────────────────
+    // MARK: - Resolve invite groups
+
+    /// Finds any invite_groups containing this user's phoneHash.
+    /// For each group:
+    ///   1. Creates mutual friendships with all members who already have a userId
+    ///   2. Adds this user's userId to the group's memberUserIds map
+    ///      so future signups from the same group connect to them too.
+    private func resolveInviteGroups(userId: String, phoneHash: String, db: Firestore, completion: @escaping () -> Void) {
+        db.collection("invite_groups")
+            .whereField("memberHashes", arrayContains: phoneHash)
+            .getDocuments { snapshot, error in
+                guard let docs = snapshot?.documents, !docs.isEmpty else {
+                    completion(); return
+                }
+
+                let group = DispatchGroup()
+
+                for doc in docs {
+                    group.enter()
+                    let data           = doc.data()
+                    let memberUserIds  = data["memberUserIds"] as? [String: String] ?? [:]
+
+                    // Collect all existing userIds except our own
+                    let existingUserIds = memberUserIds.values.filter { $0 != userId }
+
+                    db.runTransaction({ transaction, errorPointer -> Any? in
+                        // 1. Create mutual friendships with everyone already in the group
+                        for existingUserId in existingUserIds {
+                            let newUserFriendRef = db.collection("users").document(userId)
+                                .collection("friends").document(existingUserId)
+                            let existingUserFriendRef = db.collection("users").document(existingUserId)
+                                .collection("friends").document(userId)
+
+                            transaction.setData(["uid": existingUserId], forDocument: newUserFriendRef)
+                            transaction.setData(["uid": userId], forDocument: existingUserFriendRef)
+                        }
+
+                        // 2. Add this user to the group's memberUserIds map
+                        transaction.updateData(
+                            ["memberUserIds.\(phoneHash)": userId],
+                            forDocument: doc.reference
+                        )
+
+                        return nil
+                    }) { _, error in
+                        if let error = error {
+                            print("resolveInviteGroups transaction error: \(error.localizedDescription)")
+                        } else {
+                            Analytics.shared.track(
+                                event: "invite_group_resolved",
+                                properties: ["friends_added": existingUserIds.count]
+                            )
+                        }
+                        group.leave()
+                    }
+                }
+
+                group.notify(queue: .main) { completion() }
+            }
+    }
+
+    // MARK: - Hash phone number
 
     func hashPhoneNumber(_ phoneNumber: String) -> String {
         let cleaned = phoneNumber
