@@ -48,21 +48,20 @@ struct RoundResultsView: View {
                 winnerBanner
 
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         ForEach(Array(sortedSubmissions.enumerated()), id: \.element.id) { index, submission in
-                            VStack(spacing: 0) {
-                                resultCard(submission: submission, rank: index + 1)
-                                if index < sortedSubmissions.count - 1 {
-                                    Divider()
-                                        .background(AppTheme.divider)
-                                }
-                            }
+                            resultCard(submission: submission, rank: index + 1)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(AppTheme.cardBackground)
+                                        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+                                )
+                                .padding(.horizontal, 20)
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
                 }
 
-                // Play Again button -- spinner while new round is being created
                 Button(action: {
                     if !isCreatingRound { onPlayAgain() }
                 }) {
