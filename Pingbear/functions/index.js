@@ -8,6 +8,7 @@ const round = require('./roundFunctions');
 const livekit = require('./liveKitFunctions');
 const callkit = require('./callKitFunctions');
 const webBattle = require('./saveUserProfile');
+const demoRound = require('./demoRoundFunctions');
 
 const cors = require('cors')({ origin: true });
 
@@ -365,6 +366,8 @@ exports.createRound   = round.createRound;
 exports.joinRound     = round.joinRound;
 exports.leaveRound    = round.leaveRound;
 exports.startRound    = round.startRound;
+exports.createDemoRound = demoRound.createDemoRound;
+exports.startDemoRound  = demoRound.startDemoRound;
 
 // ── Live Calls ────────────────────────────────────────────────
 exports.getLiveKitToken = livekit.getLiveKitToken;
