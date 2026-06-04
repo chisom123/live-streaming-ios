@@ -162,44 +162,13 @@ struct BalanceCard: View {
 
             // ── Hint text ─────────────────────────────────────
             if viewModel.bonusCredited && !viewModel.bonusUnlocked {
-                let total = viewModel.totalLockedCredits
-                let played = total - viewModel.stakingRemaining
-                let progress = total > 0 ? CGFloat(played / total) : 0
-
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Unlock Cash Out")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppTheme.primaryText)
-                        
-                        Spacer()
-                    }
-
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 200)
-                                .fill(AppTheme.disabledBackground)
-                                .frame(height: 8)
-                            RoundedRectangle(cornerRadius: 200)
-                                .fill(AppTheme.accent)
-                                .frame(width: geo.size.width * progress, height: 8)
-                                .animation(.easeInOut(duration: 0.4), value: progress)
-                        }
-                    }
-                    .frame(height: 8)
-
-                    Text("Enter $\(String(format: "%.2f", viewModel.stakingRemaining)) into competition rounds")
-                        .font(.system(size: 13))
-                        .foregroundColor(AppTheme.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(14)
-                .background(AppTheme.cardHighlight)
-                .cornerRadius(10)
-                .padding(.top, 4)
+                Text("$\(String(format: "%.2f", viewModel.stakingRemaining)) bonus left")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(AppTheme.secondaryText)
+                    .padding(.top)
             } else if viewModel.maxWithdrawable > 0 && viewModel.maxWithdrawable < 5.0 {
                 Text("Minimum cash out is $5.00")
-                    .font(.system(size: 14))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(AppTheme.secondaryText)
                     .padding(.top)
             }
