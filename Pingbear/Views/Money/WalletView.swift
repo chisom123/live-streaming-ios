@@ -374,6 +374,8 @@ struct ActivityRow: View {
         case "top_up", "simulated_top_up": return "plus.circle.fill"
         case "round_win":                  return "trophy.fill"
         case "round_entry_fee":            return "arrow.right.circle.fill"
+        case "practice_round_win":                  return "trophy.fill"
+        case "practice_round_entry":            return "arrow.right.circle.fill"
         case "round_entry_refund":         return "arrow.counterclockwise.circle.fill"
         case "withdrawal_request":         return "arrow.up.circle.fill"
         case "withdrawal_rejected":        return "arrow.down.circle.fill"
@@ -390,6 +392,8 @@ struct ActivityRow: View {
         case "top_up", "simulated_top_up": return AppTheme.green
         case "round_win":                  return AppTheme.gold
         case "round_entry_fee":            return AppTheme.secondaryText
+        case "practice_round_win":                  return AppTheme.gold
+        case "practice_round_entry":            return AppTheme.secondaryText
         case "round_entry_refund":         return .orange
         case "withdrawal_request":         return AppTheme.secondaryText
         case "withdrawal_rejected":        return AppTheme.green
@@ -406,6 +410,8 @@ struct ActivityRow: View {
         case "top_up", "simulated_top_up": return AppTheme.green.opacity(0.12)
         case "round_win":                  return AppTheme.gold.opacity(0.12)
         case "round_entry_fee":            return AppTheme.cardHighlight
+        case "practice_round_win":                  return AppTheme.gold.opacity(0.12)
+        case "practice_round_entry":            return AppTheme.cardHighlight
         case "round_entry_refund":         return Color.orange.opacity(0.12)
         case "withdrawal_request":         return AppTheme.cardHighlight
         case "withdrawal_rejected":        return AppTheme.green.opacity(0.12)
