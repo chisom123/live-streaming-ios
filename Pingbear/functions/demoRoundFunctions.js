@@ -99,7 +99,7 @@ const MIN_ENTRY_FEE        = 0.20;
 const MAX_ENTRY_FEE        = 2.00;
 const GEMINI_MODEL         = 'gemini-2.5-flash';
 const GEMINI_ENDPOINT      = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-const GEMINI_MAX_ATTEMPTS  = 3;
+const GEMINI_MAX_ATTEMPTS  = 5;
 const GEMINI_BASE_DELAY_MS = 1000;
 
 let _db;
@@ -152,7 +152,7 @@ async function scorePhotoWithGemini(photoUrl, apiKey) {
         { text: buildScoringPrompt() }
       ]
     }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
   };
 
   const response     = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
@@ -204,7 +204,7 @@ async function scoreWithRetry(photoUrl, apiKey) {
       lastError = err;
       if (err.message === 'Content blocked by safety filter') throw err;
       if (attempt < GEMINI_MAX_ATTEMPTS) {
-        const delay = GEMINI_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        const delay = GEMINI_BASE_DELAY_MS * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 500);
         logger.warn(`[demo] scoreWithRetry attempt ${attempt}/${GEMINI_MAX_ATTEMPTS} failed — retrying in ${delay}ms`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }

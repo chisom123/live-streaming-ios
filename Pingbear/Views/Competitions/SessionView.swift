@@ -293,10 +293,10 @@ struct SessionView: View {
                 } else {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.accent)
                     Text("Join Round")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppTheme.accent)
                 }
             }
             .frame(width: width, height: imageHeight)
@@ -305,7 +305,7 @@ struct SessionView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6]))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(AppTheme.accent.opacity(0.4))
             )
             .contentShape(Rectangle())
         }
