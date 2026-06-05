@@ -286,9 +286,7 @@ struct HomeView: View {
     }
 
     private var callButtonLabel: String {
-        let count = selectedFriendIds.count
-        if count == 1 { return "Call \(selectedFriends.first?.name ?? "")" }
-        return "Call \(count) Friends"
+        return "Call to Play"
     }
 
     private func toggleSelection(_ id: String) {
