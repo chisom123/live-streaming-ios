@@ -31,7 +31,7 @@ struct CustomTabBar: View {
                     action: { selectedTab = 2 }
                 )
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 20)
         }
     }
 }
@@ -44,20 +44,14 @@ struct TabBarButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 5) {
-                Image(icon)
-                    .resizable()
-                    .renderingMode(.template)
-                    .foregroundColor(isSelected ? AppTheme.accent : AppTheme.secondaryText)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 25, height: 25)
-
-                Text(title)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(isSelected ? AppTheme.accent : AppTheme.secondaryText)
-            }
-            .frame(maxWidth: .infinity)
-            .contentShape(Rectangle())
+            Image(icon)
+                .resizable()
+                .renderingMode(.template)
+                .foregroundColor(isSelected ? AppTheme.accent : AppTheme.secondaryText)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
     }
