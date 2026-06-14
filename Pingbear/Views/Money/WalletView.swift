@@ -122,11 +122,15 @@ struct BalanceCard: View {
                 } label: {
                     Text("Cash Out")
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(viewModel.canCashOut ? .white : AppTheme.disabledText)
+                        .foregroundColor(viewModel.canCashOut ? AppTheme.secondaryText : AppTheme.disabledText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(viewModel.canCashOut ? AppTheme.accent : AppTheme.disabledBackground)
+                        .background(viewModel.canCashOut ? AppTheme.cardBackground : AppTheme.disabledBackground)
                         .cornerRadius(200)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 200)
+                                .stroke(viewModel.canCashOut ? AppTheme.secondaryText.opacity(0.3) : Color.clear, lineWidth: 1)
+                        )
                 }
                 .disabled(!viewModel.canCashOut)
             }
