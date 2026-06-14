@@ -7,7 +7,6 @@ import UserNotifications
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
-    private let callKitManager = CallKitManager.shared
     var pushNotificationManager = PushNotificationManager.shared
 
     func application(
@@ -17,14 +16,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         // ── Always first — CallKit needs Firebase immediately ─────
         FirebaseApp.configure()
-        CallKitManager.shared.configure()
-
-        // ── If launched by a VoIP push, skip all heavy setup ─────
-        let launchedForVoIP = launchOptions?[.remoteNotification] != nil
-        guard !launchedForVoIP else {
-            print("AppDelegate: 📞 Launched for VoIP push — skipping heavy setup")
-            return true
-        }
 
         // ── Normal launch setup ───────────────────────────────────
         let POSTHOG_API_KEY = "phc_CJVEsIrEFGVZez7JKBE2g5F0jGUDuNZkRC8e7Nx7VAK"
@@ -56,9 +47,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             name: UIApplication.willEnterForegroundNotification,
             object: nil
         )
-
-        // Audio session is managed entirely by CallKitManager + LiveKit.
-        // Do not configure AVAudioSession here — it fights with CallKit.
 
         return true
     }
@@ -113,8 +101,6 @@ struct PingbearApp: App {
     @State private var pendingLoginDeepLink: URL?
     @State private var selectedTab: Int = 0
 
-    @StateObject private var callManager = VoiceCallManager.shared
-
     let didLogOut = PassthroughSubject<Void, Never>()
 
     var body: some Scene {
@@ -131,7 +117,6 @@ struct PingbearApp: App {
                     .environment(\.didLogOut, didLogOut)
                     .onReceive(didLogOut) { _ in
                         isLoggedIn = false
-                        callManager.leaveCall()
                     }
 
                 } else {

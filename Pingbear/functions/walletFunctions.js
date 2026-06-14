@@ -2,7 +2,6 @@
  * walletFunctions.js
  *
  * EXPORTS — index.js:
- *   exports.creditWelcomeBonus = wallet.creditWelcomeBonus;
  *   exports.deductBalance      = wallet.deductBalance;
  *   exports.creditBalance      = wallet.creditBalance;
  *   exports.adminCreditBalance = wallet.adminCreditBalance;
@@ -12,32 +11,13 @@
  *   exports.createTopUpIntent  = wallet.createTopUpIntent;
  *   exports.confirmTopUpIntent = wallet.confirmTopUpIntent;
  *
- * ─────────────────────────────────────────────────────────────
- * BONUS UNLOCK SYSTEM
- * ─────────────────────────────────────────────────────────────
- *
- * Users receive locked credits (welcome bonus, promo injections)
- * that cannot be withdrawn until they have staked an equivalent
- * amount in rounds.
- *
- * User doc fields:
- *   bonus_credited          : bool   — true once welcome bonus credited
- *   welcome_bonus_unlocked  : bool   — true once staking threshold met
- *   total_locked_credits    : number — total locked amount (welcome + promo)
- *   total_round_staked      : number — cumulative entry fees from completed rounds
- *
- * Unlock fires in startRound (roundFunctions.js) after each round
- * completes — it increments total_round_staked by each participant's
- * entry_fee and flips welcome_bonus_unlocked when
- * total_round_staked >= total_locked_credits.
- *
- * maxWithdrawable = balance - total_locked_credits  (if still locked)
- *                = balance                          (if unlocked)
+ * No welcome bonus. No staking. No locked credits.
+ * Balance is fully spendable and withdrawable at all times.
  */
 
 const { onCall } = require('firebase-functions/v2/https');
-const admin = require('firebase-admin');
-const logger = require('firebase-functions/logger');
+const admin      = require('firebase-admin');
+const logger     = require('firebase-functions/logger');
 
 let _db;
 const getDb = () => {
@@ -45,10 +25,8 @@ const getDb = () => {
   return _db;
 };
 
-const WELCOME_BONUS_AMOUNT = 5.00;
-const MIN_WITHDRAWAL       = 5.00;
-const CURRENCY             = 'USD';
-
+const MIN_WITHDRAWAL = 5.00;
+const CURRENCY       = 'USD';
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — record a wallet transaction
@@ -58,7 +36,7 @@ async function recordTransaction(t, {
   userId, type, amount, reason,
   sessionId, metadata, balanceBefore, balanceAfter
 }) {
-  const db = getDb();
+  const db    = getDb();
   const txRef = db.collection('wallet_transactions').doc();
   t.set(txRef, {
     user_id:        userId,
@@ -72,59 +50,6 @@ async function recordTransaction(t, {
     created_at:     admin.firestore.FieldValue.serverTimestamp()
   });
 }
-
-
-// ─────────────────────────────────────────────────────────────
-// creditWelcomeBonus
-//
-// Called from NameEntryView.swift after username saved.
-// Credits $5 welcome bonus and sets total_locked_credits to 5.00.
-// Idempotent — safe to call multiple times.
-// ─────────────────────────────────────────────────────────────
-
-exports.creditWelcomeBonus = onCall({
-  cors: ['*'],
-  maxInstances: 50
-}, async (request) => {
-  if (!request.auth) throw new Error('User must be authenticated');
-
-  const userId = request.auth.uid;
-  const db = getDb();
-  const userRef = db.collection('users').doc(userId);
-
-  await db.runTransaction(async (t) => {
-    const userDoc = await t.get(userRef);
-
-    if (userDoc.data()?.bonus_credited === true) {
-      logger.info(`creditWelcomeBonus: already credited for ${userId}`);
-      return;
-    }
-
-    const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance = parseFloat((currentBalance + WELCOME_BONUS_AMOUNT).toFixed(2));
-
-    t.set(userRef, {
-      wallet_balance:         admin.firestore.FieldValue.increment(WELCOME_BONUS_AMOUNT),
-      welcome_bonus_unlocked: false,
-      bonus_credited:         true,
-      total_locked_credits:   WELCOME_BONUS_AMOUNT,
-      total_round_staked:     0
-    }, { merge: true });
-
-    await recordTransaction(t, {
-      userId,
-      type:          'credit',
-      amount:        WELCOME_BONUS_AMOUNT,
-      reason:        'welcome_bonus',
-      balanceBefore: currentBalance,
-      balanceAfter:  newBalance
-    });
-  });
-
-  logger.info(`creditWelcomeBonus: $${WELCOME_BONUS_AMOUNT} credited to ${userId}`);
-  return { success: true };
-});
-
 
 // ─────────────────────────────────────────────────────────────
 // deductBalance
@@ -142,11 +67,11 @@ exports.deductBalance = onCall({
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
 
-  const db = getDb();
+  const db      = getDb();
   const userRef = db.collection('users').doc(userId);
 
   const result = await db.runTransaction(async (t) => {
-    const userDoc = await t.get(userRef);
+    const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
 
     if (currentBalance < amount) {
@@ -162,7 +87,6 @@ exports.deductBalance = onCall({
   logger.info(`deductBalance: $${amount} from ${userId}`);
   return result;
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // creditBalance
@@ -180,13 +104,13 @@ exports.creditBalance = onCall({
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
 
-  const db = getDb();
+  const db      = getDb();
   const userRef = db.collection('users').doc(userId);
 
   await db.runTransaction(async (t) => {
-    const userDoc = await t.get(userRef);
+    const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance = parseFloat((currentBalance + amount).toFixed(2));
+    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
@@ -194,7 +118,6 @@ exports.creditBalance = onCall({
   logger.info(`creditBalance: $${amount} to ${userId}`);
   return { success: true };
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // adminCreditBalance
@@ -211,13 +134,13 @@ exports.adminCreditBalance = onCall({
   if (!amount || typeof amount !== 'number' || amount <= 0) throw new Error('Invalid amount');
   if (!reason) throw new Error('reason is required');
 
-  const db = getDb();
+  const db      = getDb();
   const userRef = db.collection('users').doc(userId);
 
   await db.runTransaction(async (t) => {
-    const userDoc = await t.get(userRef);
+    const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance = parseFloat((currentBalance + amount).toFixed(2));
+    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
@@ -226,14 +149,11 @@ exports.adminCreditBalance = onCall({
   return { success: true };
 });
 
-
 // ─────────────────────────────────────────────────────────────
 // requestWithdrawal
 //
-// maxWithdrawable = balance - total_locked_credits (if locked)
-//                = balance                         (if unlocked)
-//
-// Enforced both pre-check and inside the transaction.
+// Simplified — no staking, no locking.
+// maxWithdrawable = full wallet balance.
 // ─────────────────────────────────────────────────────────────
 
 exports.requestWithdrawal = onCall({
@@ -252,65 +172,19 @@ exports.requestWithdrawal = onCall({
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(paypalEmail.trim())) throw new Error('Invalid PayPal email address');
 
-  const db       = getDb();
-  const userRef  = db.collection('users').doc(userId);
-  const userSnap = await userRef.get();
-  const userData = userSnap.data();
-
-  const currentBalance = userData?.wallet_balance         ?? 0;
-  const bonusCredited  = userData?.bonus_credited         === true;
-  const bonusUnlocked  = userData?.welcome_bonus_unlocked === true;
-  const bonusLocked    = bonusCredited && !bonusUnlocked;
-  const totalLocked    = userData?.total_locked_credits   ?? (bonusCredited ? WELCOME_BONUS_AMOUNT : 0);
-  const stakedSoFar    = userData?.total_round_staked     ?? 0;
-
-  const outstanding     = Math.max(0, parseFloat((totalLocked - stakedSoFar).toFixed(2)));
-  const effectiveLocked = Math.min(outstanding, currentBalance);
-  const maxWithdrawable = bonusLocked
-    ? Math.max(0, parseFloat((currentBalance - effectiveLocked).toFixed(2)))
-    : currentBalance;
-
-  if (amount > maxWithdrawable) {
-    if (bonusLocked && maxWithdrawable <= 0) {
-      throw new Error(
-        `You need to stake $${totalLocked.toFixed(2)} in rounds before you can withdraw. ` +
-        `Enter your bonus into rounds to unlock it.`
-      );
-    } else if (bonusLocked) {
-      throw new Error(
-        `You can withdraw up to $${maxWithdrawable.toFixed(2)} right now. ` +
-        `Stake $${totalLocked.toFixed(2)} in rounds to unlock the rest.`
-      );
-    } else {
-      throw new Error(
-        `Insufficient funds. Available: $${currentBalance.toFixed(2)}, Requested: $${amount.toFixed(2)}`
-      );
-    }
-  }
-
+  const db           = getDb();
+  const userRef      = db.collection('users').doc(userId);
   const withdrawalRef = db.collection('withdrawals').doc();
 
   await db.runTransaction(async (t) => {
-    const freshSnap        = await t.get(userRef);
-    const freshData        = freshSnap.data();
-    const freshBalance     = freshData?.wallet_balance         ?? 0;
-    const freshUnlocked    = freshData?.welcome_bonus_unlocked === true;
-    const freshCredited    = freshData?.bonus_credited         === true;
-    const freshLocked      = freshCredited && !freshUnlocked;
-    const freshTotalLocked = freshData?.total_locked_credits   ?? (freshCredited ? WELCOME_BONUS_AMOUNT : 0);
-    const freshStaked      = freshData?.total_round_staked     ?? 0;
-    const freshOutstanding = Math.max(0, parseFloat((freshTotalLocked - freshStaked).toFixed(2)));
-    const freshEffective   = Math.min(freshOutstanding, freshBalance);
+    const userDoc        = await t.get(userRef);
+    const currentBalance = userDoc.data()?.wallet_balance ?? 0;
 
-    const freshMax = freshLocked
-      ? Math.max(0, parseFloat((freshBalance - freshEffective).toFixed(2)))
-      : freshBalance;
-
-    if (amount > freshMax) {
-      throw new Error(`Insufficient withdrawable funds. Available: $${freshMax.toFixed(2)}`);
+    if (amount > currentBalance) {
+      throw new Error(`Insufficient funds. Available: $${currentBalance.toFixed(2)}, Requested: $${amount.toFixed(2)}`);
     }
 
-    const newBalance = parseFloat((freshBalance - amount).toFixed(2));
+    const newBalance = parseFloat((currentBalance - amount).toFixed(2));
 
     t.set(userRef, {
       wallet_balance: admin.firestore.FieldValue.increment(-amount)
@@ -339,7 +213,7 @@ exports.requestWithdrawal = onCall({
         withdrawal_id: withdrawalRef.id,
         paypal_email:  paypalEmail.trim().toLowerCase()
       },
-      balanceBefore: freshBalance,
+      balanceBefore: currentBalance,
       balanceAfter:  newBalance
     });
   });
@@ -347,7 +221,6 @@ exports.requestWithdrawal = onCall({
   logger.info(`requestWithdrawal: $${amount} for ${userId}`);
   return { success: true, withdrawal_id: withdrawalRef.id };
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // approveWithdrawal
@@ -362,7 +235,7 @@ exports.approveWithdrawal = onCall({
   const { withdrawalId } = request.data;
   if (!withdrawalId) throw new Error('withdrawalId is required');
 
-  const db = getDb();
+  const db            = getDb();
   const withdrawalRef = db.collection('withdrawals').doc(withdrawalId);
   const withdrawalDoc = await withdrawalRef.get();
 
@@ -376,8 +249,7 @@ exports.approveWithdrawal = onCall({
     approved_by:  request.auth.uid
   });
 
-  logger.info(`approveWithdrawal: ${withdrawalId} approved by ${request.auth.uid}`);
-
+  logger.info(`approveWithdrawal: ${withdrawalId} approved`);
   return {
     success:      true,
     paypal_email: withdrawal.paypal_email,
@@ -385,7 +257,6 @@ exports.approveWithdrawal = onCall({
     currency:     withdrawal.currency || CURRENCY
   };
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // rejectWithdrawal
@@ -412,10 +283,10 @@ exports.rejectWithdrawal = onCall({
     if (withdrawal.status !== 'pending') throw new Error(`Cannot reject: ${withdrawal.status}`);
 
     const { user_id, amount } = withdrawal;
-    const userRef = db.collection('users').doc(user_id);
-    const userDoc = await t.get(userRef);
+    const userRef        = db.collection('users').doc(user_id);
+    const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance = parseFloat((currentBalance + amount).toFixed(2));
+    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
 
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     t.update(withdrawalRef, {
@@ -438,7 +309,6 @@ exports.rejectWithdrawal = onCall({
 
   return { success: true };
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // createTopUpIntent
@@ -470,10 +340,9 @@ exports.createTopUpIntent = onCall({
     }
   });
 
-  logger.info(`createTopUpIntent: created ${paymentIntent.id} for ${userId}`);
+  logger.info(`createTopUpIntent: ${paymentIntent.id} for ${userId}`);
   return { clientSecret: paymentIntent.client_secret };
 });
-
 
 // ─────────────────────────────────────────────────────────────
 // confirmTopUpIntent
@@ -493,8 +362,7 @@ exports.confirmTopUpIntent = onCall({
   if (!paymentIntentId)   throw new Error('paymentIntentId is required');
   if (!applePayTokenData) throw new Error('applePayTokenData is required');
 
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
+  const stripe      = require('stripe')(process.env.STRIPE_SECRET_KEY);
   const tokenBuffer = Buffer.from(applePayTokenData, 'base64');
   const tokenJson   = JSON.parse(tokenBuffer.toString('utf8'));
 
@@ -503,8 +371,6 @@ exports.confirmTopUpIntent = onCall({
     pk_token_instrument_name: 'Apple Pay',
     pk_token_transaction_id:  transactionId
   });
-
-  logger.info(`confirmTopUpIntent: created token ${token.id} for ${userId}`);
 
   const intent = await stripe.paymentIntents.confirm(paymentIntentId, {
     payment_method_data: {

@@ -13,6 +13,6 @@ struct AppTheme {
     static let accent             = Color(hex: "#FF6B00")
     static let gold               = Color(hex: "#FBBF24")
     static let green              = Color(hex: "#16A34A")
-    static let disabledBackground = Color(hex: "#F0F0F0")
+    static let disabledBackground = Color(hex: "#ebebeb")
     static let disabledText       = Color(hex: "#C7C7C7")
 }

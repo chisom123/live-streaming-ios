@@ -56,26 +56,33 @@ enum UploadError: LocalizedError {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MARK: - RoundUploadManager
+// MARK: - UploadManager
 //
-// Singleton class (not actor — avoids Swift concurrency
-// complications with Firebase's callback-based Storage SDK).
-// Progress closure is dispatched to main queue by the caller.
+// Generic upload manager. The caller constructs the folder path
+// and passes it in — this manager is not coupled to any
+// particular collection or data model.
+//
+// Example usage:
+//   let url = try await UploadManager.shared.upload(
+//     image: image,
+//     folderPath: "competitions/\(competitionId)/\(userId)",
+//     onProgress: { progress in ... }
+//   )
 // ─────────────────────────────────────────────────────────────
 
-final class RoundUploadManager {
-    static let shared = RoundUploadManager()
+final class UploadManager {
+    static let shared = UploadManager()
     private let storage = Storage.storage(url: "gs://pingbear-96b4c-us")
     private init() {}
 
-    /// Upload a round photo and return its download URL.
+    /// Upload an image to the given folder path and return its download URL.
     /// `onProgress` is always called on the main queue.
     func upload(
         image: UIImage,
-        sessionId: String,
+        folderPath: String,
         onProgress: @escaping (Double) -> Void
     ) async throws -> String {
-        guard let userId = Auth.auth().currentUser?.uid else {
+        guard Auth.auth().currentUser != nil else {
             throw UploadError.notAuthenticated
         }
 
@@ -93,7 +100,7 @@ final class RoundUploadManager {
         AppLogger.upload("[Upload] optimized — \(String(format: "%.1f", Double(imageData.count) / 1024))KB")
         DispatchQueue.main.async { onProgress(0.05) }
 
-        let path     = "sessions/\(sessionId)/\(userId)/\(UUID().uuidString).jpg"
+        let path     = "\(folderPath)/\(UUID().uuidString).jpg"
         let ref      = storage.reference().child(path)
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
@@ -139,7 +146,7 @@ final class RoundUploadManager {
                         return
                     }
                     DispatchQueue.main.async { onProgress(1.0) }
-                    AppLogger.upload("[Upload] ✅ done")
+                    AppLogger.upload("[Upload] ✅ done — \(path)")
                     resume(with: .success(urlString))
                 }
             }
@@ -148,7 +155,7 @@ final class RoundUploadManager {
                 guard !timedOut else { return }
                 timeoutWork.cancel()
                 let err = snap.error ?? UploadError.storageFailed(
-                    NSError(domain: "RoundUpload", code: -1, userInfo: nil)
+                    NSError(domain: "UploadManager", code: -1, userInfo: nil)
                 )
                 resume(with: .failure(err))
             }

@@ -218,7 +218,7 @@ struct ProfilePictureView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size * 0.6, height: size * 0.6)
                 .frame(width: size, height: size)
-                .background(Color(hex: "#F5F5F5"))
+                .background(AppTheme.cardHighlight)
                 .clipShape(Circle())
         }
     }

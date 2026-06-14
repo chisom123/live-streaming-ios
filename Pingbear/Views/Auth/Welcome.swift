@@ -35,9 +35,10 @@ struct WelcomeView: View {
             .onAppear { animationController.startAnimations() }
 
             VStack(spacing: 0) {
-                Spacer()
-                Image("Logo-T").resizable().aspectRatio(contentMode: .fit).frame(width: 65, height: 65)
                 
+                Image("Logo-T").resizable().aspectRatio(contentMode: .fit).frame(width: 50, height: 50).cornerRadius(2000).padding(.top)
+                
+                Spacer()
                 Text("Welcome to SocialStar")
                     .font(.system(size: 30, weight: .bold, design: .default))
                     .foregroundColor(AppTheme.primaryText).padding(.vertical, 30)

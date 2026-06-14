@@ -1,20 +1,7 @@
-import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 function App() {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!email) return;
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 1200);
-  };
+  const APP_STORE_URL = 'https://apps.apple.com/app/socialstar-photo-competitions/id6473705189';
 
   return (
     <>
@@ -41,6 +28,7 @@ function App() {
         .nav-cta {
           background: var(--accent); color: white; text-decoration: none;
           padding: 9px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; transition: background 0.2s; border: none; cursor: pointer;
+          display: inline-flex; align-items: center; gap: 6px;
         }
         .nav-cta:hover { background: var(--accent-dk); }
 
@@ -63,37 +51,19 @@ function App() {
           margin: 0 auto 40px; font-weight: 400; animation: fadeUp 0.5s 0.2s ease both;
         }
 
-        .waitlist-form { animation: fadeUp 0.5s 0.3s ease both; max-width: 420px; margin: 0 auto; }
-        .waitlist-row { display: flex; gap: 8px; }
-        .waitlist-input {
-          flex: 1; padding: 14px 18px; border-radius: 100px;
-          border: 1.5px solid var(--divider); background: white;
-          font-size: 15px; font-family: 'DM Sans', sans-serif; color: var(--text);
-          outline: none; transition: border-color 0.2s;
-        }
-        .waitlist-input:focus { border-color: var(--accent); }
-        .waitlist-input::placeholder { color: var(--muted); }
-        .btn-primary {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: var(--accent); color: white; border: none; cursor: pointer;
-          padding: 14px 24px; border-radius: 100px; font-size: 15px; font-weight: 600;
+        .cta-section { animation: fadeUp 0.5s 0.3s ease both; }
+        .app-store-btn {
+          display: inline-flex; align-items: center; gap: 10px;
+          background: var(--accent); color: white; text-decoration: none;
+          padding: 16px 32px; border-radius: 100px; font-size: 17px; font-weight: 600;
           font-family: 'DM Sans', sans-serif; transition: background 0.2s, transform 0.15s;
-          white-space: nowrap;
+          border: none; cursor: pointer;
         }
-        .btn-primary:hover { background: var(--accent-dk); transform: translateY(-1px); }
-        .btn-primary:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
-        .waitlist-note { font-size: 13px; color: var(--muted); margin-top: 12px; }
-
-        .success-state {
-          display: flex; flex-direction: column; align-items: center; gap: 10px;
-          animation: fadeUp 0.4s ease both;
-        }
-        .success-icon {
-          width: 48px; height: 48px; border-radius: 50%; background: var(--green);
-          display: flex; align-items: center; justify-content: center; color: white; font-size: 22px;
-        }
-        .success-title { font-size: 22px; font-weight: 700; color: var(--text); }
-        .success-sub { font-size: 15px; color: var(--muted); }
+        .app-store-btn:hover { background: var(--accent-dk); transform: translateY(-2px); }
+        .app-store-btn svg { width: 24px; height: 24px; }
+        .cta-note { font-size: 14px; color: var(--muted); margin-top: 16px; }
+        .cta-note a { color: var(--accent); text-decoration: none; font-weight: 500; }
+        .cta-note a:hover { text-decoration: underline; }
 
         .mockup-strip { width: 100%; overflow: hidden; padding: 0 24px 80px; }
         .mockup-inner { max-width: 680px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -157,21 +127,16 @@ function App() {
         .final-cta::after { content: ''; position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(255,255,255,0.05); }
         .final-cta h2 { font-size: clamp(28px, 7vw, 46px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; color: white; margin-bottom: 14px; position: relative; z-index: 1; }
         .final-cta p { font-size: 16px; color: rgba(255,255,255,0.75); margin-bottom: 32px; position: relative; z-index: 1; }
-        .final-cta .waitlist-form { position: relative; z-index: 1; }
-        .final-cta .waitlist-input { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.3); color: white; }
-        .final-cta .waitlist-input::placeholder { color: rgba(255,255,255,0.6); }
-        .final-cta .waitlist-input:focus { border-color: white; }
-        .final-cta .btn-primary { background: white; color: var(--accent); }
-        .final-cta .btn-primary:hover { background: rgba(255,255,255,0.92); }
-        .final-cta .waitlist-note { color: rgba(255,255,255,0.55); }
-        .final-cta .success-title { color: white; }
-        .final-cta .success-sub { color: rgba(255,255,255,0.75); }
-        .final-cta .success-icon { background: rgba(255,255,255,0.2); }
+        .final-cta .cta-section { position: relative; z-index: 1; }
+        .final-cta .app-store-btn { background: white; color: var(--accent); }
+        .final-cta .app-store-btn:hover { background: rgba(255,255,255,0.92); }
+        .final-cta .cta-note { color: rgba(255,255,255,0.55); }
+        .final-cta .cta-note a { color: white; }
 
         footer { border-top: 1px solid var(--divider); padding: 28px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
         .footer-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
         .footer-brand span { font-size: 15px; font-weight: 700; color: var(--text); }
-        .footer-links { display: flex; gap: 20px; }
+        .footer-links { display: flex; gap: 20px; align-items: center; }
         .footer-links a { font-size: 13px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
         .footer-links a:hover { color: var(--text); }
         .footer-right { font-size: 12px; color: var(--muted); }
@@ -180,7 +145,6 @@ function App() {
         @media (max-width: 500px) {
           .hero { padding: 52px 20px 56px; }
           .mockup-inner { gap: 8px; }
-          .waitlist-row { flex-direction: column; }
           .how { padding: 56px 20px; }
           .final-cta { margin: 0 12px 60px; padding: 44px 24px; }
           footer { flex-direction: column; align-items: flex-start; }
@@ -189,44 +153,31 @@ function App() {
       `}</style>
 
       <nav>
-        <a href="#" className="nav-brand"><img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '32px', height: '32px'}} /></a>
-        <button className="nav-cta" onClick={() => document.getElementById('waitlist').focus()}>Join waitlist</button>
+        <a href="#" className="nav-brand">
+          <img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '32px', height: '32px'}} />
+          <span>SocialStar</span>
+        </a>
+        <a href={APP_STORE_URL} className="nav-cta" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Download
+        </a>
       </nav>
 
       <section className="hero">
-        <div className="hero-badge"><span className="dot"></span>Coming soon</div>
+        <div className="hero-badge"><span className="dot"></span>Now live on the App Store</div>
         <h1>Photo comps<br />with your <em>crew</em></h1>
         <p>Pick a theme, submit your shot, let AI pick the winner. Bragging rights and real prizes in minutes.</p>
 
-        <div className="waitlist-form">
-          {submitted ? (
-            <div className="success-state">
-              <div className="success-icon">✓</div>
-              <div className="success-title">You're on the list!</div>
-              <div className="success-sub">We'll let you know the moment SocialStar launches.</div>
-            </div>
-          ) : (
-            <>
-              <form className="waitlist-row" onSubmit={handleSubmit}>
-                <input
-                  id="waitlist"
-                  className="waitlist-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                />
-                <button className="btn-primary" type="submit" disabled={loading}>
-                  {loading ? 'Joining…' : 'Join waitlist'}
-                </button>
-              </form>
-              <div className="waitlist-note">No spam. Just a heads-up when we launch.</div>
-            </>
-          )}
+        <div className="cta-section">
+          <a href={APP_STORE_URL} className="app-store-btn" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on the App Store
+          </a>
+          <div className="cta-note">Free to download. Available now.</div>
         </div>
       </section>
 
+      {/* Keep the mockup strip as-is - it shows what the app does */}
       <div className="mockup-strip">
         <div className="mockup-inner">
           <div className="mockup-card">
@@ -350,40 +301,25 @@ function App() {
       </section>
 
       <div className="final-cta">
-        <h2>Be first to play.</h2>
-        <p>Drop your email and we'll ping you the moment we launch.</p>
-        <div className="waitlist-form">
-          {submitted ? (
-            <div className="success-state">
-              <div className="success-icon">✓</div>
-              <div className="success-title">You're on the list!</div>
-              <div className="success-sub">We'll let you know the moment SocialStar launches.</div>
-            </div>
-          ) : (
-            <>
-              <form className="waitlist-row" onSubmit={handleSubmit}>
-                <input
-                  className="waitlist-input"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                />
-                <button className="btn-primary" type="submit" disabled={loading}>
-                  {loading ? 'Joining…' : 'Notify me'}
-                </button>
-              </form>
-              <div className="waitlist-note">No spam. Just a heads-up when we launch.</div>
-            </>
-          )}
+        <h2>Ready to play?</h2>
+        <p>Download SocialStar now and start competing with your crew.</p>
+        <div className="cta-section">
+          <a href={APP_STORE_URL} className="app-store-btn" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+            Download on the App Store
+          </a>
+          <div className="cta-note">Free to download. Available now.</div>
         </div>
       </div>
 
       <footer>
-        <a href="#" className="footer-brand"><img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '24px', height: '24px'}} /></a>
+        <a href="#" className="footer-brand">
+          <img src="https://firebasestorage.googleapis.com/v0/b/pingbear-96b4c-us/o/static%2Fstar-2.png?alt=media&token=5307cd18-57af-4eda-85ab-b48e3efb954a" alt="SocialStar" style={{width: '24px', height: '24px'}} />
+          <span>SocialStar</span>
+        </a>
         <div className="footer-links">
           <a href="mailto:info@socialstarapp.com">Contact</a>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer">App Store</a>
         </div>
         <div className="footer-right">© 2026 SocialStar</div>
       </footer>

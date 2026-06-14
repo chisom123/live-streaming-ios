@@ -2,12 +2,7 @@ import SwiftUI
 
 struct CashOutSheet: View {
 
-    let balance:            Double
-    let maxWithdrawable:    Double
-    let bonusCredited:      Bool
-    let bonusUnlocked:      Bool
-    let totalLockedCredits: Double
-    let stakingRemaining:   Double
+    let balance:   Double
     let onCashOut: (String, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -16,11 +11,9 @@ struct CashOutSheet: View {
     @State private var isSubmitting = false
 
     private var amount: Double { Double(amountString) ?? 0 }
-    private var bonusLocked: Bool { bonusCredited && !bonusUnlocked }
-    private var lockedAmount: Double { bonusLocked ? max(0, balance - maxWithdrawable) : 0 }
 
     private var amountIsValid: Bool {
-        amount >= 5.0 && amount <= maxWithdrawable
+        amount >= 5.0 && amount <= balance
     }
 
     private var emailIsValid: Bool {
@@ -37,6 +30,7 @@ struct CashOutSheet: View {
             AppTheme.pageBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
+
                 // ── Header ────────────────────────────────────
                 HStack {
                     Button(action: { dismiss() }) {
@@ -46,23 +40,13 @@ struct CashOutSheet: View {
                             .frame(width: 27, height: 27)
                             .foregroundColor(AppTheme.iconColor)
                     }
-
                     Spacer()
-
                     Text("Cash Out")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
-                        .onAppear {
-                            Analytics.shared.trackScreen(name: "cash_out_sheet")
-                        }
-
+                        .onAppear { Analytics.shared.trackScreen(name: "cash_out_sheet") }
                     Spacer()
-
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 27, height: 27)
-                        .foregroundColor(.clear)
+                    Color.clear.frame(width: 27, height: 27)
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 20)
@@ -72,40 +56,18 @@ struct CashOutSheet: View {
                 ScrollView {
                     VStack(spacing: 24) {
 
-                        // ── Balance display ───────────────────
+                        // Balance display
                         VStack(spacing: 7) {
                             Text("Available to Withdraw")
                                 .font(.system(size: 15))
                                 .foregroundColor(AppTheme.secondaryText)
-                            Text("$\(String(format: "%.2f", maxWithdrawable))")
+                            Text("$\(String(format: "%.2f", balance))")
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(AppTheme.primaryText)
                         }
                         .padding(.top, 8)
 
-                        // ── Locked bonus notice ───────────────
-                        if bonusLocked && lockedAmount > 0 {
-                            HStack(spacing: 10) {
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 15))
-                                    .foregroundColor(AppTheme.green)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("$\(String(format: "%.2f", lockedAmount)) locked")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundColor(AppTheme.primaryText)
-                                    Text("Enter $\(String(format: "%.2f", stakingRemaining)) more into competition rounds to unlock your bonus")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(AppTheme.secondaryText)
-                                }
-                                Spacer()
-                            }
-                            .padding(12)
-                            .background(AppTheme.green.opacity(0.08))
-                            .cornerRadius(10)
-                            .padding(.horizontal, 20)
-                        }
-
-                        // ── Amount input ──────────────────────
+                        // Amount input
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Amount")
                                 .font(.system(size: 14, weight: .semibold))
@@ -121,12 +83,12 @@ struct CashOutSheet: View {
                                     .textFieldStyle(.plain)
                                     .keyboardType(.decimalPad)
                                     .foregroundColor(AppTheme.primaryText)
-                                    .font(.system(size: 16, weight: .bold, design: .default))
+                                    .font(.system(size: 16, weight: .bold))
                                     .tint(AppTheme.accent)
                                     .padding(.leading, 4)
 
                                 Button("Max") {
-                                    amountString = String(format: "%.2f", maxWithdrawable)
+                                    amountString = String(format: "%.2f", balance)
                                 }
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(AppTheme.accent)
@@ -134,24 +96,19 @@ struct CashOutSheet: View {
                             }
                             .padding()
                             .frame(height: 60)
-                            .background(
-                                AppTheme.cardBackground
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                            )
+                            .background(AppTheme.cardBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
 
                             if !amountString.isEmpty && !amountIsValid {
-                                Text(
-                                    amount < 5.0
-                                        ? "Minimum withdrawal is $5.00"
-                                        : "Amount exceeds your available balance"
-                                )
-                                .font(.system(size: 15, weight: .bold))
-                                .foregroundColor(.red.opacity(0.8))
+                                Text(amount < 5.0
+                                     ? "Minimum withdrawal is $5.00"
+                                     : "Amount exceeds your available balance")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.red.opacity(0.8))
                             }
                         }
                         .padding(.horizontal, 20)
 
-                        // ── PayPal email ──────────────────────
+                        // PayPal email
                         VStack(alignment: .leading, spacing: 8) {
                             Text("PayPal Email")
                                 .font(.system(size: 14, weight: .semibold))
@@ -162,14 +119,11 @@ struct CashOutSheet: View {
                                 .autocapitalization(.none)
                                 .keyboardType(.emailAddress)
                                 .foregroundColor(AppTheme.primaryText)
-                                .font(.system(size: 16, weight: .bold, design: .default))
+                                .font(.system(size: 16, weight: .bold))
                                 .tint(AppTheme.accent)
                                 .padding()
                                 .frame(height: 60)
-                                .background(
-                                    AppTheme.cardBackground
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                )
+                                .background(AppTheme.cardBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
 
                             Link(destination: URL(string: "https://www.paypal.com/signup")!) {
                                 HStack(spacing: 4) {
@@ -185,7 +139,7 @@ struct CashOutSheet: View {
                         }
                         .padding(.horizontal, 20)
 
-                        // ── Processing note ───────────────────
+                        // Processing note
                         HStack(spacing: 8) {
                             Image(systemName: "clock")
                                 .font(.system(size: 13))
@@ -195,21 +149,12 @@ struct CashOutSheet: View {
                                 .foregroundColor(AppTheme.secondaryText)
                         }
                         .padding(.horizontal, 20)
-
-                        // ── Bottom hint when fully locked ─────
-                        if maxWithdrawable < 5.0 && bonusLocked {
-                            Text("Stake $\(String(format: "%.2f", stakingRemaining)) in rounds to unlock your bonus and start withdrawing.")
-                                .font(.system(size: 13))
-                                .foregroundColor(AppTheme.secondaryText)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 20)
-                        }
                     }
                     .padding(.top, 24)
                     .padding(.bottom, 20)
                 }
 
-                // ── Request Withdrawal button ─────────────────
+                // ── Submit button ─────────────────────────────
                 Button {
                     isSubmitting = true
                     onCashOut(
@@ -225,7 +170,7 @@ struct CashOutSheet: View {
                         }
                     }
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .font(.system(size: 18, weight: .bold, design: .default))
+                    .font(.system(size: 18, weight: .bold))
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                     .background(canSubmit ? AppTheme.green : AppTheme.disabledBackground)
                     .foregroundColor(canSubmit ? .white : AppTheme.disabledText)
