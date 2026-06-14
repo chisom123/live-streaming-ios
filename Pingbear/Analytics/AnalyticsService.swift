@@ -49,6 +49,20 @@ struct AnalyticsEvent {
     static let requestExpired           = "request_expired"
     static let requestCancelled         = "request_cancelled"
 
+    // MARK: Top up
+    static let topUpOpened              = "top_up_opened"
+    static let topUpCompleted           = "top_up_completed"
+    static let topUpFailed              = "top_up_failed"
+    static let topUpCancelled           = "top_up_cancelled"
+
+    // MARK: Content viewing
+    static let photoViewed              = "photo_viewed"
+    static let offerPhotoViewed         = "offer_photo_viewed"
+    static let ratingSkipped            = "rating_skipped"
+
+    // MARK: Inbox
+    static let transactionDismissed     = "transaction_dismissed"
+
     // MARK: Transactions — offers
     static let offerSent                = "offer_sent"
     static let offerAccepted            = "offer_accepted"

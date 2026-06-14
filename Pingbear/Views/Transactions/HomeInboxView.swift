@@ -307,7 +307,7 @@ struct HomeInboxView: View {
                 "transactionId": enriched.id
             ])
             Analytics.shared.track(
-                event: "transaction_dismissed",
+                event: AnalyticsEvent.transactionDismissed,
                 properties: [AnalyticsProperty.transactionId: enriched.id]
             )
         } catch {
