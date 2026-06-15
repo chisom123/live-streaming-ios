@@ -3,18 +3,6 @@ import FirebaseAuth
 import FirebaseFunctions
 import UserNotifications
 
-// ─────────────────────────────────────────────────────────────
-// MARK: - HomeInboxView
-//
-// Inbox model — transactions stay until user dismisses them
-// Three sections:
-//   Your Turn  — needs action from current user (highlighted)
-//   In Progress — waiting on someone else (normal)
-//   Recent     — completed/declined/cancelled (dimmed)
-//
-// Swipe to dismiss removes from inbox (not from history).
-// ─────────────────────────────────────────────────────────────
-
 struct HomeInboxView: View {
 
     @StateObject private var vm = InboxViewModel()
@@ -24,8 +12,6 @@ struct HomeInboxView: View {
 
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let functions     = Functions.functions()
-
-    // ── Sections ──────────────────────────────────────────────
 
     private var yourTurn: [EnrichedContentTransaction] {
         (vm.incoming + vm.outgoing)
@@ -45,39 +31,23 @@ struct HomeInboxView: View {
             .sorted { $0.transaction.createdAt > $1.transaction.createdAt }
     }
 
-    // ── Section logic ─────────────────────────────────────────
-
     private func needsAction(_ e: EnrichedContentTransaction) -> Bool {
-        let tx           = e.transaction
-        let iAmResponder = tx.toUserId == currentUserId
-        let isCreator    = tx.isCreator(currentUserId: currentUserId)
-        let iSentThis    = tx.fromUserId == currentUserId
-
-        switch tx.status {
-        case .pendingAcceptance: return iAmResponder
-        case .accepted:          return isCreator && tx.type == .request
-        case .fulfilled:         return iSentThis && tx.type == .request
-        default:                 return false
-        }
+        let tx = e.transaction
+        return tx.status == .pendingAcceptance && tx.toUserId == currentUserId
     }
 
     private func isInProgress(_ e: EnrichedContentTransaction) -> Bool {
-        let tx        = e.transaction
-        let iSentThis = tx.fromUserId == currentUserId
-        let isCreator = tx.isCreator(currentUserId: currentUserId)
-
+        let tx = e.transaction
         switch tx.status {
         case .pendingSignup:     return true
-        case .pendingAcceptance: return !needsAction(e)
-        case .accepted:          return iSentThis || !isCreator
-        case .fulfilled:         return isCreator && tx.type == .request
+        case .pendingAcceptance: return tx.fromUserId == currentUserId
         default:                 return false
         }
     }
 
     private func isRecent(_ e: EnrichedContentTransaction) -> Bool {
         switch e.transaction.status {
-        case .completed, .declined, .cancelled: return true
+        case .completed, .declined: return true
         default: return false
         }
     }
@@ -98,8 +68,6 @@ struct HomeInboxView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 24) {
-
-                            // ── Your Turn ─────────────────────
                             if !yourTurn.isEmpty {
                                 sectionHeader("Your Turn", count: yourTurn.count, color: AppTheme.accent)
                                 VStack(spacing: 10) {
@@ -111,7 +79,6 @@ struct HomeInboxView: View {
                                 .padding(.horizontal, 20)
                             }
 
-                            // ── In Progress ───────────────────
                             if !inProgress.isEmpty {
                                 sectionHeader("In Progress", count: nil, color: AppTheme.secondaryText)
                                 VStack(spacing: 10) {
@@ -123,7 +90,6 @@ struct HomeInboxView: View {
                                 .padding(.horizontal, 20)
                             }
 
-                            // ── Recent ────────────────────────
                             if !recent.isEmpty {
                                 sectionHeader("Recent", count: nil, color: AppTheme.secondaryText)
                                 VStack(spacing: 10) {
@@ -147,7 +113,7 @@ struct HomeInboxView: View {
                 HStack {
                     Spacer()
                     Button {
-                        Analytics.shared.trackTap(elementId: "new_transaction_fab", screenName: "home_inbox")
+                        Analytics.shared.trackTap(elementId: "new_offer_fab", screenName: "home_inbox")
                         showingNewTransaction = true
                     } label: {
                         Image(systemName: "plus")
@@ -162,18 +128,11 @@ struct HomeInboxView: View {
                 }
             }
 
-            // Notification prompt
             if showingNotificationPrompt {
                 NotificationPermissionPrompt(
-                    onAllow: {
-                        requestNotifications()
-                        showingNotificationPrompt = false
-                    },
+                    onAllow: { requestNotifications(); showingNotificationPrompt = false },
                     onDeny: {
-                        Analytics.shared.track(
-                            event: AnalyticsEvent.notificationPermissionDenied,
-                            properties: ["screen": "home_inbox"]
-                        )
+                        Analytics.shared.track(event: AnalyticsEvent.notificationPermissionDenied, properties: ["screen": "home_inbox"])
                         showingNotificationPrompt = false
                     }
                 )
@@ -190,10 +149,7 @@ struct HomeInboxView: View {
             NewTransactionView(onDismiss: { showingNewTransaction = false })
         }
         .sheet(item: $selectedTransaction) { enriched in
-            TransactionDetailView(
-                enriched: enriched,
-                onDismiss: { selectedTransaction = nil }
-            )
+            TransactionDetailView(enriched: enriched, onDismiss: { selectedTransaction = nil })
         }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
@@ -226,17 +182,12 @@ struct HomeInboxView: View {
         .padding(.vertical, 14)
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Section header
-    // ─────────────────────────────────────────────────────────
-
     private func sectionHeader(_ title: String, count: Int?, color: Color) -> some View {
         HStack(spacing: 8) {
             Text(title)
                 .font(.system(size: 13, weight: .bold))
                 .foregroundColor(color)
                 .textCase(.uppercase)
-
             if let count {
                 Text("\(count)")
                     .font(.system(size: 11, weight: .black))
@@ -245,7 +196,6 @@ struct HomeInboxView: View {
                     .background(AppTheme.accent)
                     .clipShape(Circle())
             }
-
             Spacer()
         }
         .padding(.horizontal, 20)
@@ -261,10 +211,7 @@ struct HomeInboxView: View {
         Button {
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
-                properties: [
-                    AnalyticsProperty.transactionId: enriched.id,
-                    AnalyticsProperty.transactionType: enriched.transaction.type.rawValue
-                ]
+                properties: [AnalyticsProperty.transactionId: enriched.id]
             )
             selectedTransaction = enriched
         } label: {
@@ -273,13 +220,8 @@ struct HomeInboxView: View {
         .buttonStyle(.plain)
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Dismiss button
-    // ─────────────────────────────────────────────────────────
-
     @ViewBuilder
     private func contextMenuItems(_ enriched: EnrichedContentTransaction) -> some View {
-        // Only show dismiss on completed/declined/cancelled — active items shouldn't be easily dismissed
         if isRecent(enriched) {
             Button(role: .destructive) {
                 Task { await dismiss(enriched) }
@@ -287,48 +229,32 @@ struct HomeInboxView: View {
                 Label("Remove from Inbox", systemImage: "xmark")
             }
         }
-
-        Button {
-            selectedTransaction = enriched
-        } label: {
+        Button { selectedTransaction = enriched } label: {
             Label("View Details", systemImage: "eye")
         }
     }
 
     private func dismiss(_ enriched: EnrichedContentTransaction) async {
         do {
-            try await functions.httpsCallable("dismissTransaction").call([
-                "transactionId": enriched.id
-            ])
-            Analytics.shared.track(
-                event: AnalyticsEvent.transactionDismissed,
-                properties: [AnalyticsProperty.transactionId: enriched.id]
-            )
+            try await functions.httpsCallable("dismissTransaction").call(["transactionId": enriched.id])
+            Analytics.shared.track(event: AnalyticsEvent.transactionDismissed, properties: [AnalyticsProperty.transactionId: enriched.id])
         } catch {
             vm.errorMessage = error.localizedDescription
         }
     }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Empty state
-    // ─────────────────────────────────────────────────────────
 
     private var emptyState: some View {
         VStack(spacing: 0) {
             Spacer()
             VStack(spacing: 16) {
                 ZStack {
-                    Circle()
-                        .fill(AppTheme.accent.opacity(0.1))
-                        .frame(width: 80, height: 80)
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 32))
-                        .foregroundColor(AppTheme.accent)
+                    Circle().fill(AppTheme.accent.opacity(0.1)).frame(width: 80, height: 80)
+                    Image(systemName: "gift").font(.system(size: 32)).foregroundColor(AppTheme.accent)
                 }
                 Text("Nothing here yet")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                Text("Tap + to send a request or offer to a friend")
+                Text("Tap + to send a mystery photo to a friend")
                     .font(.system(size: 15))
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -338,17 +264,11 @@ struct HomeInboxView: View {
         }
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Notifications
-    // ─────────────────────────────────────────────────────────
-
     private func checkNotificationStatus() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
                 if settings.authorizationStatus == .notDetermined {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showingNotificationPrompt = true
-                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showingNotificationPrompt = true }
                 }
             }
         }
@@ -359,10 +279,7 @@ struct HomeInboxView: View {
             DispatchQueue.main.async {
                 if granted {
                     UIApplication.shared.registerForRemoteNotifications()
-                    Analytics.shared.track(
-                        event: AnalyticsEvent.notificationPermissionGranted,
-                        properties: ["screen": "home_inbox"]
-                    )
+                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionGranted, properties: ["screen": "home_inbox"])
                 }
             }
         }
@@ -380,31 +297,22 @@ struct InboxCard: View {
     let style:         HomeInboxView.CardStyle
 
     private var tx: ContentTransaction { enriched.transaction }
-    private var iAmResponder: Bool { tx.toUserId == currentUserId }
-    private var isCreator:    Bool { tx.isCreator(currentUserId: currentUserId) }
-    private var iSentThis:    Bool { tx.fromUserId == currentUserId }
-
-    private var isDimmed: Bool { style == .dimmed }
+    private var iSentThis: Bool { tx.fromUserId == currentUserId }
+    private var isDimmed:  Bool { style == .dimmed }
 
     var body: some View {
         HStack(spacing: 14) {
 
-            // Avatar
-            ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
-                .opacity(isDimmed ? 0.5 : 1)
+            // Avatar — blur hint for payer so they can't see the photo
+            ZStack {
+                ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
+                    .opacity(isDimmed ? 0.5 : 1)
+            }
 
             VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
-                    Text(enriched.otherProfile?.name ?? "Someone")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
-                    typeChip
-                }
-
-                Text(tx.description)
-                    .font(.system(size: 13))
-                    .foregroundColor(AppTheme.secondaryText)
-                    .lineLimit(1)
+                Text(enriched.otherProfile?.name ?? "Someone")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
 
                 Text(statusLabel)
                     .font(.system(size: 12, weight: .semibold))
@@ -435,28 +343,9 @@ struct InboxCard: View {
         .opacity(isDimmed ? 0.7 : 1)
     }
 
-    // ── Card background ───────────────────────────────────────
-
     private var cardBackground: Color {
-        switch style {
-        case .urgent:  return AppTheme.accent.opacity(0.04)
-        case .normal:  return AppTheme.cardBackground
-        case .dimmed:  return AppTheme.cardBackground
-        }
+        style == .urgent ? AppTheme.accent.opacity(0.04) : AppTheme.cardBackground
     }
-
-    // ── Type chip ─────────────────────────────────────────────
-
-    private var typeChip: some View {
-        Text(tx.type == .request ? "📸" : "🎁")
-            .font(.system(size: 13))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(AppTheme.cardHighlight)
-            .cornerRadius(6)
-    }
-
-    // ── Direction badge ───────────────────────────────────────
 
     private var directionBadge: some View {
         HStack(spacing: 3) {
@@ -472,35 +361,20 @@ struct InboxCard: View {
         .cornerRadius(200)
     }
 
-    // ── Status label ──────────────────────────────────────────
-
     private var statusLabel: String {
         switch tx.status {
-        case .pendingSignup:
-            return "Waiting for them to join"
-        case .pendingAcceptance:
-            return iAmResponder ? "Tap to respond" : "Waiting for response"
-        case .accepted:
-            return isCreator ? "Tap to send your photo 📸" : "They're working on it..."
-        case .fulfilled:
-            return iSentThis ? "Tap to see your photo 👀" : "Photo sent — you've been paid 💰"
+        case .pendingSignup:    return "Waiting for them to join"
+        case .pendingAcceptance: return iSentThis ? "Waiting for response" : "Tap to unlock 🎁"
         case .completed:
             if let rating = tx.rating { return "Completed · \(rating)⭐" }
             return "Completed ✓"
         case .declined:
             return iSentThis ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
-        case .cancelled:
-            return iSentThis ? "You cancelled" : "\(enriched.otherProfile?.name ?? "They") cancelled"
         }
     }
 
     private var statusLabelColor: Color {
-        switch tx.status {
-        case .pendingAcceptance: return style == .urgent ? AppTheme.accent : AppTheme.secondaryText
-        case .accepted:          return style == .urgent ? AppTheme.accent : AppTheme.secondaryText
-        case .fulfilled:         return style == .urgent ? AppTheme.green : AppTheme.secondaryText
-        default:                 return AppTheme.secondaryText
-        }
+        tx.status == .pendingAcceptance && style == .urgent ? AppTheme.accent : AppTheme.secondaryText
     }
 }
 
@@ -516,27 +390,20 @@ struct NotificationPermissionPrompt: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.5).ignoresSafeArea()
-
             VStack(spacing: 24) {
                 ZStack {
-                    Circle()
-                        .fill(AppTheme.accent.opacity(0.15))
-                        .frame(width: 80, height: 80)
-                    Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 36))
-                        .foregroundColor(AppTheme.accent)
+                    Circle().fill(AppTheme.accent.opacity(0.15)).frame(width: 80, height: 80)
+                    Image(systemName: "bell.badge.fill").font(.system(size: 36)).foregroundColor(AppTheme.accent)
                 }
-
                 VStack(spacing: 8) {
                     Text("Don't miss a thing")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Get notified when friends send you requests, offers, and when your content gets unlocked")
+                    Text("Get notified when friends send you offers and when someone unlocks your content")
                         .font(.system(size: 14))
                         .foregroundColor(AppTheme.secondaryText)
                         .multilineTextAlignment(.center)
                 }
-
                 VStack(spacing: 10) {
                     Button(action: onAllow) {
                         Text("Allow Notifications")
@@ -548,9 +415,7 @@ struct NotificationPermissionPrompt: View {
                             .cornerRadius(200)
                     }
                     Button(action: onDeny) {
-                        Text("Not now")
-                            .font(.system(size: 15))
-                            .foregroundColor(AppTheme.secondaryText)
+                        Text("Not now").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
                     }
                 }
             }
@@ -561,10 +426,6 @@ struct NotificationPermissionPrompt: View {
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - Date extension
-// ─────────────────────────────────────────────────────────────
 
 extension Date {
     var timeAgoShort: String {

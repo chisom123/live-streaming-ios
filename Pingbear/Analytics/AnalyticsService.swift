@@ -41,13 +41,17 @@ struct AnalyticsEvent {
     static let inviteGroupResolved      = "invite_group_resolved"
     static let usernameSearchAttempted  = "username_search_attempted"
 
-    // MARK: Transactions — requests
-    static let requestSent              = "request_sent"
-    static let requestAccepted          = "request_accepted"
-    static let requestDeclined          = "request_declined"
-    static let requestFulfilled         = "request_fulfilled"
-    static let requestExpired           = "request_expired"
-    static let requestCancelled         = "request_cancelled"
+    // MARK: Transactions — offers
+    static let offerSent                = "offer_sent"
+    static let offerAccepted            = "offer_accepted"
+    static let offerDeclined            = "offer_declined"
+    static let offerExpired             = "offer_expired"
+
+    // MARK: Transactions — shared
+    static let contentUnlocked          = "content_unlocked"
+    static let contentRated             = "content_rated"
+    static let transactionViewed        = "transaction_viewed"
+    static let transactionDismissed     = "transaction_dismissed"
 
     // MARK: Top up
     static let topUpOpened              = "top_up_opened"
@@ -59,20 +63,6 @@ struct AnalyticsEvent {
     static let photoViewed              = "photo_viewed"
     static let offerPhotoViewed         = "offer_photo_viewed"
     static let ratingSkipped            = "rating_skipped"
-
-    // MARK: Inbox
-    static let transactionDismissed     = "transaction_dismissed"
-
-    // MARK: Transactions — offers
-    static let offerSent                = "offer_sent"
-    static let offerAccepted            = "offer_accepted"
-    static let offerDeclined            = "offer_declined"
-    static let offerExpired             = "offer_expired"
-
-    // MARK: Transactions — shared
-    static let contentUnlocked          = "content_unlocked"
-    static let contentRated             = "content_rated"
-    static let transactionViewed        = "transaction_viewed"
 
     // MARK: Wallet
     static let walletTopUpOpened        = "wallet_top_up_opened"
@@ -98,10 +88,9 @@ struct AnalyticsProperty {
     static let screenName               = "screen_name"
     static let elementId                = "element_id"
     static let transactionId            = "transaction_id"
-    static let transactionType          = "transaction_type"   // "request" | "offer"
     static let amount                   = "amount"
     static let recipientCount           = "recipient_count"
-    static let method                   = "method"             // "contacts" | "username"
+    static let method                   = "method"
     static let username                 = "username"
     static let rating                   = "rating"
     static let errorMessage             = "error_message"
@@ -170,28 +159,10 @@ class Analytics {
         track(event: AnalyticsEvent.errorOccurred, properties: props)
     }
 
-    // MARK: - Transactions
-
-    func trackRequest(action: String, transactionId: String? = nil, properties: [String: Any]? = nil) {
-        var props = properties ?? [:]
-        props[AnalyticsProperty.transactionType] = "request"
-        if let transactionId { props[AnalyticsProperty.transactionId] = transactionId }
-        let event: String
-        switch action {
-        case "sent":      event = AnalyticsEvent.requestSent
-        case "accepted":  event = AnalyticsEvent.requestAccepted
-        case "declined":  event = AnalyticsEvent.requestDeclined
-        case "fulfilled": event = AnalyticsEvent.requestFulfilled
-        case "expired":   event = AnalyticsEvent.requestExpired
-        case "cancelled": event = AnalyticsEvent.requestCancelled
-        default:          event = action
-        }
-        track(event: event, properties: props)
-    }
+    // MARK: - Offers
 
     func trackOffer(action: String, transactionId: String? = nil, properties: [String: Any]? = nil) {
         var props = properties ?? [:]
-        props[AnalyticsProperty.transactionType] = "offer"
         if let transactionId { props[AnalyticsProperty.transactionId] = transactionId }
         let event: String
         switch action {

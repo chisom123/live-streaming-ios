@@ -8,7 +8,7 @@ import FirebaseFirestore
 // Inbox behaves like an email inbox:
 // - Transactions stay until the user explicitly dismisses them
 // - Active items show highlighted (needs action / in progress)
-// - Completed/declined/cancelled show dimmed (recent)
+// - Completed/declined show dimmed (recent)
 // - Dismissed items are hidden (dismissed_by contains currentUserId)
 // ─────────────────────────────────────────────────────────────
 
@@ -27,21 +27,15 @@ final class InboxViewModel: ObservableObject {
 
     private let incomingStatuses: [String] = [
         TransactionStatus.pendingAcceptance.rawValue,
-        TransactionStatus.accepted.rawValue,
-        TransactionStatus.fulfilled.rawValue,
         TransactionStatus.completed.rawValue,
-        TransactionStatus.declined.rawValue,
-        TransactionStatus.cancelled.rawValue
+        TransactionStatus.declined.rawValue
     ]
 
     private let outgoingStatuses: [String] = [
         TransactionStatus.pendingSignup.rawValue,
         TransactionStatus.pendingAcceptance.rawValue,
-        TransactionStatus.accepted.rawValue,
-        TransactionStatus.fulfilled.rawValue,
         TransactionStatus.completed.rawValue,
-        TransactionStatus.declined.rawValue,
-        TransactionStatus.cancelled.rawValue
+        TransactionStatus.declined.rawValue
     ]
 
     // ─────────────────────────────────────────────────────────
@@ -105,14 +99,6 @@ final class InboxViewModel: ObservableObject {
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Enrichment
-    //
-    // For pending_signup transactions, toUserId is nil so
-    // otherUserId() returns nil. In that case we build a
-    // placeholder UserProfile from pendingName (the contact name
-    // stored at send time). Once the recipient signs up,
-    // resolveInviteTransaction sets toUserId → the listener fires
-    // → otherUserId() returns a real ID → we fetch their actual
-    // profile and the name updates automatically.
     // ─────────────────────────────────────────────────────────
 
     private func enrich(

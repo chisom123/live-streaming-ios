@@ -2,48 +2,38 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
-import PhotosUI
 import MessageUI
 import Contacts
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - NewTransactionView
-// 4-step wizard: Type → Details → Friends → Price
+// 3-step wizard: Photo → Friends → Price
 // ─────────────────────────────────────────────────────────────
 
 struct NewTransactionView: View {
 
     let onDismiss: () -> Void
 
-    @State private var step:                 Int               = 1
-    @State private var selectedType:         TransactionType   = .request
-    @State private var description:          String            = ""
-    @State private var offerImage:           UIImage?          = nil
-    @State private var selectedItem:         PhotosPickerItem? = nil
-    @State private var price:                String            = ""
-    @State private var selectedFriendIds:    Set<String>       = []
-    @State private var selectedOnAppIds:     Set<String>       = []
-    @State private var selectedOffAppHashes: Set<String>       = []
-    @State private var isSending:            Bool              = false
-    @State private var errorMessage:         String?           = nil
-    @State private var showingComposer:      Bool              = false
-    @State private var offAppNumbers:        [String]          = []
-    @State private var offAppMessage:        String            = ""
+    @State private var step:                 Int         = 1
+    @State private var capturedImage:        UIImage?    = nil
+    @State private var showingCamera:        Bool        = false
+    @State private var price:                String      = ""
+    @State private var selectedFriendIds:    Set<String> = []
+    @State private var selectedOnAppIds:     Set<String> = []
+    @State private var selectedOffAppHashes: Set<String> = []
+    @State private var isSending:            Bool        = false
+    @State private var errorMessage:         String?     = nil
+    @State private var showingComposer:      Bool        = false
+    @State private var offAppNumbers:        [String]    = []
+    @State private var offAppMessage:        String      = ""
 
-    // Friends search
-    @State private var friendsSearchText: String              = ""
-
-    // Wallet balance (live listener)
-    @State private var walletBalance:   Double                = 0.0
-    @State private var showWalletSheet: Bool                  = false
-    @State private var balanceListener: ListenerRegistration? = nil
+    @State private var friendsSearchText: String = ""
 
     @StateObject private var contactVM = ContactViewModel()
 
     private let presetPrices  = ["0.50", "1.00", "2.00", "5.00", "10.00"]
     private let functions     = Functions.functions()
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
-    private let db            = Firestore.firestore()
 
     private var totalSelected: Int {
         selectedFriendIds.count + selectedOnAppIds.count + selectedOffAppHashes.count
@@ -52,23 +42,10 @@ struct NewTransactionView: View {
     private var priceDouble: Double { Double(price) ?? 0 }
     private var priceValid:  Bool   { priceDouble >= 0.50 && priceDouble <= 20.00 }
 
-    private var totalEscrow: Double { priceDouble * Double(totalSelected) }
-
-    private var hasSufficientBalance: Bool {
-        selectedType == .offer || walletBalance >= totalEscrow
-    }
-
-    // Step validity gates
-    private var step2Valid: Bool {
-        let descOk = !description.trimmingCharacters(in: .whitespaces).isEmpty
-        return selectedType == .request ? descOk : (descOk && offerImage != nil)
-    }
-
-    private var step3Valid: Bool { totalSelected > 0 }
-
-    private var step4Valid: Bool { priceValid && hasSufficientBalance }
-
-    private var canSend: Bool { step4Valid && !isSending }
+    private var step1Valid: Bool { capturedImage != nil }
+    private var step2Valid: Bool { totalSelected > 0 }
+    private var step3Valid: Bool { priceValid }
+    private var canSend:    Bool { step3Valid && !isSending }
 
     private var filteredFriends: [FriendContact] {
         guard !friendsSearchText.isEmpty else { return contactVM.friends }
@@ -100,10 +77,8 @@ struct NewTransactionView: View {
         filteredOffAppContacts.isEmpty
     }
 
-    // Resolved names for selected recipients
     private var selectedRecipients: [(name: String, isOffApp: Bool)] {
         var result: [(String, Bool)] = []
-
         for friend in contactVM.friends where selectedFriendIds.contains(friend.id) {
             result.append((friend.name, false))
         }
@@ -113,7 +88,6 @@ struct NewTransactionView: View {
         for contact in contactVM.offAppContacts where selectedOffAppHashes.contains(contact.phoneHash) {
             result.append((contact.fullName, true))
         }
-
         return result
     }
 
@@ -132,22 +106,28 @@ struct NewTransactionView: View {
                     .padding(.bottom, 16)
 
                 ZStack {
-                    if step == 1 { typeStep   .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 2 { detailsStep.transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 3 { friendsStep.transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 4 { priceStep  .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 1 { photoStep  .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 2 { friendsStep.transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 3 { priceStep  .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
                 }
                 .animation(.easeInOut(duration: 0.25), value: step)
             }
 
             VStack { Spacer(); bottomButton }
         }
-        .onAppear {
-            Analytics.shared.trackScreen(name: "new_transaction_flow")
-            contactVM.fetchFriendsFromFirestore()
-            startBalanceListener()
+        .fullScreenCover(isPresented: $showingCamera) {
+            CompetitionCameraView(
+                onPhotoTaken: { image in
+                    capturedImage = image
+                    showingCamera = false
+                },
+                onCancel: { showingCamera = false }
+            )
         }
-        .onDisappear { stopBalanceListener() }
+        .onAppear {
+            Analytics.shared.trackScreen(name: "new_offer_flow")
+            contactVM.fetchFriendsFromFirestore()
+        }
         .sheet(isPresented: $showingComposer) {
             if !offAppNumbers.isEmpty {
                 OffAppInviteComposer(
@@ -157,9 +137,6 @@ struct NewTransactionView: View {
                 )
             }
         }
-        .sheet(isPresented: $showWalletSheet) {
-            WalletView(onDismiss: { showWalletSheet = false })
-        }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -168,23 +145,6 @@ struct NewTransactionView: View {
         } message: {
             Text(errorMessage ?? "")
         }
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Balance listener
-    // ─────────────────────────────────────────────────────────
-
-    private func startBalanceListener() {
-        guard !currentUserId.isEmpty else { return }
-        balanceListener = db.collection("users").document(currentUserId)
-            .addSnapshotListener { snapshot, _ in
-                walletBalance = snapshot?.data()?["wallet_balance"] as? Double ?? 0.0
-            }
-    }
-
-    private func stopBalanceListener() {
-        balanceListener?.remove()
-        balanceListener = nil
     }
 
     // ─────────────────────────────────────────────────────────
@@ -214,17 +174,16 @@ struct NewTransactionView: View {
 
     private var headerTitle: String {
         switch step {
-        case 1:  return "New"
-        case 2:  return selectedType == .request ? "Your Request" : "Your Offer"
-        case 3:  return "Who?"
-        case 4:  return "Set a Price"
+        case 1:  return "Your Offer"
+        case 2:  return "Who?"
+        case 3:  return "Set a Price"
         default: return ""
         }
     }
 
     private var progressBar: some View {
         HStack(spacing: 6) {
-            ForEach(1...4, id: \.self) { i in
+            ForEach(1...3, id: \.self) { i in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(i <= step ? AppTheme.accent : AppTheme.divider)
                     .frame(height: 4)
@@ -234,190 +193,80 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 1: Type
+    // MARK: - Step 1: Photo
     // ─────────────────────────────────────────────────────────
 
-    private var typeStep: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("What do you want to do?")
-                        .font(.system(size: 22, weight: .black))
-                        .foregroundColor(AppTheme.primaryText)
-                    Text("Choose how you want to interact with your friends")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppTheme.secondaryText)
-                }
-
-                typeCard(type: .request, icon: "📸", title: "Request Photo",
-                         subtitle: "Ask a friend to send you a photo. You set the price and they decide if it's worth it.")
-
-                typeCard(type: .offer, icon: "🎁", title: "Share Photo",
-                         subtitle: "Create a mystery photo and send it to friends. They pay to unlock and see what's inside.")
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 120)
-        }
-    }
-
-    private func typeCard(type: TransactionType, icon: String, title: String, subtitle: String) -> some View {
-        Button {
-            selectedType = type
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        } label: {
-            HStack(spacing: 16) {
-                Text(icon)
-                    .font(.system(size: 32))
-                    .frame(width: 56, height: 56)
-                    .background(AppTheme.cardBackground)
-                    .cornerRadius(12)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-                    Text(subtitle)
-                        .font(.system(size: 13))
-                        .foregroundColor(AppTheme.secondaryText)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                Spacer()
-
-                Image(systemName: selectedType == type ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundColor(selectedType == type ? AppTheme.accent : AppTheme.secondaryText.opacity(0.3))
-                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: selectedType)
-            }
-            .padding(16)
-            .background(selectedType == type ? AppTheme.accent.opacity(0.06) : AppTheme.cardBackground)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(selectedType == type ? AppTheme.accent : Color.clear, lineWidth: 2)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Step 2: Details (description + offer image)
-    // ─────────────────────────────────────────────────────────
-
-    private var detailsStep: some View {
+    private var photoStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(selectedType == .request ? "What do you want?" : "Set the scene")
+                    Text("Take your photo")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text(selectedType == .request
-                         ? "Describe the photo you're looking for."
-                         : "Add your mystery photo and a teaser description.")
+                    Text("Shoot a mystery photo — friends pay to unlock it.")
                         .font(.system(size: 15))
                         .foregroundColor(AppTheme.secondaryText)
                 }
 
-                // Offer: photo picker
-                if selectedType == .offer {
-                    VStack(alignment: .leading, spacing: 10) {
-                        sectionLabel("Your mystery photo")
-
-                        PhotosPicker(selection: $selectedItem, matching: .images) {
-                            ZStack {
-                                if let offerImage {
-                                    Image(uiImage: offerImage)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 200)
-                                        .clipped()
-                                        .cornerRadius(16)
-                                        .overlay(
-                                            VStack {
-                                                Spacer()
-                                                HStack {
-                                                    Spacer()
-                                                    Label("Change", systemImage: "pencil.circle.fill")
-                                                        .font(.system(size: 13, weight: .semibold))
-                                                        .foregroundColor(.white)
-                                                        .padding(.horizontal, 12)
-                                                        .padding(.vertical, 6)
-                                                        .background(.ultraThinMaterial)
-                                                        .cornerRadius(20)
-                                                    Spacer()
-                                                }
-                                                .padding(.bottom, 12)
-                                            }
-                                        )
-                                } else {
+                // Photo preview / take button
+                Button {
+                    showingCamera = true
+                } label: {
+                    ZStack {
+                        if let image = capturedImage {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 280)
+                                .clipped()
+                                .cornerRadius(16)
+                                .overlay(
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Label("Retake", systemImage: "camera.fill")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(.ultraThinMaterial)
+                                                .cornerRadius(20)
+                                            Spacer()
+                                        }
+                                        .padding(.bottom, 12)
+                                    }
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(AppTheme.cardBackground)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 280)
+                                .overlay(
+                                    VStack(spacing: 14) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(AppTheme.accent.opacity(0.1))
+                                                .frame(width: 72, height: 72)
+                                            Image(systemName: "camera.fill")
+                                                .font(.system(size: 28))
+                                                .foregroundColor(AppTheme.accent)
+                                        }
+                                        Text("Tap to take photo")
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(AppTheme.accent)
+                                    }
+                                )
+                                .overlay(
                                     RoundedRectangle(cornerRadius: 16)
-                                        .fill(AppTheme.cardBackground)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: 200)
-                                        .overlay(
-                                            VStack(spacing: 10) {
-                                                Image(systemName: "camera.fill")
-                                                    .font(.system(size: 28))
-                                                    .foregroundColor(AppTheme.secondaryText)
-                                                Text("Tap to add your photo")
-                                                    .font(.system(size: 14, weight: .semibold))
-                                                    .foregroundColor(AppTheme.secondaryText)
-                                            }
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 16)
-                                                .stroke(AppTheme.divider, lineWidth: 1)
-                                        )
-                                }
-                            }
-                        }
-                        .onChange(of: selectedItem) { newItem in
-                            guard let newItem else { return }
-                            Task {
-                                if let data  = try? await newItem.loadTransferable(type: Data.self),
-                                   let image = UIImage(data: data) {
-                                    await MainActor.run { offerImage = image }
-                                }
-                            }
+                                        .stroke(AppTheme.accent.opacity(0.2), lineWidth: 1.5)
+                                )
                         }
                     }
                 }
-
-                // Description
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionLabel(selectedType == .request ? "Description" : "Teaser caption")
-
-                    ZStack(alignment: .topLeading) {
-                        if description.isEmpty {
-                            Text(selectedType == .request
-                                 ? "e.g. Send me a photo of what you're having for dinner 🍕"
-                                 : "e.g. You'll never guess where I am right now 👀")
-                                .font(.system(size: 15))
-                                .foregroundColor(AppTheme.secondaryText.opacity(0.5))
-                                .padding(14)
-                        }
-                        TextEditor(text: $description)
-                            .font(.system(size: 15))
-                            .foregroundColor(AppTheme.primaryText)
-                            .frame(minHeight: 90)
-                            .padding(10)
-                            .scrollContentBackground(.hidden)
-                    }
-                    .background(AppTheme.cardBackground)
-                    .cornerRadius(12)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.divider, lineWidth: 1))
-
-                    HStack {
-                        Spacer()
-                        Text("\(description.count)/120")
-                            .font(.system(size: 12))
-                            .foregroundColor(AppTheme.secondaryText)
-                    }
-                }
-                .onChange(of: description) { if $0.count > 120 { description = String($0.prefix(120)) } }
+                .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
@@ -425,7 +274,7 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 3: Friends
+    // MARK: - Step 2: Friends
     // ─────────────────────────────────────────────────────────
 
     private var friendsStep: some View {
@@ -436,9 +285,7 @@ struct NewTransactionView: View {
                         Text("Pick your friends")
                             .font(.system(size: 22, weight: .black))
                             .foregroundColor(AppTheme.primaryText)
-                        Text(selectedType == .request
-                             ? "Who do you want photos from?"
-                             : "Who do you want to send this to?")
+                        Text("Who do you want to send this to?")
                             .font(.system(size: 15))
                             .foregroundColor(AppTheme.secondaryText)
                     }
@@ -450,7 +297,6 @@ struct NewTransactionView: View {
                     }
                 }
 
-                // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(AppTheme.secondaryText)
@@ -461,9 +307,7 @@ struct NewTransactionView: View {
                         .tint(AppTheme.accent)
                         .padding(.vertical, 10)
                     if !friendsSearchText.isEmpty {
-                        Button {
-                            friendsSearchText = ""
-                        } label: {
+                        Button { friendsSearchText = "" } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(AppTheme.secondaryText)
                         }
@@ -473,7 +317,6 @@ struct NewTransactionView: View {
                 .background(AppTheme.cardBackground)
                 .cornerRadius(10)
 
-                // No results
                 if hasNoSearchResults {
                     VStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
@@ -485,9 +328,7 @@ struct NewTransactionView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
-
                 } else {
-
                     if !filteredFriends.isEmpty {
                         sectionLabel("Friends")
                         VStack(spacing: 0) {
@@ -568,9 +409,7 @@ struct NewTransactionView: View {
             }
         } else if status == .denied || status == .restricted {
             Button {
-                if let url = URL(string: UIApplication.openSettingsURLString) {
-                    UIApplication.shared.open(url)
-                }
+                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             } label: {
                 Text("Enable Contacts in Settings")
                     .font(.system(size: 15, weight: .bold))
@@ -599,7 +438,7 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 4: Price
+    // MARK: - Step 3: Price
     // ─────────────────────────────────────────────────────────
 
     private var priceStep: some View {
@@ -610,14 +449,11 @@ struct NewTransactionView: View {
                     Text("Set a price")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text(selectedType == .request
-                         ? "This is what you'll pay per friend. The total is held until they respond."
-                         : "Friends pay this to unlock your photo.")
+                    Text("Friends pay this to unlock your photo.")
                         .font(.system(size: 15))
                         .foregroundColor(AppTheme.secondaryText)
                 }
 
-                // Preset chips
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 8) {
                     ForEach(presetPrices, id: \.self) { preset in
                         Button {
@@ -636,7 +472,6 @@ struct NewTransactionView: View {
                     }
                 }
 
-                // Custom amount field
                 HStack {
                     Text("$")
                         .font(.system(size: 18, weight: .bold))
@@ -661,130 +496,13 @@ struct NewTransactionView: View {
                         .foregroundColor(.red)
                 }
 
-                // Per-recipient breakdown (requests) or fee breakdown (offers)
                 if priceValid {
-                    if selectedType == .request {
-                        requestBreakdownView
-                    } else {
-                        FeeBreakdownView(price: priceDouble, type: selectedType)
-                    }
+                    FeeBreakdownView(price: priceDouble)
                 }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Request breakdown (per-friend + total + balance)
-    // ─────────────────────────────────────────────────────────
-
-    private var requestBreakdownView: some View {
-        VStack(spacing: 0) {
-
-            // One row per selected recipient
-            ForEach(Array(selectedRecipients.enumerated()), id: \.offset) { _, recipient in
-                HStack {
-                    HStack(spacing: 6) {
-                        Text(recipient.name)
-                            .font(.system(size: 13))
-                            .foregroundColor(AppTheme.primaryText)
-                        if recipient.isOffApp {
-                            Text("invite")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(AppTheme.accent)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 2)
-                                .background(AppTheme.accent.opacity(0.1))
-                                .cornerRadius(4)
-                        }
-                    }
-                    Spacer()
-                    Text("$\(String(format: "%.2f", priceDouble))")
-                        .font(.system(size: 13))
-                        .foregroundColor(AppTheme.secondaryText)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                Divider().background(AppTheme.divider)
-            }
-
-            // Total escrow row
-            HStack {
-                Text("Total")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(AppTheme.primaryText)
-                Spacer()
-                Text("$\(String(format: "%.2f", totalEscrow))")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(AppTheme.primaryText)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-
-            Divider().background(AppTheme.divider)
-
-            // Wallet balance row
-            HStack {
-                Image(systemName: "wallet.pass.fill")
-                    .font(.system(size: 13))
-                    .foregroundColor(hasSufficientBalance ? AppTheme.green : .red)
-                Text("Your balance")
-                    .font(.system(size: 13))
-                    .foregroundColor(AppTheme.secondaryText)
-                Spacer()
-                Text("$\(String(format: "%.2f", walletBalance))")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(hasSufficientBalance ? AppTheme.green : .red)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-
-            // Insufficient funds row + top up button
-            if !hasSufficientBalance {
-                Divider().background(AppTheme.divider)
-
-                VStack(spacing: 10) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 13))
-                            .foregroundColor(.red)
-                        Text("You need $\(String(format: "%.2f", max(0, totalEscrow - walletBalance))) more")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.red)
-                        Spacer()
-                    }
-
-                    Button {
-                        showWalletSheet = true
-                        Analytics.shared.trackTap(
-                            elementId:  "top_up_from_new_transaction",
-                            screenName: "new_transaction_flow"
-                        )
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 15))
-                            Text("Top Up Wallet")
-                                .font(.system(size: 15, weight: .bold))
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppTheme.green)
-                        .cornerRadius(10)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(12)
-            }
-        }
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-            hasSufficientBalance ? AppTheme.divider : Color.red.opacity(0.3),
-            lineWidth: 1
-        ))
     }
 
     // ─────────────────────────────────────────────────────────
@@ -817,40 +535,28 @@ struct NewTransactionView: View {
     private var bottomTitle: String {
         if isSending { return "Sending..." }
         switch step {
-        case 1, 2, 3: return "Continue"
-        case 4:        return selectedType == .request ? "Send Request" : "Send Offer"
-        default:       return "Continue"
+        case 1, 2: return "Continue"
+        case 3:    return "Send Offer"
+        default:   return "Continue"
         }
     }
 
     private var bottomEnabled: Bool {
         if isSending { return false }
         switch step {
-        case 1: return true
+        case 1: return step1Valid
         case 2: return step2Valid
-        case 3: return step3Valid
-        case 4: return canSend
+        case 3: return canSend
         default: return false
         }
     }
 
     private func bottomAction() {
         switch step {
-        case 1:
-            Analytics.shared.trackTap(
-                elementId:  "new_transaction_type_selected",
-                screenName: "new_transaction_flow",
-                properties: [AnalyticsProperty.transactionType: selectedType.rawValue]
-            )
-            withAnimation { step = 2 }
-        case 2:
-            withAnimation { step = 3 }
-        case 3:
-            withAnimation { step = 4 }
-        case 4:
-            sendTransaction()
-        default:
-            break
+        case 1: withAnimation { step = 2 }
+        case 2: withAnimation { step = 3 }
+        case 3: sendOffer()
+        default: break
         }
     }
 
@@ -858,57 +564,43 @@ struct NewTransactionView: View {
     // MARK: - Send
     // ─────────────────────────────────────────────────────────
 
-    private func sendTransaction() {
-        guard canSend else { return }
+    private func sendOffer() {
+        guard canSend, let image = capturedImage else { return }
         isSending = true
 
+        Task {
+            do {
+                let photoUrl = try await UploadManager.shared.upload(
+                    image:      image,
+                    folderPath: "offers/\(currentUserId)",
+                    onProgress: { _ in }
+                )
+                await sendToBackend(photoUrl: photoUrl)
+            } catch {
+                await MainActor.run {
+                    isSending    = false
+                    errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func sendToBackend(photoUrl: String) async {
         let onAppContactUserIds = contactVM.onAppContacts
             .filter { selectedOnAppIds.contains($0.phoneNumber) }
             .compactMap { $0.userId }
 
         let allOnAppIds    = Array(selectedFriendIds) + onAppContactUserIds
         let offAppContacts = contactVM.offAppContacts.filter { selectedOffAppHashes.contains($0.phoneHash) }
+        let offAppNamesMap = Dictionary(uniqueKeysWithValues: offAppContacts.map { ($0.phoneHash, $0.fullName) })
 
-        if selectedType == .offer, let image = offerImage {
-            Task {
-                do {
-                    let photoUrl = try await UploadManager.shared.upload(
-                        image:      image,
-                        folderPath: "offers/\(currentUserId)",
-                        onProgress: { _ in }
-                    )
-                    await sendToBackend(onAppIds: allOnAppIds, offAppContacts: offAppContacts, photoUrl: photoUrl)
-                } catch {
-                    await MainActor.run {
-                        isSending    = false
-                        errorMessage = error.localizedDescription
-                    }
-                }
-            }
-        } else {
-            Task {
-                await sendToBackend(onAppIds: allOnAppIds, offAppContacts: offAppContacts, photoUrl: nil)
-            }
-        }
-    }
-
-    private func sendToBackend(onAppIds: [String], offAppContacts: [Contact], photoUrl: String?) async {
-        // Build { phoneHash: fullName } so the backend can store the contact
-        // name on pending_signup transactions and show it before they sign up.
-        let offAppNamesMap = Dictionary(
-            uniqueKeysWithValues: offAppContacts.map { ($0.phoneHash, $0.fullName) }
-        )
-
-        var payload: [String: Any] = [
-            "type":                 selectedType.rawValue,
-            "onAppRecipientIds":    onAppIds,
+        let payload: [String: Any] = [
+            "onAppRecipientIds":    allOnAppIds,
             "offAppPhoneHashes":    offAppContacts.map { $0.phoneHash },
             "offAppRecipientNames": offAppNamesMap,
             "price":                priceDouble,
-            "description":          description.trimmingCharacters(in: .whitespaces),
-            "deadlineSeconds":      NSNull()
+            "photoUrl":             photoUrl
         ]
-        if let photoUrl { payload["photoUrl"] = photoUrl }
 
         do {
             let result = try await functions.httpsCallable("sendTransaction").call(payload)
@@ -918,26 +610,15 @@ struct NewTransactionView: View {
             }
 
             await MainActor.run {
-                if selectedType == .request {
-                    Analytics.shared.trackRequest(action: "sent", properties: [
-                        AnalyticsProperty.amount:         priceDouble,
-                        AnalyticsProperty.recipientCount: onAppIds.count + offAppContacts.count
-                    ])
-                } else {
-                    Analytics.shared.trackOffer(action: "sent", properties: [
-                        AnalyticsProperty.amount:         priceDouble,
-                        AnalyticsProperty.recipientCount: onAppIds.count + offAppContacts.count
-                    ])
-                }
-
+                Analytics.shared.trackOffer(action: "sent", properties: [
+                    AnalyticsProperty.amount:         priceDouble,
+                    AnalyticsProperty.recipientCount: allOnAppIds.count + offAppContacts.count
+                ])
                 isSending = false
-
                 if !offAppContacts.isEmpty {
                     let priceStr  = String(format: "%.2f", priceDouble)
                     offAppNumbers = offAppContacts.map { $0.phoneNumber }
-                    offAppMessage = selectedType == .request
-                        ? "I'll pay you $\(priceStr) for a photo on SocialStar! \"\(description.trimmingCharacters(in: .whitespaces))\" join.socialstarapp.com"
-                        : "I've got something for you on SocialStar 🎁 $\(priceStr) to unlock → join.socialstarapp.com"
+                    offAppMessage = "I've got something for you on SocialStar 🎁 $\(priceStr) to unlock → join.socialstarapp.com"
                     showingComposer = true
                 } else {
                     onDismiss()
@@ -1045,22 +726,18 @@ struct OffAppInviteComposer: UIViewControllerRepresentable {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - FeeBreakdownView
-// Shown for offers — displays what the creator pockets
-// after the 20% platform fee. Also used in TransactionDetailView.
 // ─────────────────────────────────────────────────────────────
 
 struct FeeBreakdownView: View {
 
     let price: Double
-    let type:  TransactionType
 
     private var platformFee: Double { (price * 0.20 * 100).rounded() / 100 }
     private var youPocket:   Double { price - platformFee }
-    private var priceLabel:  String { type == .request ? "Request price" : "Offer price" }
 
     var body: some View {
         VStack(spacing: 0) {
-            feeRow(label: priceLabel,           value: "$\(String(format: "%.2f", price))",        valueColor: AppTheme.primaryText,   bold: false)
+            feeRow(label: "Offer price",        value: "$\(String(format: "%.2f", price))",        valueColor: AppTheme.primaryText,   bold: false)
             Divider().background(AppTheme.divider)
             feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", platformFee))", valueColor: AppTheme.secondaryText, bold: false)
             Divider().background(AppTheme.divider)
@@ -1073,13 +750,9 @@ struct FeeBreakdownView: View {
 
     private func feeRow(label: String, value: String, valueColor: Color, bold: Bool) -> some View {
         HStack {
-            Text(label)
-                .font(.system(size: 13))
-                .foregroundColor(AppTheme.secondaryText)
+            Text(label).font(.system(size: 13)).foregroundColor(AppTheme.secondaryText)
             Spacer()
-            Text(value)
-                .font(.system(size: 13, weight: bold ? .bold : .regular))
-                .foregroundColor(valueColor)
+            Text(value).font(.system(size: 13, weight: bold ? .bold : .regular)).foregroundColor(valueColor)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
