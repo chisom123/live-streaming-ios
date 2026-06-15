@@ -167,14 +167,14 @@ struct NewTransactionView: View {
                 typeCard(
                     type:     .request,
                     icon:     "📸",
-                    title:    "Request",
+                    title:    "Request Photo",
                     subtitle: "Ask a friend to send you a photo. You set the price and they decide if it's worth it."
                 )
 
                 typeCard(
                     type:     .offer,
                     icon:     "🎁",
-                    title:    "Offer",
+                    title:    "Share Photo",
                     subtitle: "Create a mystery photo and send it to friends. They pay to unlock and see what's inside."
                 )
             }
@@ -279,7 +279,7 @@ struct NewTransactionView: View {
 
                 // Description / teaser
                 VStack(alignment: .leading, spacing: 10) {
-                    sectionLabel(selectedType == .request ? "What do you want?" : "Tease them a little 😏")
+                    sectionLabel(selectedType == .request ? "What do you want?" : "Description")
 
                     ZStack(alignment: .topLeading) {
                         if description.isEmpty {

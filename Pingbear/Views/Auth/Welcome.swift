@@ -87,7 +87,7 @@ struct DisclaimerText: View {
 
     var body: some View {
         VStack {
-            let youMustBe18Text = Text("You must be at least 18 years old to use this app. ")
+            let youMustBe18Text = Text("You must be at least 13 years old to use this app. ")
             let byTappingText = Text("By tapping \"Agree & Continue\", you confirm you meet this requirement and accept our ")
             let termsText = Text("Terms of Use").underline()
             let andText = Text(" and ")
