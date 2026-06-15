@@ -45,6 +45,9 @@ struct ContentTransaction: Identifiable {
     var fulfilledAt:      Date?
     var completedAt:      Date?
     var pendingPhoneHash: String?
+    var pendingName:      String?   // contact name stored at send time,
+                                    // shown until recipient signs up and
+                                    // sets their real name in the app
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Computed
@@ -99,6 +102,7 @@ struct ContentTransaction: Identifiable {
         self.fulfilledAt      = (data["fulfilled_at"] as? Timestamp)?.dateValue()
         self.completedAt      = (data["completed_at"] as? Timestamp)?.dateValue()
         self.pendingPhoneHash = data["pending_phone_hash"] as? String
+        self.pendingName      = data["pending_name"] as? String
     }
 }
 

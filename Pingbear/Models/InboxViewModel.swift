@@ -25,8 +25,6 @@ final class InboxViewModel: ObservableObject {
     private var listeners:    [ListenerRegistration] = []
     private var profileCache: [String: UserProfile]  = [:]
 
-    // All statuses except pending_signup which has no toUserId yet
-    // for outgoing — we do include pending_signup for sender's view
     private let incomingStatuses: [String] = [
         TransactionStatus.pendingAcceptance.rawValue,
         TransactionStatus.accepted.rawValue,
@@ -66,7 +64,6 @@ final class InboxViewModel: ObservableObject {
     // ─────────────────────────────────────────────────────────
 
     private func listenIncoming() {
-        // Transactions sent TO me, not dismissed by me
         let ref = db.collection("content_transactions")
             .whereField("to_user_id", isEqualTo: currentUserId)
             .whereField("status", in: incomingStatuses)
@@ -77,7 +74,6 @@ final class InboxViewModel: ObservableObject {
             if let error { self.errorMessage = error.localizedDescription; return }
             let txs = snap?.documents.compactMap { doc -> ContentTransaction? in
                 let data = doc.data()
-                // Filter out dismissed transactions client-side
                 let dismissedBy = data["dismissed_by"] as? [String] ?? []
                 if dismissedBy.contains(self.currentUserId) { return nil }
                 return ContentTransaction(id: doc.documentID, data: data)
@@ -88,7 +84,6 @@ final class InboxViewModel: ObservableObject {
     }
 
     private func listenOutgoing() {
-        // Transactions sent BY me, not dismissed by me
         let ref = db.collection("content_transactions")
             .whereField("from_user_id", isEqualTo: currentUserId)
             .whereField("status", in: outgoingStatuses)
@@ -99,7 +94,6 @@ final class InboxViewModel: ObservableObject {
             if let error { self.errorMessage = error.localizedDescription; return }
             let txs = snap?.documents.compactMap { doc -> ContentTransaction? in
                 let data = doc.data()
-                // Filter out dismissed transactions client-side
                 let dismissedBy = data["dismissed_by"] as? [String] ?? []
                 if dismissedBy.contains(self.currentUserId) { return nil }
                 return ContentTransaction(id: doc.documentID, data: data)
@@ -111,6 +105,14 @@ final class InboxViewModel: ObservableObject {
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Enrichment
+    //
+    // For pending_signup transactions, toUserId is nil so
+    // otherUserId() returns nil. In that case we build a
+    // placeholder UserProfile from pendingName (the contact name
+    // stored at send time). Once the recipient signs up,
+    // resolveInviteTransaction sets toUserId → the listener fires
+    // → otherUserId() returns a real ID → we fetch their actual
+    // profile and the name updates automatically.
     // ─────────────────────────────────────────────────────────
 
     private func enrich(
@@ -121,7 +123,19 @@ final class InboxViewModel: ObservableObject {
 
         for tx in txs {
             guard let otherId = tx.otherUserId(currentUserId: currentUserId) else {
-                enriched.append(EnrichedContentTransaction(transaction: tx, otherProfile: nil))
+                // pending_signup — no user ID yet, use stored contact name
+                let placeholder = tx.pendingName.map { name in
+                    UserProfile(
+                        id:                "",
+                        name:              name,
+                        username:          "",
+                        profilePictureUrl: nil,
+                        totalEarned:       0,
+                        averageRating:     0,
+                        ratingCount:       0
+                    )
+                }
+                enriched.append(EnrichedContentTransaction(transaction: tx, otherProfile: placeholder))
                 continue
             }
 

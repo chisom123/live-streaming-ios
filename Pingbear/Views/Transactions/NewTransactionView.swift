@@ -893,13 +893,20 @@ struct NewTransactionView: View {
     }
 
     private func sendToBackend(onAppIds: [String], offAppContacts: [Contact], photoUrl: String?) async {
+        // Build { phoneHash: fullName } so the backend can store the contact
+        // name on pending_signup transactions and show it before they sign up.
+        let offAppNamesMap = Dictionary(
+            uniqueKeysWithValues: offAppContacts.map { ($0.phoneHash, $0.fullName) }
+        )
+
         var payload: [String: Any] = [
-            "type":              selectedType.rawValue,
-            "onAppRecipientIds": onAppIds,
-            "offAppPhoneHashes": offAppContacts.map { $0.phoneHash },
-            "price":             priceDouble,
-            "description":       description.trimmingCharacters(in: .whitespaces),
-            "deadlineSeconds":   NSNull()
+            "type":                 selectedType.rawValue,
+            "onAppRecipientIds":    onAppIds,
+            "offAppPhoneHashes":    offAppContacts.map { $0.phoneHash },
+            "offAppRecipientNames": offAppNamesMap,
+            "price":                priceDouble,
+            "description":          description.trimmingCharacters(in: .whitespaces),
+            "deadlineSeconds":      NSNull()
         ]
         if let photoUrl { payload["photoUrl"] = photoUrl }
 

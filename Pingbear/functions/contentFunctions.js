@@ -182,8 +182,9 @@ exports.sendTransaction = onCall({
   const userId = request.auth.uid;
   const {
     type,
-    onAppRecipientIds = [],
-    offAppPhoneHashes = [],
+    onAppRecipientIds    = [],
+    offAppPhoneHashes    = [],
+    offAppRecipientNames = {},   // { phoneHash: "John Smith" } — stored as pending_name
     price,
     description,
     photoUrl = null
@@ -254,7 +255,7 @@ exports.sendTransaction = onCall({
   // On-app recipients
   for (const recipientId of validOnApp) {
     const txRef = db.collection('content_transactions').doc();
-    await txRef.set({ ...txBase, id: txRef.id, to_user_id: recipientId, pending_phone_hash: null });
+    await txRef.set({ ...txBase, id: txRef.id, to_user_id: recipientId, pending_phone_hash: null, pending_name: null });
     createdTxIds.push(txRef.id);
   }
 
@@ -263,13 +264,19 @@ exports.sendTransaction = onCall({
   const inviterHash = inviterDoc.data()?.phoneNumberHash ?? '';
 
   for (const phoneHash of validOffApp) {
-    const txRef = db.collection('content_transactions').doc();
+    const txRef        = db.collection('content_transactions').doc();
+    // Use the contact name passed from the client, fall back to null.
+    // Once the recipient signs up, resolveInviteTransaction fills in
+    // to_user_id and the inbox automatically fetches their real profile.
+    const pendingName  = offAppRecipientNames[phoneHash] ?? null;
+
     await txRef.set({
       ...txBase,
       id:                  txRef.id,
       to_user_id:          null,
       status:              'pending_signup',
-      pending_phone_hash:  phoneHash
+      pending_phone_hash:  phoneHash,
+      pending_name:        pendingName
     });
     createdTxIds.push(txRef.id);
 
@@ -371,7 +378,7 @@ exports.respondToTransaction = onCall({
 
     await sendPush(db, [tx.from_user_id], {
       title: `${recipientName} declined your ${tx.type}`,
-      body:  tx.type === 'request' ? 'Your escrow has been refunded' : `${recipientName} passed on your offer`,
+      body:  tx.type === 'request' ? 'Your funds have been refunded' : `${recipientName} passed on your offer`,
       data:  { type: 'transaction_declined', transaction_id: transactionId }
     });
 
@@ -397,7 +404,6 @@ exports.respondToTransaction = onCall({
   }
 
   // ── Accept — Offer ────────────────────────────────────────
-  // Escrow from payer, pay creator immediately, set completed
   await db.runTransaction(async (t) => {
     const payerRef  = db.collection('users').doc(userId);
     const payerDoc  = await t.get(payerRef);
@@ -411,8 +417,8 @@ exports.respondToTransaction = onCall({
     t.set(payerRef, { wallet_balance: admin.firestore.FieldValue.increment(-tx.price) }, { merge: true });
 
     t.update(txRef, {
-      status:      'completed',
-      accepted_at: admin.firestore.FieldValue.serverTimestamp(),
+      status:       'completed',
+      accepted_at:  admin.firestore.FieldValue.serverTimestamp(),
       completed_at: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -428,7 +434,6 @@ exports.respondToTransaction = onCall({
     });
   });
 
-  // Pay creator outside the payer transaction
   await payCreator(db, {
     txId:       transactionId,
     creatorId:  tx.from_user_id,
@@ -460,7 +465,6 @@ exports.respondToTransaction = onCall({
 // fulfillRequest
 //
 // Creator uploads photo → pay creator → status: fulfilled
-// Money moves here. A views photo via markTransactionViewed.
 // ─────────────────────────────────────────────────────────────
 
 exports.fulfillRequest = onCall({
@@ -487,14 +491,12 @@ exports.fulfillRequest = onCall({
   if (tx.to_user_id !== userId) throw new Error('You are not the creator');
   if (tx.status !== 'accepted') throw new Error(`Cannot fulfill status: ${tx.status}`);
 
-  // Update transaction — fulfilled, photo attached
   await txRef.update({
     status:       'fulfilled',
     photo_url:    photoUrl,
     fulfilled_at: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  // Pay creator now — money moves at fulfillment
   await payCreator(db, {
     txId:       transactionId,
     creatorId:  userId,
@@ -518,9 +520,6 @@ exports.fulfillRequest = onCall({
 
 // ─────────────────────────────────────────────────────────────
 // markTransactionViewed
-//
-// Called when payer opens and views the photo.
-// Pure UX — no money moves. Sets status to completed.
 // ─────────────────────────────────────────────────────────────
 
 exports.markTransactionViewed = onCall({
@@ -542,13 +541,9 @@ exports.markTransactionViewed = onCall({
 
   const tx = txDoc.data();
 
-  // Only the payer (requester) marks as viewed on requests
   if (tx.from_user_id !== userId) throw new Error('Only the requester can mark as viewed');
   if (tx.type !== 'request')      throw new Error('Only requests need marking as viewed');
-  if (tx.status !== 'fulfilled')  {
-    // Already completed or wrong state — silent success
-    return { success: true };
-  }
+  if (tx.status !== 'fulfilled')  return { success: true };
 
   await txRef.update({
     status:       'completed',
@@ -561,10 +556,6 @@ exports.markTransactionViewed = onCall({
 
 // ─────────────────────────────────────────────────────────────
 // rateTransaction
-//
-// Optional. Updates creator's average rating only.
-// No status change — transaction stays completed.
-// Can be called from history view at any time after completion.
 // ─────────────────────────────────────────────────────────────
 
 exports.rateTransaction = onCall({
@@ -588,13 +579,11 @@ exports.rateTransaction = onCall({
 
   const tx = txDoc.data();
 
-  // Payer rates — different for request vs offer
   const isCorrectUser = tx.type === 'request'
-    ? tx.from_user_id === userId   // requester rates
-    : tx.to_user_id   === userId;  // offer recipient rates
+    ? tx.from_user_id === userId
+    : tx.to_user_id   === userId;
 
   if (!isCorrectUser) throw new Error('You cannot rate this transaction');
-
   if (tx.status !== 'completed') throw new Error('Can only rate completed transactions');
   if (tx.rating !== null && tx.rating !== undefined) throw new Error('Already rated');
 
@@ -609,12 +598,7 @@ exports.rateTransaction = onCall({
     const newCount   = oldCount + 1;
     const newAvg     = parseFloat(((oldAvg * oldCount + rating) / newCount).toFixed(2));
 
-    t.set(creatorRef, {
-      ratingCount:   newCount,
-      averageRating: newAvg
-    }, { merge: true });
-
-    // Store rating on transaction but don't change status
+    t.set(creatorRef, { ratingCount: newCount, averageRating: newAvg }, { merge: true });
     t.update(txRef, { rating });
   });
 
@@ -632,10 +616,6 @@ exports.rateTransaction = onCall({
 
 // ─────────────────────────────────────────────────────────────
 // cancelRequest
-//
-// Sender cancels a request before creator fulfills it.
-// Allowed in: pending_signup, pending_acceptance, accepted
-// Blocked in: fulfilled, completed (creator already did the work)
 // ─────────────────────────────────────────────────────────────
 
 exports.cancelRequest = onCall({
@@ -665,15 +645,12 @@ exports.cancelRequest = onCall({
     throw new Error(`Cannot cancel — creator has already fulfilled this request`);
   }
 
-  // Refund escrow
   await db.runTransaction(async (t) => {
-    // Read first
     const userRef = db.collection('users').doc(userId);
     const userDoc = await t.get(userRef);
     const balance = userDoc.data()?.wallet_balance ?? 0;
     const newBal  = parseFloat((balance + tx.price).toFixed(2));
 
-    // Then write
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(tx.price) }, { merge: true });
     t.update(txRef, { status: 'cancelled' });
 
@@ -689,7 +666,6 @@ exports.cancelRequest = onCall({
     });
   });
 
-  // Notify recipient if already on app
   if (tx.to_user_id) {
     const senderName = await getUserName(db, userId);
     await sendPush(db, [tx.to_user_id], {
@@ -705,10 +681,6 @@ exports.cancelRequest = onCall({
 
 // ─────────────────────────────────────────────────────────────
 // resolveInviteTransaction
-//
-// Called from NameEntryView after signup.
-// Finds pending transactions for this user's phone hash,
-// fills in toUserId, moves to pending_acceptance, sends push.
 // ─────────────────────────────────────────────────────────────
 
 exports.resolveInviteTransaction = onCall({
@@ -733,10 +705,12 @@ exports.resolveInviteTransaction = onCall({
 
   const tx = txDoc.data();
 
-  if (tx.status !== 'pending_signup') {
-    return { success: true, skipped: true };
-  }
+  if (tx.status !== 'pending_signup') return { success: true, skipped: true };
 
+  // Set to_user_id and move to pending_acceptance.
+  // The inbox listener will fire, otherUserId() will now return a real
+  // ID, and the enrichment will fetch the user's actual profile —
+  // replacing the pending_name placeholder automatically.
   await txRef.update({
     to_user_id: userId,
     status:     'pending_acceptance'
@@ -761,13 +735,8 @@ exports.resolveInviteTransaction = onCall({
   return { success: true, skipped: false };
 });
 
-
 // ─────────────────────────────────────────────────────────────
 // dismissTransaction
-//
-// Appends currentUserId to dismissed_by array on the transaction.
-// Each user independently controls their own inbox view.
-// The other party is completely unaffected.
 // ─────────────────────────────────────────────────────────────
 
 exports.dismissTransaction = onCall({
@@ -789,7 +758,6 @@ exports.dismissTransaction = onCall({
 
   const tx = txDoc.data();
 
-  // Verify user is a party to this transaction
   if (tx.from_user_id !== userId && tx.to_user_id !== userId) {
     throw new Error('You are not a party to this transaction');
   }
