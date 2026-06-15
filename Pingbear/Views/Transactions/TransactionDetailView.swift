@@ -23,20 +23,24 @@ import FirebaseFunctions
 
 struct TransactionDetailView: View {
 
-    // Passed in as initial value — then overridden by live listener
     let initialEnriched: EnrichedContentTransaction
     let onDismiss:        () -> Void
 
-    @State private var tx:           ContentTransaction
-    @State private var otherProfile: UserProfile?
-    @State private var listener:     ListenerRegistration? = nil
+    @State private var tx:             ContentTransaction
+    @State private var otherProfile:   UserProfile?
+    @State private var listener:       ListenerRegistration? = nil
 
-    @State private var isActioning    = false
-    @State private var isCancelling   = false
-    @State private var errorMessage:  String? = nil
-    @State private var showingCamera  = false
-    @State private var capturedImage: UIImage? = nil
+    @State private var isActioning     = false
+    @State private var isCancelling    = false
+    @State private var errorMessage:   String? = nil
+    @State private var showingCamera   = false
+    @State private var capturedImage:  UIImage? = nil
     @State private var uploadProgress: Double = 0
+
+    // Wallet balance (live listener — needed for offer balance check)
+    @State private var walletBalance:   Double               = 0.0
+    @State private var showWalletSheet: Bool                 = false
+    @State private var balanceListener: ListenerRegistration? = nil
 
     private let functions     = Functions.functions()
     private let db            = Firestore.firestore()
@@ -46,6 +50,9 @@ struct TransactionDetailView: View {
     private var iAmResponder: Bool { tx.toUserId == currentUserId }
     private var iSentThis:    Bool { tx.fromUserId == currentUserId }
     private var otherName:    String { otherProfile?.name ?? "Someone" }
+
+    // For offers, the payer is the responder — check they can afford it
+    private var canAffordOffer: Bool { walletBalance >= tx.price }
 
     init(enriched: EnrichedContentTransaction, onDismiss: @escaping () -> Void) {
         self.initialEnriched = enriched
@@ -123,7 +130,6 @@ struct TransactionDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
-                        // If requester is viewing fulfilled photo, mark as completed on close
                         if tx.type == .request && tx.status == .fulfilled && iSentThis {
                             Task { await markViewed() }
                         }
@@ -138,17 +144,21 @@ struct TransactionDetailView: View {
         }
         .onAppear {
             startListening()
+            startBalanceListener()
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
                 properties: [
-                    AnalyticsProperty.transactionId: tx.id,
+                    AnalyticsProperty.transactionId:   tx.id,
                     AnalyticsProperty.transactionType: tx.type.rawValue,
-                    "status": tx.status.rawValue,
+                    "status":     tx.status.rawValue,
                     "is_creator": isCreator
                 ]
             )
         }
-        .onDisappear { stopListening() }
+        .onDisappear {
+            stopListening()
+            stopBalanceListener()
+        }
         .fullScreenCover(isPresented: $showingCamera) {
             CompetitionCameraView(
                 onPhotoTaken: { image in
@@ -157,6 +167,11 @@ struct TransactionDetailView: View {
                 },
                 onCancel: { showingCamera = false }
             )
+        }
+        // Wallet top-up sheet — balance listener means the UI updates
+        // automatically once they return with a higher balance
+        .sheet(isPresented: $showWalletSheet) {
+            WalletView(onDismiss: { showWalletSheet = false })
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
@@ -173,14 +188,14 @@ struct TransactionDetailView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Live listener
+    // MARK: - Live listeners
     // ─────────────────────────────────────────────────────────
 
     private func startListening() {
         let txId = tx.id
         listener = db.collection("content_transactions").document(txId)
-            .addSnapshotListener { [self] snap, error in
-                guard let data = snap?.data(),
+            .addSnapshotListener { [self] snap, _ in
+                guard let data    = snap?.data(),
                       let updated = ContentTransaction(id: txId, data: data) else { return }
                 tx = updated
             }
@@ -189,6 +204,19 @@ struct TransactionDetailView: View {
     private func stopListening() {
         listener?.remove()
         listener = nil
+    }
+
+    private func startBalanceListener() {
+        guard !currentUserId.isEmpty else { return }
+        balanceListener = db.collection("users").document(currentUserId)
+            .addSnapshotListener { snap, _ in
+                walletBalance = snap?.data()?["wallet_balance"] as? Double ?? 0.0
+            }
+    }
+
+    private func stopBalanceListener() {
+        balanceListener?.remove()
+        balanceListener = nil
     }
 
     // ─────────────────────────────────────────────────────────
@@ -203,7 +231,7 @@ struct TransactionDetailView: View {
                 Text(otherName)
                     .font(.system(size: 18, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                if let username = otherProfile?.username {
+                if let username = otherProfile?.username, !username.isEmpty {
                     Text("@\(username)")
                         .font(.system(size: 14))
                         .foregroundColor(AppTheme.secondaryText)
@@ -311,12 +339,22 @@ struct TransactionDetailView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Accept / Decline (toUserId only)
+    // MARK: - Accept / Decline
+    //
+    // Request responder: show fee breakdown (they earn money)
+    // Offer responder:   show balance check (they spend money)
     // ─────────────────────────────────────────────────────────
 
     private var acceptDeclineButtons: some View {
         VStack(spacing: 12) {
-            FeeBreakdownView(price: tx.price, type: tx.type)
+
+            if tx.type == .request {
+                // Recipient earns — show what they'll pocket
+                FeeBreakdownView(price: tx.price, type: tx.type)
+            } else {
+                // Payer spends — show balance and warn if insufficient
+                offerBalanceView
+            }
 
             HStack(spacing: 12) {
                 Button {
@@ -349,12 +387,100 @@ struct TransactionDetailView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(isActioning ? AppTheme.disabledBackground : AppTheme.accent)
+                    .background(acceptButtonBackground)
                     .cornerRadius(200)
                 }
-                .disabled(isActioning)
+                // Disable accept if it's an offer and they can't afford it
+                .disabled(isActioning || (tx.type == .offer && !canAffordOffer))
             }
         }
+    }
+
+    // The accept button is greyed out when balance is insufficient for offers
+    private var acceptButtonBackground: Color {
+        if isActioning { return AppTheme.disabledBackground }
+        if tx.type == .offer && !canAffordOffer { return AppTheme.disabledBackground }
+        return AppTheme.accent
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // MARK: - Offer balance view
+    //
+    // Shown above the accept/decline buttons for offers.
+    // Live balance via Firestore listener — updates automatically
+    // when the user tops up in WalletView and returns.
+    // ─────────────────────────────────────────────────────────
+
+    private var offerBalanceView: some View {
+        VStack(spacing: 10) {
+
+            // Balance row
+            HStack {
+                Image(systemName: "wallet.pass.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(canAffordOffer ? AppTheme.green : .red)
+                Text("Your balance")
+                    .font(.system(size: 13))
+                    .foregroundColor(AppTheme.secondaryText)
+                Spacer()
+                Text("$\(String(format: "%.2f", walletBalance))")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(canAffordOffer ? AppTheme.green : .red)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background((canAffordOffer ? AppTheme.green : Color.red).opacity(0.08))
+            .cornerRadius(10)
+
+            // Insufficient funds warning + Top Up button
+            if !canAffordOffer {
+                VStack(spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.red)
+                        Text("You need $\(String(format: "%.2f", max(0, tx.price - walletBalance))) more to unlock this")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.red)
+                        Spacer()
+                    }
+
+                    Button {
+                        showWalletSheet = true
+                        Analytics.shared.trackTap(
+                            elementId:  "top_up_from_offer_detail",
+                            screenName: "transaction_detail"
+                        )
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 15))
+                            Text("Top Up Wallet")
+                                .font(.system(size: 15, weight: .bold))
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(AppTheme.green)
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(12)
+                .background(Color.red.opacity(0.06))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                )
+            }
+        }
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(canAffordOffer ? AppTheme.divider : Color.red.opacity(0.3), lineWidth: 1)
+        )
     }
 
     // ─────────────────────────────────────────────────────────
@@ -421,7 +547,6 @@ struct TransactionDetailView: View {
                 }
                 .disabled(isActioning)
             } else {
-                // Fee breakdown before they take photo
                 FeeBreakdownView(price: tx.price, type: tx.type)
 
                 Button { showingCamera = true } label: {
@@ -484,15 +609,12 @@ struct TransactionDetailView: View {
                         .frame(maxWidth: .infinity).frame(height: 260)
                         .overlay(ProgressView().tint(AppTheme.secondaryText))
                 }
-
             }
 
-            // Rating if completed and not yet rated
             if tx.status == .completed && tx.rating == nil {
                 RatingCard(transactionId: tx.id, onRated: { })
             }
 
-            // Show existing rating
             if let rating = tx.rating {
                 HStack {
                     Text("You rated this")
@@ -511,7 +633,7 @@ struct TransactionDetailView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Cancel button (sender, before fulfilled)
+    // MARK: - Cancel button
     // ─────────────────────────────────────────────────────────
 
     private var cancelButton: some View {
@@ -545,11 +667,11 @@ struct TransactionDetailView: View {
         do {
             try await functions.httpsCallable("respondToTransaction").call([
                 "transactionId": tx.id,
-                "accept": accept
+                "accept":        accept
             ])
             await MainActor.run {
                 isActioning = false
-                let action = accept ? "accepted" : "declined"
+                let action  = accept ? "accepted" : "declined"
                 if tx.type == .request {
                     Analytics.shared.trackRequest(action: action, transactionId: tx.id)
                 } else {
@@ -570,7 +692,7 @@ struct TransactionDetailView: View {
         isActioning = true
         do {
             let photoUrl = try await UploadManager.shared.upload(
-                image: image,
+                image:      image,
                 folderPath: "fulfilled/\(currentUserId)/\(tx.id)",
                 onProgress: { progress in
                     DispatchQueue.main.async { uploadProgress = progress }
@@ -600,11 +722,10 @@ struct TransactionDetailView: View {
                 "transactionId": tx.id
             ])
             Analytics.shared.track(
-                event: AnalyticsEvent.contentUnlocked,
+                event:      AnalyticsEvent.contentUnlocked,
                 properties: [AnalyticsProperty.transactionId: tx.id]
             )
         } catch {
-            // Silent — not critical
             print("markViewed error: \(error.localizedDescription)")
         }
     }
@@ -636,7 +757,7 @@ struct TransactionDetailView: View {
 struct RatingCard: View {
 
     let transactionId: String
-    let onRated: () -> Void
+    let onRated:       () -> Void
 
     @State private var selectedRating = 0
     @State private var isSubmitting   = false
@@ -704,7 +825,7 @@ struct RatingCard: View {
                 "rating":        selectedRating
             ])
             Analytics.shared.track(
-                event: AnalyticsEvent.contentRated,
+                event:      AnalyticsEvent.contentRated,
                 properties: [
                     AnalyticsProperty.transactionId: transactionId,
                     AnalyticsProperty.rating:        selectedRating
