@@ -156,7 +156,6 @@ struct HomeInboxView: View {
                             .frame(width: 60, height: 60)
                             .background(AppTheme.accent)
                             .clipShape(Circle())
-                            .shadow(color: AppTheme.accent.opacity(0.4), radius: 12, x: 0, y: 6)
                     }
                     .padding(.trailing, 24)
                     .padding(.bottom, 40)
@@ -216,11 +215,6 @@ struct HomeInboxView: View {
                 .font(.system(size: 22, weight: .black))
                 .foregroundColor(AppTheme.primaryText)
             Spacer()
-            NavigationLink { WalletView() } label: {
-                Image(systemName: "wallet.pass.fill")
-                    .font(.system(size: 20))
-                    .foregroundColor(AppTheme.iconColor)
-            }
             NavigationLink { HistoryView() } label: {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 20))
