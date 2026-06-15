@@ -36,6 +36,7 @@ struct TransactionDetailView: View {
     @State private var showingCamera   = false
     @State private var capturedImage:  UIImage? = nil
     @State private var uploadProgress: Double = 0
+    @State private var showingFullPhoto: Bool   = false
 
     // Wallet balance (live listener — needed for offer balance check)
     @State private var walletBalance:   Double               = 0.0
@@ -99,13 +100,19 @@ struct TransactionDetailView: View {
                             senderWaitingCard
                         }
 
-                        // Request sender views fulfilled photo
-                        if iSentThis && tx.type == .request && tx.status == .fulfilled {
+                        // Request sender views photo at fulfilled OR completed
+                        if iSentThis && tx.type == .request &&
+                           (tx.status == .fulfilled || tx.status == .completed) {
                             viewPhotoCard
                         }
 
                         // Creator sees fulfilled state
                         if isCreator && tx.type == .request && tx.status == .fulfilled {
+                            creatorFulfilledCard
+                        }
+
+                        // Creator sees completed state (after payer views)
+                        if isCreator && tx.type == .request && tx.status == .completed {
                             creatorFulfilledCard
                         }
 
@@ -172,6 +179,11 @@ struct TransactionDetailView: View {
         // automatically once they return with a higher balance
         .sheet(isPresented: $showWalletSheet) {
             WalletView(onDismiss: { showWalletSheet = false })
+        }
+        .fullScreenCover(isPresented: $showingFullPhoto) {
+            if let photoUrl = tx.photoUrl {
+                FullScreenPhotoView(photoUrl: photoUrl, onDismiss: { showingFullPhoto = false })
+            }
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
@@ -599,19 +611,41 @@ struct TransactionDetailView: View {
     private var viewPhotoCard: some View {
         VStack(spacing: 16) {
             if let photoUrl = tx.photoUrl {
-                AsyncImage(url: URL(string: photoUrl)) { img in
-                    img.resizable().scaledToFill()
-                        .frame(maxWidth: .infinity).frame(height: 260)
-                        .clipped().cornerRadius(12)
-                } placeholder: {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(AppTheme.cardBackground)
-                        .frame(maxWidth: .infinity).frame(height: 260)
-                        .overlay(ProgressView().tint(AppTheme.secondaryText))
+                Button { showingFullPhoto = true } label: {
+                    AsyncImage(url: URL(string: photoUrl)) { img in
+                        img.resizable().scaledToFill()
+                            .frame(maxWidth: .infinity).frame(height: 260)
+                            .clipped().cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.black.opacity(0.02))
+                                    .overlay(
+                                        VStack {
+                                            Spacer()
+                                            HStack {
+                                                Spacer()
+                                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                                    .font(.system(size: 13, weight: .bold))
+                                                    .foregroundColor(.white)
+                                                    .padding(8)
+                                                    .background(Color.black.opacity(0.4))
+                                                    .clipShape(Circle())
+                                                    .padding(12)
+                                            }
+                                        }
+                                    )
+                            )
+                    } placeholder: {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(AppTheme.cardBackground)
+                            .frame(maxWidth: .infinity).frame(height: 260)
+                            .overlay(ProgressView().tint(AppTheme.secondaryText))
+                    }
                 }
+                .buttonStyle(.plain)
             }
 
-            if tx.status == .completed && tx.rating == nil {
+            if tx.status == .completed && tx.rating == nil && !isCreator {
                 RatingCard(transactionId: tx.id, onRated: { })
             }
 
