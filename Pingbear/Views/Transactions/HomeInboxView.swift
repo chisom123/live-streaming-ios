@@ -6,7 +6,7 @@ import UserNotifications
 // ─────────────────────────────────────────────────────────────
 // MARK: - HomeInboxView
 //
-// Inbox model — transactions stay until user dismisses them.
+// Inbox model — transactions stay until user dismisses them
 // Three sections:
 //   Your Turn  — needs action from current user (highlighted)
 //   In Progress — waiting on someone else (normal)
