@@ -74,13 +74,21 @@ struct TransactionDetailView: View {
         .onAppear {
             startListening()
             startBalanceListener()
+            Analytics.shared.trackScreen(name: "transaction_detail")
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
                 properties: [AnalyticsProperty.transactionId: tx.id, "status": tx.status.rawValue, "is_creator": isCreator]
             )
         }
         .onDisappear { stopListening(); stopBalanceListener() }
-        .fullScreenCover(isPresented: $showWalletSheet) { WalletView(onDismiss: { showWalletSheet = false }) }
+        .fullScreenCover(isPresented: $showWalletSheet) {
+            WalletView(onDismiss: { showWalletSheet = false })
+        }
+        .onChange(of: showWalletSheet) { isShowing in
+            if isShowing {
+                Analytics.shared.trackTap(elementId: "wallet_sheet_opened", screenName: "transaction_detail")
+            }
+        }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -255,6 +263,7 @@ struct TransactionDetailView: View {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
                                 showInsufficientFunds = false
                             }
+                            Analytics.shared.trackTap(elementId: "insufficient_funds_not_now", screenName: "transaction_detail")
                         } label: {
                             Text("Not now")
                                 .font(.system(size: 15))
@@ -483,6 +492,7 @@ struct TransactionDetailView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             if tx.rating == nil {
                 showRatingPrompt = true
+                Analytics.shared.track(event: "rating_card_shown", properties: [AnalyticsProperty.transactionId: tx.id])
             }
         }
     }
@@ -528,6 +538,7 @@ struct TransactionDetailView: View {
             await MainActor.run {
                 isActioning   = false
                 Analytics.shared.trackOffer(action: "accepted", transactionId: tx.id)
+                Analytics.shared.track(event: "countdown_started", properties: [AnalyticsProperty.transactionId: tx.id])
                 showCountdown = true
             }
         } catch {
