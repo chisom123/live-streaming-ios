@@ -420,7 +420,7 @@ struct NewTransactionView: View {
                 )
 
                 if !price.isEmpty && !priceValid {
-                    Text("Price must be between $0.50 and $20.00").font(.system(size: 12, weight: .bold)).foregroundColor(.red)
+                    Text("Reward must be between $0.50 and $20.00").font(.system(size: 12, weight: .bold)).foregroundColor(.red)
                 }
 
                 if priceValid { requestBreakdownView }
