@@ -260,11 +260,10 @@ struct TransactionDetailView: View {
     private var descriptionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("The Request")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(AppTheme.secondaryText)
-                .textCase(.uppercase)
             Text(tx.description)
-                .font(.system(size: 16))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(AppTheme.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -298,7 +297,7 @@ struct TransactionDetailView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .scaleEffect(0.85)
                         }
-                        Text("Accept & Earn $\(String(format: "%.2f", tx.creatorPayout))")
+                        Text("Accept")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     }
