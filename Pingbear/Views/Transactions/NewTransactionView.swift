@@ -392,7 +392,7 @@ struct NewTransactionView: View {
                                 .foregroundColor(price == preset ? .white : AppTheme.primaryText)
                                 .frame(maxWidth: .infinity).padding(.vertical, 10)
                                 .background(price == preset ? AppTheme.accent : AppTheme.cardBackground)
-                                .cornerRadius(10)
+                                .cornerRadius(200)
                         }
                         .buttonStyle(.plain)
                     }
