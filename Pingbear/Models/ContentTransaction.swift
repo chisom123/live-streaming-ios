@@ -8,8 +8,11 @@ import FirebaseFirestore
 enum TransactionStatus: String, Codable {
     case pendingSignup     = "pending_signup"      // toUser not on app yet
     case pendingAcceptance = "pending_acceptance"  // waiting for recipient to accept/decline
-    case completed         = "completed"           // payer accepted and paid
+    case accepted          = "accepted"            // creator accepted, awaiting fulfillment
+    case fulfilled         = "fulfilled"           // creator fulfilled, awaiting payer view
+    case completed         = "completed"           // payer viewed, fully done
     case declined          = "declined"            // recipient declined
+    case cancelled         = "cancelled"           // sender cancelled before fulfillment
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -18,16 +21,18 @@ enum TransactionStatus: String, Codable {
 
 struct ContentTransaction: Identifiable {
     let id:               String
-    let fromUserId:       String
-    var toUserId:         String?
+    let fromUserId:       String       // payer — sent the request
+    var toUserId:         String?      // creator — takes the photo
     let price:            Double
     let platformFee:      Double
     let creatorPayout:    Double
+    let description:      String       // what photo the payer wants
     var status:           TransactionStatus
     var photoUrl:         String?
     var rating:           Int?
     let createdAt:        Date
     var acceptedAt:       Date?
+    var fulfilledAt:      Date?
     var completedAt:      Date?
     var pendingPhoneHash: String?
     var pendingName:      String?
@@ -40,13 +45,14 @@ struct ContentTransaction: Identifiable {
         fromUserId == currentUserId ? toUserId : fromUserId
     }
 
-    /// Creator is always the sender (from_user_id) for offers
+    /// Creator = toUserId (person being asked to take the photo)
     func isCreator(currentUserId: String) -> Bool {
-        fromUserId == currentUserId
+        toUserId == currentUserId
     }
 
+    /// Payer = fromUserId (person who sent the request)
     func isPayer(currentUserId: String) -> Bool {
-        toUserId == currentUserId
+        fromUserId == currentUserId
     }
 
     // ─────────────────────────────────────────────────────────
@@ -59,6 +65,7 @@ struct ContentTransaction: Identifiable {
             let price         = data["price"] as? Double,
             let platformFee   = data["platform_fee"] as? Double,
             let creatorPayout = data["creator_payout"] as? Double,
+            let description   = data["description"] as? String,
             let statusRaw     = data["status"] as? String,
             let status        = TransactionStatus(rawValue: statusRaw),
             let createdAt     = (data["created_at"] as? Timestamp)?.dateValue()
@@ -70,11 +77,13 @@ struct ContentTransaction: Identifiable {
         self.price            = price
         self.platformFee      = platformFee
         self.creatorPayout    = creatorPayout
+        self.description      = description
         self.status           = status
         self.photoUrl         = data["photo_url"] as? String
         self.rating           = data["rating"] as? Int
         self.createdAt        = createdAt
         self.acceptedAt       = (data["accepted_at"] as? Timestamp)?.dateValue()
+        self.fulfilledAt      = (data["fulfilled_at"] as? Timestamp)?.dateValue()
         self.completedAt      = (data["completed_at"] as? Timestamp)?.dateValue()
         self.pendingPhoneHash = data["pending_phone_hash"] as? String
         self.pendingName      = data["pending_name"] as? String

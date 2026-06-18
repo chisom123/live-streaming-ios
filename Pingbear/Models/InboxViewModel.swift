@@ -2,16 +2,6 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 
-// ─────────────────────────────────────────────────────────────
-// MARK: - InboxViewModel
-//
-// Inbox behaves like an email inbox:
-// - Transactions stay until the user explicitly dismisses them
-// - Active items show highlighted (needs action / in progress)
-// - Completed/declined show dimmed (recent)
-// - Dismissed items are hidden (dismissed_by contains currentUserId)
-// ─────────────────────────────────────────────────────────────
-
 @MainActor
 final class InboxViewModel: ObservableObject {
 
@@ -27,20 +17,22 @@ final class InboxViewModel: ObservableObject {
 
     private let incomingStatuses: [String] = [
         TransactionStatus.pendingAcceptance.rawValue,
+        TransactionStatus.accepted.rawValue,
+        TransactionStatus.fulfilled.rawValue,
         TransactionStatus.completed.rawValue,
-        TransactionStatus.declined.rawValue
+        TransactionStatus.declined.rawValue,
+        TransactionStatus.cancelled.rawValue
     ]
 
     private let outgoingStatuses: [String] = [
         TransactionStatus.pendingSignup.rawValue,
         TransactionStatus.pendingAcceptance.rawValue,
+        TransactionStatus.accepted.rawValue,
+        TransactionStatus.fulfilled.rawValue,
         TransactionStatus.completed.rawValue,
-        TransactionStatus.declined.rawValue
+        TransactionStatus.declined.rawValue,
+        TransactionStatus.cancelled.rawValue
     ]
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Lifecycle
-    // ─────────────────────────────────────────────────────────
 
     func start() {
         guard !currentUserId.isEmpty else { return }
@@ -52,10 +44,6 @@ final class InboxViewModel: ObservableObject {
         listeners.forEach { $0.remove() }
         listeners.removeAll()
     }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Listeners
-    // ─────────────────────────────────────────────────────────
 
     private func listenIncoming() {
         let ref = db.collection("content_transactions")
@@ -97,34 +85,20 @@ final class InboxViewModel: ObservableObject {
         listeners.append(listener)
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Enrichment
-    // ─────────────────────────────────────────────────────────
-
     private func enrich(
         txs: [ContentTransaction],
         into keyPath: ReferenceWritableKeyPath<InboxViewModel, [EnrichedContentTransaction]>
     ) async {
         var enriched: [EnrichedContentTransaction] = []
-
         for tx in txs {
             guard let otherId = tx.otherUserId(currentUserId: currentUserId) else {
-                // pending_signup — no user ID yet, use stored contact name
                 let placeholder = tx.pendingName.map { name in
-                    UserProfile(
-                        id:                "",
-                        name:              name,
-                        username:          "",
-                        profilePictureUrl: nil,
-                        totalEarned:       0,
-                        averageRating:     0,
-                        ratingCount:       0
-                    )
+                    UserProfile(id: "", name: name, username: "", profilePictureUrl: nil,
+                                totalEarned: 0, averageRating: 0, ratingCount: 0)
                 }
                 enriched.append(EnrichedContentTransaction(transaction: tx, otherProfile: placeholder))
                 continue
             }
-
             let profile: UserProfile?
             if let cached = profileCache[otherId] {
                 profile = cached
@@ -133,24 +107,16 @@ final class InboxViewModel: ObservableObject {
                 if let fetched { profileCache[otherId] = fetched }
                 profile = fetched
             }
-
             enriched.append(EnrichedContentTransaction(transaction: tx, otherProfile: profile))
         }
-
         self[keyPath: keyPath] = enriched
         isLoading = false
     }
 
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Fetch profile
-    // ─────────────────────────────────────────────────────────
-
     private func fetchProfile(userId: String) async -> UserProfile? {
         await withCheckedContinuation { continuation in
             db.collection("users").document(userId).getDocument { snap, _ in
-                guard let data = snap?.data() else {
-                    continuation.resume(returning: nil); return
-                }
+                guard let data = snap?.data() else { continuation.resume(returning: nil); return }
                 continuation.resume(returning: UserProfile(
                     id:                userId,
                     name:              data["name"] as? String ?? "",

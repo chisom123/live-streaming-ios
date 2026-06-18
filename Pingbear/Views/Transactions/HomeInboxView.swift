@@ -13,6 +13,8 @@ struct HomeInboxView: View {
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let functions     = Functions.functions()
 
+    // ── Section logic ─────────────────────────────────────────
+
     private var yourTurn: [EnrichedContentTransaction] {
         (vm.incoming + vm.outgoing)
             .filter { needsAction($0) }
@@ -32,22 +34,32 @@ struct HomeInboxView: View {
     }
 
     private func needsAction(_ e: EnrichedContentTransaction) -> Bool {
-        let tx = e.transaction
-        return tx.status == .pendingAcceptance && tx.toUserId == currentUserId
+        let tx           = e.transaction
+        let iAmCreator   = tx.toUserId == currentUserId
+        let iAmPayer     = tx.fromUserId == currentUserId
+        switch tx.status {
+        case .pendingAcceptance: return iAmCreator               // creator needs to respond
+        case .accepted:          return iAmCreator               // creator needs to shoot photo
+        case .fulfilled:         return iAmPayer                 // payer needs to view photo
+        default:                 return false
+        }
     }
 
     private func isInProgress(_ e: EnrichedContentTransaction) -> Bool {
-        let tx = e.transaction
+        let tx       = e.transaction
+        let iAmPayer = tx.fromUserId == currentUserId
         switch tx.status {
         case .pendingSignup:     return true
-        case .pendingAcceptance: return tx.fromUserId == currentUserId
+        case .pendingAcceptance: return iAmPayer                 // payer waiting for response
+        case .accepted:          return iAmPayer                 // payer waiting for photo
+        case .fulfilled:         return !iAmPayer                // creator waiting for payer to view
         default:                 return false
         }
     }
 
     private func isRecent(_ e: EnrichedContentTransaction) -> Bool {
         switch e.transaction.status {
-        case .completed, .declined: return true
+        case .completed, .declined, .cancelled: return true
         default: return false
         }
     }
@@ -113,7 +125,7 @@ struct HomeInboxView: View {
                 HStack {
                     Spacer()
                     Button {
-                        Analytics.shared.trackTap(elementId: "new_offer_fab", screenName: "home_inbox")
+                        Analytics.shared.trackTap(elementId: "new_request_fab", screenName: "home_inbox")
                         showingNewTransaction = true
                     } label: {
                         Image(systemName: "plus")
@@ -148,7 +160,7 @@ struct HomeInboxView: View {
         .fullScreenCover(isPresented: $showingNewTransaction) {
             NewTransactionView(onDismiss: { showingNewTransaction = false })
         }
-        .fullScreenCover(item: $selectedTransaction) { enriched in
+        .sheet(item: $selectedTransaction) { enriched in
             TransactionDetailView(enriched: enriched, onDismiss: { selectedTransaction = nil })
         }
         .alert("Error", isPresented: Binding(
@@ -202,17 +214,15 @@ struct HomeInboxView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Transaction card
+    // MARK: - Cards
     // ─────────────────────────────────────────────────────────
 
     enum CardStyle { case urgent, normal, dimmed }
 
     private func transactionCard(_ enriched: EnrichedContentTransaction, style: CardStyle) -> some View {
         Button {
-            Analytics.shared.track(
-                event: AnalyticsEvent.transactionViewed,
-                properties: [AnalyticsProperty.transactionId: enriched.id]
-            )
+            Analytics.shared.track(event: AnalyticsEvent.transactionViewed,
+                                   properties: [AnalyticsProperty.transactionId: enriched.id])
             selectedTransaction = enriched
         } label: {
             InboxCard(enriched: enriched, currentUserId: currentUserId, style: style)
@@ -237,7 +247,8 @@ struct HomeInboxView: View {
     private func dismiss(_ enriched: EnrichedContentTransaction) async {
         do {
             try await functions.httpsCallable("dismissTransaction").call(["transactionId": enriched.id])
-            Analytics.shared.track(event: AnalyticsEvent.transactionDismissed, properties: [AnalyticsProperty.transactionId: enriched.id])
+            Analytics.shared.track(event: AnalyticsEvent.transactionDismissed,
+                                   properties: [AnalyticsProperty.transactionId: enriched.id])
         } catch {
             vm.errorMessage = error.localizedDescription
         }
@@ -249,12 +260,12 @@ struct HomeInboxView: View {
             VStack(spacing: 16) {
                 ZStack {
                     Circle().fill(AppTheme.accent.opacity(0.1)).frame(width: 80, height: 80)
-                    Image(systemName: "gift").font(.system(size: 32)).foregroundColor(AppTheme.accent)
+                    Image(systemName: "camera.fill").font(.system(size: 32)).foregroundColor(AppTheme.accent)
                 }
                 Text("Nothing here yet")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                Text("Tap + to send a mystery photo to a friend")
+                Text("Tap + to request a photo from a friend")
                     .font(.system(size: 15))
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -279,7 +290,8 @@ struct HomeInboxView: View {
             DispatchQueue.main.async {
                 if granted {
                     UIApplication.shared.registerForRemoteNotifications()
-                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionGranted, properties: ["screen": "home_inbox"])
+                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionGranted,
+                                           properties: ["screen": "home_inbox"])
                 }
             }
         }
@@ -297,22 +309,25 @@ struct InboxCard: View {
     let style:         HomeInboxView.CardStyle
 
     private var tx: ContentTransaction { enriched.transaction }
-    private var iSentThis: Bool { tx.fromUserId == currentUserId }
-    private var isDimmed:  Bool { style == .dimmed }
+    private var iAmCreator: Bool { tx.toUserId == currentUserId }
+    private var iAmPayer:   Bool { tx.fromUserId == currentUserId }
+    private var isDimmed:   Bool { style == .dimmed }
 
     var body: some View {
         HStack(spacing: 14) {
 
-            // Avatar — blur hint for payer so they can't see the photo
-            ZStack {
-                ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
-                    .opacity(isDimmed ? 0.5 : 1)
-            }
+            ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
+                .opacity(isDimmed ? 0.5 : 1)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(enriched.otherProfile?.name ?? "Someone")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
+
+                Text(tx.description)
+                    .font(.system(size: 13))
+                    .foregroundColor(AppTheme.secondaryText)
+                    .lineLimit(1)
 
                 Text(statusLabel)
                     .font(.system(size: 12, weight: .semibold))
@@ -349,32 +364,45 @@ struct InboxCard: View {
 
     private var directionBadge: some View {
         HStack(spacing: 3) {
-            Image(systemName: iSentThis ? "arrow.up.right" : "arrow.down.left")
+            Image(systemName: iAmPayer ? "arrow.up.right" : "arrow.down.left")
                 .font(.system(size: 9, weight: .bold))
-            Text(iSentThis ? "Sent" : "Received")
+            Text(iAmPayer ? "Sent" : "Received")
                 .font(.system(size: 10, weight: .bold))
         }
-        .foregroundColor(iSentThis ? AppTheme.secondaryText : AppTheme.accent)
+        .foregroundColor(iAmPayer ? AppTheme.secondaryText : AppTheme.accent)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
-        .background((iSentThis ? AppTheme.secondaryText : AppTheme.accent).opacity(0.08))
+        .background((iAmPayer ? AppTheme.secondaryText : AppTheme.accent).opacity(0.08))
         .cornerRadius(200)
     }
 
     private var statusLabel: String {
         switch tx.status {
-        case .pendingSignup:    return "Waiting for them to join"
-        case .pendingAcceptance: return iSentThis ? "Waiting for response" : "Tap to unlock 🎁"
+        case .pendingSignup:
+            return "Waiting for them to join"
+        case .pendingAcceptance:
+            return iAmCreator ? "Tap to respond 📸" : "Waiting for response"
+        case .accepted:
+            return iAmCreator ? "Tap to send your photo 📸" : "They're working on it..."
+        case .fulfilled:
+            return iAmPayer ? "Tap to see your photo 👀" : "Photo sent — waiting for them to view"
         case .completed:
             if let rating = tx.rating { return "Completed · \(rating)⭐" }
             return "Completed ✓"
         case .declined:
-            return iSentThis ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
+            return iAmPayer ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
+        case .cancelled:
+            return iAmPayer ? "You cancelled" : "\(enriched.otherProfile?.name ?? "They") cancelled"
         }
     }
 
     private var statusLabelColor: Color {
-        tx.status == .pendingAcceptance && style == .urgent ? AppTheme.accent : AppTheme.secondaryText
+        switch tx.status {
+        case .pendingAcceptance: return style == .urgent ? AppTheme.accent : AppTheme.secondaryText
+        case .accepted:          return style == .urgent ? AppTheme.accent : AppTheme.secondaryText
+        case .fulfilled:         return style == .urgent ? AppTheme.green  : AppTheme.secondaryText
+        default:                 return AppTheme.secondaryText
+        }
     }
 }
 
@@ -399,7 +427,7 @@ struct NotificationPermissionPrompt: View {
                     Text("Don't miss a thing")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Get notified when friends send you offers and when someone unlocks your content")
+                    Text("Get notified when friends respond to your requests and when photos are ready")
                         .font(.system(size: 14))
                         .foregroundColor(AppTheme.secondaryText)
                         .multilineTextAlignment(.center)

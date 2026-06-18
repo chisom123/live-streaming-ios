@@ -25,7 +25,8 @@ final class HistoryViewModel: ObservableObject {
 
         let completedStatuses: [String] = [
             TransactionStatus.completed.rawValue,
-            TransactionStatus.declined.rawValue
+            TransactionStatus.declined.rawValue,
+            TransactionStatus.cancelled.rawValue
         ]
 
         group.enter()
@@ -124,10 +125,8 @@ struct HistoryView: View {
                                 }
                             }
                         }
-                        .background(AppTheme.cardBackground)
-                        .cornerRadius(16)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
+                        .background(AppTheme.cardBackground).cornerRadius(16)
+                        .padding(.horizontal, 20).padding(.bottom, 40)
                     }
                 }
             }
@@ -145,7 +144,7 @@ struct HistoryView: View {
             Spacer()
             Image(systemName: "clock.arrow.circlepath").font(.system(size: 48)).foregroundColor(AppTheme.secondaryText.opacity(0.3))
             Text("No history yet").font(.system(size: 18, weight: .bold)).foregroundColor(AppTheme.primaryText)
-            Text("Completed offers will appear here").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
+            Text("Completed requests will appear here").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
             Spacer()
         }
     }
@@ -162,7 +161,7 @@ struct HistoryRow: View {
 
     private var tx: ContentTransaction { enriched.transaction }
     private var isCreator: Bool { tx.isCreator(currentUserId: currentUserId) }
-    private var iSentThis: Bool { tx.fromUserId == currentUserId }
+    private var isPayer:   Bool { tx.isPayer(currentUserId: currentUserId) }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -178,7 +177,7 @@ struct HistoryRow: View {
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 VStack { Spacer(); HStack { Spacer()
-                    Text("🎁").font(.system(size: 10)).frame(width: 18, height: 18)
+                    Text("📸").font(.system(size: 10)).frame(width: 18, height: 18)
                         .background(AppTheme.pageBackground).clipShape(Circle()).offset(x: 4, y: 4)
                 }}
                 .frame(width: 52, height: 52)
@@ -188,11 +187,11 @@ struct HistoryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(enriched.otherProfile?.name ?? "Someone")
                     .font(.system(size: 15, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                Text(tx.description)
+                    .font(.system(size: 13)).foregroundColor(AppTheme.secondaryText).lineLimit(1)
                 HStack(spacing: 6) {
                     statusBadge
-                    if let rating = tx.rating {
-                        Text("\(rating)⭐").font(.system(size: 11)).foregroundColor(AppTheme.secondaryText)
-                    }
+                    if let rating = tx.rating { Text("\(rating)⭐").font(.system(size: 11)).foregroundColor(AppTheme.secondaryText) }
                 }
             }
 
@@ -202,7 +201,7 @@ struct HistoryRow: View {
                 if isCreator && tx.status == .completed {
                     Text("+$\(String(format: "%.2f", tx.creatorPayout))")
                         .font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.green)
-                } else if !isCreator && tx.status == .completed {
+                } else if isPayer && tx.status == .completed {
                     Text("-$\(String(format: "%.2f", tx.price))")
                         .font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.primaryText)
                 }
@@ -210,17 +209,32 @@ struct HistoryRow: View {
             }
             .padding(.trailing, 16)
         }
-        .padding(.vertical, 14)
-        .contentShape(Rectangle())
+        .padding(.vertical, 14).contentShape(Rectangle())
     }
 
     private var statusBadge: some View {
-        Text(tx.status == .completed ? (iSentThis ? "Sent" : "Unlocked") : "Declined")
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(tx.status == .completed ? AppTheme.green : AppTheme.secondaryText)
+        Text(statusText)
+            .font(.system(size: 11, weight: .bold)).foregroundColor(statusColor)
             .padding(.horizontal, 6).padding(.vertical, 2)
-            .background((tx.status == .completed ? AppTheme.green : AppTheme.secondaryText).opacity(0.1))
-            .cornerRadius(4)
+            .background(statusColor.opacity(0.1)).cornerRadius(4)
+    }
+
+    private var statusText: String {
+        switch tx.status {
+        case .completed:  return isPayer ? "Sent" : "Received"
+        case .declined:   return "Declined"
+        case .cancelled:  return "Cancelled"
+        default:          return tx.status.rawValue.capitalized
+        }
+    }
+
+    private var statusColor: Color {
+        switch tx.status {
+        case .completed:  return AppTheme.green
+        case .declined:   return AppTheme.secondaryText
+        case .cancelled:  return .red
+        default:          return AppTheme.secondaryText
+        }
     }
 }
 
@@ -265,11 +279,9 @@ struct HistoryDetailView: View {
                                         .overlay(ProgressView().tint(AppTheme.secondaryText))
                                 }
                             }
-                            .buttonStyle(.plain)
-                            .padding(.horizontal, 20)
+                            .buttonStyle(.plain).padding(.horizontal, 20)
                         }
 
-                        // People + money
                         HStack(spacing: 16) {
                             ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
                             VStack(alignment: .leading, spacing: 3) {
@@ -293,8 +305,9 @@ struct HistoryDetailView: View {
                         }
                         .padding(16).background(AppTheme.cardBackground).cornerRadius(12).padding(.horizontal, 20)
 
-                        // Details
                         VStack(spacing: 0) {
+                            detailRow(label: "The Request", value: tx.description)
+                            Divider().background(AppTheme.divider).padding(.leading, 16)
                             detailRow(label: "Status", value: tx.status.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)
                             if let rating = tx.rating {
                                 Divider().background(AppTheme.divider).padding(.leading, 16)
