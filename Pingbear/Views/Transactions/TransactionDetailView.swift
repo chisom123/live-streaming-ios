@@ -260,7 +260,7 @@ struct TransactionDetailView: View {
     private var descriptionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("The Request")
-                .font(.system(size: 14, weight: .bold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(AppTheme.secondaryText)
             Text(tx.description)
                 .font(.system(size: 15, weight: .semibold))
@@ -280,6 +280,8 @@ struct TransactionDetailView: View {
     private var creatorAcceptDeclineButtons: some View {
         VStack(spacing: 12) {
             feeBreakdownCard
+                .padding(.bottom)
+            
             HStack(spacing: 12) {
                 Button { Task { await respond(accept: false) } } label: {
                     Text("Decline")
@@ -312,25 +314,24 @@ struct TransactionDetailView: View {
 
     private var feeBreakdownCard: some View {
         VStack(spacing: 0) {
-            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",          color: AppTheme.primaryText,   bold: false)
+            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",          color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",   color: AppTheme.secondaryText, bold: false)
+            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",   color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))",  color: AppTheme.green,         bold: true)
+            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))",  color: AppTheme.green)
         }
         .background(AppTheme.cardBackground).cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.divider, lineWidth: 1))
     }
 
-    private func feeRow(label: String, value: String, color: Color, bold: Bool) -> some View {
+    private func feeRow(label: String, value: String, color: Color) -> some View {
         HStack {
-            Text(label).font(.system(size: 13)).foregroundColor(AppTheme.secondaryText)
+            Text(label).font(.system(size: 13, weight: .semibold)).foregroundColor(AppTheme.secondaryText)
             Spacer()
             Text(value)
-                .font(.system(size: 13, weight: bold ? .bold : .regular))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundColor(color)
         }
-        .padding(.horizontal, 14).padding(.vertical, 10)
+        .padding(.horizontal, 16).padding(.vertical, 16)
     }
 
     // ─────────────────────────────────────────────────────────
