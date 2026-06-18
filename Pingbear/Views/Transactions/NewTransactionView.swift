@@ -346,19 +346,23 @@ struct NewTransactionView: View {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             } label: {
                 Text("Enable Contacts in Settings")
-                    .font(.system(size: 15, weight: .bold)).foregroundColor(AppTheme.accent)
-                    .frame(maxWidth: .infinity).padding(.vertical, 16)
-                    .background(AppTheme.cardBackground).cornerRadius(12)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(AppTheme.accent)
+                    .cornerRadius(200)
             }
             .buttonStyle(.plain)
         } else {
             Button { contactVM.requestContactAccess() } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "person.2.fill")
-                    Text("Find Friends from Contacts").font(.system(size: 15, weight: .bold))
-                }
-                .foregroundColor(.white).frame(maxWidth: .infinity).padding(.vertical, 14)
-                .background(AppTheme.accent).cornerRadius(12)
+                Text("Find Friends from Contacts")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(AppTheme.accent)
+                    .cornerRadius(200)
             }
             .buttonStyle(.plain)
         }
