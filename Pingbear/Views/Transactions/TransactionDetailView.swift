@@ -1,4 +1,5 @@
 import SwiftUI
+import AVKit
 import FirebaseAuth
 import FirebaseFirestore
 import FirebaseFunctions
@@ -8,7 +9,7 @@ import FirebaseFunctions
 //
 // ROLES:
 //   payer   = fromUserId (sent the request, pays)
-//   creator = toUserId   (takes the photo, earns)
+//   creator = toUserId   (records the video, earns)
 //
 // STATUS FLOW:
 //   pending_signup → pending_acceptance → accepted → fulfilled → completed
@@ -21,16 +22,16 @@ struct TransactionDetailView: View {
     let initialEnriched: EnrichedContentTransaction
     let onDismiss:        () -> Void
 
-    @State private var tx:             ContentTransaction
-    @State private var otherProfile:   UserProfile?
-    @State private var listener:       ListenerRegistration? = nil
-    @State private var isActioning     = false
-    @State private var isCancelling    = false
-    @State private var errorMessage:   String? = nil
-    @State private var showingCamera   = false
-    @State private var capturedImage:  UIImage? = nil
-    @State private var uploadProgress: Double = 0
-    @State private var showingFullPhoto = false
+    @State private var tx:              ContentTransaction
+    @State private var otherProfile:    UserProfile?
+    @State private var listener:        ListenerRegistration? = nil
+    @State private var isActioning      = false
+    @State private var isCancelling     = false
+    @State private var errorMessage:    String? = nil
+    @State private var showingCamera    = false
+    @State private var capturedVideoURL: URL?   = nil
+    @State private var uploadProgress:  Double  = 0
+    @State private var showingFullVideo  = false
 
     private let functions     = Functions.functions()
     private let db            = Firestore.firestore()
@@ -72,24 +73,24 @@ struct TransactionDetailView: View {
                             waitingCard("Waiting for \(otherName) to join SocialStar")
                         }
 
-                        // Creator: accepted — shoot the photo
+                        // Creator: accepted — record the video
                         if isCreator && tx.status == .accepted {
                             fulfillCard
                         }
 
-                        // Payer: waiting for photo
+                        // Payer: waiting for video
                         if isPayer && tx.status == .accepted {
                             waitingCard("\(otherName) accepted — they're working on it!")
                         }
 
-                        // Payer: photo arrived — tap to view
+                        // Payer: video arrived — tap to view
                         if isPayer && (tx.status == .fulfilled || tx.status == .completed) {
-                            viewPhotoCard
+                            viewVideoCard
                         }
 
                         // Creator: waiting for payer to view
                         if isCreator && tx.status == .fulfilled {
-                            waitingCard("Photo sent — waiting for them to view")
+                            waitingCard("Video sent — waiting for them to view")
                         }
 
                         // Creator: completed
@@ -124,19 +125,28 @@ struct TransactionDetailView: View {
             startListening()
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
-                properties: [AnalyticsProperty.transactionId: tx.id, "status": tx.status.rawValue, "is_creator": isCreator]
+                properties: [
+                    AnalyticsProperty.transactionId: tx.id,
+                    "status":     tx.status.rawValue,
+                    "is_creator": isCreator
+                ]
             )
         }
         .onDisappear { stopListening() }
+        // Camera for creator to record their video
         .fullScreenCover(isPresented: $showingCamera) {
-            CompetitionCameraView(
-                onPhotoTaken: { image in showingCamera = false; capturedImage = image },
-                onCancel:     { showingCamera = false }
+            RequestCameraView(
+                onVideoTaken: { url in
+                    showingCamera    = false
+                    capturedVideoURL = url
+                },
+                onCancel: { showingCamera = false }
             )
         }
-        .fullScreenCover(isPresented: $showingFullPhoto) {
-            if let photoUrl = tx.photoUrl {
-                FullScreenPhotoView(photoUrl: photoUrl, onDismiss: { showingFullPhoto = false })
+        // Full-screen playback for payer
+        .fullScreenCover(isPresented: $showingFullVideo) {
+            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                FullScreenVideoView(url: url, onDismiss: { showingFullVideo = false })
             }
         }
         .alert("Error", isPresented: Binding(
@@ -147,9 +157,9 @@ struct TransactionDetailView: View {
         } message: {
             Text(errorMessage ?? "")
         }
-        .onChange(of: capturedImage) { image in
-            guard let image else { return }
-            Task { await fulfillRequest(image: image) }
+        .onChange(of: capturedVideoURL) { url in
+            guard let url else { return }
+            Task { await fulfillRequest(videoURL: url) }
         }
     }
 
@@ -160,8 +170,10 @@ struct TransactionDetailView: View {
     private func startListening() {
         let txId = tx.id
         listener = db.collection("content_transactions").document(txId)
-            .addSnapshotListener { [self] snap, _ in
-                guard let data = snap?.data(), let updated = ContentTransaction(id: txId, data: data) else { return }
+            .addSnapshotListener { snap, _ in
+                guard let data = snap?.data(),
+                      let updated = ContentTransaction(id: txId, data: data)
+                else { return }
                 tx = updated
             }
     }
@@ -176,18 +188,24 @@ struct TransactionDetailView: View {
         VStack(spacing: 12) {
             ProfilePictureView(url: otherProfile?.profilePictureUrl, size: 64)
             VStack(spacing: 4) {
-                Text(otherName).font(.system(size: 18, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                Text(otherName)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(AppTheme.primaryText)
                 if let username = otherProfile?.username, !username.isEmpty {
-                    Text("@\(username)").font(.system(size: 14)).foregroundColor(AppTheme.secondaryText)
+                    Text("@\(username)")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppTheme.secondaryText)
                 }
             }
             HStack(spacing: 6) {
-                Text("📸 Request")
-                    .font(.system(size: 13, weight: .bold)).foregroundColor(AppTheme.accent)
+                Text("🎥 Request")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(AppTheme.accent)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(AppTheme.accent.opacity(0.1)).cornerRadius(200)
                 Text("$\(String(format: "%.2f", tx.price))")
-                    .font(.system(size: 15, weight: .black)).foregroundColor(AppTheme.primaryText)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(AppTheme.primaryText)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(AppTheme.cardBackground).cornerRadius(200)
             }
@@ -202,21 +220,38 @@ struct TransactionDetailView: View {
     private var statusCard: some View {
         HStack(spacing: 12) {
             Circle().fill(statusColor).frame(width: 10, height: 10)
-            Text(statusMessage).font(.system(size: 14, weight: .semibold)).foregroundColor(AppTheme.primaryText)
+            Text(statusMessage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppTheme.primaryText)
             Spacer()
         }
-        .padding(16).background(statusColor.opacity(0.08)).cornerRadius(12)
+        .padding(16)
+        .background(statusColor.opacity(0.08))
+        .cornerRadius(12)
     }
 
     private var statusMessage: String {
         switch tx.status {
-        case .pendingSignup:     return "Waiting for \(otherName) to join SocialStar"
-        case .pendingAcceptance: return isCreator ? "\(otherName) wants a photo from you" : "Waiting for \(otherName) to respond"
-        case .accepted:          return isCreator ? "You accepted — shoot your photo 📸" : "\(otherName) accepted — they're working on it!"
-        case .fulfilled:         return isCreator ? "Photo sent! Waiting for them to view" : "\(otherName) sent your photo — tap to see it 👀"
-        case .completed:         return tx.rating != nil ? "Completed · \(tx.rating!)⭐" : "Completed ✓"
-        case .declined:          return isCreator ? "You declined" : "\(otherName) declined"
-        case .cancelled:         return isPayer ? "You cancelled this request" : "\(otherName) cancelled"
+        case .pendingSignup:
+            return "Waiting for \(otherName) to join SocialStar"
+        case .pendingAcceptance:
+            return isCreator
+                ? "\(otherName) wants a video from you"
+                : "Waiting for \(otherName) to respond"
+        case .accepted:
+            return isCreator
+                ? "You accepted — record your video 🎥"
+                : "\(otherName) accepted — they're working on it!"
+        case .fulfilled:
+            return isCreator
+                ? "Video sent! Waiting for them to view"
+                : "\(otherName) sent your video — tap to see it 👀"
+        case .completed:
+            return tx.rating != nil ? "Completed · \(tx.rating!)⭐" : "Completed ✓"
+        case .declined:
+            return isCreator ? "You declined" : "\(otherName) declined"
+        case .cancelled:
+            return isPayer ? "You cancelled this request" : "\(otherName) cancelled"
         }
     }
 
@@ -237,27 +272,32 @@ struct TransactionDetailView: View {
     private var descriptionCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("The Request")
-                .font(.system(size: 13, weight: .bold)).foregroundColor(AppTheme.secondaryText).textCase(.uppercase)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(AppTheme.secondaryText)
+                .textCase(.uppercase)
             Text(tx.description)
-                .font(.system(size: 16)).foregroundColor(AppTheme.primaryText).fixedSize(horizontal: false, vertical: true)
+                .font(.system(size: 16))
+                .foregroundColor(AppTheme.primaryText)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16).background(AppTheme.cardBackground).cornerRadius(12)
+        .padding(16)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Creator accept/decline
+    // MARK: - Creator accept / decline
     // ─────────────────────────────────────────────────────────
 
     private var creatorAcceptDeclineButtons: some View {
         VStack(spacing: 12) {
-            // Fee breakdown — creator sees what they'll earn
             feeBreakdownCard
-
             HStack(spacing: 12) {
                 Button { Task { await respond(accept: false) } } label: {
                     Text("Decline")
-                        .font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
                         .frame(maxWidth: .infinity).padding(.vertical, 14)
                         .background(AppTheme.cardBackground).cornerRadius(200)
                 }
@@ -265,9 +305,14 @@ struct TransactionDetailView: View {
 
                 Button { Task { await respond(accept: true) } } label: {
                     HStack(spacing: 6) {
-                        if isActioning { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.85) }
+                        if isActioning {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.85)
+                        }
                         Text("Accept & Earn $\(String(format: "%.2f", tx.creatorPayout))")
-                            .font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(isActioning ? AppTheme.disabledBackground : AppTheme.accent)
@@ -280,11 +325,11 @@ struct TransactionDetailView: View {
 
     private var feeBreakdownCard: some View {
         VStack(spacing: 0) {
-            feeRow(label: "Request price",     value: "$\(String(format: "%.2f", tx.price))",          color: AppTheme.primaryText,   bold: false)
+            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",          color: AppTheme.primaryText,   bold: false)
             Divider().background(AppTheme.divider)
-            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",  color: AppTheme.secondaryText, bold: false)
+            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",   color: AppTheme.secondaryText, bold: false)
             Divider().background(AppTheme.divider)
-            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))", color: AppTheme.green,         bold: true)
+            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))",  color: AppTheme.green,         bold: true)
         }
         .background(AppTheme.cardBackground).cornerRadius(12)
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.divider, lineWidth: 1))
@@ -294,7 +339,9 @@ struct TransactionDetailView: View {
         HStack {
             Text(label).font(.system(size: 13)).foregroundColor(AppTheme.secondaryText)
             Spacer()
-            Text(value).font(.system(size: 13, weight: bold ? .bold : .regular)).foregroundColor(color)
+            Text(value)
+                .font(.system(size: 13, weight: bold ? .bold : .regular))
+                .foregroundColor(color)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
     }
@@ -305,34 +352,52 @@ struct TransactionDetailView: View {
 
     private func waitingCard(_ message: String) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "clock.fill").font(.system(size: 18)).foregroundColor(AppTheme.secondaryText)
-            Text(message).font(.system(size: 14)).foregroundColor(AppTheme.secondaryText)
+            Image(systemName: "clock.fill")
+                .font(.system(size: 18))
+                .foregroundColor(AppTheme.secondaryText)
+            Text(message)
+                .font(.system(size: 14))
+                .foregroundColor(AppTheme.secondaryText)
             Spacer()
         }
-        .padding(16).background(AppTheme.cardBackground).cornerRadius(12)
+        .padding(16)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Fulfill card (creator shoots photo)
+    // MARK: - Fulfill card (creator records video)
     // ─────────────────────────────────────────────────────────
 
     private var fulfillCard: some View {
         VStack(spacing: 16) {
-            if let image = capturedImage {
-                Image(uiImage: image)
-                    .resizable().scaledToFill()
+            if let url = capturedVideoURL {
+                // Thumbnail preview of recorded clip
+                VideoThumbnailView(url: url)
                     .frame(maxWidth: .infinity).frame(height: 220)
-                    .clipped().cornerRadius(12)
+                    .cornerRadius(12).clipped()
 
                 if uploadProgress > 0 && uploadProgress < 1 {
-                    ProgressView(value: uploadProgress).tint(AppTheme.accent)
+                    VStack(spacing: 6) {
+                        ProgressView(value: uploadProgress).tint(AppTheme.accent)
+                        Text("\(Int(uploadProgress * 100))% uploaded")
+                            .font(.system(size: 12))
+                            .foregroundColor(AppTheme.secondaryText)
+                    }
                 }
 
-                Button { Task { await fulfillRequest(image: image) } } label: {
+                Button { Task { await fulfillRequest(videoURL: url) } } label: {
                     HStack(spacing: 8) {
-                        if isActioning { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.85) }
-                        Text(isActioning ? "Sending..." : "Send Photo — Earn $\(String(format: "%.2f", tx.creatorPayout))")
-                            .font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                        if isActioning {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.85)
+                        }
+                        Text(isActioning
+                             ? "Sending..."
+                             : "Send Video — Earn $\(String(format: "%.2f", tx.creatorPayout))")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(isActioning ? AppTheme.disabledBackground : AppTheme.accent)
@@ -340,9 +405,13 @@ struct TransactionDetailView: View {
                 }
                 .disabled(isActioning)
 
-                Button { showingCamera = true } label: {
+                Button {
+                    capturedVideoURL = nil
+                    showingCamera    = true
+                } label: {
                     Text("Retake")
-                        .font(.system(size: 14)).foregroundColor(AppTheme.secondaryText)
+                        .font(.system(size: 14))
+                        .foregroundColor(AppTheme.secondaryText)
                 }
 
             } else {
@@ -350,44 +419,45 @@ struct TransactionDetailView: View {
 
                 Button { showingCamera = true } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: "camera.fill").font(.system(size: 18))
-                        Text("Take the photo").font(.system(size: 16, weight: .bold))
+                        Image(systemName: "video.fill").font(.system(size: 18))
+                        Text("Record the video").font(.system(size: 16, weight: .bold))
                     }
-                    .foregroundColor(.white).frame(maxWidth: .infinity).padding(.vertical, 14)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(AppTheme.accent).cornerRadius(200)
                 }
             }
         }
-        .padding(16).background(AppTheme.cardBackground).cornerRadius(12)
+        .padding(16)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - View photo card (payer)
+    // MARK: - View video card (payer)
     // ─────────────────────────────────────────────────────────
 
-    private var viewPhotoCard: some View {
+    private var viewVideoCard: some View {
         VStack(spacing: 16) {
-            if let photoUrl = tx.photoUrl {
-                Button { showingFullPhoto = true; Task { await markViewed() } } label: {
-                    AsyncImage(url: URL(string: photoUrl)) { img in
-                        img.resizable().scaledToFill()
-                            .frame(maxWidth: .infinity).frame(height: 260)
-                            .clipped().cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.02))
-                                    .overlay(VStack { Spacer(); HStack { Spacer()
-                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                            .font(.system(size: 13, weight: .bold)).foregroundColor(.white)
-                                            .padding(8).background(Color.black.opacity(0.4)).clipShape(Circle()).padding(12)
-                                    }})
-                            )
-                    } placeholder: {
-                        RoundedRectangle(cornerRadius: 12).fill(AppTheme.cardBackground)
-                            .frame(maxWidth: .infinity).frame(height: 260)
-                            .overlay(ProgressView().tint(AppTheme.secondaryText))
+            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                // Inline player
+                InlineVideoPlayer(url: url)
+                    .frame(maxWidth: .infinity).frame(height: 300)
+                    .cornerRadius(12).clipped()
+                    .onAppear { Task { await markViewed() } }
+
+                // Full screen button
+                Button {
+                    showingFullVideo = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Full screen")
+                            .font(.system(size: 14, weight: .semibold))
                     }
+                    .foregroundColor(AppTheme.secondaryText)
                 }
-                .buttonStyle(.plain)
             }
 
             if tx.status == .completed && tx.rating == nil {
@@ -396,11 +466,17 @@ struct TransactionDetailView: View {
 
             if let rating = tx.rating {
                 HStack {
-                    Text("You rated this").font(.system(size: 14)).foregroundColor(AppTheme.secondaryText)
+                    Text("You rated this")
+                        .font(.system(size: 14))
+                        .foregroundColor(AppTheme.secondaryText)
                     Spacer()
-                    Text("\(rating)⭐").font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                    Text("\(rating)⭐")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
                 }
-                .padding(14).background(AppTheme.cardBackground).cornerRadius(12)
+                .padding(14)
+                .background(AppTheme.cardBackground)
+                .cornerRadius(12)
             }
         }
     }
@@ -411,15 +487,22 @@ struct TransactionDetailView: View {
 
     private var creatorCompletedCard: some View {
         HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill").font(.system(size: 20)).foregroundColor(AppTheme.green)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 20))
+                .foregroundColor(AppTheme.green)
             VStack(alignment: .leading, spacing: 3) {
-                Text("Photo sent & payment received").font(.system(size: 14, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                Text("Video sent & payment received")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(AppTheme.primaryText)
                 Text("+$\(String(format: "%.2f", tx.creatorPayout)) added to your wallet")
-                    .font(.system(size: 13)).foregroundColor(AppTheme.green)
+                    .font(.system(size: 13))
+                    .foregroundColor(AppTheme.green)
             }
             Spacer()
         }
-        .padding(16).background(AppTheme.green.opacity(0.08)).cornerRadius(12)
+        .padding(16)
+        .background(AppTheme.green.opacity(0.08))
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
@@ -429,9 +512,14 @@ struct TransactionDetailView: View {
     private var cancelButton: some View {
         Button { Task { await cancelRequest() } } label: {
             HStack(spacing: 6) {
-                if isCancelling { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .red)).scaleEffect(0.8) }
+                if isCancelling {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .red))
+                        .scaleEffect(0.8)
+                }
                 Text(isCancelling ? "Cancelling..." : "Cancel Request")
-                    .font(.system(size: 15, weight: .bold)).foregroundColor(.red)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.red)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 14)
             .background(Color.red.opacity(0.08)).cornerRadius(200)
@@ -447,11 +535,15 @@ struct TransactionDetailView: View {
         isActioning = true
         do {
             try await functions.httpsCallable("respondToTransaction").call([
-                "transactionId": tx.id, "accept": accept
+                "transactionId": tx.id,
+                "accept":        accept
             ])
             await MainActor.run {
                 isActioning = false
-                Analytics.shared.trackRequest(action: accept ? "accepted" : "declined", transactionId: tx.id)
+                Analytics.shared.trackRequest(
+                    action: accept ? "accepted" : "declined",
+                    transactionId: tx.id
+                )
                 if !accept { onDismiss() }
             }
         } catch {
@@ -459,30 +551,41 @@ struct TransactionDetailView: View {
         }
     }
 
-    private func fulfillRequest(image: UIImage) async {
+    private func fulfillRequest(videoURL: URL) async {
+        guard !isActioning else { return }
         isActioning = true
         do {
-            let photoUrl = try await UploadManager.shared.upload(
-                image:      image,
+            let downloadURL = try await VideoUploadManager.shared.upload(
+                videoURL:   videoURL,
                 folderPath: "fulfilled/\(currentUserId)/\(tx.id)",
-                onProgress: { progress in DispatchQueue.main.async { uploadProgress = progress } }
+                onProgress: { p in DispatchQueue.main.async { uploadProgress = p } }
             )
+            // Clean up local temp file
+            try? FileManager.default.removeItem(at: videoURL)
+
             try await functions.httpsCallable("fulfillRequest").call([
-                "transactionId": tx.id, "photoUrl": photoUrl
+                "transactionId": tx.id,
+                "photoUrl":      downloadURL   // field name unchanged in backend
             ])
             await MainActor.run {
-                isActioning    = false
-                uploadProgress = 0
+                isActioning      = false
+                uploadProgress   = 0
+                capturedVideoURL = nil
                 Analytics.shared.trackRequest(action: "fulfilled", transactionId: tx.id)
             }
         } catch {
-            await MainActor.run { isActioning = false; uploadProgress = 0; errorMessage = error.localizedDescription }
+            await MainActor.run {
+                isActioning    = false
+                uploadProgress = 0
+                errorMessage   = error.localizedDescription
+            }
         }
     }
 
     private func markViewed() async {
         do {
-            try await functions.httpsCallable("markTransactionViewed").call(["transactionId": tx.id])
+            try await functions.httpsCallable("markTransactionViewed")
+                .call(["transactionId": tx.id])
         } catch {
             print("markViewed error: \(error.localizedDescription)")
         }
@@ -491,7 +594,8 @@ struct TransactionDetailView: View {
     private func cancelRequest() async {
         isCancelling = true
         do {
-            try await functions.httpsCallable("cancelRequest").call(["transactionId": tx.id])
+            try await functions.httpsCallable("cancelRequest")
+                .call(["transactionId": tx.id])
             await MainActor.run {
                 isCancelling = false
                 Analytics.shared.trackRequest(action: "cancelled", transactionId: tx.id)
@@ -504,7 +608,159 @@ struct TransactionDetailView: View {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MARK: - RatingCard
+// MARK: - VideoThumbnailView
+// Shows the first frame of a local video file with a play badge.
+// ─────────────────────────────────────────────────────────────
+
+struct VideoThumbnailView: View {
+    let url: URL
+    @State private var thumbnail: UIImage?
+
+    var body: some View {
+        ZStack {
+            if let img = thumbnail {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Rectangle()
+                    .fill(AppTheme.cardBackground)
+                    .overlay(ProgressView().tint(AppTheme.secondaryText))
+            }
+            // Play badge overlay
+            Image(systemName: "play.circle.fill")
+                .font(.system(size: 44))
+                .foregroundColor(.white.opacity(0.85))
+                .shadow(color: .black.opacity(0.3), radius: 4)
+        }
+        .onAppear { generateThumbnail() }
+    }
+
+    private func generateThumbnail() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let asset = AVAsset(url: url)
+            let gen   = AVAssetImageGenerator(asset: asset)
+            gen.appliesPreferredTrackTransform = true
+            gen.maximumSize = CGSize(width: 720, height: 720)
+            if let cgImg = try? gen.copyCGImage(at: .zero, actualTime: nil) {
+                let img = UIImage(cgImage: cgImg)
+                DispatchQueue.main.async { thumbnail = img }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - InlineVideoPlayer
+// AVPlayerViewController wrapped for SwiftUI.
+// Loops, shows system controls, fills the frame.
+// ─────────────────────────────────────────────────────────────
+
+struct InlineVideoPlayer: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let player = AVPlayer(url: url)
+        let vc     = AVPlayerViewController()
+        vc.player                = player
+        vc.showsPlaybackControls = true
+        vc.videoGravity          = .resizeAspectFill
+
+        // Loop
+        context.coordinator.loopObserver = NotificationCenter.default.addObserver(
+            forName:  .AVPlayerItemDidPlayToEndTime,
+            object:   player.currentItem,
+            queue:    .main
+        ) { _ in
+            player.seek(to: .zero)
+            player.play()
+        }
+
+        player.play()
+        return vc
+    }
+
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+
+    static func dismantleUIViewController(_ vc: AVPlayerViewController, coordinator: Coordinator) {
+        vc.player?.pause()
+        if let obs = coordinator.loopObserver {
+            NotificationCenter.default.removeObserver(obs)
+        }
+    }
+
+    class Coordinator {
+        var loopObserver: NSObjectProtocol?
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - FullScreenVideoView
+// Pinch-to-zoom, tap-to-dismiss, same pattern as the old
+// FullScreenPhotoView but for video.
+// ─────────────────────────────────────────────────────────────
+
+struct FullScreenVideoView: View {
+    let url:       URL
+    let onDismiss: () -> Void
+
+    @State private var player:        AVPlayer?
+    @State private var loopObserver:  NSObjectProtocol?
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if let player {
+                VideoPlayer(player: player)
+                    .ignoresSafeArea()
+            }
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(10)
+                            .background(Color.black.opacity(0.5))
+                            .clipShape(Circle())
+                    }
+                    .padding(.top, 60).padding(.trailing, 20)
+                }
+                Spacer()
+            }
+        }
+        .onAppear { setupPlayer() }
+        .onDisappear { teardown() }
+    }
+
+    private func setupPlayer() {
+        let p = AVPlayer(url: url)
+        player = p
+        loopObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object:  p.currentItem,
+            queue:   .main
+        ) { _ in p.seek(to: .zero); p.play() }
+        p.play()
+    }
+
+    private func teardown() {
+        player?.pause()
+        player = nil
+        if let obs = loopObserver {
+            NotificationCenter.default.removeObserver(obs)
+            loopObserver = nil
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - RatingCard (unchanged)
 // ─────────────────────────────────────────────────────────────
 
 struct RatingCard: View {
@@ -520,14 +776,19 @@ struct RatingCard: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("Rate the photo").font(.system(size: 16, weight: .bold)).foregroundColor(AppTheme.primaryText)
+            Text("Rate the video")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(AppTheme.primaryText)
 
             HStack(spacing: 12) {
                 ForEach(1...5, id: \.self) { star in
                     Image(systemName: star <= selectedRating ? "star.fill" : "star")
                         .font(.system(size: 32))
                         .foregroundColor(star <= selectedRating ? AppTheme.gold : AppTheme.secondaryText.opacity(0.3))
-                        .onTapGesture { UIImpactFeedbackGenerator(style: .light).impactOccurred(); selectedRating = star }
+                        .onTapGesture {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            selectedRating = star
+                        }
                         .animation(.spring(response: 0.2, dampingFraction: 0.6), value: selectedRating)
                 }
             }
@@ -535,9 +796,14 @@ struct RatingCard: View {
             if selectedRating > 0 {
                 Button { Task { await submitRating() } } label: {
                     HStack(spacing: 6) {
-                        if isSubmitting { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.85) }
+                        if isSubmitting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.85)
+                        }
                         Text(isSubmitting ? "Submitting..." : "Submit Rating")
-                            .font(.system(size: 16, weight: .bold)).foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
                     .background(isSubmitting ? AppTheme.disabledBackground : AppTheme.accent)
@@ -546,17 +812,31 @@ struct RatingCard: View {
                 .disabled(isSubmitting)
             }
 
-            if let errorMessage { Text(errorMessage).font(.system(size: 13)).foregroundColor(.red) }
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 13))
+                    .foregroundColor(.red)
+            }
         }
-        .padding(20).background(AppTheme.cardBackground).cornerRadius(16)
+        .padding(20)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(16)
     }
 
     private func submitRating() async {
         isSubmitting = true
         do {
-            try await functions.httpsCallable("rateTransaction").call(["transactionId": transactionId, "rating": selectedRating])
-            Analytics.shared.track(event: AnalyticsEvent.contentRated,
-                                   properties: [AnalyticsProperty.transactionId: transactionId, AnalyticsProperty.rating: selectedRating])
+            try await functions.httpsCallable("rateTransaction").call([
+                "transactionId": transactionId,
+                "rating":        selectedRating
+            ])
+            Analytics.shared.track(
+                event: AnalyticsEvent.contentRated,
+                properties: [
+                    AnalyticsProperty.transactionId: transactionId,
+                    AnalyticsProperty.rating:        selectedRating
+                ]
+            )
             await MainActor.run { onRated() }
         } catch {
             await MainActor.run { isSubmitting = false; errorMessage = error.localizedDescription }

@@ -72,8 +72,6 @@
 		4F49243B2FDEAC3B0095A72F /* NewTransactionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F49243A2FDEAC3B0095A72F /* NewTransactionView.swift */; };
 		4F49243D2FDEAC560095A72F /* TransactionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F49243C2FDEAC560095A72F /* TransactionDetailView.swift */; };
 		4F4924432FDED13E0095A72F /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F4924422FDED13E0095A72F /* HistoryView.swift */; };
-		4F6D1E0C2FD36DE70014CB28 /* UploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D1E0B2FD36DE70014CB28 /* UploadManager.swift */; };
-		4F6D1E122FD36E550014CB28 /* CompetitionCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D1E112FD36E550014CB28 /* CompetitionCameraView.swift */; };
 		4F6D1E1C2FD36FFC0014CB28 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
@@ -87,9 +85,11 @@
 		4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */; };
 		4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */; };
 		4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */; };
+		4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */; };
+		4FE8EA7C2FE37B96002F73F0 /* RequestCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8EA7B2FE37B96002F73F0 /* RequestCameraView.swift */; };
+		4FE8EA7E2FE37BAD002F73F0 /* VideoUploadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8EA7D2FE37BAD002F73F0 /* VideoUploadManager.swift */; };
 		4FE9999C2F190A7B00B59DCC /* RealNameEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */; };
 		4FED5C5C2BF641BC00CC5BFE /* CameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */; };
-		4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */; };
 		4FF146422FAC97900081A477 /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF146412FAC97900081A477 /* AppTheme.swift */; };
 		4FF9C19F2F0FF12D000F045C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C19E2F0FF12D000F045C /* MainTabView.swift */; };
 		4FF9C1A52F11F406000F045C /* WalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A42F11F406000F045C /* WalletView.swift */; };
@@ -152,8 +152,6 @@
 		4F49243A2FDEAC3B0095A72F /* NewTransactionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTransactionView.swift; sourceTree = "<group>"; };
 		4F49243C2FDEAC560095A72F /* TransactionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionDetailView.swift; sourceTree = "<group>"; };
 		4F4924422FDED13E0095A72F /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		4F6D1E0B2FD36DE70014CB28 /* UploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadManager.swift; sourceTree = "<group>"; };
-		4F6D1E112FD36E550014CB28 /* CompetitionCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionCameraView.swift; sourceTree = "<group>"; };
 		4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
@@ -165,9 +163,11 @@
 		4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogAnalyticsService.swift; sourceTree = "<group>"; };
 		4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationQueueManager.swift; sourceTree = "<group>"; };
+		4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecordingViewModel.swift; sourceTree = "<group>"; };
+		4FE8EA7B2FE37B96002F73F0 /* RequestCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestCameraView.swift; sourceTree = "<group>"; };
+		4FE8EA7D2FE37BAD002F73F0 /* VideoUploadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoUploadManager.swift; sourceTree = "<group>"; };
 		4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealNameEntryView.swift; sourceTree = "<group>"; };
 		4FED5C5B2BF641BC00CC5BFE /* CameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraViewModel.swift; sourceTree = "<group>"; };
-		4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraInit.swift; sourceTree = "<group>"; };
 		4FF146412FAC97900081A477 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		4FF9C19E2F0FF12D000F045C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4FF9C1A42F11F406000F045C /* WalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletView.swift; sourceTree = "<group>"; };
@@ -346,7 +346,6 @@
 			children = (
 				4F4924372FDEAC0A0095A72F /* Transactions */,
 				4FF9C1962F0FDAA6000F045C /* Money */,
-				4FED5C5A2BF61F6D00CC5BFE /* Camera */,
 				4F31B8932BDBAA85007892BC /* Auth */,
 				4F31B8942BDBAB22007892BC /* User Management */,
 				4F31B8962BDBABB4007892BC /* Payments */,
@@ -379,6 +378,7 @@
 				4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */,
 				4F4924332FDEAB800095A72F /* ContentTransaction.swift */,
 				4F4924352FDEABAA0095A72F /* InboxViewModel.swift */,
+				4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -390,8 +390,8 @@
 				4F49243A2FDEAC3B0095A72F /* NewTransactionView.swift */,
 				4F49243C2FDEAC560095A72F /* TransactionDetailView.swift */,
 				4F4924422FDED13E0095A72F /* HistoryView.swift */,
-				4F6D1E0B2FD36DE70014CB28 /* UploadManager.swift */,
-				4F6D1E112FD36E550014CB28 /* CompetitionCameraView.swift */,
+				4FE8EA7B2FE37B96002F73F0 /* RequestCameraView.swift */,
+				4FE8EA7D2FE37BAD002F73F0 /* VideoUploadManager.swift */,
 			);
 			path = Transactions;
 			sourceTree = "<group>";
@@ -421,14 +421,6 @@
 				4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */,
 			);
 			path = Analytics;
-			sourceTree = "<group>";
-		};
-		4FED5C5A2BF61F6D00CC5BFE /* Camera */ = {
-			isa = PBXGroup;
-			children = (
-				4FED5C5D2BF6420300CC5BFE /* CameraInit.swift */,
-			);
-			path = Camera;
 			sourceTree = "<group>";
 		};
 		4FF9C1962F0FDAA6000F045C /* Money */ = {
@@ -643,23 +635,23 @@
 				4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
-				4F6D1E0C2FD36DE70014CB28 /* UploadManager.swift in Sources */,
+				4FE8EA7C2FE37B96002F73F0 /* RequestCameraView.swift in Sources */,
 				4F2008DC2FA366720039FBCB /* TopUpViewModel.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
+				4FE8EA7E2FE37BAD002F73F0 /* VideoUploadManager.swift in Sources */,
 				4F4924432FDED13E0095A72F /* HistoryView.swift in Sources */,
 				4F4924342FDEAB800095A72F /* ContentTransaction.swift in Sources */,
 				4FE9999C2F190A7B00B59DCC /* RealNameEntryView.swift in Sources */,
 				4FF9C19F2F0FF12D000F045C /* MainTabView.swift in Sources */,
 				4F49243B2FDEAC3B0095A72F /* NewTransactionView.swift in Sources */,
 				4F9439912D7F90760068AF24 /* Welcome.swift in Sources */,
-				4FED5C5E2BF6420300CC5BFE /* CameraInit.swift in Sources */,
+				4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
 				4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */,
 				4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */,
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4FF9C1A52F11F406000F045C /* WalletView.swift in Sources */,
-				4F6D1E122FD36E550014CB28 /* CompetitionCameraView.swift in Sources */,
 				4F49243D2FDEAC560095A72F /* TransactionDetailView.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F2008D82FA3660D0039FBCB /* Withdrawal.swift in Sources */,
@@ -827,7 +819,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 575;
+				CURRENT_PROJECT_VERSION = 576;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -858,7 +850,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 50.8;
+				MARKETING_VERSION = 50.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -878,7 +870,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 575;
+				CURRENT_PROJECT_VERSION = 576;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -908,7 +900,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 50.8;
+				MARKETING_VERSION = 50.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
