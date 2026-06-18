@@ -201,7 +201,7 @@ struct NewTransactionView: View {
                     Text("What do you want?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Describe the photo you're looking for.")
+                    Text("Describe the video you're looking for.")
                         .font(.system(size: 15))
                         .foregroundColor(AppTheme.secondaryText)
                 }
@@ -209,7 +209,7 @@ struct NewTransactionView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     ZStack(alignment: .topLeading) {
                         if description.isEmpty {
-                            Text("e.g. Send me a photo of what you're having for dinner 🍕")
+                            Text("e.g. Send me a video of what you're having for dinner 🍕")
                                 .font(.system(size: 15))
                                 .foregroundColor(AppTheme.secondaryText.opacity(0.5))
                                 .padding(14)
@@ -251,7 +251,7 @@ struct NewTransactionView: View {
                         Text("Pick your friends")
                             .font(.system(size: 22, weight: .black))
                             .foregroundColor(AppTheme.primaryText)
-                        Text("Who do you want photos from?")
+                        Text("Who do you want videos from?")
                             .font(.system(size: 15))
                             .foregroundColor(AppTheme.secondaryText)
                     }
@@ -571,7 +571,7 @@ struct NewTransactionView: View {
                     if !offAppContacts.isEmpty {
                         let priceStr  = String(format: "%.2f", priceDouble)
                         offAppNumbers = offAppContacts.map { $0.phoneNumber }
-                        offAppMessage = "I'll pay you $\(priceStr) for a photo on SocialStar! \"\(description.trimmingCharacters(in: .whitespaces))\" join.socialstarapp.com"
+                        offAppMessage = "I'll pay you $\(priceStr) for a video on SocialStar! \"\(description.trimmingCharacters(in: .whitespaces))\" join.socialstarapp.com"
                         showingComposer = true
                     } else {
                         onDismiss()
