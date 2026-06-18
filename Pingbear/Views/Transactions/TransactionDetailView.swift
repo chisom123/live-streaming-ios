@@ -6,15 +6,6 @@ import FirebaseFunctions
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - TransactionDetailView
-//
-// ROLES:
-//   payer   = fromUserId (sent the request, pays)
-//   creator = toUserId   (records the video, earns)
-//
-// STATUS FLOW:
-//   pending_signup → pending_acceptance → accepted → fulfilled → completed
-//                                       → declined
-//   cancelled (payer cancels before fulfilled)
 // ─────────────────────────────────────────────────────────────
 
 struct TransactionDetailView: View {
@@ -32,6 +23,9 @@ struct TransactionDetailView: View {
     @State private var capturedVideoURL: URL?   = nil
     @State private var uploadProgress:  Double  = 0
     @State private var showingFullVideo  = false
+
+    // Shared player so inline and fullscreen stay in sync
+    @State private var inlinePlayer:    AVPlayer? = nil
 
     private let functions     = Functions.functions()
     private let db            = Firestore.firestore()
@@ -90,47 +84,30 @@ struct TransactionDetailView: View {
                             statusCard
                             descriptionCard
 
-                            // Creator: respond to pending request
                             if isCreator && tx.status == .pendingAcceptance {
                                 creatorAcceptDeclineButtons
                             }
-
-                            // Payer: waiting for response
                             if isPayer && tx.status == .pendingAcceptance {
                                 waitingCard("Waiting for \(otherName) to respond")
                             }
-
-                            // Payer: waiting while pending signup
                             if isPayer && tx.status == .pendingSignup {
                                 waitingCard("Waiting for \(otherName) to join SocialStar")
                             }
-
-                            // Creator: accepted — record the video
                             if isCreator && tx.status == .accepted {
                                 fulfillCard
                             }
-
-                            // Payer: waiting for video
                             if isPayer && tx.status == .accepted {
                                 waitingCard("\(otherName) accepted — they're working on it!")
                             }
-
-                            // Payer: video arrived — tap to view
                             if isPayer && (tx.status == .fulfilled || tx.status == .completed) {
                                 viewVideoCard
                             }
-
-                            // Creator: waiting for payer to view
                             if isCreator && tx.status == .fulfilled {
                                 waitingCard("Video sent — waiting for them to view")
                             }
-
-                            // Creator: completed
                             if isCreator && tx.status == .completed {
                                 creatorCompletedCard
                             }
-
-                            // Payer: cancel button (before fulfilled)
                             if isPayer && [.pendingSignup, .pendingAcceptance, .accepted].contains(tx.status) {
                                 cancelButton
                             }
@@ -144,6 +121,7 @@ struct TransactionDetailView: View {
         }
         .onAppear {
             startListening()
+            setupAudioSession()
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
                 properties: [
@@ -154,7 +132,6 @@ struct TransactionDetailView: View {
             )
         }
         .onDisappear { stopListening() }
-        // Camera for creator to record their video
         .fullScreenCover(isPresented: $showingCamera) {
             RequestCameraView(
                 onVideoTaken: { url in
@@ -164,10 +141,22 @@ struct TransactionDetailView: View {
                 onCancel: { showingCamera = false }
             )
         }
-        // Full-screen playback for payer
         .fullScreenCover(isPresented: $showingFullVideo) {
             if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
-                FullScreenVideoView(url: url, onDismiss: { showingFullVideo = false })
+                FullScreenVideoView(
+                    url: url,
+                    onDismiss: {
+                        showingFullVideo = false
+                        // Resume inline player when full screen closes
+                        inlinePlayer?.play()
+                    }
+                )
+            }
+        }
+        // Pause inline player when full screen opens, resume when it closes
+        .onChange(of: showingFullVideo) { isShowing in
+            if isShowing {
+                inlinePlayer?.pause()
             }
         }
         .alert("Error", isPresented: Binding(
@@ -182,6 +171,15 @@ struct TransactionDetailView: View {
             guard let url else { return }
             Task { await fulfillRequest(videoURL: url) }
         }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // MARK: - Audio session
+    // ─────────────────────────────────────────────────────────
+
+    private func setupAudioSession() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
     }
 
     // ─────────────────────────────────────────────────────────
@@ -281,7 +279,7 @@ struct TransactionDetailView: View {
         VStack(spacing: 12) {
             feeBreakdownCard
                 .padding(.bottom)
-            
+
             HStack(spacing: 12) {
                 Button { Task { await respond(accept: false) } } label: {
                     Text("Decline")
@@ -314,9 +312,9 @@ struct TransactionDetailView: View {
 
     private var feeBreakdownCard: some View {
         VStack(spacing: 0) {
-            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",        color: AppTheme.primaryText)
+            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",         color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))", color: AppTheme.primaryText)
+            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",  color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
             feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))", color: AppTheme.green, valueSize: 20)
         }
@@ -360,7 +358,6 @@ struct TransactionDetailView: View {
     private var fulfillCard: some View {
         VStack(spacing: 16) {
             if let url = capturedVideoURL {
-                // Thumbnail preview of recorded clip
                 VideoThumbnailView(url: url)
                     .frame(maxWidth: .infinity).frame(height: 220)
                     .cornerRadius(12).clipped()
@@ -428,13 +425,13 @@ struct TransactionDetailView: View {
     private var viewVideoCard: some View {
         VStack(spacing: 16) {
             if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
-                // Inline player
-                InlineVideoPlayer(url: url)
-                    .frame(maxWidth: .infinity).frame(height: 300)
-                    .cornerRadius(12).clipped()
-                    .onAppear { Task { await markViewed() } }
+                InlineVideoPlayer(url: url, onPlayerReady: { player in
+                    inlinePlayer = player
+                })
+                .frame(maxWidth: .infinity).frame(height: 300)
+                .cornerRadius(12).clipped()
+                .onAppear { Task { await markViewed() } }
 
-                // Full screen button
                 Button {
                     showingFullVideo = true
                 } label: {
@@ -548,12 +545,11 @@ struct TransactionDetailView: View {
                 folderPath: "fulfilled/\(currentUserId)/\(tx.id)",
                 onProgress: { p in DispatchQueue.main.async { uploadProgress = p } }
             )
-            // Clean up local temp file
             try? FileManager.default.removeItem(at: videoURL)
 
             try await functions.httpsCallable("fulfillRequest").call([
                 "transactionId": tx.id,
-                "photoUrl":      downloadURL   // field name unchanged in backend
+                "photoUrl":      downloadURL
             ])
             await MainActor.run {
                 isActioning      = false
@@ -597,7 +593,6 @@ struct TransactionDetailView: View {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - VideoThumbnailView
-// Shows the first frame of a local video file with a play badge.
 // ─────────────────────────────────────────────────────────────
 
 struct VideoThumbnailView: View {
@@ -615,7 +610,6 @@ struct VideoThumbnailView: View {
                     .fill(AppTheme.cardBackground)
                     .overlay(ProgressView().tint(AppTheme.secondaryText))
             }
-            // Play badge overlay
             Image(systemName: "play.circle.fill")
                 .font(.system(size: 44))
                 .foregroundColor(.white.opacity(0.85))
@@ -640,23 +634,28 @@ struct VideoThumbnailView: View {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - InlineVideoPlayer
-// AVPlayerViewController wrapped for SwiftUI.
-// Loops, shows system controls, fills the frame.
+// No controls, fills frame, loops, audio enabled.
+// Calls onPlayerReady so the parent can pause/resume it.
 // ─────────────────────────────────────────────────────────────
 
 struct InlineVideoPlayer: UIViewControllerRepresentable {
-    let url: URL
+    let url:           URL
+    let onPlayerReady: (AVPlayer) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+
         let player = AVPlayer(url: url)
-        let vc     = AVPlayerViewController()
+        player.isMuted = false
+
+        let vc = AVPlayerViewController()
         vc.player                = player
-        vc.showsPlaybackControls = true
+        vc.showsPlaybackControls = false
         vc.videoGravity          = .resizeAspectFill
 
-        // Loop
         context.coordinator.loopObserver = NotificationCenter.default.addObserver(
             forName:  .AVPlayerItemDidPlayToEndTime,
             object:   player.currentItem,
@@ -667,6 +666,10 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
         }
 
         player.play()
+
+        // Hand the player back to the parent so it can pause/resume
+        DispatchQueue.main.async { onPlayerReady(player) }
+
         return vc
     }
 
@@ -686,23 +689,22 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - FullScreenVideoView
-// Pinch-to-zoom, tap-to-dismiss, same pattern as the old
-// FullScreenPhotoView but for video.
+// No controls, fills edge to edge, loops, tap or X to dismiss.
 // ─────────────────────────────────────────────────────────────
 
 struct FullScreenVideoView: View {
     let url:       URL
     let onDismiss: () -> Void
 
-    @State private var player:        AVPlayer?
-    @State private var loopObserver:  NSObjectProtocol?
+    @State private var player:       AVPlayer?
+    @State private var loopObserver: NSObjectProtocol?
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
             if let player {
-                VideoPlayer(player: player)
+                FullScreenFillPlayer(player: player)
                     .ignoresSafeArea()
             }
 
@@ -724,16 +726,23 @@ struct FullScreenVideoView: View {
         }
         .onAppear { setupPlayer() }
         .onDisappear { teardown() }
+        .onTapGesture { onDismiss() }
     }
 
     private func setupPlayer() {
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+
         let p = AVPlayer(url: url)
+        p.isMuted = false
         player = p
+
         loopObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object:  p.currentItem,
             queue:   .main
         ) { _ in p.seek(to: .zero); p.play() }
+
         p.play()
     }
 
@@ -748,7 +757,25 @@ struct FullScreenVideoView: View {
 }
 
 // ─────────────────────────────────────────────────────────────
-// MARK: - RatingCard (unchanged)
+// MARK: - FullScreenFillPlayer
+// ─────────────────────────────────────────────────────────────
+
+struct FullScreenFillPlayer: UIViewControllerRepresentable {
+    let player: AVPlayer
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let vc = AVPlayerViewController()
+        vc.player                = player
+        vc.showsPlaybackControls = false
+        vc.videoGravity          = .resizeAspectFill
+        return vc
+    }
+
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - RatingCard
 // ─────────────────────────────────────────────────────────────
 
 struct RatingCard: View {
