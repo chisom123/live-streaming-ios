@@ -230,7 +230,7 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 
   if (validOnApp.length > 0) {
     await sendPush(db, validOnApp, {
-      title: `${senderName} wants a photo from you 📸`,
+      title: `${senderName} wants a video from you 📸`,
       body:  `They'll pay you $${price.toFixed(2)} — accept their request!`,
       data:  { type: 'request_received' }
     });
@@ -306,7 +306,7 @@ exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (
 
   await sendPush(db, [tx.from_user_id], {
     title: `${recipientName} accepted your request! 🎉`,
-    body:  "They're working on your photo now",
+    body:  "They're working on your video now",
     data:  { type: 'request_accepted', transaction_id: transactionId }
   });
 
@@ -354,7 +354,7 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
   const creatorName = await getUserName(db, userId);
 
   await sendPush(db, [tx.from_user_id], {
-    title: `${creatorName} sent your photo 👀`,
+    title: `${creatorName} sent your video 👀`,
     body:  'Tap to see what they sent you!',
     data:  { type: 'request_fulfilled', transaction_id: transactionId }
   });
@@ -434,7 +434,7 @@ exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 
   const payerName = await getUserName(db, userId);
   await sendPush(db, [creatorId], {
-    title: `${payerName} rated your photo ${rating}⭐`,
+    title: `${payerName} rated your video ${rating}⭐`,
     body:  rating >= 4 ? 'They loved it! 🔥' : 'Keep it up!',
     data:  { type: 'content_rated', transaction_id: transactionId }
   });
@@ -524,7 +524,7 @@ exports.resolveInviteTransaction = onCall({ cors: ['*'], maxInstances: 50 }, asy
 
   const senderName = await getUserName(db, tx.from_user_id);
   await sendPush(db, [userId], {
-    title: `${senderName} wants a photo from you 📸`,
+    title: `${senderName} wants a video from you 📸`,
     body:  `They'll pay you $${tx.price.toFixed(2)} — open SocialStar to respond!`,
     data:  { type: 'request_received', transaction_id: transactionId }
   });
