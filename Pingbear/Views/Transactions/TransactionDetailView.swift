@@ -314,21 +314,21 @@ struct TransactionDetailView: View {
 
     private var feeBreakdownCard: some View {
         VStack(spacing: 0) {
-            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",          color: AppTheme.primaryText)
+            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",        color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",   color: AppTheme.primaryText)
+            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))", color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))",  color: AppTheme.green)
+            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))", color: AppTheme.green, valueSize: 20)
         }
         .background(AppTheme.cardBackground).cornerRadius(12)
     }
 
-    private func feeRow(label: String, value: String, color: Color) -> some View {
+    private func feeRow(label: String, value: String, color: Color, valueSize: CGFloat = 13) -> some View {
         HStack {
             Text(label).font(.system(size: 13, weight: .semibold)).foregroundColor(AppTheme.secondaryText)
             Spacer()
             Text(value)
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: valueSize, weight: .bold))
                 .foregroundColor(color)
         }
         .padding(.horizontal, 16).padding(.vertical, 16)
