@@ -228,12 +228,12 @@ struct TransactionDetailView: View {
                 : "Waiting for \(otherName) to respond"
         case .accepted:
             return isCreator
-                ? "You accepted — record your video 🎥"
+                ? "You accepted — record your video"
                 : "\(otherName) accepted — they're working on it!"
         case .fulfilled:
             return isCreator
                 ? "Video sent! Waiting for them to view"
-                : "\(otherName) sent your video — tap to see it 👀"
+                : "\(otherName) sent your video — tap to see it"
         case .completed:
             return tx.rating != nil ? "Completed · \(tx.rating!)⭐" : "Completed ✓"
         case .declined:

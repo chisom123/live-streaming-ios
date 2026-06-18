@@ -1,11 +1,9 @@
 import SwiftUI
 import AVFoundation
+import AVKit
 import PhotosUI
 
 // MARK: - RequestCameraView
-/// Drop-in replacement for CompetitionCameraView.
-/// Records a short video instead of a still photo.
-/// Calls `onVideoTaken(URL)` instead of `onPhotoTaken(UIImage)`.
 
 struct RequestCameraView: View {
 
@@ -21,7 +19,7 @@ struct RequestCameraView: View {
     }
 }
 
-// MARK: - Simulator fallback (pick from library)
+// MARK: - Simulator fallback
 
 struct RequestSimulatorPickerView: View {
     let onVideoTaken: (URL) -> Void
@@ -29,52 +27,68 @@ struct RequestSimulatorPickerView: View {
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var isLoading = false
+    @State private var previewURL: URL?
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            VStack(spacing: 24) {
-                HStack {
-                    Button(action: onCancel) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 28))
-                            .foregroundColor(.white)
-                            .padding(5)
+
+            if let url = previewURL {
+                VideoPreviewConfirmView(
+                    url: url,
+                    onConfirm: { onVideoTaken(url) },
+                    onRetake:  { previewURL = nil }
+                )
+            } else {
+                VStack(spacing: 24) {
+                    HStack {
+                        Button(action: onCancel) {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 28))
+                                .foregroundColor(.white)
+                                .padding(5)
+                        }
+                        Spacer()
                     }
+                    .padding(.horizontal, 16).padding(.top, 65)
+
                     Spacer()
-                }
-                .padding(.horizontal, 16).padding(.top, 65)
-                Spacer()
-                Image(systemName: "video.fill")
-                    .font(.system(size: 48)).foregroundColor(.white.opacity(0.4))
-                Text("Simulator — pick a video")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white.opacity(0.6))
-                Spacer()
-                if isLoading {
-                    ProgressView().progressViewStyle(.circular).tint(.white)
-                } else {
-                    PhotosPicker(selection: $selectedItem, matching: .videos) {
-                        Text("Choose Video")
-                            .font(.system(size: 18, weight: .bold)).foregroundColor(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 16)
-                            .background(AppTheme.accent).cornerRadius(200)
-                            .padding(.horizontal, 32)
+
+                    Image(systemName: "video.fill")
+                        .font(.system(size: 48))
+                        .foregroundColor(.white.opacity(0.4))
+
+                    Text("Simulator — pick a video")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white.opacity(0.6))
+
+                    Spacer()
+
+                    if isLoading {
+                        ProgressView().progressViewStyle(.circular).tint(.white)
+                    } else {
+                        PhotosPicker(selection: $selectedItem, matching: .videos) {
+                            Text("Choose Video")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity).padding(.vertical, 16)
+                                .background(AppTheme.accent).cornerRadius(200)
+                                .padding(.horizontal, 32)
+                        }
                     }
                 }
+                .padding(.bottom, 60)
             }
-            .padding(.bottom, 60)
         }
         .ignoresSafeArea()
         .onChange(of: selectedItem) { item in
             guard let item else { return }
             isLoading = true
             Task {
-                // Copy to a temp file so we have a stable URL
-                if let movie = try? await item.loadTransferable(type: Data.self) {
+                if let data = try? await item.loadTransferable(type: Data.self) {
                     let url = VideoRecordingViewModel.newTempURL()
-                    try? movie.write(to: url)
-                    await MainActor.run { isLoading = false; onVideoTaken(url) }
+                    try? data.write(to: url)
+                    await MainActor.run { isLoading = false; previewURL = url }
                 } else {
                     await MainActor.run { isLoading = false }
                 }
@@ -90,52 +104,60 @@ struct RequestRealCameraView: View {
     let onVideoTaken: (URL) -> Void
     let onCancel:     () -> Void
 
-    @StateObject private var vm = VideoRecordingViewModel()
+    @StateObject private var vm               = VideoRecordingViewModel()
     @State private var isViewAppeared         = false
     @State private var showingPermissionAlert = false
-
-    // Timer mode
-    @State private var timerMode:        Int   = 0
-    @State private var countdown:        Int   = 0
-    @State private var timerFiring:      Bool  = false
-    @State private var countdownTimer:   Timer? = nil
-    private let timerModes = [0, 3, 10]
+    @State private var previewURL:            URL? = nil
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
+            // Camera stays alive in background so retake is instant
             if isViewAppeared {
-                // Reuse CameraInitView — it reads the session from the EnvironmentObject
                 VideoInitView()
                     .environmentObject(vm)
                     .ignoresSafeArea()
             }
 
-            VStack(spacing: 0) {
-                topBar
-                Spacer()
-                if timerFiring && countdown > 0 { countdownDisplay }
-                Spacer()
-                bottomBar
+            if let url = previewURL {
+                // Preview / confirm step overlaid on top of live camera
+                VideoPreviewConfirmView(
+                    url: url,
+                    onConfirm: {
+                        onVideoTaken(url)
+                    },
+                    onRetake: {
+                        try? FileManager.default.removeItem(at: url)
+                        previewURL = nil
+                    }
+                )
+            } else {
+                // Camera UI
+                VStack(spacing: 0) {
+                    topBar
+                    Spacer()
+                    bottomBar
+                }
             }
         }
         .ignoresSafeArea()
-        // When recording finishes, vm.showPreview flips → hand URL to caller
         .onChange(of: vm.showPreview) { showing in
             guard showing, let url = vm.recordedVideoURL else { return }
             vm.showPreview = false
-            onVideoTaken(url)
+            previewURL = url
         }
         .onAppear { checkPermissions() }
-        .onDisappear { cancelTimer(); vm.stopSession() }
+        .onDisappear { vm.stopSession() }
         .alert("Camera Required", isPresented: $showingPermissionAlert) {
             Button("Open Settings") {
                 UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
                 onCancel()
             }
             Button("Cancel", role: .cancel) { onCancel() }
-        } message: { Text("Camera and microphone access are required to record videos.") }
+        } message: {
+            Text("Camera and microphone access are required to record videos.")
+        }
     }
 
     // ── Top bar ───────────────────────────────────────────────
@@ -144,7 +166,6 @@ struct RequestRealCameraView: View {
         HStack(alignment: .top) {
             Button {
                 if vm.isRecording { vm.stopRecording() }
-                cancelTimer()
                 onCancel()
             } label: {
                 Image(systemName: "xmark")
@@ -152,16 +173,19 @@ struct RequestRealCameraView: View {
                     .foregroundColor(.white)
                     .frame(width: 60, height: 60)
             }
+
             Spacer()
+
             VStack(spacing: 4) {
-                // Flip camera (only when not recording)
+                // Flip camera (disabled while recording)
                 Button { if !vm.isRecording { vm.toggleCamera() } } label: {
                     Image(systemName: "arrow.2.circlepath")
                         .font(.system(size: 26, weight: .bold))
                         .foregroundColor(vm.isRecording ? .white.opacity(0.3) : .white)
                         .frame(width: 60, height: 60)
                 }
-                // Torch
+
+                // Torch (back camera only)
                 if vm.isFlashAvailable {
                     Button { vm.toggleFlashMode() } label: {
                         Image(systemName: vm.flashMode == .on ? "bolt.fill" : "bolt.slash")
@@ -170,47 +194,16 @@ struct RequestRealCameraView: View {
                             .frame(width: 60, height: 60)
                     }
                 }
-                // Timer (only when not recording)
-                if !vm.isRecording {
-                    Button { cycleTimer() } label: {
-                        ZStack {
-                            Image(systemName: "timer")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(timerMode > 0 ? AppTheme.accent : .white)
-                                .frame(width: 60, height: 60)
-                            if timerMode > 0 {
-                                Text("\(timerMode)")
-                                    .font(.system(size: 10, weight: .black))
-                                    .foregroundColor(AppTheme.accent)
-                                    .offset(x: 10, y: 10)
-                            }
-                        }
-                    }
-                }
             }
         }
         .padding(.horizontal, 12).padding(.top, 60)
-    }
-
-    // ── Countdown overlay ─────────────────────────────────────
-
-    private var countdownDisplay: some View {
-        Text("\(countdown)")
-            .font(.system(size: 120, weight: .black))
-            .foregroundColor(.white)
-            .shadow(color: .black.opacity(0.5), radius: 8)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: countdown)
     }
 
     // ── Bottom bar ────────────────────────────────────────────
 
     private var bottomBar: some View {
         VStack(spacing: 12) {
-            // Duration label while recording
-            if vm.isRecording {
-                durationLabel
-            }
-            // Record button
+            if vm.isRecording { durationLabel }
             recordButton
         }
         .padding(.bottom, 65)
@@ -219,7 +212,6 @@ struct RequestRealCameraView: View {
     private var durationLabel: some View {
         HStack(spacing: 8) {
             Circle().fill(Color.red).frame(width: 8, height: 8)
-                .opacity(vm.isRecording ? 1 : 0)
             Text(formattedDuration)
                 .font(.system(size: 16, weight: .semibold).monospacedDigit())
                 .foregroundColor(.white)
@@ -235,13 +227,10 @@ struct RequestRealCameraView: View {
 
     private var recordButton: some View {
         Button {
-            guard !timerFiring else { cancelTimer(); return }
             if vm.isRecording {
                 vm.stopRecording()
-            } else if timerMode == 0 {
-                vm.startRecording()
             } else {
-                startTimer()
+                vm.startRecording()
             }
         } label: {
             ZStack {
@@ -259,44 +248,10 @@ struct RequestRealCameraView: View {
         }
     }
 
-    // ── Timer helpers ─────────────────────────────────────────
-
-    private func cycleTimer() {
-        let idx   = timerModes.firstIndex(of: timerMode) ?? 0
-        timerMode = timerModes[(idx + 1) % timerModes.count]
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-    }
-
-    private func startTimer() {
-        countdown   = timerMode
-        timerFiring = true
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
-            if countdown > 1 {
-                countdown -= 1
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            } else {
-                t.invalidate()
-                countdownTimer = nil
-                timerFiring    = false
-                countdown      = 0
-                vm.startRecording()
-            }
-        }
-    }
-
-    private func cancelTimer() {
-        countdownTimer?.invalidate()
-        countdownTimer = nil
-        timerFiring    = false
-        countdown      = 0
-    }
-
     // ── Permissions ───────────────────────────────────────────
 
     private func checkPermissions() {
-        let camStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        switch camStatus {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             isViewAppeared = true
             vm.checkPermission()
@@ -313,12 +268,117 @@ struct RequestRealCameraView: View {
     }
 }
 
-// ① NOTE: CameraInitView uses `@EnvironmentObject var cameraModel: CameraViewModel`.
-// VideoRecordingViewModel extends the same NSObject/ObservableObject base and
-// publishes the same `session`, `alert`, `preview` properties.
-// The cast works because CameraInitView only reads those three properties.
-// If you'd rather not cast, copy CameraInitView and change the type annotation
-// to `VideoRecordingViewModel` — that's the cleanest long-term approach.
+// MARK: - VideoPreviewConfirmView
+/// Full-screen looping preview with Retake / Use Video buttons.
+/// Uses resizeAspectFill so vertical video fills edge to edge with no black bars.
+
+struct VideoPreviewConfirmView: View {
+
+    let url:       URL
+    let onConfirm: () -> Void
+    let onRetake:  () -> Void
+
+    @State private var player:       AVPlayer?
+    @State private var loopObserver: NSObjectProtocol?
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            // Fill player — no letterboxing
+            if let player {
+                VideoPlayerFillView(player: player)
+                    .ignoresSafeArea()
+            }
+
+            // Gradient for button legibility
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.7)],
+                    startPoint: .top,
+                    endPoint:   .bottom
+                )
+                .frame(height: 200)
+            }
+            .ignoresSafeArea()
+
+            // Retake / Use Video buttons
+            VStack {
+                Spacer()
+                HStack(spacing: 20) {
+                    Button(action: onRetake) {
+                        Text("Retake")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.15))
+                            .cornerRadius(200)
+                    }
+
+                    Button(action: onConfirm) {
+                        Text("Use Video")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(AppTheme.accent)
+                            .cornerRadius(200)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 50)
+            }
+        }
+        .onAppear { setupPlayer() }
+        .onDisappear { teardown() }
+    }
+
+    private func setupPlayer() {
+        let p = AVPlayer(url: url)
+        p.isMuted = false
+        player = p
+        loopObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object:  p.currentItem,
+            queue:   .main
+        ) { _ in
+            p.seek(to: .zero)
+            p.play()
+        }
+        p.play()
+    }
+
+    private func teardown() {
+        player?.pause()
+        player = nil
+        if let obs = loopObserver {
+            NotificationCenter.default.removeObserver(obs)
+            loopObserver = nil
+        }
+    }
+}
+
+// MARK: - VideoPlayerFillView
+/// AVPlayerViewController with resizeAspectFill — fills the frame
+/// edge to edge with no letterboxing, matching the camera preview behaviour.
+
+struct VideoPlayerFillView: UIViewControllerRepresentable {
+    let player: AVPlayer
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let vc = AVPlayerViewController()
+        vc.player                = player
+        vc.showsPlaybackControls = false
+        vc.videoGravity          = .resizeAspectFill
+        return vc
+    }
+
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+}
+
+// MARK: - VideoInitView
 
 struct VideoInitView: View {
     @EnvironmentObject var vm: VideoRecordingViewModel
@@ -339,6 +399,8 @@ struct VideoInitView: View {
     }
 }
 
+// MARK: - VideoCameraPreview
+
 struct VideoCameraPreview: UIViewRepresentable {
     @EnvironmentObject var vm: VideoRecordingViewModel
     var size: CGSize
@@ -346,8 +408,8 @@ struct VideoCameraPreview: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         vm.preview = AVCaptureVideoPreviewLayer(session: vm.session)
-        vm.preview.frame.size    = size
-        vm.preview.videoGravity  = .resizeAspectFill
+        vm.preview.frame.size   = size
+        vm.preview.videoGravity = .resizeAspectFill
         view.layer.addSublayer(vm.preview)
         return view
     }
