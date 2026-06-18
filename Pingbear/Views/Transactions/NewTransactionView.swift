@@ -193,7 +193,7 @@ struct NewTransactionView: View {
         switch step {
         case 1: return "Your Request"
         case 2: return "Pick Friends"
-        case 3: return "Set a Price"
+        case 3: return "Request Reward"
         default: return ""
         }
     }
@@ -376,12 +376,9 @@ struct NewTransactionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Set a price")
+                    Text("What's the reward?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("This is what you'll pay per friend. The total is held until they respond.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppTheme.secondaryText)
                 }
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 8) {
