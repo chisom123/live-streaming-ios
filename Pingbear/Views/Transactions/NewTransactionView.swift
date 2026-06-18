@@ -217,41 +217,20 @@ struct NewTransactionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("What do you want?")
+                    Text("What's your video request?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Describe the video you're looking for.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppTheme.secondaryText)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    ZStack(alignment: .topLeading) {
-                        if description.isEmpty {
-                            Text("e.g. Send me a video of what you're having for dinner 🍕")
-                                .font(.system(size: 15))
-                                .foregroundColor(AppTheme.secondaryText.opacity(0.5))
-                                .padding(14)
-                        }
-                        TextEditor(text: $description)
-                            .font(.system(size: 15))
-                            .foregroundColor(AppTheme.primaryText)
-                            .frame(minHeight: 120)
-                            .padding(10)
-                            .scrollContentBackground(.hidden)
-                    }
+                TextField("e.g. Crack an egg on your head", text: $description, axis: .vertical)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(AppTheme.primaryText)
+                    .lineLimit(5...10)
+                    .padding(14)
                     .background(AppTheme.cardBackground)
-                    .cornerRadius(12)
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppTheme.divider, lineWidth: 1))
-
-                    HStack {
-                        Spacer()
-                        Text("\(description.count)/120")
-                            .font(.system(size: 12))
-                            .foregroundColor(AppTheme.secondaryText)
-                    }
-                }
-                .onChange(of: description) { if $0.count > 120 { description = String($0.prefix(120)) } }
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .tint(AppTheme.accent)
+                    .onChange(of: description) { if $0.count > 120 { description = String($0.prefix(120)) } }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
