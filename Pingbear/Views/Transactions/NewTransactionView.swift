@@ -192,7 +192,7 @@ struct NewTransactionView: View {
     private var headerTitle: String {
         switch step {
         case 1: return "Your Request"
-        case 2: return "Who?"
+        case 2: return "Pick Friends"
         case 3: return "Set a Price"
         default: return ""
         }
@@ -245,14 +245,9 @@ struct NewTransactionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Pick your friends")
-                            .font(.system(size: 22, weight: .black))
-                            .foregroundColor(AppTheme.primaryText)
-                        Text("Who do you want videos from?")
-                            .font(.system(size: 15))
-                            .foregroundColor(AppTheme.secondaryText)
-                    }
+                    Text("Pick your friends")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundColor(AppTheme.primaryText)
                     Spacer()
                     if totalSelected > 0 {
                         Text("\(totalSelected) selected")
@@ -502,7 +497,7 @@ struct NewTransactionView: View {
             HStack(spacing: 8) {
                 if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.85) }
                 Text(isSending ? "Sending..." : step < 3 ? "Continue" : "Send Request")
-                    .font(.system(size: 18, weight: .bold)).foregroundColor(.white)
+                    .font(.system(size: 18, weight: .bold)).foregroundColor(bottomEnabled ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
             .background(bottomEnabled ? AppTheme.accent : AppTheme.disabledBackground)
