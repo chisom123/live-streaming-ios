@@ -52,74 +52,95 @@ struct TransactionDetailView: View {
         NavigationStack {
             ZStack {
                 AppTheme.pageBackground.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 20) {
-                        profileHeader
-                        statusCard
-                        descriptionCard
-
-                        // Creator: respond to pending request
-                        if isCreator && tx.status == .pendingAcceptance {
-                            creatorAcceptDeclineButtons
+                VStack(spacing: 0) {
+                    // MARK: - Navigation Bar
+                    HStack {
+                        Button(action: {
+                            if isPayer && tx.status == .fulfilled { Task { await markViewed() } }
+                            onDismiss()
+                        }) {
+                            Image(systemName: "arrow.left")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 27, height: 27)
+                                .foregroundColor(AppTheme.iconColor)
                         }
 
-                        // Payer: waiting for response
-                        if isPayer && tx.status == .pendingAcceptance {
-                            waitingCard("Waiting for \(otherName) to respond")
-                        }
+                        Spacer()
 
-                        // Payer: waiting while pending signup
-                        if isPayer && tx.status == .pendingSignup {
-                            waitingCard("Waiting for \(otherName) to join SocialStar")
-                        }
+                        Text(otherName)
+                            .font(.system(size: 18, weight: .bold))
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(AppTheme.primaryText)
+                            .padding(.horizontal)
 
-                        // Creator: accepted — record the video
-                        if isCreator && tx.status == .accepted {
-                            fulfillCard
-                        }
+                        Spacer()
 
-                        // Payer: waiting for video
-                        if isPayer && tx.status == .accepted {
-                            waitingCard("\(otherName) accepted — they're working on it!")
-                        }
-
-                        // Payer: video arrived — tap to view
-                        if isPayer && (tx.status == .fulfilled || tx.status == .completed) {
-                            viewVideoCard
-                        }
-
-                        // Creator: waiting for payer to view
-                        if isCreator && tx.status == .fulfilled {
-                            waitingCard("Video sent — waiting for them to view")
-                        }
-
-                        // Creator: completed
-                        if isCreator && tx.status == .completed {
-                            creatorCompletedCard
-                        }
-
-                        // Payer: cancel button (before fulfilled)
-                        if isPayer && [.pendingSignup, .pendingAcceptance, .accepted].contains(tx.status) {
-                            cancelButton
-                        }
+                        Image(systemName: "arrow.left")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 27, height: 27)
+                            .opacity(0)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 60)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        if isPayer && tx.status == .fulfilled { Task { await markViewed() } }
-                        onDismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(AppTheme.iconColor)
+                    .padding(.vertical, 20)
+
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            statusCard
+                            descriptionCard
+
+                            // Creator: respond to pending request
+                            if isCreator && tx.status == .pendingAcceptance {
+                                creatorAcceptDeclineButtons
+                            }
+
+                            // Payer: waiting for response
+                            if isPayer && tx.status == .pendingAcceptance {
+                                waitingCard("Waiting for \(otherName) to respond")
+                            }
+
+                            // Payer: waiting while pending signup
+                            if isPayer && tx.status == .pendingSignup {
+                                waitingCard("Waiting for \(otherName) to join SocialStar")
+                            }
+
+                            // Creator: accepted — record the video
+                            if isCreator && tx.status == .accepted {
+                                fulfillCard
+                            }
+
+                            // Payer: waiting for video
+                            if isPayer && tx.status == .accepted {
+                                waitingCard("\(otherName) accepted — they're working on it!")
+                            }
+
+                            // Payer: video arrived — tap to view
+                            if isPayer && (tx.status == .fulfilled || tx.status == .completed) {
+                                viewVideoCard
+                            }
+
+                            // Creator: waiting for payer to view
+                            if isCreator && tx.status == .fulfilled {
+                                waitingCard("Video sent — waiting for them to view")
+                            }
+
+                            // Creator: completed
+                            if isCreator && tx.status == .completed {
+                                creatorCompletedCard
+                            }
+
+                            // Payer: cancel button (before fulfilled)
+                            if isPayer && [.pendingSignup, .pendingAcceptance, .accepted].contains(tx.status) {
+                                cancelButton
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 60)
                     }
                 }
             }
+            .navigationBarHidden(true)
         }
         .onAppear {
             startListening()
@@ -179,39 +200,6 @@ struct TransactionDetailView: View {
     }
 
     private func stopListening() { listener?.remove(); listener = nil }
-
-    // ─────────────────────────────────────────────────────────
-    // MARK: - Profile header
-    // ─────────────────────────────────────────────────────────
-
-    private var profileHeader: some View {
-        VStack(spacing: 12) {
-            ProfilePictureView(url: otherProfile?.profilePictureUrl, size: 64)
-            VStack(spacing: 4) {
-                Text(otherName)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(AppTheme.primaryText)
-                if let username = otherProfile?.username, !username.isEmpty {
-                    Text("@\(username)")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppTheme.secondaryText)
-                }
-            }
-            HStack(spacing: 6) {
-                Text("🎥 Request")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(AppTheme.accent)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(AppTheme.accent.opacity(0.1)).cornerRadius(200)
-                Text("$\(String(format: "%.2f", tx.price))")
-                    .font(.system(size: 15, weight: .black))
-                    .foregroundColor(AppTheme.primaryText)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(AppTheme.cardBackground).cornerRadius(200)
-            }
-        }
-        .padding(.top, 8)
-    }
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Status card

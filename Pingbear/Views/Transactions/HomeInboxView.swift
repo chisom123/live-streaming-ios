@@ -160,7 +160,7 @@ struct HomeInboxView: View {
         .fullScreenCover(isPresented: $showingNewTransaction) {
             NewTransactionView(onDismiss: { showingNewTransaction = false })
         }
-        .sheet(item: $selectedTransaction) { enriched in
+        .fullScreenCover(item: $selectedTransaction) { enriched in
             TransactionDetailView(enriched: enriched, onDismiss: { selectedTransaction = nil })
         }
         .alert("Error", isPresented: Binding(
