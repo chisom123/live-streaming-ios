@@ -38,9 +38,9 @@ struct HomeInboxView: View {
         let iAmCreator   = tx.toUserId == currentUserId
         let iAmPayer     = tx.fromUserId == currentUserId
         switch tx.status {
-        case .pendingAcceptance: return iAmCreator               // creator needs to respond
-        case .accepted:          return iAmCreator               // creator needs to shoot photo
-        case .fulfilled:         return iAmPayer                 // payer needs to view photo
+        case .pendingAcceptance: return iAmCreator
+        case .accepted:          return iAmCreator
+        case .fulfilled:         return iAmPayer
         default:                 return false
         }
     }
@@ -50,9 +50,9 @@ struct HomeInboxView: View {
         let iAmPayer = tx.fromUserId == currentUserId
         switch tx.status {
         case .pendingSignup:     return true
-        case .pendingAcceptance: return iAmPayer                 // payer waiting for response
-        case .accepted:          return iAmPayer                 // payer waiting for photo
-        case .fulfilled:         return !iAmPayer                // creator waiting for payer to view
+        case .pendingAcceptance: return iAmPayer
+        case .accepted:          return iAmPayer
+        case .fulfilled:         return !iAmPayer
         default:                 return false
         }
     }

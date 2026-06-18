@@ -122,6 +122,7 @@ struct TransactionDetailView: View {
         .onAppear {
             startListening()
             setupAudioSession()
+            Analytics.shared.trackScreen(name: "transaction_detail")
             Analytics.shared.track(
                 event: AnalyticsEvent.transactionViewed,
                 properties: [
@@ -147,13 +148,11 @@ struct TransactionDetailView: View {
                     url: url,
                     onDismiss: {
                         showingFullVideo = false
-                        // Resume inline player when full screen closes
                         inlinePlayer?.play()
                     }
                 )
             }
         }
-        // Pause inline player when full screen opens, resume when it closes
         .onChange(of: showingFullVideo) { isShowing in
             if isShowing {
                 inlinePlayer?.pause()
@@ -281,7 +280,10 @@ struct TransactionDetailView: View {
                 .padding(.bottom)
 
             HStack(spacing: 12) {
-                Button { Task { await respond(accept: false) } } label: {
+                Button {
+                    Analytics.shared.trackTap(elementId: "decline_request", screenName: "transaction_detail")
+                    Task { await respond(accept: false) }
+                } label: {
                     Text("Decline")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
@@ -290,7 +292,10 @@ struct TransactionDetailView: View {
                 }
                 .disabled(isActioning)
 
-                Button { Task { await respond(accept: true) } } label: {
+                Button {
+                    Analytics.shared.trackTap(elementId: "accept_request", screenName: "transaction_detail")
+                    Task { await respond(accept: true) }
+                } label: {
                     HStack(spacing: 6) {
                         if isActioning {
                             ProgressView()
@@ -391,6 +396,7 @@ struct TransactionDetailView: View {
                 .disabled(isActioning)
 
                 Button {
+                    Analytics.shared.trackTap(elementId: "retake_video", screenName: "transaction_detail")
                     capturedVideoURL = nil
                     showingCamera    = true
                 } label: {
@@ -402,7 +408,10 @@ struct TransactionDetailView: View {
             } else {
                 feeBreakdownCard
 
-                Button { showingCamera = true } label: {
+                Button {
+                    Analytics.shared.trackTap(elementId: "record_video", screenName: "transaction_detail")
+                    showingCamera = true
+                } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "video.fill").font(.system(size: 18))
                         Text("Record the video").font(.system(size: 16, weight: .bold))
@@ -433,6 +442,7 @@ struct TransactionDetailView: View {
                 .onAppear { Task { await markViewed() } }
 
                 Button {
+                    Analytics.shared.trackTap(elementId: "fullscreen_video", screenName: "transaction_detail")
                     showingFullVideo = true
                 } label: {
                     HStack(spacing: 6) {
@@ -495,7 +505,10 @@ struct TransactionDetailView: View {
     // ─────────────────────────────────────────────────────────
 
     private var cancelButton: some View {
-        Button { Task { await cancelRequest() } } label: {
+        Button {
+            Analytics.shared.trackTap(elementId: "cancel_request", screenName: "transaction_detail")
+            Task { await cancelRequest() }
+        } label: {
             HStack(spacing: 6) {
                 if isCancelling {
                     ProgressView()
@@ -634,8 +647,6 @@ struct VideoThumbnailView: View {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - InlineVideoPlayer
-// No controls, fills frame, loops, audio enabled.
-// Calls onPlayerReady so the parent can pause/resume it.
 // ─────────────────────────────────────────────────────────────
 
 struct InlineVideoPlayer: UIViewControllerRepresentable {
@@ -667,7 +678,6 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
 
         player.play()
 
-        // Hand the player back to the parent so it can pause/resume
         DispatchQueue.main.async { onPlayerReady(player) }
 
         return vc
@@ -689,7 +699,6 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - FullScreenVideoView
-// No controls, fills edge to edge, loops, tap or X to dismiss.
 // ─────────────────────────────────────────────────────────────
 
 struct FullScreenVideoView: View {

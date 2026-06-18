@@ -107,15 +107,34 @@ struct NewTransactionView: View {
             VStack { Spacer(); bottomButton }
         }
         .onAppear {
-            Analytics.shared.trackScreen(name: "new_request_flow")
+            Analytics.shared.trackScreen(name: "new_request_step_1")
             contactVM.fetchFriendsFromFirestore()
             startBalanceListener()
         }
         .onDisappear { stopBalanceListener() }
         .sheet(isPresented: $showingComposer) {
             if !offAppNumbers.isEmpty {
-                OffAppInviteComposer(recipients: offAppNumbers, body: offAppMessage,
-                                     onFinish: { _ in showingComposer = false; onDismiss() })
+                OffAppInviteComposer(
+                    recipients: offAppNumbers,
+                    body: offAppMessage,
+                    onFinish: { result in
+                        switch result {
+                        case .sent:
+                            Analytics.shared.track(
+                                event: AnalyticsEvent.invitesSent,
+                                properties: [AnalyticsProperty.recipientCount: offAppNumbers.count]
+                            )
+                        case .cancelled:
+                            Analytics.shared.track(event: AnalyticsEvent.inviteComposerCancelled)
+                        case .failed:
+                            Analytics.shared.track(event: AnalyticsEvent.inviteComposerFailed)
+                        @unknown default:
+                            break
+                        }
+                        showingComposer = false
+                        onDismiss()
+                    }
+                )
             }
         }
         .sheet(isPresented: $showWalletSheet) {
@@ -473,8 +492,10 @@ struct NewTransactionView: View {
                         Spacer()
                     }
                     Button {
+                        Analytics.shared.trackTap(elementId: "top_up_from_new_request", screenName: "new_request_step_3")
+                        Analytics.shared.track(event: AnalyticsEvent.walletTopUpOpened,
+                                               properties: ["screen": "new_request_step_3"])
                         showWalletSheet = true
-                        Analytics.shared.trackTap(elementId: "top_up_from_new_request", screenName: "new_request_flow")
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "plus.circle.fill").font(.system(size: 15))
@@ -525,10 +546,16 @@ struct NewTransactionView: View {
 
     private func bottomAction() {
         switch step {
-        case 1: withAnimation { step = 2 }
-        case 2: withAnimation { step = 3 }
-        case 3: sendRequest()
-        default: break
+        case 1:
+            withAnimation { step = 2 }
+            Analytics.shared.trackScreen(name: "new_request_step_2")
+        case 2:
+            withAnimation { step = 3 }
+            Analytics.shared.trackScreen(name: "new_request_step_3")
+        case 3:
+            sendRequest()
+        default:
+            break
         }
     }
 
@@ -572,6 +599,8 @@ struct NewTransactionView: View {
                         let priceStr  = String(format: "%.2f", priceDouble)
                         offAppNumbers = offAppContacts.map { $0.phoneNumber }
                         offAppMessage = "I'll pay you $\(priceStr) for a video on SocialStar! \"\(description.trimmingCharacters(in: .whitespaces))\" join.socialstarapp.com"
+                        Analytics.shared.track(event: AnalyticsEvent.inviteComposerOpened,
+                                               properties: [AnalyticsProperty.recipientCount: offAppContacts.count])
                         showingComposer = true
                     } else {
                         onDismiss()

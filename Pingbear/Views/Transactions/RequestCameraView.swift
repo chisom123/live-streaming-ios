@@ -81,6 +81,9 @@ struct RequestSimulatorPickerView: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            Analytics.shared.trackScreen(name: "camera")
+        }
         .onChange(of: selectedItem) { item in
             guard let item else { return }
             isLoading = true
@@ -142,13 +145,16 @@ struct RequestRealCameraView: View {
             }
         }
         .ignoresSafeArea()
+        .onAppear {
+            Analytics.shared.trackScreen(name: "camera")
+            checkPermissions()
+        }
+        .onDisappear { vm.stopSession() }
         .onChange(of: vm.showPreview) { showing in
             guard showing, let url = vm.recordedVideoURL else { return }
             vm.showPreview = false
             previewURL = url
         }
-        .onAppear { checkPermissions() }
-        .onDisappear { vm.stopSession() }
         .alert("Camera Required", isPresented: $showingPermissionAlert) {
             Button("Open Settings") {
                 UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
@@ -269,8 +275,6 @@ struct RequestRealCameraView: View {
 }
 
 // MARK: - VideoPreviewConfirmView
-/// Full-screen looping preview with Retake / Use Video buttons.
-/// Uses resizeAspectFill so vertical video fills edge to edge with no black bars.
 
 struct VideoPreviewConfirmView: View {
 
@@ -285,13 +289,11 @@ struct VideoPreviewConfirmView: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            // Fill player — no letterboxing
             if let player {
                 VideoPlayerFillView(player: player)
                     .ignoresSafeArea()
             }
 
-            // Gradient for button legibility
             VStack {
                 Spacer()
                 LinearGradient(
@@ -303,7 +305,6 @@ struct VideoPreviewConfirmView: View {
             }
             .ignoresSafeArea()
 
-            // Retake / Use Video buttons
             VStack {
                 Spacer()
                 HStack(spacing: 20) {
@@ -361,8 +362,6 @@ struct VideoPreviewConfirmView: View {
 }
 
 // MARK: - VideoPlayerFillView
-/// AVPlayerViewController with resizeAspectFill — fills the frame
-/// edge to edge with no letterboxing, matching the camera preview behaviour.
 
 struct VideoPlayerFillView: UIViewControllerRepresentable {
     let player: AVPlayer
