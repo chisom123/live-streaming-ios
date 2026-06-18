@@ -399,17 +399,28 @@ struct NewTransactionView: View {
                 }
 
                 HStack {
-                    Text("$").font(.system(size: 18, weight: .bold)).foregroundColor(AppTheme.primaryText).padding(.leading, 16)
+                    Text("$")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
+                        .padding(.leading, 16)
                     TextField("Custom amount", text: $price)
-                        .font(.system(size: 18, weight: .bold)).foregroundColor(AppTheme.primaryText)
-                        .keyboardType(.decimalPad).padding(.vertical, 14)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
+                        .keyboardType(.decimalPad)
+                        .padding(.vertical, 14)
+                        .tint(AppTheme.accent)
                 }
-                .background(AppTheme.cardBackground).cornerRadius(12)
-                .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-                    !price.isEmpty && !priceValid ? Color.red.opacity(0.5) : AppTheme.divider, lineWidth: 1))
+                .frame(height: 60)
+                .background(AppTheme.cardBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
+                .cornerRadius(10)
+                .overlay(
+                    !price.isEmpty && !priceValid
+                        ? RoundedRectangle(cornerRadius: 10).stroke(Color.red.opacity(0.5), lineWidth: 2)
+                        : nil
+                )
 
                 if !price.isEmpty && !priceValid {
-                    Text("Price must be between $0.50 and $20.00").font(.system(size: 12)).foregroundColor(.red)
+                    Text("Price must be between $0.50 and $20.00").font(.system(size: 12, weight: .bold)).foregroundColor(.red)
                 }
 
                 if priceValid { requestBreakdownView }
