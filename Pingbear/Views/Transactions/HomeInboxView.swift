@@ -265,7 +265,7 @@ struct HomeInboxView: View {
                 Text("Nothing here yet")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                Text("Tap + to request a photo from a friend")
+                Text("Tap + to request a video from a friend")
                     .font(.system(size: 15))
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -383,9 +383,9 @@ struct InboxCard: View {
         case .pendingAcceptance:
             return iAmCreator ? "Tap to respond 📸" : "Waiting for response"
         case .accepted:
-            return iAmCreator ? "Tap to send your photo 📸" : "They're working on it..."
+            return iAmCreator ? "Tap to send your video 📸" : "They're working on it..."
         case .fulfilled:
-            return iAmPayer ? "Tap to see your photo 👀" : "Photo sent — waiting for them to view"
+            return iAmPayer ? "Tap to see your video 👀" : "Video sent — waiting for them to view"
         case .completed:
             if let rating = tx.rating { return "Completed · \(rating)⭐" }
             return "Completed ✓"
@@ -427,7 +427,7 @@ struct NotificationPermissionPrompt: View {
                     Text("Don't miss a thing")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Get notified when friends respond to your requests and when photos are ready")
+                    Text("Get notified when friends respond to your requests and when videos are ready")
                         .font(.system(size: 14))
                         .foregroundColor(AppTheme.secondaryText)
                         .multilineTextAlignment(.center)
