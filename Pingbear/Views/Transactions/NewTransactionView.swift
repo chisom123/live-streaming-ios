@@ -499,8 +499,8 @@ struct NewTransactionView: View {
     private var bottomButton: some View {
         Button(action: bottomAction) {
             HStack(spacing: 8) {
-                if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: .white)).scaleEffect(0.85) }
-                Text(isSending ? "Sending..." : step < 3 ? "Continue" : "Send Request")
+                if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText)).scaleEffect(0.85) }
+                Text(isSending ? "Sending..." : step < 3 ? "Continue" : "Continue")
                     .font(.system(size: 18, weight: .bold)).foregroundColor(bottomEnabled ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
