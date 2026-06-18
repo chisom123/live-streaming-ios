@@ -137,7 +137,7 @@ struct NewTransactionView: View {
                 )
             }
         }
-        .sheet(isPresented: $showWalletSheet) {
+        .fullScreenCover(isPresented: $showWalletSheet) {
             WalletView(onDismiss: { showWalletSheet = false })
         }
         .alert("Error", isPresented: Binding(
@@ -398,31 +398,6 @@ struct NewTransactionView: View {
                     }
                 }
 
-                HStack {
-                    Text("$")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-                        .padding(.leading, 16)
-                    TextField("Custom amount", text: $price)
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-                        .keyboardType(.decimalPad)
-                        .padding(.vertical, 14)
-                        .tint(AppTheme.accent)
-                }
-                .frame(height: 60)
-                .background(AppTheme.cardBackground.clipShape(RoundedRectangle(cornerRadius: 10)))
-                .cornerRadius(10)
-                .overlay(
-                    !price.isEmpty && !priceValid
-                        ? RoundedRectangle(cornerRadius: 10).stroke(Color.red.opacity(0.5), lineWidth: 2)
-                        : nil
-                )
-
-                if !price.isEmpty && !priceValid {
-                    Text("Reward must be between $0.50 and $20.00").font(.system(size: 12, weight: .bold)).foregroundColor(.red)
-                }
-
                 if priceValid { requestBreakdownView }
             }
             .padding(.horizontal, 20)
@@ -435,69 +410,79 @@ struct NewTransactionView: View {
             ForEach(Array(selectedRecipients.enumerated()), id: \.offset) { _, recipient in
                 HStack {
                     HStack(spacing: 6) {
-                        Text(recipient.name).font(.system(size: 13)).foregroundColor(AppTheme.primaryText)
-                        if recipient.isOffApp {
-                            Text("invite").font(.system(size: 10, weight: .bold)).foregroundColor(AppTheme.accent)
-                                .padding(.horizontal, 5).padding(.vertical, 2)
-                                .background(AppTheme.accent.opacity(0.1)).cornerRadius(4)
-                        }
+                        Text(recipient.name)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(AppTheme.secondaryText)
                     }
                     Spacer()
-                    Text("$\(String(format: "%.2f", priceDouble))").font(.system(size: 13)).foregroundColor(AppTheme.secondaryText)
+                    Text("$\(String(format: "%.2f", priceDouble))")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
                 }
-                .padding(.horizontal, 14).padding(.vertical, 10)
+                .padding(.horizontal, 16).padding(.vertical, 16)
                 Divider().background(AppTheme.divider)
             }
 
+            // Total row
             HStack {
-                Text("Total").font(.system(size: 13, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                Text("Total reward")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(AppTheme.secondaryText)
                 Spacer()
-                Text("$\(String(format: "%.2f", totalEscrow))").font(.system(size: 13, weight: .bold)).foregroundColor(AppTheme.primaryText)
+                Text("$\(String(format: "%.2f", totalEscrow))")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(AppTheme.primaryText)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
+            .padding(.horizontal, 16).padding(.vertical, 16)
 
-            Divider().background(AppTheme.divider)
-
-            HStack {
-                Image(systemName: "wallet.pass.fill").font(.system(size: 13))
-                    .foregroundColor(hasSufficientBalance ? AppTheme.green : .red)
-                Text("Your balance").font(.system(size: 13)).foregroundColor(AppTheme.secondaryText)
-                Spacer()
-                Text("$\(String(format: "%.2f", walletBalance))").font(.system(size: 13, weight: .bold))
-                    .foregroundColor(hasSufficientBalance ? AppTheme.green : .red)
-            }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-
+            // Balance + top-up — only shown when funds are insufficient
             if !hasSufficientBalance {
                 Divider().background(AppTheme.divider)
+
+                HStack {
+                    Text("Your balance")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppTheme.secondaryText)
+                    Spacer()
+                    Text("$\(String(format: "%.2f", walletBalance))")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.red)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 16)
+
+                Divider().background(AppTheme.divider)
+
                 VStack(spacing: 10) {
                     HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 13)).foregroundColor(.red)
+                        Spacer()
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.red)
                         Text("You need $\(String(format: "%.2f", max(0, totalEscrow - walletBalance))) more")
-                            .font(.system(size: 13, weight: .semibold)).foregroundColor(.red)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.red)
                         Spacer()
                     }
+                    .padding(.vertical, 5)
                     Button {
                         Analytics.shared.trackTap(elementId: "top_up_from_new_request", screenName: "new_request_step_3")
                         Analytics.shared.track(event: AnalyticsEvent.walletTopUpOpened,
                                                properties: ["screen": "new_request_step_3"])
                         showWalletSheet = true
                     } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus.circle.fill").font(.system(size: 15))
-                            Text("Top Up Wallet").font(.system(size: 15, weight: .bold))
-                        }
-                        .foregroundColor(.white).frame(maxWidth: .infinity).padding(.vertical, 12)
-                        .background(AppTheme.green).cornerRadius(10)
+                        Text("Top Up Wallet")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 13)
+                            .background(AppTheme.accent).cornerRadius(200)
                     }
                     .buttonStyle(.plain)
                 }
                 .padding(12)
             }
         }
-        .background(AppTheme.cardBackground).cornerRadius(12)
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-            hasSufficientBalance ? AppTheme.divider : Color.red.opacity(0.3), lineWidth: 1))
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
