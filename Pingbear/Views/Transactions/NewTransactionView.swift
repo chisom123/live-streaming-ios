@@ -34,6 +34,12 @@ struct NewTransactionView: View {
     @StateObject private var contactVM = ContactViewModel()
 
     private let presetPrices  = ["0.50", "1.00", "2.00", "5.00", "10.00"]
+    private let suggestions   = [
+        "Tell me a joke",
+        "Go sing happy birthday to someone",
+        "Scream super loud",
+        "Shave your head"
+    ]
     private let functions     = Functions.functions()
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let db            = Firestore.firestore()
@@ -231,9 +237,39 @@ struct NewTransactionView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .tint(AppTheme.accent)
                     .onChange(of: description) { if $0.count > 120 { description = String($0.prefix(120)) } }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Need ideas?")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(AppTheme.secondaryText)
+                        .textCase(.uppercase)
+                        .padding(.leading, 4)
+
+                    suggestionChips
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
+        }
+    }
+
+    private var suggestionChips: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(suggestions, id: \.self) { suggestion in
+                Button {
+                    description = suggestion
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                } label: {
+                    Text(suggestion)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(description == suggestion ? .white : AppTheme.primaryText)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(description == suggestion ? AppTheme.accent : AppTheme.cardBackground)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -616,6 +652,52 @@ struct NewTransactionView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - FlowLayout
+// ─────────────────────────────────────────────────────────────
+
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? .infinity
+        var height: CGFloat = 0
+        var lineWidth: CGFloat = 0
+        var lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if lineWidth + size.width > width, lineWidth > 0 {
+                height += lineHeight + spacing
+                lineWidth = 0
+                lineHeight = 0
+            }
+            lineWidth += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
+        height += lineHeight
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var lineHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX, x > bounds.minX {
+                x = bounds.minX
+                y += lineHeight + spacing
+                lineHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+        }
     }
 }
 
