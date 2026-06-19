@@ -20,8 +20,6 @@ struct TransactionDetailView: View {
     @State private var isCancelling     = false
     @State private var errorMessage:    String? = nil
     @State private var showingCamera    = false
-    @State private var capturedVideoURL: URL?   = nil
-    @State private var uploadProgress:  Double  = 0
     @State private var showingFullVideo  = false
 
     // Shared player so inline and fullscreen stay in sync
@@ -135,11 +133,9 @@ struct TransactionDetailView: View {
         .onDisappear { stopListening() }
         .fullScreenCover(isPresented: $showingCamera) {
             RequestCameraView(
-                onVideoTaken: { url in
-                    showingCamera    = false
-                    capturedVideoURL = url
-                },
-                onCancel: { showingCamera = false }
+                transactionId: tx.id,
+                onFulfilled: { showingCamera = false },
+                onCancel:    { showingCamera = false }
             )
         }
         .fullScreenCover(isPresented: $showingFullVideo) {
@@ -165,10 +161,6 @@ struct TransactionDetailView: View {
             Button("OK") { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")
-        }
-        .onChange(of: capturedVideoURL) { url in
-            guard let url else { return }
-            Task { await fulfillRequest(videoURL: url) }
         }
     }
 
@@ -358,68 +350,25 @@ struct TransactionDetailView: View {
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Fulfill card (creator records video)
+    // Recording, preview, upload, and the fulfillRequest call all now
+    // happen inside RequestCameraView — this just launches it.
     // ─────────────────────────────────────────────────────────
 
     private var fulfillCard: some View {
         VStack(spacing: 16) {
-            if let url = capturedVideoURL {
-                VideoThumbnailView(url: url)
-                    .frame(maxWidth: .infinity).frame(height: 220)
-                    .cornerRadius(12).clipped()
+            feeBreakdownCard
 
-                if uploadProgress > 0 && uploadProgress < 1 {
-                    VStack(spacing: 6) {
-                        ProgressView(value: uploadProgress).tint(AppTheme.accent)
-                        Text("\(Int(uploadProgress * 100))% uploaded")
-                            .font(.system(size: 12))
-                            .foregroundColor(AppTheme.secondaryText)
-                    }
+            Button {
+                Analytics.shared.trackTap(elementId: "record_video", screenName: "transaction_detail")
+                showingCamera = true
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "video.fill").font(.system(size: 18))
+                    Text("Record the video").font(.system(size: 16, weight: .bold))
                 }
-
-                Button { Task { await fulfillRequest(videoURL: url) } } label: {
-                    HStack(spacing: 8) {
-                        if isActioning {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.85)
-                        }
-                        Text(isActioning
-                             ? "Sending..."
-                             : "Send Video — Earn $\(String(format: "%.2f", tx.creatorPayout))")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(isActioning ? AppTheme.disabledBackground : AppTheme.accent)
-                    .cornerRadius(200)
-                }
-                .disabled(isActioning)
-
-                Button {
-                    Analytics.shared.trackTap(elementId: "retake_video", screenName: "transaction_detail")
-                    capturedVideoURL = nil
-                    showingCamera    = true
-                } label: {
-                    Text("Retake")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppTheme.secondaryText)
-                }
-
-            } else {
-                feeBreakdownCard
-
-                Button {
-                    Analytics.shared.trackTap(elementId: "record_video", screenName: "transaction_detail")
-                    showingCamera = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "video.fill").font(.system(size: 18))
-                        Text("Record the video").font(.system(size: 16, weight: .bold))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(AppTheme.accent).cornerRadius(200)
-                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                .background(AppTheme.accent).cornerRadius(200)
             }
         }
         .padding(16)
@@ -549,36 +498,6 @@ struct TransactionDetailView: View {
         }
     }
 
-    private func fulfillRequest(videoURL: URL) async {
-        guard !isActioning else { return }
-        isActioning = true
-        do {
-            let downloadURL = try await VideoUploadManager.shared.upload(
-                videoURL:   videoURL,
-                folderPath: "fulfilled/\(currentUserId)/\(tx.id)",
-                onProgress: { p in DispatchQueue.main.async { uploadProgress = p } }
-            )
-            try? FileManager.default.removeItem(at: videoURL)
-
-            try await functions.httpsCallable("fulfillRequest").call([
-                "transactionId": tx.id,
-                "photoUrl":      downloadURL
-            ])
-            await MainActor.run {
-                isActioning      = false
-                uploadProgress   = 0
-                capturedVideoURL = nil
-                Analytics.shared.trackRequest(action: "fulfilled", transactionId: tx.id)
-            }
-        } catch {
-            await MainActor.run {
-                isActioning    = false
-                uploadProgress = 0
-                errorMessage   = error.localizedDescription
-            }
-        }
-    }
-
     private func markViewed() async {
         do {
             try await functions.httpsCallable("markTransactionViewed")
@@ -600,47 +519,6 @@ struct TransactionDetailView: View {
             }
         } catch {
             await MainActor.run { isCancelling = false; errorMessage = error.localizedDescription }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - VideoThumbnailView
-// ─────────────────────────────────────────────────────────────
-
-struct VideoThumbnailView: View {
-    let url: URL
-    @State private var thumbnail: UIImage?
-
-    var body: some View {
-        ZStack {
-            if let img = thumbnail {
-                Image(uiImage: img)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Rectangle()
-                    .fill(AppTheme.cardBackground)
-                    .overlay(ProgressView().tint(AppTheme.secondaryText))
-            }
-            Image(systemName: "play.circle.fill")
-                .font(.system(size: 44))
-                .foregroundColor(.white.opacity(0.85))
-                .shadow(color: .black.opacity(0.3), radius: 4)
-        }
-        .onAppear { generateThumbnail() }
-    }
-
-    private func generateThumbnail() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let asset = AVAsset(url: url)
-            let gen   = AVAssetImageGenerator(asset: asset)
-            gen.appliesPreferredTrackTransform = true
-            gen.maximumSize = CGSize(width: 720, height: 720)
-            if let cgImg = try? gen.copyCGImage(at: .zero, actualTime: nil) {
-                let img = UIImage(cgImage: cgImg)
-                DispatchQueue.main.async { thumbnail = img }
-            }
         }
     }
 }

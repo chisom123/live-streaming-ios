@@ -222,7 +222,7 @@ struct NewTransactionView: View {
                         .foregroundColor(AppTheme.primaryText)
                 }
 
-                TextField("e.g. Crack an egg on your head", text: $description, axis: .vertical)
+                TextField("e.g. Go sing happy birthday to someone", text: $description, axis: .vertical)
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
                     .lineLimit(5...10)

@@ -2,19 +2,30 @@ import SwiftUI
 import AVFoundation
 import AVKit
 import PhotosUI
+import FirebaseAuth
+import FirebaseFunctions
 
 // MARK: - RequestCameraView
 
 struct RequestCameraView: View {
 
-    let onVideoTaken: (URL) -> Void
-    let onCancel:     () -> Void
+    let transactionId: String
+    let onFulfilled:   () -> Void
+    let onCancel:      () -> Void
 
     var body: some View {
         #if targetEnvironment(simulator)
-        RequestSimulatorPickerView(onVideoTaken: onVideoTaken, onCancel: onCancel)
+        RequestSimulatorPickerView(
+            transactionId: transactionId,
+            onFulfilled:   onFulfilled,
+            onCancel:      onCancel
+        )
         #else
-        RequestRealCameraView(onVideoTaken: onVideoTaken, onCancel: onCancel)
+        RequestRealCameraView(
+            transactionId: transactionId,
+            onFulfilled:   onFulfilled,
+            onCancel:      onCancel
+        )
         #endif
     }
 }
@@ -22,8 +33,9 @@ struct RequestCameraView: View {
 // MARK: - Simulator fallback
 
 struct RequestSimulatorPickerView: View {
-    let onVideoTaken: (URL) -> Void
-    let onCancel:     () -> Void
+    let transactionId: String
+    let onFulfilled:   () -> Void
+    let onCancel:      () -> Void
 
     @State private var selectedItem: PhotosPickerItem?
     @State private var isLoading = false
@@ -35,9 +47,10 @@ struct RequestSimulatorPickerView: View {
 
             if let url = previewURL {
                 VideoPreviewConfirmView(
-                    url: url,
-                    onConfirm: { onVideoTaken(url) },
-                    onRetake:  { previewURL = nil }
+                    url:           url,
+                    transactionId: transactionId,
+                    onFulfilled:   onFulfilled,
+                    onRetake:      { previewURL = nil }
                 )
             } else {
                 VStack(spacing: 24) {
@@ -104,8 +117,9 @@ struct RequestSimulatorPickerView: View {
 
 struct RequestRealCameraView: View {
 
-    let onVideoTaken: (URL) -> Void
-    let onCancel:     () -> Void
+    let transactionId: String
+    let onFulfilled:   () -> Void
+    let onCancel:      () -> Void
 
     @StateObject private var vm               = VideoRecordingViewModel()
     @State private var isViewAppeared         = false
@@ -124,12 +138,11 @@ struct RequestRealCameraView: View {
             }
 
             if let url = previewURL {
-                // Preview / confirm step overlaid on top of live camera
+                // Preview / confirm / upload step overlaid on top of live camera
                 VideoPreviewConfirmView(
-                    url: url,
-                    onConfirm: {
-                        onVideoTaken(url)
-                    },
+                    url:           url,
+                    transactionId: transactionId,
+                    onFulfilled:   onFulfilled,
                     onRetake: {
                         try? FileManager.default.removeItem(at: url)
                         previewURL = nil
@@ -275,17 +288,64 @@ struct RequestRealCameraView: View {
 }
 
 // MARK: - VideoPreviewConfirmView
+// Now owns the full "confirm → upload → fulfill" lifecycle so the progress
+// UI lives right on top of the recorded clip instead of back in
+// TransactionDetailView.
 
 struct VideoPreviewConfirmView: View {
 
-    let url:       URL
-    let onConfirm: () -> Void
-    let onRetake:  () -> Void
+    let url:           URL
+    let transactionId: String
+    let onFulfilled:   () -> Void
+    let onRetake:      () -> Void
 
     @State private var player:       AVPlayer?
     @State private var loopObserver: NSObjectProtocol?
+    @State private var uploadState:  UploadState = .idle
+
+    private let functions = Functions.functions()
+
+    enum UploadState: Equatable {
+        case idle
+        case uploading(Double)
+        case finalizing
+        case failed(String)
+    }
 
     var body: some View {
+        Group {
+            if let info = activeUploadInfo {
+                VideoUploadStatusView(progress: info.progress, statusText: info.statusText)
+            } else if case .failed(let message) = uploadState {
+                failedScreen(message: message)
+            } else {
+                previewScreen
+            }
+        }
+        .onAppear { setupPlayer() }
+        .onDisappear { teardown() }
+        .onChange(of: uploadState) { state in
+            // The preview player isn't on screen once we leave .idle —
+            // stop it explicitly so it doesn't keep playing in the background.
+            if state != .idle { player?.pause() }
+        }
+    }
+
+    // Collapses .uploading/.finalizing into a single optional so the
+    // branch above is the *same* one across that transition — otherwise
+    // SwiftUI treats them as different view identities and the
+    // color-cycling/haptics engine restarts right as the upload finishes.
+    private var activeUploadInfo: (progress: Double, statusText: String)? {
+        switch uploadState {
+        case .uploading(let progress): return (progress, "Uploading your video")
+        case .finalizing:              return (1.0, "Almost done...")
+        default:                       return nil
+        }
+    }
+
+    // ── Preview / confirm screen ──────────────────────────────────
+
+    private var previewScreen: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
@@ -307,19 +367,69 @@ struct VideoPreviewConfirmView: View {
 
             VStack {
                 Spacer()
-                HStack(spacing: 20) {
-                    Button(action: onRetake) {
-                        Text("Retake")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(Color.white.opacity(0.15))
-                            .cornerRadius(200)
-                    }
+                confirmButtons
+            }
+        }
+    }
 
-                    Button(action: onConfirm) {
-                        Text("Use Video")
+    private var confirmButtons: some View {
+        HStack(spacing: 20) {
+            retakeButton
+
+            Button { Task { await startUpload() } } label: {
+                Text("Use Video")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppTheme.accent)
+                    .cornerRadius(200)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 50)
+    }
+
+    private var retakeButton: some View {
+        Button(action: onRetake) {
+            Text("Retake")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(200)
+        }
+    }
+
+    // ── Failed screen ────────────────────────────────────────────
+
+    private func failedScreen(message: String) -> some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 20) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 34))
+                    .foregroundColor(AppTheme.gold)
+
+                Text("Upload failed")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(message)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            VStack {
+                Spacer()
+                HStack(spacing: 20) {
+                    retakeButton
+                    Button { Task { await startUpload() } } label: {
+                        Text("Try Again")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -332,9 +442,43 @@ struct VideoPreviewConfirmView: View {
                 .padding(.bottom, 50)
             }
         }
-        .onAppear { setupPlayer() }
-        .onDisappear { teardown() }
     }
+
+    // ── Upload + fulfill ─────────────────────────────────────────
+
+    private func startUpload() async {
+        await MainActor.run { uploadState = .uploading(0) }
+
+        let currentUserId = Auth.auth().currentUser?.uid ?? ""
+
+        do {
+            let downloadURL = try await VideoUploadManager.shared.upload(
+                videoURL:   url,
+                folderPath: "fulfilled/\(currentUserId)/\(transactionId)",
+                onProgress: { p in
+                    Task { @MainActor in uploadState = .uploading(p) }
+                }
+            )
+
+            await MainActor.run { uploadState = .finalizing }
+
+            try await functions.httpsCallable("fulfillRequest").call([
+                "transactionId": transactionId,
+                "photoUrl":      downloadURL
+            ])
+
+            // Only remove the local temp file once everything has succeeded.
+            try? FileManager.default.removeItem(at: url)
+
+            Analytics.shared.trackRequest(action: "fulfilled", transactionId: transactionId)
+            await MainActor.run { onFulfilled() }
+
+        } catch {
+            await MainActor.run { uploadState = .failed(error.localizedDescription) }
+        }
+    }
+
+    // ── Player ───────────────────────────────────────────────────
 
     private func setupPlayer() {
         let p = AVPlayer(url: url)
@@ -358,6 +502,85 @@ struct VideoPreviewConfirmView: View {
             NotificationCenter.default.removeObserver(obs)
             loopObserver = nil
         }
+    }
+}
+
+// MARK: - VideoUploadStatusView
+//
+// Full-screen takeover shown while the video uploads and the fulfillment
+// call finishes. Same flashing-color background treatment as
+// RoundJudgingView, with a progress bar + percentage in place of the
+// spinning ring, since this is a trackable upload rather than an
+// indeterminate wait.
+
+struct VideoUploadStatusView: View {
+    let progress:   Double   // 0...1
+    let statusText: String
+
+    private let colors: [Color] = [
+        Color(hex: "#FF6B6B"),
+        Color(hex: "#FFD93D"),
+        Color(hex: "#6BCB77"),
+        Color(hex: "#4D96FF"),
+        Color(hex: "#FF922B"),
+        Color(hex: "#CC5DE8"),
+    ]
+
+    @State private var colorIndex: Int = 0
+    @State private var currentBeatTask: DispatchWorkItem? = nil
+
+    var body: some View {
+        ZStack {
+            colors[colorIndex]
+                .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.6), value: colorIndex)
+
+            VStack(spacing: 32) {
+                Text(statusText)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.white)
+
+                VStack(spacing: 16) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.25))
+
+                            Capsule()
+                                .fill(Color.white)
+                                .frame(width: geo.size.width * CGFloat(max(0, min(progress, 1))))
+                        }
+                    }
+                    .frame(height: 14)
+                    .animation(.easeInOut(duration: 0.2), value: progress)
+
+                    Text("\(Int((progress * 100).rounded()))%")
+                        .font(.system(size: 44, weight: .black).monospacedDigit())
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 48)
+            }
+        }
+        .onAppear { startCycling() }
+        .onDisappear {
+            currentBeatTask?.cancel()
+            currentBeatTask = nil
+        }
+    }
+
+    // ── Cycling ─────────────────────────────────────────────────
+
+    private func startCycling() {
+        fireNextBeat()
+    }
+
+    private func fireNextBeat() {
+        colorIndex = (colorIndex + 1) % colors.count
+
+        let interval = Double.random(in: 0.5...1.1)
+        let task = DispatchWorkItem { fireNextBeat() }
+        currentBeatTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: task)
     }
 }
 
