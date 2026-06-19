@@ -34,12 +34,13 @@ struct NewTransactionView: View {
     @StateObject private var contactVM = ContactViewModel()
 
     private let presetPrices  = ["0.50", "1.00", "2.00", "5.00", "10.00"]
-    private let suggestions   = [
+    private let suggestionPool = [
         "Tell me a joke",
         "Go sing happy birthday to someone",
         "Scream super loud",
         "Shave your head"
     ]
+    @State private var suggestions: [String] = []
     private let functions     = Functions.functions()
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let db            = Firestore.firestore()
@@ -250,6 +251,9 @@ struct NewTransactionView: View {
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
+        }
+        .onAppear {
+            suggestions = suggestionPool.shuffled()
         }
     }
 
