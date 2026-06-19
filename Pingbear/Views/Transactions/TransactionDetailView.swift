@@ -317,11 +317,11 @@ struct TransactionDetailView: View {
 
     private var feeBreakdownCard: some View {
         VStack(spacing: 0) {
-            feeRow(label: "Request price",      value: "$\(String(format: "%.2f", tx.price))",         color: AppTheme.primaryText)
+            feeRow(label: "Reward",      value: "$\(String(format: "%.2f", tx.price))",         color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
             feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", tx.platformFee))",  color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "You earn",           value: "$\(String(format: "%.2f", tx.creatorPayout))", color: AppTheme.green, valueSize: 20)
+            feeRow(label: "You get",           value: "$\(String(format: "%.2f", tx.creatorPayout))", color: AppTheme.green, valueSize: 20)
         }
         .background(AppTheme.cardBackground).cornerRadius(12)
     }
