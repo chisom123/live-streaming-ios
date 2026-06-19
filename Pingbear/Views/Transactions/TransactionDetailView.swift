@@ -101,9 +101,11 @@ struct TransactionDetailView: View {
                                 viewVideoCard
                             }
                             if isCreator && tx.status == .fulfilled {
+                                creatorVideoCard
                                 waitingCard("Video sent — waiting for them to view")
                             }
                             if isCreator && tx.status == .completed {
+                                creatorVideoCard
                                 creatorCompletedCard
                             }
                             if isPayer && [.pendingSignup, .pendingAcceptance, .accepted].contains(tx.status) {
@@ -377,32 +379,58 @@ struct TransactionDetailView: View {
     }
 
     // ─────────────────────────────────────────────────────────
+    // MARK: - Video player section (shared between payer & creator)
+    // Sized like an actual mobile video — a tall vertical rectangle —
+    // and tappable anywhere to open full screen. The expand icon
+    // top-right is just a visual affordance; tapping it also opens
+    // full screen since it sits on top of the same tappable area.
+    // ─────────────────────────────────────────────────────────
+
+    private var videoPlayerSection: some View {
+        Group {
+            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                HStack {
+                    Spacer(minLength: 0)
+
+                    ZStack(alignment: .topTrailing) {
+                        InlineVideoPlayer(url: url, onPlayerReady: { player in
+                            inlinePlayer = player
+                        })
+
+                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(7)
+                            .background(Color.black.opacity(0.45))
+                            .clipShape(Circle())
+                            .padding(8)
+                            .allowsHitTesting(false)
+                    }
+                    .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                    .frame(width: 170)
+                    .background(Color.black)
+                    .cornerRadius(16)
+                    .clipped()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        Analytics.shared.trackTap(elementId: "fullscreen_video", screenName: "transaction_detail")
+                        showingFullVideo = true
+                    }
+
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // MARK: - View video card (payer)
     // ─────────────────────────────────────────────────────────
 
     private var viewVideoCard: some View {
         VStack(spacing: 16) {
-            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
-                InlineVideoPlayer(url: url, onPlayerReady: { player in
-                    inlinePlayer = player
-                })
-                .frame(maxWidth: .infinity).frame(height: 300)
-                .cornerRadius(12).clipped()
+            videoPlayerSection
                 .onAppear { Task { await markViewed() } }
-
-                Button {
-                    Analytics.shared.trackTap(elementId: "fullscreen_video", screenName: "transaction_detail")
-                    showingFullVideo = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.system(size: 13, weight: .bold))
-                        Text("Full screen")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .foregroundColor(AppTheme.secondaryText)
-                }
-            }
 
             if tx.status == .completed && tx.rating == nil {
                 RatingCard(transactionId: tx.id, onRated: { })
@@ -423,6 +451,24 @@ struct TransactionDetailView: View {
                 .cornerRadius(12)
             }
         }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // MARK: - Creator's own video card
+    // Lets the creator watch back what they sent. No markViewed
+    // call here — that's only for when the payer watches it.
+    // ─────────────────────────────────────────────────────────
+
+    private var creatorVideoCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your video")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(AppTheme.secondaryText)
+            videoPlayerSection
+        }
+        .padding(16)
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
     }
 
     // ─────────────────────────────────────────────────────────
@@ -593,22 +639,6 @@ struct FullScreenVideoView: View {
             if let player {
                 FullScreenFillPlayer(player: player)
                     .ignoresSafeArea()
-            }
-
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: onDismiss) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(10)
-                            .background(Color.black.opacity(0.5))
-                            .clipShape(Circle())
-                    }
-                    .padding(.top, 60).padding(.trailing, 20)
-                }
-                Spacer()
             }
         }
         .onAppear { setupPlayer() }
