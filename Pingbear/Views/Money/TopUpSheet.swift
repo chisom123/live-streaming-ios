@@ -129,7 +129,7 @@ struct TopUpSheet: View {
                                         .frame(maxWidth: .infinity)
                                         .padding(.vertical, 14)
                                         .background(AppTheme.cardBackground)
-                                        .cornerRadius(12)
+                                        .cornerRadius(200)
                                 }
                             }
                         }
