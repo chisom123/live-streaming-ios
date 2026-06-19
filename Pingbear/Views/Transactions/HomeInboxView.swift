@@ -179,19 +179,25 @@ struct HomeInboxView: View {
 
     private var navBar: some View {
         HStack {
-            Text("SocialStar")
-                .font(.system(size: 22, weight: .black))
-                .foregroundColor(AppTheme.primaryText)
+            Color.clear.frame(width: 30, height: 30)
+
             Spacer()
+
+            Text("Home")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(AppTheme.primaryText)
+
+            Spacer()
+
             NavigationLink { HistoryView() } label: {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 20))
                     .foregroundColor(AppTheme.iconColor)
-                    .padding(.leading, 6)
             }
+            .frame(width: 30, height: 30)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.vertical, 10)
     }
 
     private func sectionHeader(_ title: String, count: Int?, color: Color) -> some View {
