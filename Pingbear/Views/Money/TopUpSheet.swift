@@ -78,6 +78,12 @@ struct TopUpSheet: View {
                                         cleaned = components[0] + "." + components[1]
                                     }
 
+                                    // NEW: cap decimal places at 2
+                                    let parts = cleaned.components(separatedBy: ".")
+                                    if parts.count == 2, parts[1].count > 2 {
+                                        cleaned = parts[0] + "." + String(parts[1].prefix(2))
+                                    }
+
                                     if cleaned.isEmpty {
                                         displayAmount = ""
                                         viewModel.customAmount = ""
@@ -98,7 +104,7 @@ struct TopUpSheet: View {
                         .padding(.horizontal, 20)
 
                         if !viewModel.customAmount.isEmpty && !viewModel.customAmountIsValid {
-                            Text("Minimum top-up is $1.00")
+                            Text("Minimum top-up is $\(String(format: "%.2f", viewModel.minimumAmount))")
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.red.opacity(0.8))
                                 .padding(.horizontal, 20)

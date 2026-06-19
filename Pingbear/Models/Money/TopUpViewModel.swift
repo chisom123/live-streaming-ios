@@ -10,7 +10,7 @@ class TopUpViewModel: ObservableObject {
     @Published var successMessage: String? = nil
 
     let quickAmounts:  [Double] = [5, 10, 20, 50]
-    let minimumAmount: Double   = 1.00
+    let minimumAmount: Double   = 5.00
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Initiate top-up
