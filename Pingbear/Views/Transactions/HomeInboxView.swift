@@ -189,12 +189,13 @@ struct HomeInboxView: View {
 
             Spacer()
 
-            NavigationLink { HistoryView() } label: {
-                Image(systemName: "clock.fill")
-                    .font(.system(size: 20))
+            NavigationLink(destination: HistoryView()) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 30, height: 30)
                     .foregroundColor(AppTheme.iconColor)
             }
-            .frame(width: 30, height: 30)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
