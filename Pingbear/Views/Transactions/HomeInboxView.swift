@@ -200,14 +200,6 @@ struct HomeInboxView: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundColor(color)
                 .textCase(.uppercase)
-            if let count {
-                Text("\(count)")
-                    .font(.system(size: 11, weight: .black))
-                    .foregroundColor(.white)
-                    .frame(minWidth: 20, minHeight: 20)
-                    .background(AppTheme.accent)
-                    .clipShape(Circle())
-            }
             Spacer()
         }
         .padding(.horizontal, 20)
@@ -338,7 +330,7 @@ struct InboxCard: View {
 
             VStack(alignment: .trailing, spacing: 6) {
                 Text("$\(String(format: "%.2f", tx.price))")
-                    .font(.system(size: 16, weight: .black))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
 
                 directionBadge
@@ -381,14 +373,17 @@ struct InboxCard: View {
         case .pendingSignup:
             return "Waiting for them to join"
         case .pendingAcceptance:
-            return iAmCreator ? "Tap to respond 📸" : "Waiting for response"
+            return iAmCreator ? "Tap to respond" : "Waiting for response"
         case .accepted:
-            return iAmCreator ? "Tap to send your video 📸" : "They're working on it..."
+            return iAmCreator ? "Tap to send your video" : "They're working on it..."
         case .fulfilled:
-            return iAmPayer ? "Tap to see your video 👀" : "Video sent — waiting for them to view"
+            return iAmPayer ? "Tap to see your video" : "Video sent — waiting for them to view"
         case .completed:
-            if let rating = tx.rating { return "Completed · \(rating)⭐" }
-            return "Completed ✓"
+            if let rating = tx.rating {
+                let label = rating == 1 ? "star" : "stars"
+                return "Completed · \(rating) \(label)"
+            }
+            return "Completed"
         case .declined:
             return iAmPayer ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
         case .cancelled:
