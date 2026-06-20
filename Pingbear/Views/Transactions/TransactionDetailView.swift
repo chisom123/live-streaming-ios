@@ -21,6 +21,7 @@ struct TransactionDetailView: View {
     @State private var errorMessage:    String? = nil
     @State private var showingCamera    = false
     @State private var showingFullVideo  = false
+    @State private var isInlineVideoLoading = true
 
     // Shared player so inline and fullscreen stay in sync
     @State private var inlinePlayer:    AVPlayer? = nil
@@ -384,6 +385,8 @@ struct TransactionDetailView: View {
     // and tappable anywhere to open full screen. The expand icon
     // top-right is just a visual affordance; tapping it also opens
     // full screen since it sits on top of the same tappable area.
+    // A loading spinner is centered over the player until the video
+    // is actually ready/playing, covering the brief black-screen gap.
     // ─────────────────────────────────────────────────────────
 
     private var videoPlayerSection: some View {
@@ -393,9 +396,19 @@ struct TransactionDetailView: View {
                     Spacer(minLength: 0)
 
                     ZStack(alignment: .topTrailing) {
-                        InlineVideoPlayer(url: url, onPlayerReady: { player in
-                            inlinePlayer = player
-                        })
+                        InlineVideoPlayer(
+                            url: url,
+                            onPlayerReady: { player in
+                                inlinePlayer = player
+                            },
+                            isLoading: $isInlineVideoLoading
+                        )
+
+                        if isInlineVideoLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                        }
 
                         Image(systemName: "arrow.up.left.and.arrow.down.right")
                             .font(.system(size: 11, weight: .bold))
@@ -576,8 +589,9 @@ struct TransactionDetailView: View {
 struct InlineVideoPlayer: UIViewControllerRepresentable {
     let url:           URL
     let onPlayerReady: (AVPlayer) -> Void
+    @Binding var isLoading: Bool
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading) }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -600,6 +614,22 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
             player.play()
         }
 
+        // Drive the loading spinner: hide it once the item is ready
+        // to play, with a fallback on timeControlStatus in case
+        // readyToPlay fires slightly before a frame actually renders.
+        context.coordinator.statusObserver = player.currentItem?.observe(\.status, options: [.new, .initial]) { item, _ in
+            DispatchQueue.main.async {
+                context.coordinator.isLoading.wrappedValue = (item.status != .readyToPlay)
+            }
+        }
+        context.coordinator.rateObserver = player.observe(\.timeControlStatus, options: [.new]) { p, _ in
+            DispatchQueue.main.async {
+                if p.timeControlStatus == .playing {
+                    context.coordinator.isLoading.wrappedValue = false
+                }
+            }
+        }
+
         player.play()
 
         DispatchQueue.main.async { onPlayerReady(player) }
@@ -614,10 +644,16 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
         if let obs = coordinator.loopObserver {
             NotificationCenter.default.removeObserver(obs)
         }
+        coordinator.statusObserver?.invalidate()
+        coordinator.rateObserver?.invalidate()
     }
 
     class Coordinator {
-        var loopObserver: NSObjectProtocol?
+        var loopObserver:   NSObjectProtocol?
+        var statusObserver: NSKeyValueObservation?
+        var rateObserver:   NSKeyValueObservation?
+        let isLoading: Binding<Bool>
+        init(isLoading: Binding<Bool>) { self.isLoading = isLoading }
     }
 }
 
@@ -631,14 +667,21 @@ struct FullScreenVideoView: View {
 
     @State private var player:       AVPlayer?
     @State private var loopObserver: NSObjectProtocol?
+    @State private var isLoading     = true
 
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
 
             if let player {
-                FullScreenFillPlayer(player: player)
+                FullScreenFillPlayer(player: player, isLoading: $isLoading)
                     .ignoresSafeArea()
+            }
+
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    .scaleEffect(1.3)
             }
         }
         .onAppear { setupPlayer() }
@@ -679,16 +722,45 @@ struct FullScreenVideoView: View {
 
 struct FullScreenFillPlayer: UIViewControllerRepresentable {
     let player: AVPlayer
+    @Binding var isLoading: Bool
+
+    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading) }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let vc = AVPlayerViewController()
         vc.player                = player
         vc.showsPlaybackControls = false
         vc.videoGravity          = .resizeAspectFill
+
+        context.coordinator.statusObserver = player.currentItem?.observe(\.status, options: [.new, .initial]) { item, _ in
+            DispatchQueue.main.async {
+                context.coordinator.isLoading.wrappedValue = (item.status != .readyToPlay)
+            }
+        }
+        context.coordinator.rateObserver = player.observe(\.timeControlStatus, options: [.new]) { p, _ in
+            DispatchQueue.main.async {
+                if p.timeControlStatus == .playing {
+                    context.coordinator.isLoading.wrappedValue = false
+                }
+            }
+        }
+
         return vc
     }
 
     func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+
+    static func dismantleUIViewController(_ vc: AVPlayerViewController, coordinator: Coordinator) {
+        coordinator.statusObserver?.invalidate()
+        coordinator.rateObserver?.invalidate()
+    }
+
+    class Coordinator {
+        var statusObserver: NSKeyValueObservation?
+        var rateObserver:   NSKeyValueObservation?
+        let isLoading: Binding<Bool>
+        init(isLoading: Binding<Bool>) { self.isLoading = isLoading }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────
