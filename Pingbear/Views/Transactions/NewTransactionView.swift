@@ -510,7 +510,7 @@ struct NewTransactionView: View {
                                                properties: ["screen": "new_request_step_3"])
                         showWalletSheet = true
                     } label: {
-                        Text("Top Up Wallet")
+                        Text("Top Up")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
