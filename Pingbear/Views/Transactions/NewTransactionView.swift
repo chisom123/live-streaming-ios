@@ -382,29 +382,25 @@ struct NewTransactionView: View {
                 }
             }
         } else if status == .denied || status == .restricted {
-            Button {
+            emptyStateBox(
+                icon: "lock.fill",
+                title: "Contacts Access Needed",
+                subtitle: "Enable contacts access in Settings to find friends who are already on SocialStar.",
+                buttonTitle: "Enable in Settings"
+            ) {
+                Analytics.shared.trackTap(elementId: "enable_contacts_settings", screenName: "new_request_step_2")
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-            } label: {
-                Text("Enable Contacts in Settings")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(AppTheme.accent)
-                    .cornerRadius(200)
             }
-            .buttonStyle(.plain)
         } else {
-            Button { contactVM.requestContactAccess() } label: {
-                Text("Find Friends from Contacts")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(AppTheme.accent)
-                    .cornerRadius(200)
+            emptyStateBox(
+                icon: "person.crop.circle.badge.plus",
+                title: "Find Friends from Contacts",
+                subtitle: "We'll match your contacts with people already on SocialStar — your contacts stay private.",
+                buttonTitle: "Allow Access"
+            ) {
+                Analytics.shared.trackTap(elementId: "find_friends_contacts", screenName: "new_request_step_2")
+                contactVM.requestContactAccess()
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -734,4 +730,45 @@ struct OffAppInviteComposer: UIViewControllerRepresentable {
             controller.dismiss(animated: true) { self.parent.onFinish(result) }
         }
     }
+}
+
+private func emptyStateBox(icon: String, title: String, subtitle: String, buttonTitle: String, action: @escaping () -> Void) -> some View {
+    VStack(spacing: 14) {
+        ZStack {
+            Circle()
+                .fill(AppTheme.accent.opacity(0.12))
+                .frame(width: 56, height: 56)
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(AppTheme.accent)
+        }
+
+        VStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(AppTheme.primaryText)
+                .multilineTextAlignment(.center)
+            Text(subtitle)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+
+        Button(action: action) {
+            Text(buttonTitle)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(AppTheme.accent)
+                .cornerRadius(200)
+        }
+        .buttonStyle(.plain)
+    }
+    .padding(.horizontal, 24)
+    .padding(.vertical, 28)
+    .frame(maxWidth: .infinity)
+    .background(AppTheme.cardBackground)
+    .cornerRadius(16)
 }
