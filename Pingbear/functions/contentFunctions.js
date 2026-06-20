@@ -13,13 +13,19 @@
  *
  * FLOW
  * ────
- * REQUEST:
- *   sendTransaction          → escrow price from payer → pending_acceptance
+ * REQUEST (payer asks, creator records):
+ *   sendTransaction          → escrow reward from payer → pending_acceptance
  *   cancelRequest            → refund payer → cancelled  (before fulfilled)
  *   respondToTransaction (decline) → refund payer → declined
  *   respondToTransaction (accept)  → accepted
  *   fulfillRequest           → pay creator 80%, platform 20% → fulfilled
  *   markTransactionViewed    → completed (no money)
+ *   rateTransaction          → updates creator avg rating (no status change)
+ *
+ * OFFER (creator records mystery video upfront, payer unlocks):
+ *   sendTransaction          → pending_acceptance (no money moved, video already attached)
+ *   respondToTransaction (decline) → declined (nothing to refund)
+ *   respondToTransaction (accept)  → pay creator 80%, platform 20% → completed (single step)
  *   rateTransaction          → updates creator avg rating (no status change)
  */
 
@@ -54,12 +60,12 @@ async function recordWalletTx(t, { userId, type, amount, reason, txId, metadata,
   });
 }
 
-async function recordPlatformRevenue(db, { txId, fromUserId, toUserId, grossAmount, platformFee, creatorPayout }) {
+async function recordPlatformRevenue(db, { txId, fromUserId, toUserId, grossAmount, platformFee, creatorPayout, type }) {
   await db.collection('platform_revenue').doc().set({
     transaction_id:  txId,
     from_user_id:    fromUserId,
     to_user_id:      toUserId,
-    type:            'request',
+    type,
     gross_amount:    grossAmount,
     platform_fee:    platformFee,
     creator_payout:  creatorPayout,
@@ -99,7 +105,7 @@ async function getUserName(db, userId) {
   return doc.data()?.name ?? 'Someone';
 }
 
-async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price }) {
+async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price, type }) {
   const { platformFee, creatorPayout } = calcFees(price);
   await db.runTransaction(async (t) => {
     const creatorRef = db.collection('users').doc(creatorId);
@@ -116,19 +122,22 @@ async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price }) 
       amount:        creatorPayout,
       reason:        'creator_payout',
       txId,
-      metadata:      { gross_amount: price, platform_fee: platformFee },
+      metadata:      { gross_amount: price, platform_fee: platformFee, transaction_type: type },
       balanceBefore: creatorBal,
       balanceAfter:  newBal
     });
   });
   await recordPlatformRevenue(db, {
     txId, fromUserId, toUserId,
-    grossAmount: price, platformFee: calcFees(price).platformFee, creatorPayout: calcFees(price).creatorPayout
+    grossAmount: price, platformFee, creatorPayout, type
   });
 }
 
 // ─────────────────────────────────────────────────────────────
-// sendTransaction — escrow price × recipient count upfront
+// sendTransaction
+//
+// REQUEST: escrow reward × recipient count upfront, no video yet.
+// OFFER:   video required upfront, no money moves until payer accepts.
 // ─────────────────────────────────────────────────────────────
 
 exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -136,16 +145,23 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 
   const userId = request.auth.uid;
   const {
+    type,
     onAppRecipientIds    = [],
     offAppPhoneHashes    = [],
     offAppRecipientNames = {},
     price,
-    description
+    description = '',
+    photoUrl = null   // video URL — required for offers, ignored for requests
   } = request.data;
 
+  if (!['request', 'offer'].includes(type))             throw new Error('Invalid type');
   if (!price || price < MIN_PRICE || price > MAX_PRICE) throw new Error(`Price must be between $${MIN_PRICE} and $${MAX_PRICE}`);
-  if (!description || description.trim().length === 0)  throw new Error('Description is required');
-  if (description.trim().length > 120)                  throw new Error('Description max 120 chars');
+
+  if (type === 'request') {
+    if (!description || description.trim().length === 0) throw new Error('Description is required');
+    if (description.trim().length > 120)                  throw new Error('Description max 120 chars');
+  }
+  if (type === 'offer' && !photoUrl) throw new Error('A video is required for offers');
 
   const db          = getDb();
   const validOnApp  = onAppRecipientIds.filter(id => id !== userId);
@@ -155,38 +171,40 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
   if (totalCount === 0) throw new Error('At least one recipient required');
 
   const { platformFee, creatorPayout } = calcFees(price);
-  const totalEscrow = parseFloat((price * totalCount).toFixed(2));
-  const senderName  = await getUserName(db, userId);
+  const senderName = await getUserName(db, userId);
 
-  // Escrow total upfront
-  await db.runTransaction(async (t) => {
-    const userRef  = db.collection('users').doc(userId);
-    const userDoc  = await t.get(userRef);
-    const balance  = userDoc.data()?.wallet_balance ?? 0;
-    if (balance < totalEscrow) throw new Error(`Insufficient funds. Need $${totalEscrow.toFixed(2)}, balance $${balance.toFixed(2)}`);
-    const newBalance = parseFloat((balance - totalEscrow).toFixed(2));
-    t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(-totalEscrow) }, { merge: true });
-    await recordWalletTx(t, {
-      userId,
-      type:          'debit',
-      amount:        totalEscrow,
-      reason:        'request_escrow',
-      metadata:      { recipient_count: totalCount },
-      balanceBefore: balance,
-      balanceAfter:  newBalance
+  // Requests escrow the full reward upfront — offers don't move money on send.
+  if (type === 'request') {
+    const totalEscrow = parseFloat((price * totalCount).toFixed(2));
+    await db.runTransaction(async (t) => {
+      const userRef = db.collection('users').doc(userId);
+      const userDoc = await t.get(userRef);
+      const balance = userDoc.data()?.wallet_balance ?? 0;
+      if (balance < totalEscrow) throw new Error(`Insufficient funds. Need $${totalEscrow.toFixed(2)}, balance $${balance.toFixed(2)}`);
+      const newBalance = parseFloat((balance - totalEscrow).toFixed(2));
+      t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(-totalEscrow) }, { merge: true });
+      await recordWalletTx(t, {
+        userId,
+        type:          'debit',
+        amount:        totalEscrow,
+        reason:        'request_escrow',
+        metadata:      { recipient_count: totalCount },
+        balanceBefore: balance,
+        balanceAfter:  newBalance
+      });
     });
-  });
+  }
 
   const createdTxIds = [];
   const txBase = {
-    type:           'request',
+    type,
     from_user_id:   userId,
     price,
     platform_fee:   platformFee,
     creator_payout: creatorPayout,
-    description:    description.trim(),
+    description:    type === 'request' ? description.trim() : '',
     status:         'pending_acceptance',
-    photo_url:      null,
+    photo_url:      type === 'offer' ? photoUrl : null,
     rating:         null,
     dismissed_by:   [],
     created_at:     admin.firestore.FieldValue.serverTimestamp(),
@@ -229,20 +247,29 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
   }
 
   if (validOnApp.length > 0) {
+    const notifTitle = type === 'request'
+      ? `${senderName} wants a video from you!`
+      : `${senderName} sent you a mystery video!`;
+    const notifBody = type === 'request'
+      ? `Your reward is $${price.toFixed(2)} — accept their request`
+      : `Pay $${price.toFixed(2)} to unlock what they sent you`;
+
     await sendPush(db, validOnApp, {
-      title: `${senderName} wants a video from you!`,
-      body:  `Your reward is $${price.toFixed(2)} — accept their request`,
-      data:  { type: 'request_received' }
+      title: notifTitle,
+      body:  notifBody,
+      data:  { type: type === 'request' ? 'request_received' : 'offer_received' }
     });
   }
 
-  logger.info(`sendTransaction: ${userId} sent request to ${totalCount} recipients, $${price} each`);
+  logger.info(`sendTransaction: ${userId} sent ${type} to ${totalCount} recipients, $${price} each`);
   return { success: true, transactionIds: createdTxIds };
 });
 
 // ─────────────────────────────────────────────────────────────
 // respondToTransaction
-// accept → accepted | decline → refund → declined
+//
+// REQUEST — accept → accepted, decline → refund → declined
+// OFFER   — accept → pay creator → completed, decline → declined
 // ─────────────────────────────────────────────────────────────
 
 exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -261,61 +288,130 @@ exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (
   if (!txDoc.exists) throw new Error('Transaction not found');
   const tx = txDoc.data();
 
-  if (tx.type !== 'request')              throw new Error('Only requests can be responded to here');
   if (tx.to_user_id !== userId)           throw new Error('You are not the recipient');
   if (tx.status !== 'pending_acceptance') throw new Error(`Cannot respond to status: ${tx.status}`);
 
+  const senderName    = await getUserName(db, tx.from_user_id);
   const recipientName = await getUserName(db, userId);
 
-  // ── Decline — refund payer ────────────────────────────────
+  // ── Decline ───────────────────────────────────────────────
   if (!accept) {
     await db.runTransaction(async (t) => {
-      const fromRef = db.collection('users').doc(tx.from_user_id);
-      const fromDoc = await t.get(fromRef);
-      const balance = fromDoc.data()?.wallet_balance ?? 0;
-      const newBal  = parseFloat((balance + tx.price).toFixed(2));
-      t.set(fromRef, { wallet_balance: admin.firestore.FieldValue.increment(tx.price) }, { merge: true });
+      // ALL READS FIRST
+      let fromDoc = null;
+      if (tx.type === 'request') {
+        const fromRef = db.collection('users').doc(tx.from_user_id);
+        fromDoc = await t.get(fromRef);
+      }
+
+      // THEN ALL WRITES
       t.update(txRef, { status: 'declined' });
-      await recordWalletTx(t, {
-        userId:        tx.from_user_id,
-        type:          'credit',
-        amount:        tx.price,
-        reason:        'escrow_refund',
-        txId:          transactionId,
-        metadata:      { reason: 'recipient_declined' },
-        balanceBefore: balance,
-        balanceAfter:  newBal
-      });
+
+      if (tx.type === 'request' && fromDoc) {
+        const fromRef = db.collection('users').doc(tx.from_user_id);
+        const balance = fromDoc.data()?.wallet_balance ?? 0;
+        const newBal  = parseFloat((balance + tx.price).toFixed(2));
+        t.set(fromRef, { wallet_balance: admin.firestore.FieldValue.increment(tx.price) }, { merge: true });
+        await recordWalletTx(t, {
+          userId:        tx.from_user_id,
+          type:          'credit',
+          amount:        tx.price,
+          reason:        'escrow_refund',
+          txId:          transactionId,
+          metadata:      { reason: 'recipient_declined' },
+          balanceBefore: balance,
+          balanceAfter:  newBal
+        });
+      }
     });
 
     await sendPush(db, [tx.from_user_id], {
-      title: `${recipientName} declined your request`,
-      body:  'Your funds have been refunded',
-      data:  { type: 'request_declined', transaction_id: transactionId }
+      title: `${recipientName} declined your ${tx.type}`,
+      body:  tx.type === 'request' ? 'Your funds have been refunded' : `${recipientName} passed on your offer`,
+      data:  { type: 'transaction_declined', transaction_id: transactionId }
     });
 
-    logger.info(`respondToTransaction: ${userId} declined ${transactionId}`);
+    logger.info(`respondToTransaction: ${userId} declined ${tx.type} ${transactionId}`);
     return { success: true };
   }
 
-  // ── Accept ────────────────────────────────────────────────
-  await txRef.update({
-    status:      'accepted',
-    accepted_at: admin.firestore.FieldValue.serverTimestamp()
+  // ── Accept — Request ──────────────────────────────────────
+  if (tx.type === 'request') {
+    await txRef.update({
+      status:      'accepted',
+      accepted_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await sendPush(db, [tx.from_user_id], {
+      title: `${recipientName} accepted your request!`,
+      body:  "They're working on your video now",
+      data:  { type: 'request_accepted', transaction_id: transactionId }
+    });
+
+    logger.info(`respondToTransaction: ${userId} accepted request ${transactionId}`);
+    return { success: true };
+  }
+
+  // ── Accept — Offer ────────────────────────────────────────
+  await db.runTransaction(async (t) => {
+    const payerRef = db.collection('users').doc(userId);
+    const payerDoc = await t.get(payerRef);
+    const balance  = payerDoc.data()?.wallet_balance ?? 0;
+
+    if (balance < tx.price) {
+      throw new Error(`Insufficient funds. Balance: $${balance.toFixed(2)}, Required: $${tx.price.toFixed(2)}`);
+    }
+
+    const newBalance = parseFloat((balance - tx.price).toFixed(2));
+    t.set(payerRef, { wallet_balance: admin.firestore.FieldValue.increment(-tx.price) }, { merge: true });
+
+    t.update(txRef, {
+      status:       'completed',
+      accepted_at:  admin.firestore.FieldValue.serverTimestamp(),
+      completed_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await recordWalletTx(t, {
+      userId,
+      type:          'debit',
+      amount:        tx.price,
+      reason:        'offer_payment',
+      txId:          transactionId,
+      metadata:      { from_user_id: tx.from_user_id },
+      balanceBefore: balance,
+      balanceAfter:  newBalance
+    });
   });
+
+  await payCreator(db, {
+    txId:       transactionId,
+    creatorId:  tx.from_user_id,
+    fromUserId: tx.from_user_id,
+    toUserId:   userId,
+    price:      tx.price,
+    type:       'offer'
+  });
+
+  const payerName = await getUserName(db, userId);
 
   await sendPush(db, [tx.from_user_id], {
-    title: `${recipientName} accepted your request!`,
-    body:  "They're working on your video now",
-    data:  { type: 'request_accepted', transaction_id: transactionId }
+    title: `${payerName} unlocked your offer!`,
+    body:  `You earned $${tx.creator_payout.toFixed(2)}!`,
+    data:  { type: 'offer_accepted', transaction_id: transactionId }
   });
 
-  logger.info(`respondToTransaction: ${userId} accepted ${transactionId}`);
+  await sendPush(db, [userId], {
+    title: `You unlocked ${senderName}'s video`,
+    body:  'Tap to see what they sent you',
+    data:  { type: 'offer_unlocked', transaction_id: transactionId }
+  });
+
+  logger.info(`respondToTransaction: ${userId} accepted offer ${transactionId}`);
   return { success: true };
 });
 
 // ─────────────────────────────────────────────────────────────
-// fulfillRequest — creator uploads photo, gets paid
+// fulfillRequest — creator uploads video, gets paid (requests only)
 // ─────────────────────────────────────────────────────────────
 
 exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -334,6 +430,7 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
   if (!txDoc.exists) throw new Error('Transaction not found');
   const tx = txDoc.data();
 
+  if (tx.type !== 'request')    throw new Error('Can only fulfill requests');
   if (tx.to_user_id !== userId) throw new Error('You are not the creator');
   if (tx.status !== 'accepted') throw new Error(`Cannot fulfill status: ${tx.status}`);
 
@@ -348,7 +445,8 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
     creatorId:  userId,
     fromUserId: tx.from_user_id,
     toUserId:   userId,
-    price:      tx.price
+    price:      tx.price,
+    type:       'request'
   });
 
   const creatorName = await getUserName(db, userId);
@@ -364,7 +462,8 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
 });
 
 // ─────────────────────────────────────────────────────────────
-// markTransactionViewed — payer views photo → completed
+// markTransactionViewed — request payer views video → completed
+// (no-op for offers — they go straight to completed on accept)
 // ─────────────────────────────────────────────────────────────
 
 exports.markTransactionViewed = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -383,6 +482,7 @@ exports.markTransactionViewed = onCall({ cors: ['*'], maxInstances: 50 }, async 
   const tx = txDoc.data();
 
   if (tx.from_user_id !== userId) throw new Error('Only the requester can mark as viewed');
+  if (tx.type !== 'request')      return { success: true };
   if (tx.status !== 'fulfilled')  return { success: true };
 
   await txRef.update({
@@ -414,11 +514,15 @@ exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
   if (!txDoc.exists) throw new Error('Transaction not found');
   const tx = txDoc.data();
 
-  if (tx.from_user_id !== userId) throw new Error('Only the requester can rate');
-  if (tx.status !== 'completed')  throw new Error('Can only rate completed transactions');
+  const isCorrectUser = tx.type === 'request'
+    ? tx.from_user_id === userId
+    : tx.to_user_id   === userId;
+
+  if (!isCorrectUser)            throw new Error('You cannot rate this transaction');
+  if (tx.status !== 'completed') throw new Error('Can only rate completed transactions');
   if (tx.rating !== null && tx.rating !== undefined) throw new Error('Already rated');
 
-  const creatorId = tx.to_user_id;
+  const creatorId = tx.type === 'request' ? tx.to_user_id : tx.from_user_id;
 
   await db.runTransaction(async (t) => {
     const creatorRef = db.collection('users').doc(creatorId);
@@ -444,7 +548,7 @@ exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 });
 
 // ─────────────────────────────────────────────────────────────
-// cancelRequest — payer cancels, gets refunded
+// cancelRequest — payer cancels a request before fulfilled, gets refunded
 // ─────────────────────────────────────────────────────────────
 
 exports.cancelRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -463,6 +567,7 @@ exports.cancelRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request
   const tx = txDoc.data();
 
   if (tx.from_user_id !== userId) throw new Error('Only the sender can cancel');
+  if (tx.type !== 'request')      throw new Error('Only requests can be cancelled');
 
   const cancellable = ['pending_signup', 'pending_acceptance', 'accepted'];
   if (!cancellable.includes(tx.status)) throw new Error('Cannot cancel — request already fulfilled');
@@ -523,10 +628,18 @@ exports.resolveInviteTransaction = onCall({ cors: ['*'], maxInstances: 50 }, asy
   await txRef.update({ to_user_id: userId, status: 'pending_acceptance' });
 
   const senderName = await getUserName(db, tx.from_user_id);
+
+  const notifTitle = tx.type === 'request'
+    ? `${senderName} wants a video from you!`
+    : `${senderName} sent you a mystery video!`;
+  const notifBody = tx.type === 'request'
+    ? `Your reward is $${tx.price.toFixed(2)} — open SocialStar to respond`
+    : `Pay $${tx.price.toFixed(2)} to unlock what they sent you`;
+
   await sendPush(db, [userId], {
-    title: `${senderName} wants a video from you!`,
-    body:  `Your reward is $${tx.price.toFixed(2)} — open SocialStar to respond`,
-    data:  { type: 'request_received', transaction_id: transactionId }
+    title: notifTitle,
+    body:  notifBody,
+    data:  { type: tx.type === 'request' ? 'request_received' : 'offer_received', transaction_id: transactionId }
   });
 
   logger.info(`resolveInviteTransaction: resolved ${transactionId} for ${userId}`);

@@ -101,26 +101,62 @@ struct HistoryView: View {
 
     @StateObject private var vm             = HistoryViewModel()
     @State private var selectedTransaction: EnrichedContentTransaction? = nil
+    @State private var filter:              HistoryFilter = .all
 
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
+
+    enum HistoryFilter: String, CaseIterable {
+        case all      = "All"
+        case requests = "Requests"
+        case offers   = "Offers"
+    }
+
+    private var filtered: [EnrichedContentTransaction] {
+        switch filter {
+        case .all:      return vm.transactions
+        case .requests: return vm.transactions.filter { $0.transaction.type == .request }
+        case .offers:   return vm.transactions.filter { $0.transaction.type == .offer }
+        }
+    }
 
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
             VStack(spacing: 0) {
+                // Filter chips
+                HStack(spacing: 8) {
+                    ForEach(HistoryFilter.allCases, id: \.self) { f in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { filter = f }
+                        } label: {
+                            Text(f.rawValue)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(filter == f ? .white : AppTheme.secondaryText)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(filter == f ? AppTheme.accent : AppTheme.cardBackground)
+                                .cornerRadius(200)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+
                 if vm.isLoading {
                     Spacer(); ProgressView().tint(AppTheme.primaryText); Spacer()
-                } else if vm.transactions.isEmpty {
+                } else if filtered.isEmpty {
                     emptyState
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            ForEach(Array(vm.transactions.enumerated()), id: \.element.id) { index, enriched in
+                            ForEach(Array(filtered.enumerated()), id: \.element.id) { index, enriched in
                                 Button { selectedTransaction = enriched } label: {
                                     HistoryRow(enriched: enriched, currentUserId: currentUserId)
                                 }
                                 .buttonStyle(.plain)
-                                if index < vm.transactions.count - 1 {
+                                if index < filtered.count - 1 {
                                     Divider().background(AppTheme.divider).padding(.leading, 76)
                                 }
                             }
@@ -144,7 +180,7 @@ struct HistoryView: View {
             Spacer()
             Image(systemName: "clock.arrow.circlepath").font(.system(size: 48)).foregroundColor(AppTheme.secondaryText.opacity(0.3))
             Text("No history yet").font(.system(size: 18, weight: .bold)).foregroundColor(AppTheme.primaryText)
-            Text("Completed requests will appear here").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
+            Text("Completed transactions will appear here").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
             Spacer()
         }
     }
@@ -166,18 +202,17 @@ struct HistoryRow: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                if let photoUrl = tx.photoUrl, tx.status == .completed {
-                    AsyncImage(url: URL(string: photoUrl)) { img in
-                        img.resizable().scaledToFill()
-                    } placeholder: { AppTheme.cardHighlight }
-                    .frame(width: 52, height: 52)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                if let urlStr = tx.photoUrl, tx.status == .completed, let url = URL(string: urlStr) {
+                    VideoPosterFrame(url: url)
+                        .frame(width: 52, height: 52)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 } else {
                     ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 52)
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
                 VStack { Spacer(); HStack { Spacer()
-                    Text("📸").font(.system(size: 10)).frame(width: 18, height: 18)
+                    Text(tx.type == .request ? "📸" : "🎁")
+                        .font(.system(size: 10)).frame(width: 18, height: 18)
                         .background(AppTheme.pageBackground).clipShape(Circle()).offset(x: 4, y: 4)
                 }}
                 .frame(width: 52, height: 52)
@@ -187,8 +222,10 @@ struct HistoryRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(enriched.otherProfile?.name ?? "Someone")
                     .font(.system(size: 15, weight: .bold)).foregroundColor(AppTheme.primaryText)
-                Text(tx.description)
-                    .font(.system(size: 13)).foregroundColor(AppTheme.secondaryText).lineLimit(1)
+                if tx.type == .request {
+                    Text(tx.description)
+                        .font(.system(size: 13)).foregroundColor(AppTheme.secondaryText).lineLimit(1)
+                }
                 HStack(spacing: 6) {
                     statusBadge
                     if let rating = tx.rating { Text("\(rating)⭐").font(.system(size: 11)).foregroundColor(AppTheme.secondaryText) }
@@ -248,7 +285,7 @@ struct HistoryDetailView: View {
     let currentUserId: String
     let onDismiss:     () -> Void
 
-    @State private var showingFullPhoto = false
+    @State private var showingFullVideo = false
 
     private var tx: ContentTransaction { enriched.transaction }
     private var isCreator: Bool { tx.isCreator(currentUserId: currentUserId) }
@@ -261,22 +298,24 @@ struct HistoryDetailView: View {
                 ScrollView {
                     VStack(spacing: 20) {
 
-                        if let photoUrl = tx.photoUrl {
-                            Button { showingFullPhoto = true } label: {
-                                AsyncImage(url: URL(string: photoUrl)) { img in
-                                    img.resizable().scaledToFill()
-                                        .frame(maxWidth: .infinity).frame(height: 280)
-                                        .clipped().cornerRadius(16)
-                                        .overlay(RoundedRectangle(cornerRadius: 16).fill(Color.black.opacity(0.02))
-                                            .overlay(VStack { Spacer(); HStack { Spacer()
-                                                Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                                    .font(.system(size: 14, weight: .bold)).foregroundColor(.white)
-                                                    .padding(8).background(Color.black.opacity(0.4)).clipShape(Circle()).padding(12)
-                                            }}))
-                                } placeholder: {
-                                    RoundedRectangle(cornerRadius: 16).fill(AppTheme.cardBackground)
-                                        .frame(maxWidth: .infinity).frame(height: 280)
-                                        .overlay(ProgressView().tint(AppTheme.secondaryText))
+                        if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                            Button { showingFullVideo = true } label: {
+                                ZStack(alignment: .topTrailing) {
+                                    VideoPosterFrame(url: url)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: 280)
+                                        .clipped()
+                                        .cornerRadius(16)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16).fill(Color.black.opacity(0.02))
+                                        )
+
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.system(size: 44))
+                                        .foregroundColor(.white)
+                                        .shadow(radius: 4)
+                                        .padding(20)
+                                        .frame(maxWidth: .infinity, maxHeight: 280)
                                 }
                             }
                             .buttonStyle(.plain).padding(.horizontal, 20)
@@ -306,7 +345,11 @@ struct HistoryDetailView: View {
                         .padding(16).background(AppTheme.cardBackground).cornerRadius(12).padding(.horizontal, 20)
 
                         VStack(spacing: 0) {
-                            detailRow(label: "The Request", value: tx.description)
+                            detailRow(label: "Type", value: tx.type == .request ? "📸 Request" : "🎁 Offer")
+                            if tx.type == .request {
+                                Divider().background(AppTheme.divider).padding(.leading, 16)
+                                detailRow(label: "The Request", value: tx.description)
+                            }
                             Divider().background(AppTheme.divider).padding(.leading, 16)
                             detailRow(label: "Status", value: tx.status.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)
                             if let rating = tx.rating {
@@ -338,9 +381,9 @@ struct HistoryDetailView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showingFullPhoto) {
-            if let photoUrl = tx.photoUrl {
-                FullScreenPhotoView(photoUrl: photoUrl, onDismiss: { showingFullPhoto = false })
+        .fullScreenCover(isPresented: $showingFullVideo) {
+            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                FullScreenVideoView(url: url, onDismiss: { showingFullVideo = false })
             }
         }
     }
@@ -352,48 +395,5 @@ struct HistoryDetailView: View {
             Spacer()
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - FullScreenPhotoView
-// ─────────────────────────────────────────────────────────────
-
-struct FullScreenPhotoView: View {
-
-    let photoUrl: String
-    let onDismiss: () -> Void
-
-    @State private var scale:  CGFloat = 1.0
-    @State private var offset: CGSize  = .zero
-
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            AsyncImage(url: URL(string: photoUrl)) { img in
-                img.resizable().scaledToFit()
-                    .scaleEffect(scale).offset(offset)
-                    .gesture(MagnificationGesture()
-                        .onChanged { scale = max(1, $0) }
-                        .onEnded { _ in if scale < 1 { withAnimation { scale = 1; offset = .zero } } })
-                    .gesture(DragGesture()
-                        .onChanged { offset = $0.translation }
-                        .onEnded { _ in if scale <= 1 { withAnimation { offset = .zero } } })
-            } placeholder: { ProgressView().tint(.white) }
-
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: onDismiss) {
-                        Image(systemName: "xmark").font(.system(size: 16, weight: .bold)).foregroundColor(.white)
-                            .padding(10).background(Color.black.opacity(0.5)).clipShape(Circle())
-                    }
-                    .padding(.top, 60).padding(.trailing, 20)
-                }
-                Spacer()
-            }
-        }
-        .ignoresSafeArea()
-        .onTapGesture { if scale <= 1 { onDismiss() } }
     }
 }

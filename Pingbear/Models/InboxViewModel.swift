@@ -15,6 +15,9 @@ final class InboxViewModel: ObservableObject {
     private var listeners:    [ListenerRegistration] = []
     private var profileCache: [String: UserProfile]  = [:]
 
+    // Covers every status either type can be in. Per-status filtering
+    // for "what counts as incoming/outgoing/actionable" happens in
+    // HomeInboxView since it differs by type.
     private let incomingStatuses: [String] = [
         TransactionStatus.pendingAcceptance.rawValue,
         TransactionStatus.accepted.rawValue,

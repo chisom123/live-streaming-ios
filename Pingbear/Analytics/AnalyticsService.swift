@@ -48,6 +48,11 @@ struct AnalyticsEvent {
     static let requestFulfilled          = "request_fulfilled"
     static let requestCancelled          = "request_cancelled"
 
+    // MARK: Transactions — offers
+    static let offerSent                 = "offer_sent"
+    static let offerAccepted             = "offer_accepted"
+    static let offerDeclined             = "offer_declined"
+
     // MARK: Transactions — shared
     static let contentRated              = "content_rated"
     static let transactionViewed         = "transaction_viewed"
@@ -80,6 +85,7 @@ struct AnalyticsProperty {
     static let screenName     = "screen_name"
     static let elementId      = "element_id"
     static let transactionId  = "transaction_id"
+    static let transactionType = "transaction_type"   // "request" | "offer"
     static let amount         = "amount"
     static let recipientCount = "recipient_count"
     static let method         = "method"
@@ -147,6 +153,19 @@ class Analytics {
         case "fulfilled": event = AnalyticsEvent.requestFulfilled
         case "cancelled": event = AnalyticsEvent.requestCancelled
         default:          event = action
+        }
+        track(event: event, properties: props)
+    }
+
+    func trackOffer(action: String, transactionId: String? = nil, properties: [String: Any]? = nil) {
+        var props = properties ?? [:]
+        if let transactionId { props[AnalyticsProperty.transactionId] = transactionId }
+        let event: String
+        switch action {
+        case "sent":     event = AnalyticsEvent.offerSent
+        case "accepted": event = AnalyticsEvent.offerAccepted
+        case "declined": event = AnalyticsEvent.offerDeclined
+        default:         event = action
         }
         track(event: event, properties: props)
     }

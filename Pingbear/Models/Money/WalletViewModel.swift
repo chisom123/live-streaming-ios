@@ -16,6 +16,10 @@ struct EnrichedTransaction: Identifiable {
     let paypalEmail:               String?
     let withdrawalStatus:          String?
     let withdrawalRejectionReason: String?
+    // "request" | "offer" — only present on creator_payout rows, lets
+    // the UI distinguish "Reward Received" (request) from "Offer
+    // Unlocked" payout (offer) instead of showing one generic label.
+    let contentTransactionType:    String?
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -110,7 +114,8 @@ class WalletViewModel: ObservableObject {
                     createdAt:                 createdAt,
                     paypalEmail:               withdrawalData?["paypal_email"]     as? String,
                     withdrawalStatus:          withdrawalData?["status"]           as? String,
-                    withdrawalRejectionReason: withdrawalData?["rejection_reason"] as? String
+                    withdrawalRejectionReason: withdrawalData?["rejection_reason"] as? String,
+                    contentTransactionType:    metadata?["transaction_type"]       as? String
                 )
             }
 

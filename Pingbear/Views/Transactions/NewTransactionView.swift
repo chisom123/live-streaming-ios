@@ -4,18 +4,32 @@ import FirebaseFirestore
 import FirebaseFunctions
 import MessageUI
 import Contacts
+import PhotosUI
+import AVFoundation
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - NewTransactionView
-// 3-step wizard: Description → Friends → Price
+//
+// Step 1: Type (Request vs Offer)
+// Request path: Description → Friends → Reward
+// Offer path:   Record video → Friends → Reward
 // ─────────────────────────────────────────────────────────────
 
 struct NewTransactionView: View {
 
     let onDismiss: () -> Void
 
-    @State private var step:                 Int         = 1
-    @State private var description:          String      = ""
+    @State private var step:                 Int             = 1
+    @State private var selectedType:         TransactionType = .request
+
+    // Request-only
+    @State private var description:          String          = ""
+
+    // Offer-only
+    @State private var capturedVideoURL:     URL?            = nil
+    @State private var showingCamera:        Bool            = false
+
+    // Shared
     @State private var price:                String      = ""
     @State private var selectedFriendIds:    Set<String> = []
     @State private var selectedOnAppIds:     Set<String> = []
@@ -31,6 +45,10 @@ struct NewTransactionView: View {
     @State private var walletBalance:   Double                = 0.0
     @State private var balanceListener: ListenerRegistration? = nil
 
+    // Offer upload state, shown as a full-screen takeover (mirrors
+    // VideoPreviewConfirmView's upload UX from the request fulfillment flow)
+    @State private var offerUploadProgress: Double = 0
+
     @StateObject private var contactVM = ContactViewModel()
 
     private let presetPrices  = ["0.50", "1.00", "2.00", "5.00", "10.00"]
@@ -45,19 +63,29 @@ struct NewTransactionView: View {
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let db            = Firestore.firestore()
 
+    // Step numbering differs slightly by type but both have 4 steps total
+    // including the type picker: 1 Type, 2 Content, 3 Friends, 4 Reward
+    private let totalSteps = 4
+
     private var totalSelected: Int {
         selectedFriendIds.count + selectedOnAppIds.count + selectedOffAppHashes.count
     }
 
     private var priceDouble:  Double { Double(price) ?? 0 }
     private var priceValid:   Bool   { priceDouble >= 0.50 && priceDouble <= 20.00 }
-    private var totalEscrow:  Double { priceDouble * Double(totalSelected) }
-    private var hasSufficientBalance: Bool { walletBalance >= totalEscrow }
 
-    private var step1Valid: Bool { !description.trimmingCharacters(in: .whitespaces).isEmpty }
-    private var step2Valid: Bool { totalSelected > 0 }
-    private var step3Valid: Bool { priceValid && hasSufficientBalance }
-    private var canSend:    Bool { step3Valid && !isSending }
+    // Requests escrow reward × recipients; offers move no money on send.
+    private var totalEscrow:  Double { selectedType == .request ? priceDouble * Double(totalSelected) : 0 }
+    private var hasSufficientBalance: Bool { selectedType == .offer || walletBalance >= totalEscrow }
+
+    private var step2Valid: Bool {
+        selectedType == .request
+            ? !description.trimmingCharacters(in: .whitespaces).isEmpty
+            : capturedVideoURL != nil
+    }
+    private var step3Valid: Bool { totalSelected > 0 }
+    private var step4Valid: Bool { priceValid && hasSufficientBalance }
+    private var canSend:    Bool { step4Valid && !isSending }
 
     private var filteredFriends: [FriendContact] {
         guard !friendsSearchText.isEmpty else { return contactVM.friends }
@@ -105,20 +133,39 @@ struct NewTransactionView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 16)
                 ZStack {
-                    if step == 1 { descriptionStep.transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 2 { friendsStep    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 3 { priceStep      .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 1 { typeStep       .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 2 { contentStep     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 3 { friendsStep     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if step == 4 { priceStep       .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
                 }
                 .animation(.easeInOut(duration: 0.25), value: step)
             }
             VStack { Spacer(); bottomButton }
+
+            // Offer upload takeover
+            if offerSendState == .uploading {
+                VideoUploadStatusView(progress: offerUploadProgress, statusText: "Uploading your video")
+                    .ignoresSafeArea()
+            } else if offerSendState == .finalizing {
+                VideoUploadStatusView(progress: 1.0, statusText: "Almost done...")
+                    .ignoresSafeArea()
+            }
         }
         .onAppear {
-            Analytics.shared.trackScreen(name: "new_request_step_1")
+            Analytics.shared.trackScreen(name: "new_transaction_step_1")
             contactVM.fetchFriendsFromFirestore()
             startBalanceListener()
         }
         .onDisappear { stopBalanceListener() }
+        .fullScreenCover(isPresented: $showingCamera) {
+            OfferRecordCameraView(
+                onRecorded: { url in
+                    capturedVideoURL = url
+                    showingCamera    = false
+                },
+                onCancel: { showingCamera = false }
+            )
+        }
         .sheet(isPresented: $showingComposer) {
             if !offAppNumbers.isEmpty {
                 OffAppInviteComposer(
@@ -156,6 +203,9 @@ struct NewTransactionView: View {
             Text(errorMessage ?? "")
         }
     }
+
+    private enum OfferSendState { case idle, uploading, finalizing }
+    @State private var offerSendState: OfferSendState = .idle
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Balance listener
@@ -198,16 +248,17 @@ struct NewTransactionView: View {
 
     private var headerTitle: String {
         switch step {
-        case 1: return "Your Request"
-        case 2: return "Pick Friends"
-        case 3: return "Request Reward"
+        case 1: return "New"
+        case 2: return selectedType == .request ? "Your Request" : "Your Offer"
+        case 3: return "Pick Friends"
+        case 4: return selectedType == .request ? "Request Reward" : "Set Reward"
         default: return ""
         }
     }
 
     private var progressBar: some View {
         HStack(spacing: 6) {
-            ForEach(1...3, id: \.self) { i in
+            ForEach(1...totalSteps, id: \.self) { i in
                 RoundedRectangle(cornerRadius: 2)
                     .fill(i <= step ? AppTheme.accent : AppTheme.divider)
                     .frame(height: 4)
@@ -217,8 +268,91 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 1: Description
+    // MARK: - Step 1: Type
     // ─────────────────────────────────────────────────────────
+
+    private var typeStep: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("What do you want to do?")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundColor(AppTheme.primaryText)
+                    Text("Choose how you want to interact with your friends")
+                        .font(.system(size: 15))
+                        .foregroundColor(AppTheme.secondaryText)
+                }
+
+                typeCard(
+                    type: .request, icon: "📸", title: "Request a Video",
+                    subtitle: "Ask a friend to record something for you. You set the reward and they decide if it's worth it."
+                )
+
+                typeCard(
+                    type: .offer, icon: "🎁", title: "Send a Mystery Video",
+                    subtitle: "Record a mystery video and send it to friends. They pay to unlock and see what's inside."
+                )
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 120)
+        }
+    }
+
+    private func typeCard(type: TransactionType, icon: String, title: String, subtitle: String) -> some View {
+        Button {
+            selectedType = type
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        } label: {
+            HStack(spacing: 16) {
+                Text(icon)
+                    .font(.system(size: 32))
+                    .frame(width: 56, height: 56)
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(12)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
+                    Text(subtitle)
+                        .font(.system(size: 13))
+                        .foregroundColor(AppTheme.secondaryText)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                Image(systemName: selectedType == type ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundColor(selectedType == type ? AppTheme.accent : AppTheme.secondaryText.opacity(0.3))
+                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: selectedType)
+            }
+            .padding(16)
+            .background(selectedType == type ? AppTheme.accent.opacity(0.06) : AppTheme.cardBackground)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selectedType == type ? AppTheme.accent : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // MARK: - Step 2: Content (branches by type)
+    // ─────────────────────────────────────────────────────────
+
+    @ViewBuilder
+    private var contentStep: some View {
+        if selectedType == .request {
+            descriptionStep
+        } else {
+            offerVideoStep
+        }
+    }
+
+    // ── Request: description ──────────────────────────────────
 
     private var descriptionStep: some View {
         ScrollView {
@@ -252,9 +386,7 @@ struct NewTransactionView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
-        .onAppear {
-            suggestions = suggestionPool.shuffled()
-        }
+        .onAppear { suggestions = suggestionPool.shuffled() }
     }
 
     private var suggestionChips: some View {
@@ -277,15 +409,86 @@ struct NewTransactionView: View {
         }
     }
 
+    // ── Offer: record the mystery video ────────────────────────
+
+    private var offerVideoStep: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Record your mystery video")
+                        .font(.system(size: 22, weight: .black))
+                        .foregroundColor(AppTheme.primaryText)
+                    Text("Friends pay to unlock it — make it worth it.")
+                        .font(.system(size: 15))
+                        .foregroundColor(AppTheme.secondaryText)
+                }
+
+                Button {
+                    Analytics.shared.trackTap(elementId: "record_offer_video", screenName: "new_transaction_step_2")
+                    showingCamera = true
+                } label: {
+                    ZStack {
+                        if let url = capturedVideoURL {
+                            OfferVideoThumbnail(url: url)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 280)
+                                .clipped()
+                                .cornerRadius(16)
+                                .overlay(
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Label("Retake", systemImage: "arrow.triangle.2.circlepath")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(.ultraThinMaterial)
+                                                .cornerRadius(20)
+                                            Spacer()
+                                        }
+                                        .padding(.bottom, 12)
+                                    }
+                                )
+                        } else {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(AppTheme.cardBackground)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 280)
+                                .overlay(
+                                    VStack(spacing: 10) {
+                                        Image(systemName: "video.fill")
+                                            .font(.system(size: 28))
+                                            .foregroundColor(AppTheme.secondaryText)
+                                        Text("Tap to record your video")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(AppTheme.secondaryText)
+                                    }
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(AppTheme.divider, lineWidth: 1)
+                                )
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 120)
+        }
+    }
+
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 2: Friends
+    // MARK: - Step 3: Friends
     // ─────────────────────────────────────────────────────────
 
     private var friendsStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
-                    Text("Who should do this?")
+                    Text(selectedType == .request ? "Who should do this?" : "Who gets this?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                     Spacer()
@@ -388,7 +591,7 @@ struct NewTransactionView: View {
                 subtitle: "Enable contacts access in Settings to find friends who are already on SocialStar.",
                 buttonTitle: "Enable in Settings"
             ) {
-                Analytics.shared.trackTap(elementId: "enable_contacts_settings", screenName: "new_request_step_2")
+                Analytics.shared.trackTap(elementId: "enable_contacts_settings", screenName: "new_transaction_step_3")
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
             }
         } else {
@@ -398,21 +601,21 @@ struct NewTransactionView: View {
                 subtitle: "We'll match your contacts with people already on SocialStar — your contacts stay private.",
                 buttonTitle: "Allow Access"
             ) {
-                Analytics.shared.trackTap(elementId: "find_friends_contacts", screenName: "new_request_step_2")
+                Analytics.shared.trackTap(elementId: "find_friends_contacts", screenName: "new_transaction_step_3")
                 contactVM.requestContactAccess()
             }
         }
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Step 3: Price
+    // MARK: - Step 4: Reward / Price
     // ─────────────────────────────────────────────────────────
 
     private var priceStep: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("What's the reward?")
+                    Text(selectedType == .request ? "What's the reward?" : "What's the unlock price?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                 }
@@ -434,22 +637,24 @@ struct NewTransactionView: View {
                     }
                 }
 
-                if priceValid { requestBreakdownView }
+                if priceValid {
+                    selectedType == .request ? AnyView(requestBreakdownView) : AnyView(offerBreakdownView)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
     }
 
+    // ── Request: escrow breakdown, per-recipient, balance + top up ──
+
     private var requestBreakdownView: some View {
         VStack(spacing: 0) {
             ForEach(Array(selectedRecipients.enumerated()), id: \.offset) { _, recipient in
                 HStack {
-                    HStack(spacing: 6) {
-                        Text(recipient.name)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(AppTheme.secondaryText)
-                    }
+                    Text(recipient.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(AppTheme.secondaryText)
                     Spacer()
                     Text("$\(String(format: "%.2f", priceDouble))")
                         .font(.system(size: 13, weight: .bold))
@@ -459,7 +664,6 @@ struct NewTransactionView: View {
                 Divider().background(AppTheme.divider)
             }
 
-            // Total row
             HStack {
                 Text("Total reward")
                     .font(.system(size: 13, weight: .semibold))
@@ -471,7 +675,6 @@ struct NewTransactionView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 16)
 
-            // Balance + top-up — only shown when funds are insufficient
             if !hasSufficientBalance {
                 Divider().background(AppTheme.divider)
 
@@ -501,9 +704,9 @@ struct NewTransactionView: View {
                     }
                     .padding(.vertical, 5)
                     Button {
-                        Analytics.shared.trackTap(elementId: "top_up_from_new_request", screenName: "new_request_step_3")
+                        Analytics.shared.trackTap(elementId: "top_up_from_new_transaction", screenName: "new_transaction_step_4")
                         Analytics.shared.track(event: AnalyticsEvent.walletTopUpOpened,
-                                               properties: ["screen": "new_request_step_3"])
+                                               properties: ["screen": "new_transaction_step_4"])
                         showWalletSheet = true
                     } label: {
                         Text("Top Up")
@@ -521,6 +724,29 @@ struct NewTransactionView: View {
         .cornerRadius(12)
     }
 
+    // ── Offer: simple fee breakdown, no escrow/balance check ────
+
+    private var offerBreakdownView: some View {
+        VStack(spacing: 0) {
+            feeRow(label: "Unlock price",       value: "$\(String(format: "%.2f", priceDouble))",                color: AppTheme.primaryText)
+            Divider().background(AppTheme.divider)
+            feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", priceDouble * 0.20))",        color: AppTheme.primaryText)
+            Divider().background(AppTheme.divider)
+            feeRow(label: "You get per unlock", value: "$\(String(format: "%.2f", priceDouble * 0.80))",        color: AppTheme.green, valueSize: 20)
+        }
+        .background(AppTheme.cardBackground)
+        .cornerRadius(12)
+    }
+
+    private func feeRow(label: String, value: String, color: Color, valueSize: CGFloat = 13) -> some View {
+        HStack {
+            Text(label).font(.system(size: 13, weight: .semibold)).foregroundColor(AppTheme.secondaryText)
+            Spacer()
+            Text(value).font(.system(size: valueSize, weight: .bold)).foregroundColor(color)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 16)
+    }
+
     // ─────────────────────────────────────────────────────────
     // MARK: - Bottom button
     // ─────────────────────────────────────────────────────────
@@ -529,7 +755,7 @@ struct NewTransactionView: View {
         Button(action: bottomAction) {
             HStack(spacing: 8) {
                 if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText)).scaleEffect(0.85) }
-                Text(isSending ? "Sending..." : step < 3 ? "Continue" : "Continue")
+                Text(isSending ? "Sending..." : step < totalSteps ? "Continue" : (selectedType == .request ? "Send Request" : "Send Offer"))
                     .font(.system(size: 18, weight: .bold)).foregroundColor(bottomEnabled ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
@@ -544,9 +770,10 @@ struct NewTransactionView: View {
     private var bottomEnabled: Bool {
         if isSending { return false }
         switch step {
-        case 1: return step1Valid
+        case 1: return true
         case 2: return step2Valid
-        case 3: return canSend
+        case 3: return step3Valid
+        case 4: return canSend
         default: return false
         }
     }
@@ -555,19 +782,27 @@ struct NewTransactionView: View {
         switch step {
         case 1:
             withAnimation { step = 2 }
-            Analytics.shared.trackScreen(name: "new_request_step_2")
+            Analytics.shared.trackTap(
+                elementId: "transaction_type_selected",
+                screenName: "new_transaction_step_1",
+                properties: [AnalyticsProperty.transactionType: selectedType.rawValue]
+            )
+            Analytics.shared.trackScreen(name: "new_transaction_step_2")
         case 2:
             withAnimation { step = 3 }
-            Analytics.shared.trackScreen(name: "new_request_step_3")
+            Analytics.shared.trackScreen(name: "new_transaction_step_3")
         case 3:
-            sendRequest()
+            withAnimation { step = 4 }
+            Analytics.shared.trackScreen(name: "new_transaction_step_4")
+        case 4:
+            selectedType == .request ? sendRequest() : sendOffer()
         default:
             break
         }
     }
 
     // ─────────────────────────────────────────────────────────
-    // MARK: - Send
+    // MARK: - Send — Request
     // ─────────────────────────────────────────────────────────
 
     private func sendRequest() {
@@ -582,6 +817,7 @@ struct NewTransactionView: View {
         let offAppNamesMap = Dictionary(uniqueKeysWithValues: offAppContacts.map { ($0.phoneHash, $0.fullName) })
 
         let payload: [String: Any] = [
+            "type":                 "request",
             "onAppRecipientIds":    allOnAppIds,
             "offAppPhoneHashes":    offAppContacts.map { $0.phoneHash },
             "offAppRecipientNames": offAppNamesMap,
@@ -620,6 +856,78 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
+    // MARK: - Send — Offer (uploads video first, then sends)
+    // ─────────────────────────────────────────────────────────
+
+    private func sendOffer() {
+        guard canSend, let videoURL = capturedVideoURL else { return }
+        isSending = true
+        offerSendState = .uploading
+
+        Task {
+            do {
+                let downloadURL = try await VideoUploadManager.shared.upload(
+                    videoURL:   videoURL,
+                    folderPath: "offers/\(currentUserId)",
+                    onProgress: { p in
+                        Task { @MainActor in offerUploadProgress = p }
+                    }
+                )
+
+                await MainActor.run { offerSendState = .finalizing }
+
+                let onAppContactUserIds = contactVM.onAppContacts
+                    .filter { selectedOnAppIds.contains($0.phoneNumber) }
+                    .compactMap { $0.userId }
+                let allOnAppIds    = Array(selectedFriendIds) + onAppContactUserIds
+                let offAppContacts = contactVM.offAppContacts.filter { selectedOffAppHashes.contains($0.phoneHash) }
+                let offAppNamesMap = Dictionary(uniqueKeysWithValues: offAppContacts.map { ($0.phoneHash, $0.fullName) })
+
+                let payload: [String: Any] = [
+                    "type":                 "offer",
+                    "onAppRecipientIds":    allOnAppIds,
+                    "offAppPhoneHashes":    offAppContacts.map { $0.phoneHash },
+                    "offAppRecipientNames": offAppNamesMap,
+                    "price":                priceDouble,
+                    "photoUrl":             downloadURL
+                ]
+
+                let result = try await functions.httpsCallable("sendTransaction").call(payload)
+                guard let data    = result.data as? [String: Any],
+                      let success = data["success"] as? Bool, success else {
+                    throw NSError(domain: "SocialStar", code: -1)
+                }
+
+                try? FileManager.default.removeItem(at: videoURL)
+
+                await MainActor.run {
+                    Analytics.shared.trackOffer(action: "sent", properties: [
+                        AnalyticsProperty.amount:         priceDouble,
+                        AnalyticsProperty.recipientCount: allOnAppIds.count + offAppContacts.count
+                    ])
+                    isSending         = false
+                    offerSendState = .idle
+
+                    if !offAppContacts.isEmpty {
+                        let priceStr  = String(format: "%.2f", priceDouble)
+                        offAppNumbers = offAppContacts.map { $0.phoneNumber }
+                        offAppMessage = "I've got something for you on SocialStar — $\(priceStr) to unlock! join.socialstarapp.com"
+                        showingComposer = true
+                    } else {
+                        onDismiss()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isSending         = false
+                    offerSendState = .idle
+                    errorMessage      = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // MARK: - Helpers
     // ─────────────────────────────────────────────────────────
 
@@ -652,6 +960,236 @@ struct NewTransactionView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - OfferRecordCameraView
+//
+// Thin wrapper around the same recording infra used for request
+// fulfillment (RequestRealCameraView / RequestSimulatorPickerView),
+// but it hands back a local file URL instead of uploading —
+// upload happens later, after Friends + Reward are picked, as
+// part of sendOffer().
+// ─────────────────────────────────────────────────────────────
+
+struct OfferRecordCameraView: View {
+    let onRecorded: (URL) -> Void
+    let onCancel:   () -> Void
+
+    var body: some View {
+        #if targetEnvironment(simulator)
+        OfferSimulatorPickerView(onRecorded: onRecorded, onCancel: onCancel)
+        #else
+        OfferRealCameraView(onRecorded: onRecorded, onCancel: onCancel)
+        #endif
+    }
+}
+
+private struct OfferSimulatorPickerView: View {
+    let onRecorded: (URL) -> Void
+    let onCancel:   () -> Void
+
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var isLoading = false
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            VStack(spacing: 24) {
+                HStack {
+                    Button(action: onCancel) {
+                        Image(systemName: "xmark").font(.system(size: 28)).foregroundColor(.white).padding(5)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 16).padding(.top, 65)
+
+                Spacer()
+                Image(systemName: "video.fill").font(.system(size: 48)).foregroundColor(.white.opacity(0.4))
+                Text("Simulator — pick a video").font(.system(size: 14, weight: .bold)).foregroundColor(.white.opacity(0.6))
+                Spacer()
+
+                if isLoading {
+                    ProgressView().progressViewStyle(.circular).tint(.white)
+                } else {
+                    PhotosPicker(selection: $selectedItem, matching: .videos) {
+                        Text("Choose Video")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity).padding(.vertical, 16)
+                            .background(AppTheme.accent).cornerRadius(200)
+                            .padding(.horizontal, 32)
+                    }
+                }
+            }
+            .padding(.bottom, 60)
+        }
+        .ignoresSafeArea()
+        .onChange(of: selectedItem) { item in
+            guard let item else { return }
+            isLoading = true
+            Task {
+                if let data = try? await item.loadTransferable(type: Data.self) {
+                    let url = VideoRecordingViewModel.newTempURL()
+                    try? data.write(to: url)
+                    await MainActor.run { isLoading = false; onRecorded(url) }
+                } else {
+                    await MainActor.run { isLoading = false }
+                }
+            }
+        }
+    }
+}
+
+private struct OfferRealCameraView: View {
+    let onRecorded: (URL) -> Void
+    let onCancel:   () -> Void
+
+    @StateObject private var vm               = VideoRecordingViewModel()
+    @State private var isViewAppeared         = false
+    @State private var showingPermissionAlert = false
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if isViewAppeared {
+                VideoInitView()
+                    .environmentObject(vm)
+                    .ignoresSafeArea()
+            }
+
+            VStack(spacing: 0) {
+                topBar
+                Spacer()
+                bottomBar
+            }
+        }
+        .ignoresSafeArea()
+        .onAppear { checkPermissions() }
+        .onDisappear { vm.stopSession() }
+        .onChange(of: vm.showPreview) { showing in
+            guard showing, let url = vm.recordedVideoURL else { return }
+            vm.showPreview = false
+            onRecorded(url)
+        }
+        .alert("Camera Required", isPresented: $showingPermissionAlert) {
+            Button("Open Settings") {
+                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+                onCancel()
+            }
+            Button("Cancel", role: .cancel) { onCancel() }
+        } message: {
+            Text("Camera and microphone access are required to record videos.")
+        }
+    }
+
+    private var topBar: some View {
+        HStack(alignment: .top) {
+            Button {
+                if vm.isRecording { vm.stopRecording() }
+                onCancel()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 26, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+            }
+
+            Spacer()
+
+            VStack(spacing: 4) {
+                Button { if !vm.isRecording { vm.toggleCamera() } } label: {
+                    Image(systemName: "arrow.2.circlepath")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(vm.isRecording ? .white.opacity(0.3) : .white)
+                        .frame(width: 60, height: 60)
+                }
+                if vm.isFlashAvailable {
+                    Button { vm.toggleFlashMode() } label: {
+                        Image(systemName: vm.flashMode == .on ? "bolt.fill" : "bolt.slash")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(vm.flashMode == .on ? .yellow : .white)
+                            .frame(width: 60, height: 60)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12).padding(.top, 60)
+    }
+
+    private var bottomBar: some View {
+        VStack(spacing: 12) {
+            if vm.isRecording { durationLabel }
+            recordButton
+        }
+        .padding(.bottom, 65)
+    }
+
+    private var durationLabel: some View {
+        HStack(spacing: 8) {
+            Circle().fill(Color.red).frame(width: 8, height: 8)
+            Text(formattedDuration)
+                .font(.system(size: 16, weight: .semibold).monospacedDigit())
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 6)
+        .background(Color.black.opacity(0.4)).cornerRadius(20)
+    }
+
+    private var formattedDuration: String {
+        let t = Int(vm.recordingDuration)
+        return String(format: "%02d:%02d", t / 60, t % 60)
+    }
+
+    private var recordButton: some View {
+        Button {
+            if vm.isRecording { vm.stopRecording() } else { vm.startRecording() }
+        } label: {
+            ZStack {
+                Circle().stroke(Color.white, lineWidth: 7).frame(width: 90, height: 90)
+                RoundedRectangle(cornerRadius: vm.isRecording ? 8 : 45)
+                    .fill(Color.red)
+                    .frame(width: vm.isRecording ? 36 : 72, height: vm.isRecording ? 36 : 72)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: vm.isRecording)
+            }
+        }
+    }
+
+    private func checkPermissions() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            isViewAppeared = true
+            vm.checkPermission()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted { isViewAppeared = true; vm.checkPermission() }
+                    else       { showingPermissionAlert = true }
+                }
+            }
+        default:
+            showingPermissionAlert = true
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MARK: - OfferVideoThumbnail
+// Simple muted, looping inline preview for the captured offer
+// video while still on the compose screen (pre-upload).
+// ─────────────────────────────────────────────────────────────
+
+struct OfferVideoThumbnail: View {
+    let url: URL
+
+    var body: some View {
+        InlineVideoPlayer(
+            url: url,
+            onPlayerReady: { _ in },
+            isLoading: .constant(false)
+        )
     }
 }
 

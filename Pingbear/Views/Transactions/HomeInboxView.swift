@@ -14,6 +14,8 @@ struct HomeInboxView: View {
     private let functions     = Functions.functions()
 
     // ── Section logic ─────────────────────────────────────────
+    // Request: creator = toUserId, lifecycle has accepted/fulfilled states
+    // Offer:   creator = fromUserId, single-step accept = completed
 
     private var yourTurn: [EnrichedContentTransaction] {
         (vm.incoming + vm.outgoing)
@@ -34,26 +36,45 @@ struct HomeInboxView: View {
     }
 
     private func needsAction(_ e: EnrichedContentTransaction) -> Bool {
-        let tx           = e.transaction
-        let iAmCreator   = tx.toUserId == currentUserId
-        let iAmPayer     = tx.fromUserId == currentUserId
-        switch tx.status {
-        case .pendingAcceptance: return iAmCreator
-        case .accepted:          return iAmCreator
-        case .fulfilled:         return iAmPayer
-        default:                 return false
+        let tx = e.transaction
+
+        switch tx.type {
+        case .request:
+            let iAmCreator = tx.toUserId == currentUserId
+            let iAmPayer   = tx.fromUserId == currentUserId
+            switch tx.status {
+            case .pendingAcceptance: return iAmCreator
+            case .accepted:          return iAmCreator
+            case .fulfilled:         return iAmPayer
+            default:                 return false
+            }
+        case .offer:
+            // Payer needs to unlock; creator has nothing to do until completed.
+            let iAmPayer = tx.toUserId == currentUserId
+            return tx.status == .pendingAcceptance && iAmPayer
         }
     }
 
     private func isInProgress(_ e: EnrichedContentTransaction) -> Bool {
-        let tx       = e.transaction
-        let iAmPayer = tx.fromUserId == currentUserId
-        switch tx.status {
-        case .pendingSignup:     return true
-        case .pendingAcceptance: return iAmPayer
-        case .accepted:          return iAmPayer
-        case .fulfilled:         return !iAmPayer
-        default:                 return false
+        let tx = e.transaction
+
+        switch tx.type {
+        case .request:
+            let iAmPayer = tx.fromUserId == currentUserId
+            switch tx.status {
+            case .pendingSignup:     return true
+            case .pendingAcceptance: return iAmPayer
+            case .accepted:          return iAmPayer
+            case .fulfilled:         return !iAmPayer
+            default:                 return false
+            }
+        case .offer:
+            let iAmCreator = tx.fromUserId == currentUserId
+            switch tx.status {
+            case .pendingSignup:     return true
+            case .pendingAcceptance: return iAmCreator   // creator waiting for unlock
+            default:                 return false
+            }
         }
     }
 
@@ -125,7 +146,7 @@ struct HomeInboxView: View {
                 HStack {
                     Spacer()
                     Button {
-                        Analytics.shared.trackTap(elementId: "new_request_fab", screenName: "home_inbox")
+                        Analytics.shared.trackTap(elementId: "new_transaction_fab", screenName: "home_inbox")
                         showingNewTransaction = true
                     } label: {
                         Image(systemName: "plus")
@@ -161,7 +182,7 @@ struct HomeInboxView: View {
             NewTransactionView(onDismiss: { showingNewTransaction = false })
         }
         .fullScreenCover(item: $selectedTransaction) { enriched in
-            TransactionDetailView(enriched: enriched, onDismiss: { selectedTransaction = nil })
+            TransactionDetailView(initialEnriched: enriched, onDismiss: { selectedTransaction = nil })
         }
         .alert("Error", isPresented: Binding(
             get: { vm.errorMessage != nil },
@@ -259,12 +280,12 @@ struct HomeInboxView: View {
             VStack(spacing: 16) {
                 ZStack {
                     Circle().fill(AppTheme.accent.opacity(0.1)).frame(width: 80, height: 80)
-                    Image(systemName: "camera.fill").font(.system(size: 32)).foregroundColor(AppTheme.accent)
+                    Image(systemName: "video.fill").font(.system(size: 32)).foregroundColor(AppTheme.accent)
                 }
                 Text("Nothing here yet")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                Text("Tap + to request a video from a friend")
+                Text("Tap + to request or send a video to a friend")
                     .font(.system(size: 15))
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -299,6 +320,13 @@ struct HomeInboxView: View {
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - InboxCard
+//
+// Request cards: standard layout — avatar, description, status.
+// Offer cards (incoming, locked): blurred video poster-frame
+// tease as the card background — same teaser treatment whether
+// it's a photo or video underneath, since we only ever show a
+// still frame on the card (full video is reserved for the
+// detail view reveal).
 // ─────────────────────────────────────────────────────────────
 
 struct InboxCard: View {
@@ -308,25 +336,103 @@ struct InboxCard: View {
     let style:         HomeInboxView.CardStyle
 
     private var tx: ContentTransaction { enriched.transaction }
-    private var iAmCreator: Bool { tx.toUserId == currentUserId }
-    private var iAmPayer:   Bool { tx.fromUserId == currentUserId }
+    private var iAmCreator: Bool { tx.isCreator(currentUserId: currentUserId) }
+    private var iAmPayer:   Bool { tx.isPayer(currentUserId: currentUserId) }
     private var isDimmed:   Bool { style == .dimmed }
 
+    private var isLockedIncomingOffer: Bool {
+        tx.type == .offer && iAmPayer && tx.status == .pendingAcceptance
+    }
+
     var body: some View {
+        if isLockedIncomingOffer {
+            lockedOfferCard
+        } else {
+            standardCard
+        }
+    }
+
+    // ── Locked offer card — blurred video tease ────────────────
+
+    private var lockedOfferCard: some View {
+        ZStack(alignment: .bottom) {
+
+            if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
+                VideoPosterFrame(url: url)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 140)
+                    .blur(radius: 18, opaque: true)
+                    .clipped()
+            } else {
+                Rectangle()
+                    .fill(AppTheme.cardBackground)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 140)
+            }
+
+            LinearGradient(
+                colors: [Color.black.opacity(0), Color.black.opacity(0.75)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 140)
+
+            HStack(spacing: 12) {
+                ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 40)
+                    .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1.5))
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(enriched.otherProfile?.name ?? "Someone")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("sent you something secret")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                Spacer()
+
+                Text("$\(String(format: "%.2f", tx.price))")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(.black)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.white)
+                    .cornerRadius(200)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 14)
+        }
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(AppTheme.accent.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    // ── Standard card ─────────────────────────────────────────
+
+    private var standardCard: some View {
         HStack(spacing: 14) {
 
             ProfilePictureView(url: enriched.otherProfile?.profilePictureUrl, size: 48)
                 .opacity(isDimmed ? 0.5 : 1)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(enriched.otherProfile?.name ?? "Someone")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
+                HStack(spacing: 6) {
+                    Text(enriched.otherProfile?.name ?? "Someone")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(isDimmed ? AppTheme.secondaryText : AppTheme.primaryText)
+                    typeChip
+                }
 
-                Text(tx.description)
-                    .font(.system(size: 13))
-                    .foregroundColor(AppTheme.secondaryText)
-                    .lineLimit(1)
+                if tx.type == .request {
+                    Text(tx.description)
+                        .font(.system(size: 13))
+                        .foregroundColor(AppTheme.secondaryText)
+                        .lineLimit(1)
+                }
 
                 Text(statusLabel)
                     .font(.system(size: 12, weight: .semibold))
@@ -361,6 +467,15 @@ struct InboxCard: View {
         style == .urgent ? AppTheme.accent.opacity(0.04) : AppTheme.cardBackground
     }
 
+    private var typeChip: some View {
+        Text(tx.type == .request ? "📸" : "🎁")
+            .font(.system(size: 13))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(AppTheme.cardHighlight)
+            .cornerRadius(6)
+    }
+
     private var directionBadge: some View {
         HStack(spacing: 3) {
             Image(systemName: iAmPayer ? "arrow.up.right" : "arrow.down.left")
@@ -376,25 +491,33 @@ struct InboxCard: View {
     }
 
     private var statusLabel: String {
-        switch tx.status {
-        case .pendingSignup:
-            return "Waiting for them to join"
-        case .pendingAcceptance:
-            return iAmCreator ? "Tap to respond" : "Waiting for response"
-        case .accepted:
-            return iAmCreator ? "Tap to send your video" : "They're working on it..."
-        case .fulfilled:
-            return iAmPayer ? "Tap to see your video" : "Video sent — waiting for them to view"
-        case .completed:
-            if let rating = tx.rating {
-                let label = rating == 1 ? "star" : "stars"
-                return "Completed · \(rating) \(label)"
+        switch tx.type {
+        case .request:
+            switch tx.status {
+            case .pendingSignup:     return "Waiting for them to join"
+            case .pendingAcceptance: return iAmCreator ? "Tap to respond" : "Waiting for response"
+            case .accepted:          return iAmCreator ? "Tap to send your video" : "They're working on it..."
+            case .fulfilled:         return iAmPayer ? "Tap to see your video" : "Video sent — waiting for them to view"
+            case .completed:
+                if let rating = tx.rating {
+                    return "Completed · \(rating) \(rating == 1 ? "star" : "stars")"
+                }
+                return "Completed"
+            case .declined:  return iAmPayer ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
+            case .cancelled: return iAmPayer ? "You cancelled" : "\(enriched.otherProfile?.name ?? "They") cancelled"
             }
-            return "Completed"
-        case .declined:
-            return iAmPayer ? "\(enriched.otherProfile?.name ?? "They") declined" : "You declined"
-        case .cancelled:
-            return iAmPayer ? "You cancelled" : "\(enriched.otherProfile?.name ?? "They") cancelled"
+        case .offer:
+            switch tx.status {
+            case .pendingSignup:     return "Waiting for them to join"
+            case .pendingAcceptance: return iAmPayer ? "Tap to unlock" : "Waiting for them to unlock"
+            case .completed:
+                if let rating = tx.rating {
+                    return "Completed · \(rating) \(rating == 1 ? "star" : "stars")"
+                }
+                return "Completed"
+            case .declined: return iAmPayer ? "You declined" : "\(enriched.otherProfile?.name ?? "They") declined"
+            default:        return ""
+            }
         }
     }
 

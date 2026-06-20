@@ -276,12 +276,19 @@ struct ActivityRow: View {
         }
     }
 
+    // Reward payouts (creator_payout) are shared by both request
+    // fulfillment and offer unlocks — branch on the content
+    // transaction's type (stashed in wallet tx metadata) so the
+    // two don't show the same generic label.
     private var title: String {
         switch transaction.reason {
         case "top_up":              return "Top Up"
         case "request_escrow":      return "Request Sent"
         case "offer_escrow":        return "Offer Unlocked"
-        case "creator_payout":      return "Reward Received"
+        case "creator_payout":
+            return transaction.contentTransactionType == "offer"
+                ? "Offer Payment"
+                : "Request Reward"
         case "escrow_refund":       return "Refund"
         case "withdrawal_request":  return "Withdrawal"
         case "withdrawal_rejected": return "Withdrawal Returned"
