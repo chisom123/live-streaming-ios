@@ -511,7 +511,7 @@ struct NewTransactionView: View {
                         showWalletSheet = true
                     } label: {
                         Text("Top Up")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity).padding(.vertical, 13)
                             .background(AppTheme.accent).cornerRadius(200)
