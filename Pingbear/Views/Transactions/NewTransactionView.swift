@@ -609,7 +609,7 @@ struct NewTransactionView: View {
                     if !offAppContacts.isEmpty {
                         let priceStr  = String(format: "%.2f", priceDouble)
                         offAppNumbers = offAppContacts.map { $0.phoneNumber }
-                        offAppMessage = "Hey \"\(description.trimmingCharacters(in: .whitespaces))\" on SocialStar and your reward will be $\(priceStr) — join.socialstarapp.com"
+                        offAppMessage = "Hey \"\(description.trimmingCharacters(in: .whitespaces))\" on SocialStar and your reward will be $\(priceStr)! — join.socialstarapp.com"
                         Analytics.shared.track(event: AnalyticsEvent.inviteComposerOpened,
                                                properties: [AnalyticsProperty.recipientCount: offAppContacts.count])
                         showingComposer = true
