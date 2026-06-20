@@ -285,7 +285,7 @@ struct NewTransactionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
-                    Text("Pick your friends")
+                    Text("Who should do this?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                     Spacer()
