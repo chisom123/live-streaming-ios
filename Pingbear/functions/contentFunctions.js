@@ -14,9 +14,9 @@
  * FLOW
  * ────
  * REQUEST (payer asks, creator records):
- *   sendTransaction          → escrow reward from payer → pending_acceptance
- *   cancelRequest            → refund payer → cancelled  (before fulfilled)
- *   respondToTransaction (decline) → refund payer → declined
+ *   sendTransaction          → escrow reward from payer (bonus spent first) → pending_acceptance
+ *   cancelRequest            → refund payer (bonus/real restored proportionally) → cancelled
+ *   respondToTransaction (decline) → refund payer (bonus/real restored proportionally) → declined
  *   respondToTransaction (accept)  → accepted
  *   fulfillRequest           → pay creator 80%, platform 20% → fulfilled
  *   markTransactionViewed    → completed (no money)
@@ -25,13 +25,26 @@
  * OFFER (creator records mystery video upfront, payer unlocks):
  *   sendTransaction          → pending_acceptance (no money moved, video already attached)
  *   respondToTransaction (decline) → declined (nothing to refund)
- *   respondToTransaction (accept)  → pay creator 80%, platform 20% → completed (single step)
+ *   respondToTransaction (accept)  → pay creator 80%, platform 20% (bonus spent first) → completed
  *   rateTransaction          → updates creator avg rating (no status change)
+ *
+ * BONUS MONEY
+ * ───────────
+ * Every debit (request escrow, offer payment) spends bonus_balance
+ * before real money — see walletHelpers.splitDebit. Each
+ * content_transaction doc stores funded_bonus_amount /
+ * funded_real_amount so refunds and payouts can trace back to their
+ * funding source. Creator payouts are always real money regardless of
+ * funding source — payCreator never touches the recipient's
+ * bonus_balance. platform_revenue records the split too, so
+ * bonus-funded fee revenue can be excluded from "real" revenue
+ * reporting via real_revenue_fee.
  */
 
 const { onCall } = require('firebase-functions/v2/https');
 const admin      = require('firebase-admin');
 const logger     = require('firebase-functions/logger');
+const { round2, splitDebit } = require('./walletHelpers');
 
 let _db;
 const getDb = () => { if (!_db) _db = admin.firestore(); return _db; };
@@ -60,16 +73,27 @@ async function recordWalletTx(t, { userId, type, amount, reason, txId, metadata,
   });
 }
 
-async function recordPlatformRevenue(db, { txId, fromUserId, toUserId, grossAmount, platformFee, creatorPayout, type }) {
+async function recordPlatformRevenue(db, {
+  txId, fromUserId, toUserId, grossAmount, platformFee, creatorPayout, type,
+  bonusFundedAmount = 0, realFundedAmount = null, realRevenueFee = null
+}) {
+  const realFunded = realFundedAmount ?? grossAmount;
+  const realFee     = realRevenueFee ?? platformFee;
   await db.collection('platform_revenue').doc().set({
-    transaction_id:  txId,
-    from_user_id:    fromUserId,
-    to_user_id:      toUserId,
+    transaction_id:      txId,
+    from_user_id:        fromUserId,
+    to_user_id:          toUserId,
     type,
-    gross_amount:    grossAmount,
-    platform_fee:    platformFee,
-    creator_payout:  creatorPayout,
-    collected_at:    admin.firestore.FieldValue.serverTimestamp()
+    gross_amount:        grossAmount,
+    platform_fee:        platformFee,
+    creator_payout:      creatorPayout,
+    bonus_funded_amount: bonusFundedAmount,
+    real_funded_amount:  realFunded,
+    // Only this portion is real, collected revenue. The rest of
+    // platform_fee was generated from bonus money the platform itself
+    // funded — exclude it when reporting actual revenue.
+    real_revenue_fee:    realFee,
+    collected_at:        admin.firestore.FieldValue.serverTimestamp()
   });
 }
 
@@ -95,8 +119,8 @@ async function sendPush(db, userIds, { title, body, data = {} }) {
 }
 
 function calcFees(price) {
-  const platformFee   = parseFloat((price * PLATFORM_FEE_RATE).toFixed(2));
-  const creatorPayout = parseFloat((price - platformFee).toFixed(2));
+  const platformFee   = round2(price * PLATFORM_FEE_RATE);
+  const creatorPayout = round2(price - platformFee);
   return { platformFee, creatorPayout };
 }
 
@@ -105,13 +129,18 @@ async function getUserName(db, userId) {
   return doc.data()?.name ?? 'Someone';
 }
 
-async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price, type }) {
+// Creator payout is always real money for the recipient — their
+// bonus_balance is never touched here, regardless of how the payer
+// funded the original transaction.
+async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price, type, bonusFundedAmount = 0, realFundedAmount = null }) {
   const { platformFee, creatorPayout } = calcFees(price);
+  const realFunded = realFundedAmount ?? round2(price - bonusFundedAmount);
+
   await db.runTransaction(async (t) => {
     const creatorRef = db.collection('users').doc(creatorId);
     const creatorDoc = await t.get(creatorRef);
     const creatorBal = creatorDoc.data()?.wallet_balance ?? 0;
-    const newBal     = parseFloat((creatorBal + creatorPayout).toFixed(2));
+    const newBal      = round2(creatorBal + creatorPayout);
     t.set(creatorRef, {
       wallet_balance: admin.firestore.FieldValue.increment(creatorPayout),
       totalEarned:    admin.firestore.FieldValue.increment(creatorPayout)
@@ -122,22 +151,31 @@ async function payCreator(db, { txId, creatorId, fromUserId, toUserId, price, ty
       amount:        creatorPayout,
       reason:        'creator_payout',
       txId,
-      metadata:      { gross_amount: price, platform_fee: platformFee, transaction_type: type },
+      metadata:      {
+        gross_amount: price, platform_fee: platformFee, transaction_type: type,
+        funded_by_bonus: bonusFundedAmount, funded_by_real: realFunded
+      },
       balanceBefore: creatorBal,
       balanceAfter:  newBal
     });
   });
+
+  const realRevenueFee = price > 0 ? round2(platformFee * (realFunded / price)) : 0;
+
   await recordPlatformRevenue(db, {
     txId, fromUserId, toUserId,
-    grossAmount: price, platformFee, creatorPayout, type
+    grossAmount: price, platformFee, creatorPayout, type,
+    bonusFundedAmount, realFundedAmount: realFunded, realRevenueFee
   });
 }
 
 // ─────────────────────────────────────────────────────────────
 // sendTransaction
 //
-// REQUEST: escrow reward × recipient count upfront, no video yet.
-// OFFER:   video required upfront, no money moves until payer accepts.
+// REQUEST: escrow reward × recipient count upfront (bonus spent
+//          first), splits the bonus used evenly across recipients
+//          and stores it per-doc for later refund/payout tracing.
+// OFFER:   video required upfront, no money moves until accepted.
 // ─────────────────────────────────────────────────────────────
 
 exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -173,26 +211,54 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
   const { platformFee, creatorPayout } = calcFees(price);
   const senderName = await getUserName(db, userId);
 
-  // Requests escrow the full reward upfront — offers don't move money on send.
+  // Requests escrow the full reward upfront, bonus spent first.
+  // Offers don't move money on send.
+  let bonusUsedTotal = 0;
   if (type === 'request') {
-    const totalEscrow = parseFloat((price * totalCount).toFixed(2));
+    const totalEscrow = round2(price * totalCount);
     await db.runTransaction(async (t) => {
       const userRef = db.collection('users').doc(userId);
       const userDoc = await t.get(userRef);
       const balance = userDoc.data()?.wallet_balance ?? 0;
+      const bonus   = userDoc.data()?.bonus_balance ?? 0;
       if (balance < totalEscrow) throw new Error(`Insufficient funds. Need $${totalEscrow.toFixed(2)}, balance $${balance.toFixed(2)}`);
-      const newBalance = parseFloat((balance - totalEscrow).toFixed(2));
-      t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(-totalEscrow) }, { merge: true });
+
+      const split = splitDebit(bonus, totalEscrow);
+      bonusUsedTotal = split.bonusUsed;
+
+      const newBalance = round2(balance - totalEscrow);
+      t.set(userRef, {
+        wallet_balance: admin.firestore.FieldValue.increment(-totalEscrow),
+        bonus_balance:  admin.firestore.FieldValue.increment(-split.bonusUsed)
+      }, { merge: true });
       await recordWalletTx(t, {
         userId,
         type:          'debit',
         amount:        totalEscrow,
         reason:        'request_escrow',
-        metadata:      { recipient_count: totalCount },
+        metadata:      { recipient_count: totalCount, bonus_used: split.bonusUsed, real_used: split.realUsed },
         balanceBefore: balance,
         balanceAfter:  newBalance
       });
     });
+  }
+
+  // Split the bonus used evenly across recipients (each owes the
+  // same `price`), giving any rounding remainder to the last one so
+  // the per-recipient amounts always sum back to the total escrowed.
+  let bonusRemaining  = bonusUsedTotal;
+  let recipientsSoFar = 0;
+  function nextFundingSplit() {
+    recipientsSoFar++;
+    const isLast = recipientsSoFar === totalCount;
+    let bonusShare;
+    if (isLast) {
+      bonusShare = bonusRemaining;
+    } else {
+      bonusShare = round2(Math.min(price, bonusUsedTotal / totalCount));
+      bonusRemaining = round2(bonusRemaining - bonusShare);
+    }
+    return { bonusShare, realShare: round2(price - bonusShare) };
   }
 
   const createdTxIds = [];
@@ -207,6 +273,9 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
     photo_url:      type === 'offer' ? photoUrl : null,
     rating:         null,
     dismissed_by:   [],
+    // Set here for requests (escrowed now); set at accept-time for offers.
+    funded_bonus_amount: null,
+    funded_real_amount:  null,
     created_at:     admin.firestore.FieldValue.serverTimestamp(),
     accepted_at:    null,
     fulfilled_at:   null,
@@ -215,8 +284,13 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 
   // On-app recipients
   for (const recipientId of validOnApp) {
-    const txRef = db.collection('content_transactions').doc();
-    await txRef.set({ ...txBase, id: txRef.id, to_user_id: recipientId, pending_phone_hash: null, pending_name: null });
+    const txRef   = db.collection('content_transactions').doc();
+    const funding = type === 'request' ? nextFundingSplit() : { bonusShare: null, realShare: null };
+    await txRef.set({
+      ...txBase, id: txRef.id, to_user_id: recipientId, pending_phone_hash: null, pending_name: null,
+      funded_bonus_amount: funding.bonusShare,
+      funded_real_amount:  funding.realShare
+    });
     createdTxIds.push(txRef.id);
   }
 
@@ -225,15 +299,18 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
   const inviterHash = inviterDoc.data()?.phoneNumberHash ?? '';
 
   for (const phoneHash of validOffApp) {
-    const txRef       = db.collection('content_transactions').doc();
-    const pendingName = offAppRecipientNames[phoneHash] ?? null;
+    const txRef        = db.collection('content_transactions').doc();
+    const pendingName  = offAppRecipientNames[phoneHash] ?? null;
+    const funding      = type === 'request' ? nextFundingSplit() : { bonusShare: null, realShare: null };
     await txRef.set({
       ...txBase,
       id:                  txRef.id,
       to_user_id:          null,
       status:              'pending_signup',
       pending_phone_hash:  phoneHash,
-      pending_name:        pendingName
+      pending_name:        pendingName,
+      funded_bonus_amount: funding.bonusShare,
+      funded_real_amount:  funding.realShare
     });
     createdTxIds.push(txRef.id);
     const allHashes = [phoneHash];
@@ -268,8 +345,9 @@ exports.sendTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 // ─────────────────────────────────────────────────────────────
 // respondToTransaction
 //
-// REQUEST — accept → accepted, decline → refund → declined
-// OFFER   — accept → pay creator → completed, decline → declined
+// REQUEST — accept → accepted, decline → refund (bonus/real restored) → declined
+// OFFER   — accept → debit payer (bonus spent first), pay creator → completed
+//           decline → declined (nothing to refund)
 // ─────────────────────────────────────────────────────────────
 
 exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -308,17 +386,27 @@ exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (
       t.update(txRef, { status: 'declined' });
 
       if (tx.type === 'request' && fromDoc) {
-        const fromRef = db.collection('users').doc(tx.from_user_id);
-        const balance = fromDoc.data()?.wallet_balance ?? 0;
-        const newBal  = parseFloat((balance + tx.price).toFixed(2));
-        t.set(fromRef, { wallet_balance: admin.firestore.FieldValue.increment(tx.price) }, { merge: true });
+        const fromRef      = db.collection('users').doc(tx.from_user_id);
+        const balance       = fromDoc.data()?.wallet_balance ?? 0;
+        const bonusPortion  = tx.funded_bonus_amount ?? 0;
+        const realPortion   = tx.funded_real_amount ?? tx.price;
+        const refundAmount  = round2(bonusPortion + realPortion);
+        const newBal        = round2(balance + refundAmount);
+
+        // Restore each pool to where it came from — bonus money goes
+        // back into bonus_balance (still non-withdrawable).
+        t.set(fromRef, {
+          wallet_balance: admin.firestore.FieldValue.increment(refundAmount),
+          bonus_balance:  admin.firestore.FieldValue.increment(bonusPortion)
+        }, { merge: true });
+
         await recordWalletTx(t, {
           userId:        tx.from_user_id,
           type:          'credit',
-          amount:        tx.price,
+          amount:        refundAmount,
           reason:        'escrow_refund',
           txId:          transactionId,
-          metadata:      { reason: 'recipient_declined' },
+          metadata:      { reason: 'recipient_declined', bonus_restored: bonusPortion, real_restored: realPortion },
           balanceBefore: balance,
           balanceAfter:  newBal
         });
@@ -352,23 +440,36 @@ exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (
     return { success: true };
   }
 
-  // ── Accept — Offer ────────────────────────────────────────
+  // ── Accept — Offer (money moves here, bonus spent first) ───
+  let offerBonusUsed = 0;
+  let offerRealUsed  = 0;
+
   await db.runTransaction(async (t) => {
     const payerRef = db.collection('users').doc(userId);
     const payerDoc = await t.get(payerRef);
     const balance  = payerDoc.data()?.wallet_balance ?? 0;
+    const bonus    = payerDoc.data()?.bonus_balance ?? 0;
 
     if (balance < tx.price) {
       throw new Error(`Insufficient funds. Balance: $${balance.toFixed(2)}, Required: $${tx.price.toFixed(2)}`);
     }
 
-    const newBalance = parseFloat((balance - tx.price).toFixed(2));
-    t.set(payerRef, { wallet_balance: admin.firestore.FieldValue.increment(-tx.price) }, { merge: true });
+    const split = splitDebit(bonus, tx.price);
+    offerBonusUsed = split.bonusUsed;
+    offerRealUsed  = split.realUsed;
+
+    const newBalance = round2(balance - tx.price);
+    t.set(payerRef, {
+      wallet_balance: admin.firestore.FieldValue.increment(-tx.price),
+      bonus_balance:  admin.firestore.FieldValue.increment(-split.bonusUsed)
+    }, { merge: true });
 
     t.update(txRef, {
-      status:       'completed',
-      accepted_at:  admin.firestore.FieldValue.serverTimestamp(),
-      completed_at: admin.firestore.FieldValue.serverTimestamp()
+      status:              'completed',
+      accepted_at:         admin.firestore.FieldValue.serverTimestamp(),
+      completed_at:        admin.firestore.FieldValue.serverTimestamp(),
+      funded_bonus_amount: split.bonusUsed,
+      funded_real_amount:  split.realUsed
     });
 
     await recordWalletTx(t, {
@@ -377,19 +478,21 @@ exports.respondToTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (
       amount:        tx.price,
       reason:        'offer_payment',
       txId:          transactionId,
-      metadata:      { from_user_id: tx.from_user_id },
+      metadata:      { from_user_id: tx.from_user_id, bonus_used: split.bonusUsed, real_used: split.realUsed },
       balanceBefore: balance,
       balanceAfter:  newBalance
     });
   });
 
   await payCreator(db, {
-    txId:       transactionId,
-    creatorId:  tx.from_user_id,
-    fromUserId: tx.from_user_id,
-    toUserId:   userId,
-    price:      tx.price,
-    type:       'offer'
+    txId:              transactionId,
+    creatorId:         tx.from_user_id,
+    fromUserId:        tx.from_user_id,
+    toUserId:          userId,
+    price:             tx.price,
+    type:              'offer',
+    bonusFundedAmount: offerBonusUsed,
+    realFundedAmount:  offerRealUsed
   });
 
   const payerName = await getUserName(db, userId);
@@ -441,12 +544,14 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
   });
 
   await payCreator(db, {
-    txId:       transactionId,
-    creatorId:  userId,
-    fromUserId: tx.from_user_id,
-    toUserId:   userId,
-    price:      tx.price,
-    type:       'request'
+    txId:              transactionId,
+    creatorId:         userId,
+    fromUserId:        tx.from_user_id,
+    toUserId:          userId,
+    price:             tx.price,
+    type:              'request',
+    bonusFundedAmount: tx.funded_bonus_amount ?? 0,
+    realFundedAmount:  tx.funded_real_amount ?? tx.price
   });
 
   const creatorName = await getUserName(db, userId);
@@ -462,8 +567,7 @@ exports.fulfillRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (reques
 });
 
 // ─────────────────────────────────────────────────────────────
-// markTransactionViewed — request payer views video → completed
-// (no-op for offers — they go straight to completed on accept)
+// markTransactionViewed — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.markTransactionViewed = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -495,7 +599,7 @@ exports.markTransactionViewed = onCall({ cors: ['*'], maxInstances: 50 }, async 
 });
 
 // ─────────────────────────────────────────────────────────────
-// rateTransaction
+// rateTransaction — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -531,7 +635,7 @@ exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
     const oldCount   = data.ratingCount   ?? 0;
     const oldAvg     = data.averageRating ?? 0;
     const newCount   = oldCount + 1;
-    const newAvg     = parseFloat(((oldAvg * oldCount + rating) / newCount).toFixed(2));
+    const newAvg     = round2((oldAvg * oldCount + rating) / newCount);
     t.set(creatorRef, { ratingCount: newCount, averageRating: newAvg }, { merge: true });
     t.update(txRef, { rating });
   });
@@ -548,7 +652,8 @@ exports.rateTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (reque
 });
 
 // ─────────────────────────────────────────────────────────────
-// cancelRequest — payer cancels a request before fulfilled, gets refunded
+// cancelRequest — payer cancels before fulfilled, refund restores
+// bonus/real proportionally based on the original funding split
 // ─────────────────────────────────────────────────────────────
 
 exports.cancelRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -573,19 +678,26 @@ exports.cancelRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request
   if (!cancellable.includes(tx.status)) throw new Error('Cannot cancel — request already fulfilled');
 
   await db.runTransaction(async (t) => {
-    const userRef = db.collection('users').doc(userId);
-    const userDoc = await t.get(userRef);
-    const balance = userDoc.data()?.wallet_balance ?? 0;
-    const newBal  = parseFloat((balance + tx.price).toFixed(2));
-    t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(tx.price) }, { merge: true });
+    const userRef       = db.collection('users').doc(userId);
+    const userDoc        = await t.get(userRef);
+    const balance        = userDoc.data()?.wallet_balance ?? 0;
+    const bonusPortion   = tx.funded_bonus_amount ?? 0;
+    const realPortion    = tx.funded_real_amount ?? tx.price;
+    const refundAmount   = round2(bonusPortion + realPortion);
+    const newBal         = round2(balance + refundAmount);
+
+    t.set(userRef, {
+      wallet_balance: admin.firestore.FieldValue.increment(refundAmount),
+      bonus_balance:  admin.firestore.FieldValue.increment(bonusPortion)
+    }, { merge: true });
     t.update(txRef, { status: 'cancelled' });
     await recordWalletTx(t, {
       userId,
       type:          'credit',
-      amount:        tx.price,
+      amount:        refundAmount,
       reason:        'escrow_refund',
       txId:          transactionId,
-      metadata:      { reason: 'request_cancelled_by_sender' },
+      metadata:      { reason: 'request_cancelled_by_sender', bonus_restored: bonusPortion, real_restored: realPortion },
       balanceBefore: balance,
       balanceAfter:  newBal
     });
@@ -605,7 +717,7 @@ exports.cancelRequest = onCall({ cors: ['*'], maxInstances: 50 }, async (request
 });
 
 // ─────────────────────────────────────────────────────────────
-// resolveInviteTransaction
+// resolveInviteTransaction — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.resolveInviteTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
@@ -647,7 +759,7 @@ exports.resolveInviteTransaction = onCall({ cors: ['*'], maxInstances: 50 }, asy
 });
 
 // ─────────────────────────────────────────────────────────────
-// dismissTransaction
+// dismissTransaction — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.dismissTransaction = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {

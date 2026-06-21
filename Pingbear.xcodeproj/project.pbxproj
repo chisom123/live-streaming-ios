@@ -83,6 +83,7 @@
 		4FBB91262FB623EC0055CAF8 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4FBB91252FB623EC0055CAF8 /* LiveKit */; };
 		4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05562D993FCD002C592B /* AnalyticsService.swift */; };
 		4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */; };
+		4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */; };
 		4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */; };
 		4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */; };
 		4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */; };
@@ -161,6 +162,7 @@
 		4FB73FBD2FC895FE005DF768 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		4FDE05562D993FCD002C592B /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogAnalyticsService.swift; sourceTree = "<group>"; };
+		4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeBonusView.swift; sourceTree = "<group>"; };
 		4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationQueueManager.swift; sourceTree = "<group>"; };
 		4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecordingViewModel.swift; sourceTree = "<group>"; };
@@ -252,6 +254,7 @@
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
+				4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -645,6 +648,7 @@
 				4FF9C19F2F0FF12D000F045C /* MainTabView.swift in Sources */,
 				4F49243B2FDEAC3B0095A72F /* NewTransactionView.swift in Sources */,
 				4F9439912D7F90760068AF24 /* Welcome.swift in Sources */,
+				4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */,
 				4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
 				4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */,
@@ -819,7 +823,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 581;
+				CURRENT_PROJECT_VERSION = 582;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
@@ -850,7 +854,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 51.4;
+				MARKETING_VERSION = 51.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -870,7 +874,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Pingbear/Pingbear.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 581;
+				CURRENT_PROJECT_VERSION = 582;
 				DEVELOPMENT_ASSET_PATHS = "\"Pingbear/Preview Content\"";
 				DEVELOPMENT_TEAM = 27J5KH92LA;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -900,7 +904,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 13.3;
-				MARKETING_VERSION = 51.4;
+				MARKETING_VERSION = 51.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pordio.Chay;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;

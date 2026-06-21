@@ -61,7 +61,7 @@ struct WalletView: View {
             .sheet(isPresented: $viewModel.showTopUpSheet) { TopUpSheet() }
             .sheet(isPresented: $viewModel.showCashOutSheet) {
                 CashOutSheet(
-                    balance:   viewModel.balance,
+                    withdrawableBalance: viewModel.withdrawableBalance,
                     onCashOut: { email, amount in
                         Task {
                             let success = await viewModel.requestWithdrawal(amount: amount, paypalEmail: email)
@@ -100,6 +100,14 @@ struct BalanceCard: View {
                 .font(.system(size: 48, weight: .bold))
                 .foregroundColor(AppTheme.primaryText)
 
+            if viewModel.bonusBalance > 0 {
+                Text("Includes $\(String(format: "%.2f", viewModel.bonusBalance)) bonus credit — spendable, not withdrawable")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppTheme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
+
             HStack(spacing: 12) {
                 Button {
                     viewModel.showTopUpSheet = true
@@ -135,11 +143,17 @@ struct BalanceCard: View {
                 .disabled(!viewModel.canCashOut)
             }
 
-            if !viewModel.canCashOut && viewModel.balance > 0 {
-                Text("Minimum cash out is $5.00")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(AppTheme.secondaryText)
-                    .padding(.top, 4)
+            if !viewModel.canCashOut {
+                if viewModel.bonusBalance > 0 && viewModel.balance >= 5.00 {
+                    // They have $5+ total but it's locked up as bonus credit —
+                    // "minimum is $5" would be misleading here since adding
+                    // $0.01 more bonus still wouldn't unlock cash out.
+                } else if viewModel.balance > 0 {
+                    Text("Minimum cash out is $5.00")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(AppTheme.secondaryText)
+                        .padding(.top, 4)
+                }
             }
         }
         .padding(24)
@@ -293,6 +307,7 @@ struct ActivityRow: View {
         case "withdrawal_request":  return "Withdrawal"
         case "withdrawal_rejected": return "Withdrawal Returned"
         case "promo_credit":        return "Bonus Credit"
+        case "welcome_bonus":       return "Welcome Bonus"
         default:
             return transaction.reason
                 .replacingOccurrences(of: "_", with: " ")
@@ -320,6 +335,7 @@ struct ActivityRow: View {
         case "withdrawal_request":  return "arrow.up.circle.fill"
         case "withdrawal_rejected": return "arrow.down.circle.fill"
         case "promo_credit":        return "gift.fill"
+        case "welcome_bonus":       return "gift.fill"
         default:                    return "dollarsign"
         }
     }
@@ -334,6 +350,7 @@ struct ActivityRow: View {
         case "withdrawal_request":  return AppTheme.secondaryText
         case "withdrawal_rejected": return AppTheme.green
         case "promo_credit":        return AppTheme.green
+        case "welcome_bonus":       return AppTheme.green
         default:                    return AppTheme.secondaryText
         }
     }
@@ -348,6 +365,7 @@ struct ActivityRow: View {
         case "withdrawal_request":  return AppTheme.cardHighlight
         case "withdrawal_rejected": return AppTheme.green.opacity(0.12)
         case "promo_credit":        return AppTheme.green.opacity(0.12)
+        case "welcome_bonus":       return AppTheme.green.opacity(0.12)
         default:                    return AppTheme.cardHighlight
         }
     }

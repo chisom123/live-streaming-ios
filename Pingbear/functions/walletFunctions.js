@@ -10,14 +10,24 @@
  *   exports.rejectWithdrawal   = wallet.rejectWithdrawal;
  *   exports.createTopUpIntent  = wallet.createTopUpIntent;
  *   exports.confirmTopUpIntent = wallet.confirmTopUpIntent;
+ *   exports.grantWelcomeBonus  = wallet.grantWelcomeBonus;
  *
- * No welcome bonus. No staking. No locked credits.
- * Balance is fully spendable and withdrawable at all times.
+ * BALANCE MODEL
+ *   wallet_balance = total spendable balance
+ *   bonus_balance  = subset of wallet_balance that's non-withdrawable
+ *                    (welcome bonus, promo credit). Spent before real
+ *                    money on any debit. Becomes ordinary real money
+ *                    for whoever receives it — payCreator (in
+ *                    contentFunctions.js) never touches the
+ *                    recipient's bonus_balance.
+ *   withdrawable   = wallet_balance - bonus_balance
  */
 
-const { onCall } = require('firebase-functions/v2/https');
-const admin      = require('firebase-admin');
-const logger     = require('firebase-functions/logger');
+const { onCall }            = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const admin                 = require('firebase-admin');
+const logger                = require('firebase-functions/logger');
+const { round2, splitDebit, withdrawableAmount } = require('./walletHelpers');
 
 let _db;
 const getDb = () => {
@@ -25,8 +35,9 @@ const getDb = () => {
   return _db;
 };
 
-const MIN_WITHDRAWAL = 5.00;
-const CURRENCY       = 'USD';
+const MIN_WITHDRAWAL       = 5.00;
+const CURRENCY             = 'USD';
+const WELCOME_BONUS_AMOUNT = 5.00;
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — record a wallet transaction
@@ -52,7 +63,47 @@ async function recordTransaction(t, {
 }
 
 // ─────────────────────────────────────────────────────────────
-// deductBalance
+// grantWelcomeBonus — fires once per new user, server-side only.
+// Client never writes wallet_balance/bonus_balance directly.
+// ─────────────────────────────────────────────────────────────
+
+exports.grantWelcomeBonus = onDocumentCreated('users/{userId}', async (event) => {
+  const userId  = event.params.userId;
+  const db      = getDb();
+  const userRef = db.collection('users').doc(userId);
+
+  await db.runTransaction(async (t) => {
+    const userDoc = await t.get(userRef);
+    if (!userDoc.exists) return;
+
+    const data = userDoc.data();
+    if (data.welcomeBonusGranted) return; // idempotency guard — triggers can retry
+
+    const currentBalance = data.wallet_balance ?? 0;
+    const newBalance      = round2(currentBalance + WELCOME_BONUS_AMOUNT);
+
+    t.set(userRef, {
+      wallet_balance:      admin.firestore.FieldValue.increment(WELCOME_BONUS_AMOUNT),
+      bonus_balance:       admin.firestore.FieldValue.increment(WELCOME_BONUS_AMOUNT),
+      welcomeBonusGranted: true
+    }, { merge: true });
+
+    await recordTransaction(t, {
+      userId,
+      type:          'credit',
+      amount:        WELCOME_BONUS_AMOUNT,
+      reason:        'welcome_bonus',
+      metadata:      { note: 'New user welcome bonus' },
+      balanceBefore: currentBalance,
+      balanceAfter:  newBalance
+    });
+  });
+
+  logger.info(`grantWelcomeBonus: $${WELCOME_BONUS_AMOUNT} granted to ${userId}`);
+});
+
+// ─────────────────────────────────────────────────────────────
+// deductBalance — generic debit, bonus spent first
 // ─────────────────────────────────────────────────────────────
 
 exports.deductBalance = onCall({
@@ -73,23 +124,35 @@ exports.deductBalance = onCall({
   const result = await db.runTransaction(async (t) => {
     const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
+    const currentBonus   = userDoc.exists ? (userDoc.data().bonus_balance ?? 0) : 0;
 
     if (currentBalance < amount) {
       throw new Error(`Insufficient funds. Balance: $${currentBalance.toFixed(2)}, Required: $${amount.toFixed(2)}`);
     }
 
-    const newBalance = parseFloat((currentBalance - amount).toFixed(2));
-    t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(-amount) }, { merge: true });
-    await recordTransaction(t, { userId, type: 'debit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
-    return { success: true, new_balance: newBalance };
+    const { bonusUsed, realUsed } = splitDebit(currentBonus, amount);
+    const newBalance = round2(currentBalance - amount);
+
+    t.set(userRef, {
+      wallet_balance: admin.firestore.FieldValue.increment(-amount),
+      bonus_balance:  admin.firestore.FieldValue.increment(-bonusUsed)
+    }, { merge: true });
+
+    await recordTransaction(t, {
+      userId, type: 'debit', amount, reason, sessionId,
+      metadata: { ...(metadata ?? {}), bonus_used: bonusUsed, real_used: realUsed },
+      balanceBefore: currentBalance, balanceAfter: newBalance
+    });
+
+    return { success: true, new_balance: newBalance, bonus_used: bonusUsed, real_used: realUsed };
   });
 
-  logger.info(`deductBalance: $${amount} from ${userId}`);
+  logger.info(`deductBalance: $${amount} from ${userId} (bonus: $${result.bonus_used}, real: $${result.real_used})`);
   return result;
 });
 
 // ─────────────────────────────────────────────────────────────
-// creditBalance
+// creditBalance — always real money, bonus_balance untouched
 // ─────────────────────────────────────────────────────────────
 
 exports.creditBalance = onCall({
@@ -110,7 +173,7 @@ exports.creditBalance = onCall({
   await db.runTransaction(async (t) => {
     const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
+    const newBalance     = round2(currentBalance + amount);
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
@@ -120,7 +183,7 @@ exports.creditBalance = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// adminCreditBalance
+// adminCreditBalance — always real money, bonus_balance untouched
 // ─────────────────────────────────────────────────────────────
 
 exports.adminCreditBalance = onCall({
@@ -140,7 +203,7 @@ exports.adminCreditBalance = onCall({
   await db.runTransaction(async (t) => {
     const userDoc        = await t.get(userRef);
     const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
+    const newBalance     = round2(currentBalance + amount);
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     await recordTransaction(t, { userId, type: 'credit', amount, reason, sessionId, metadata, balanceBefore: currentBalance, balanceAfter: newBalance });
   });
@@ -150,10 +213,9 @@ exports.adminCreditBalance = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// requestWithdrawal
-//
-// Simplified — no staking, no locking.
-// maxWithdrawable = full wallet balance.
+// requestWithdrawal — checked against withdrawable, not total.
+// Withdrawals only ever draw from real money — bonus_balance
+// is never decremented here.
 // ─────────────────────────────────────────────────────────────
 
 exports.requestWithdrawal = onCall({
@@ -172,19 +234,21 @@ exports.requestWithdrawal = onCall({
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(paypalEmail.trim())) throw new Error('Invalid PayPal email address');
 
-  const db           = getDb();
-  const userRef      = db.collection('users').doc(userId);
-  const withdrawalRef = db.collection('withdrawals').doc();
+  const db            = getDb();
+  const userRef        = db.collection('users').doc(userId);
+  const withdrawalRef  = db.collection('withdrawals').doc();
 
   await db.runTransaction(async (t) => {
-    const userDoc        = await t.get(userRef);
-    const currentBalance = userDoc.data()?.wallet_balance ?? 0;
+    const userDoc         = await t.get(userRef);
+    const currentBalance  = userDoc.data()?.wallet_balance ?? 0;
+    const currentBonus    = userDoc.data()?.bonus_balance ?? 0;
+    const withdrawable    = withdrawableAmount(currentBalance, currentBonus);
 
-    if (amount > currentBalance) {
-      throw new Error(`Insufficient funds. Available: $${currentBalance.toFixed(2)}, Requested: $${amount.toFixed(2)}`);
+    if (amount > withdrawable) {
+      throw new Error(`Insufficient withdrawable funds. Available: $${withdrawable.toFixed(2)}, Requested: $${amount.toFixed(2)}`);
     }
 
-    const newBalance = parseFloat((currentBalance - amount).toFixed(2));
+    const newBalance = round2(currentBalance - amount);
 
     t.set(userRef, {
       wallet_balance: admin.firestore.FieldValue.increment(-amount)
@@ -223,7 +287,7 @@ exports.requestWithdrawal = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// approveWithdrawal
+// approveWithdrawal — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.approveWithdrawal = onCall({
@@ -259,7 +323,8 @@ exports.approveWithdrawal = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// rejectWithdrawal
+// rejectWithdrawal — refund is always real money (withdrawals
+// never touch bonus_balance, so none needs restoring)
 // ─────────────────────────────────────────────────────────────
 
 exports.rejectWithdrawal = onCall({
@@ -284,9 +349,9 @@ exports.rejectWithdrawal = onCall({
 
     const { user_id, amount } = withdrawal;
     const userRef        = db.collection('users').doc(user_id);
-    const userDoc        = await t.get(userRef);
-    const currentBalance = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
-    const newBalance     = parseFloat((currentBalance + amount).toFixed(2));
+    const userDoc         = await t.get(userRef);
+    const currentBalance  = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
+    const newBalance      = round2(currentBalance + amount);
 
     t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
     t.update(withdrawalRef, {
@@ -311,7 +376,7 @@ exports.rejectWithdrawal = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// createTopUpIntent
+// createTopUpIntent — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.createTopUpIntent = onCall({
@@ -345,7 +410,7 @@ exports.createTopUpIntent = onCall({
 });
 
 // ─────────────────────────────────────────────────────────────
-// confirmTopUpIntent
+// confirmTopUpIntent — unchanged
 // ─────────────────────────────────────────────────────────────
 
 exports.confirmTopUpIntent = onCall({

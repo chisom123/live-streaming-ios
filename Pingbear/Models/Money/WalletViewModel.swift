@@ -30,6 +30,10 @@ struct EnrichedTransaction: Identifiable {
 class WalletViewModel: ObservableObject {
 
     @Published var balance:       Double               = 0.0
+    // Subset of `balance` that's non-withdrawable (welcome bonus,
+    // promo credit). Not a separate pot — see bonus_balance docs in
+    // walletHelpers.js for the full model.
+    @Published var bonusBalance:  Double               = 0.0
     @Published var transactions:  [EnrichedTransaction] = []
     @Published var isLoading      = false
     @Published var errorMessage:  String?              = nil
@@ -39,7 +43,11 @@ class WalletViewModel: ObservableObject {
     private let db             = Firestore.firestore()
     private var balanceListener: ListenerRegistration?
 
-    var canCashOut: Bool { balance >= 5.00 }
+    /// What's actually withdrawable — total balance minus whatever's
+    /// still tagged as bonus credit.
+    var withdrawableBalance: Double { max(0, balance - bonusBalance) }
+
+    var canCashOut: Bool { withdrawableBalance >= 5.00 }
 
     // ─────────────────────────────────────────────────────────
     // MARK: - Lifecycle
@@ -52,8 +60,9 @@ class WalletViewModel: ObservableObject {
         balanceListener = db.collection("users").document(userId)
             .addSnapshotListener { [weak self] snapshot, _ in
                 guard let self else { return }
-                self.balance   = snapshot?.data()?["wallet_balance"] as? Double ?? 0.0
-                self.isLoading = false
+                self.balance      = snapshot?.data()?["wallet_balance"] as? Double ?? 0.0
+                self.bonusBalance = snapshot?.data()?["bonus_balance"] as? Double ?? 0.0
+                self.isLoading    = false
             }
 
         Task { await loadTransactions() }

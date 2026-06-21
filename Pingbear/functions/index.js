@@ -94,6 +94,7 @@ async function handleSuccessfulTopUp(intent) {
       const current    = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
       const newBalance = parseFloat((current + amount).toFixed(2));
 
+      // Top-ups are always real money — bonus_balance untouched.
       t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
       t.set(orderRef, {
         user_id: userId, amount, currency: 'USD', provider: 'stripe',
@@ -129,6 +130,7 @@ exports.adminCreditBalance = wallet.adminCreditBalance;
 exports.requestWithdrawal  = wallet.requestWithdrawal;
 exports.approveWithdrawal  = wallet.approveWithdrawal;
 exports.rejectWithdrawal   = wallet.rejectWithdrawal;
+exports.grantWelcomeBonus  = wallet.grantWelcomeBonus;
 
 // ─────────────────────────────────────────────────────────────
 // Content Transactions

@@ -2,8 +2,10 @@ import SwiftUI
 
 struct CashOutSheet: View {
 
-    let balance:   Double
-    let onCashOut: (String, Double) -> Void
+    /// Withdrawable balance only — pass `viewModel.withdrawableBalance`,
+    /// not total balance, since bonus credit can't be cashed out.
+    let withdrawableBalance: Double
+    let onCashOut:           (String, Double) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var paypalEmail  = ""
@@ -13,7 +15,7 @@ struct CashOutSheet: View {
     private var amount: Double { Double(amountString) ?? 0 }
 
     private var amountIsValid: Bool {
-        amount >= 5.0 && amount <= balance
+        amount >= 5.0 && amount <= withdrawableBalance
     }
 
     private var emailIsValid: Bool {
@@ -58,10 +60,10 @@ struct CashOutSheet: View {
 
                         // Balance display
                         VStack(spacing: 7) {
-                            Text("Available to Withdraw")
+                            Text("Available to Cash Out")
                                 .font(.system(size: 15))
                                 .foregroundColor(AppTheme.secondaryText)
-                            Text("$\(String(format: "%.2f", balance))")
+                            Text("$\(String(format: "%.2f", withdrawableBalance))")
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(AppTheme.primaryText)
                         }
@@ -88,7 +90,7 @@ struct CashOutSheet: View {
                                     .padding(.leading, 4)
 
                                 Button("Max") {
-                                    amountString = String(format: "%.2f", balance)
+                                    amountString = String(format: "%.2f", withdrawableBalance)
                                 }
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(AppTheme.accent)
@@ -101,7 +103,7 @@ struct CashOutSheet: View {
                             if !amountString.isEmpty && !amountIsValid {
                                 Text(amount < 5.0
                                      ? "Minimum withdrawal is $5.00"
-                                     : "Amount exceeds your available balance")
+                                     : "Amount exceeds your withdrawable balance")
                                     .font(.system(size: 15, weight: .bold))
                                     .foregroundColor(.red.opacity(0.8))
                             }

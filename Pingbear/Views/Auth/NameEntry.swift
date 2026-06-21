@@ -11,6 +11,7 @@ struct NameEntryView: View {
     @State private var username:      String  = ""
     @State private var errorMessage:  String? = nil
     @State private var isLoading:     Bool    = false
+    @State private var showWelcomeBonus: Bool = false
 
     var body: some View {
         ZStack {
@@ -69,6 +70,9 @@ struct NameEntryView: View {
             }
         }
         .navigationBarHidden(true)
+        .fullScreenCover(isPresented: $showWelcomeBonus) {
+            WelcomeBonusView()
+        }
     }
 
     // MARK: - Validate username
@@ -139,20 +143,10 @@ struct NameEntryView: View {
             self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) {
                 DispatchQueue.main.async {
                     self.isLoading = false
-                    self.goToHome()
+                    self.showWelcomeBonus = true
                 }
             }
         }
-    }
-
-    // MARK: - Go to home
-
-    private func goToHome() {
-        Analytics.shared.track(event: "onboarding_completed")
-        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-        UserDefaults.standard.set(true, forKey: "isFriendActivated")
-        UserDefaults.standard.synchronize()
-        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
     }
 
     // MARK: - Resolve invite groups
