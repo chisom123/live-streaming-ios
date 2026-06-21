@@ -1239,8 +1239,12 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
             loadedURL     = url
             currentIsActive = isActive
 
-            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-            try? AVAudioSession.sharedInstance().setActive(true)
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("🟣 InlineVideoPlayer: audio session setup FAILED: \(error)")
+            }
 
             let player = AVPlayer(url: url)
             player.isMuted = false
@@ -1259,9 +1263,9 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
                 guard let self,
                       let info = note.userInfo,
                       let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
-                      let type = AVAudioSession.InterruptionType(rawValue: typeValue),
-                      type == .ended
+                      let type = AVAudioSession.InterruptionType(rawValue: typeValue)
                 else { return }
+                guard type == .ended else { return }
                 try? AVAudioSession.sharedInstance().setActive(true)
                 if self.currentIsActive { player.play() }
             }
@@ -1270,7 +1274,9 @@ struct InlineVideoPlayer: UIViewControllerRepresentable {
                 DispatchQueue.main.async { isLoading.wrappedValue = (item.status != .readyToPlay) }
             }
 
-            if isActive { player.play() }
+            if isActive {
+                player.play()
+            }
         }
 
         func update(isActive: Bool, vc: AVPlayerViewController) {

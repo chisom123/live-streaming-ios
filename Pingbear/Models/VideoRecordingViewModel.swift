@@ -301,15 +301,29 @@ final class VideoRecordingViewModel: NSObject, ObservableObject {
 
     // MARK: - Session Control
 
-    func stopSession() {
+    private var hasStoppedSession = false
+
+    func stopSession(completion: (() -> Void)? = nil) {
         sessionQueue.async { [weak self] in
-            guard let self, self.session.isRunning else { return }
-            self.session.stopRunning()
-            try? AVAudioSession.sharedInstance().setActive(
-                false,
-                options: .notifyOthersOnDeactivation
-            )
-            DispatchQueue.main.async { self.isConfigured = false }
+            guard let self, !self.hasStoppedSession else {
+                DispatchQueue.main.async { completion?() }
+                return
+            }
+            self.hasStoppedSession = true
+
+            if self.session.isRunning {
+                self.session.stopRunning()
+            }
+            do {
+                try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            } catch {
+                print("🟡 stopSession: deactivate FAILED: \(error)")
+            }
+
+            DispatchQueue.main.async {
+                self.isConfigured = false
+                completion?()
+            }
         }
         setTorch(mode: .off)
     }

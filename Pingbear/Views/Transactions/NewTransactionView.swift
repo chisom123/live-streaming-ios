@@ -1069,7 +1069,11 @@ private struct OfferRealCameraView: View {
             if let url = previewURL {
                 OfferVideoPreviewConfirmView(
                     url: url,
-                    onUse: { onRecorded(url) },
+                    onUse: {
+                        vm.stopSession {
+                            onRecorded(url)
+                        }
+                    },
                     onRetake: {
                         try? FileManager.default.removeItem(at: url)
                         previewURL = nil
@@ -1085,7 +1089,9 @@ private struct OfferRealCameraView: View {
         }
         .ignoresSafeArea()
         .onAppear { checkPermissions() }
-        .onDisappear { vm.stopSession() }
+        .onDisappear {
+            vm.stopSession()
+        }
         .onChange(of: vm.showPreview) { showing in
             guard showing, let url = vm.recordedVideoURL else { return }
             vm.showPreview = false
@@ -1094,9 +1100,15 @@ private struct OfferRealCameraView: View {
         .alert("Camera Required", isPresented: $showingPermissionAlert) {
             Button("Open Settings") {
                 UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-                onCancel()
+                vm.stopSession {
+                    onCancel()
+                }
             }
-            Button("Cancel", role: .cancel) { onCancel() }
+            Button("Cancel", role: .cancel) {
+                vm.stopSession {
+                    onCancel()
+                }
+            }
         } message: {
             Text("Camera and microphone access are required to record videos.")
         }
@@ -1106,7 +1118,9 @@ private struct OfferRealCameraView: View {
         HStack(alignment: .top) {
             Button {
                 if vm.isRecording { vm.stopRecording() }
-                onCancel()
+                vm.stopSession {
+                    onCancel()
+                }
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 26, weight: .bold))
