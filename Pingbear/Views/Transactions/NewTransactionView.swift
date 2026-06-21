@@ -916,7 +916,7 @@ struct NewTransactionView: View {
                     if !offAppContacts.isEmpty {
                         let priceStr  = String(format: "%.2f", priceDouble)
                         offAppNumbers = offAppContacts.map { $0.phoneNumber }
-                        offAppMessage = "I've got something for you on SocialStar — $\(priceStr) to unlock! join.socialstarapp.com"
+                        offAppMessage = "Hey I've got a video for you on SocialStar — $\(priceStr) to unlock! join.socialstarapp.com"
                         showingComposer = true
                     } else {
                         onDismiss()
