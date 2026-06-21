@@ -305,6 +305,10 @@ final class VideoRecordingViewModel: NSObject, ObservableObject {
         sessionQueue.async { [weak self] in
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()
+            try? AVAudioSession.sharedInstance().setActive(
+                false,
+                options: .notifyOthersOnDeactivation
+            )
             DispatchQueue.main.async { self.isConfigured = false }
         }
         setTorch(mode: .off)

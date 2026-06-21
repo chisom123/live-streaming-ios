@@ -249,7 +249,7 @@ struct NewTransactionView: View {
     private var headerTitle: String {
         switch step {
         case 1: return "New Video"
-        case 2: return selectedType == .request ? "Your Request" : "Your Offer"
+        case 2: return selectedType == .request ? "Your Request" : "Your Video"
         case 3: return "Pick Friends"
         case 4: return selectedType == .request ? "Request Reward" : "Set Reward"
         default: return ""
@@ -431,11 +431,16 @@ struct NewTransactionView: View {
                     Analytics.shared.trackTap(elementId: "record_offer_video", screenName: "new_transaction_step_2")
                     showingCamera = true
                 } label: {
-                    ZStack {
-                        if let url = capturedVideoURL {
-                            OfferVideoThumbnail(url: url)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 280)
+                    HStack {
+                        Spacer(minLength: 0)
+                        ZStack {
+                            if let url = capturedVideoURL {
+                                OfferVideoThumbnail(
+                                    url: url,
+                                    isActive: Binding(get: { !showingCamera }, set: { _ in })
+                                )
+                                .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                                .frame(maxWidth: 280)
                                 .clipped()
                                 .cornerRadius(16)
                                 .overlay(
@@ -455,26 +460,28 @@ struct NewTransactionView: View {
                                         .padding(.bottom, 12)
                                     }
                                 )
-                        } else {
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(AppTheme.cardBackground)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 280)
-                                .overlay(
-                                    VStack(spacing: 10) {
-                                        Image(systemName: "video.fill")
-                                            .font(.system(size: 28))
-                                            .foregroundColor(AppTheme.secondaryText)
-                                        Text("Tap to record your video")
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundColor(AppTheme.secondaryText)
-                                    }
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(AppTheme.divider, lineWidth: 1)
-                                )
+                            } else {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(AppTheme.cardBackground)
+                                    .aspectRatio(9.0 / 16.0, contentMode: .fit)
+                                    .frame(maxWidth: 280)
+                                    .overlay(
+                                        VStack(spacing: 10) {
+                                            Image(systemName: "video.fill")
+                                                .font(.system(size: 28))
+                                                .foregroundColor(AppTheme.secondaryText)
+                                            Text("Tap to record your video")
+                                                .font(.system(size: 14, weight: .semibold))
+                                                .foregroundColor(AppTheme.secondaryText)
+                                        }
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(AppTheme.divider, lineWidth: 1)
+                                    )
+                            }
                         }
+                        Spacer(minLength: 0)
                     }
                 }
                 .buttonStyle(.plain)
@@ -736,7 +743,7 @@ struct NewTransactionView: View {
             Divider().background(AppTheme.divider)
             feeRow(label: "Platform fee (20%)", value: "-$\(String(format: "%.2f", priceDouble * 0.20))",        color: AppTheme.primaryText)
             Divider().background(AppTheme.divider)
-            feeRow(label: "You get per unlock", value: "$\(String(format: "%.2f", priceDouble * 0.80))",        color: AppTheme.green, valueSize: 20)
+            feeRow(label: "You get", value: "$\(String(format: "%.2f", priceDouble * 0.80))",        color: AppTheme.green, valueSize: 20)
         }
         .background(AppTheme.cardBackground)
         .cornerRadius(12)
@@ -1053,6 +1060,7 @@ private struct OfferRealCameraView: View {
     @StateObject private var vm               = VideoRecordingViewModel()
     @State private var isViewAppeared         = false
     @State private var showingPermissionAlert = false
+    @State private var previewURL: URL? = nil
 
     var body: some View {
         ZStack {
@@ -1064,10 +1072,21 @@ private struct OfferRealCameraView: View {
                     .ignoresSafeArea()
             }
 
-            VStack(spacing: 0) {
-                topBar
-                Spacer()
-                bottomBar
+            if let url = previewURL {
+                OfferVideoPreviewConfirmView(
+                    url: url,
+                    onUse: { onRecorded(url) },
+                    onRetake: {
+                        try? FileManager.default.removeItem(at: url)
+                        previewURL = nil
+                    }
+                )
+            } else {
+                VStack(spacing: 0) {
+                    topBar
+                    Spacer()
+                    bottomBar
+                }
             }
         }
         .ignoresSafeArea()
@@ -1076,7 +1095,7 @@ private struct OfferRealCameraView: View {
         .onChange(of: vm.showPreview) { showing in
             guard showing, let url = vm.recordedVideoURL else { return }
             vm.showPreview = false
-            onRecorded(url)
+            previewURL = url
         }
         .alert("Camera Required", isPresented: $showingPermissionAlert) {
             Button("Open Settings") {
@@ -1179,6 +1198,80 @@ private struct OfferRealCameraView: View {
     }
 }
 
+private struct OfferVideoPreviewConfirmView: View {
+    let url: URL
+    let onUse: () -> Void
+    let onRetake: () -> Void
+
+    @State private var player: AVPlayer?
+    @State private var loopObserver: NSObjectProtocol?
+
+    var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+
+            if let player {
+                VideoPlayerFillView(player: player)
+                    .ignoresSafeArea()
+            }
+
+            VStack {
+                Spacer()
+                LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 200)
+            }
+            .ignoresSafeArea()
+
+            VStack {
+                Spacer()
+                HStack(spacing: 20) {
+                    Button(action: onRetake) {
+                        Text("Retake")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(Color.white.opacity(0.15))
+                            .cornerRadius(200)
+                    }
+                    Button(action: onUse) {
+                        Text("Use Video")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(AppTheme.accent)
+                            .cornerRadius(200)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 50)
+            }
+        }
+        .onAppear { setupPlayer() }
+        .onDisappear { teardown() }
+    }
+
+    private func setupPlayer() {
+        let p = AVPlayer(url: url)
+        p.isMuted = false
+        player = p
+        loopObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime, object: p.currentItem, queue: .main
+        ) { _ in p.seek(to: .zero); p.play() }
+        p.play()
+    }
+
+    private func teardown() {
+        player?.pause()
+        player = nil
+        if let obs = loopObserver {
+            NotificationCenter.default.removeObserver(obs)
+            loopObserver = nil
+        }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────
 // MARK: - OfferVideoThumbnail
 // Simple muted, looping inline preview for the captured offer
@@ -1187,13 +1280,10 @@ private struct OfferRealCameraView: View {
 
 struct OfferVideoThumbnail: View {
     let url: URL
+    @Binding var isActive: Bool
 
     var body: some View {
-        InlineVideoPlayer(
-            url: url,
-            onPlayerReady: { _ in },
-            isLoading: .constant(false)
-        )
+        InlineVideoPlayer(url: url, isActive: $isActive, isLoading: .constant(false))
     }
 }
 

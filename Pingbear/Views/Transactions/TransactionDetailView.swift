@@ -48,8 +48,6 @@ struct RequestDetailView: View {
     @State private var showingFullVideo  = false
     @State private var isInlineVideoLoading = true
 
-    @State private var inlinePlayer:    AVPlayer? = nil
-
     private let functions     = Functions.functions()
     private let db            = Firestore.firestore()
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
@@ -169,15 +167,9 @@ struct RequestDetailView: View {
             if let urlStr = tx.photoUrl, let url = URL(string: urlStr) {
                 FullScreenVideoView(
                     url: url,
-                    onDismiss: {
-                        showingFullVideo = false
-                        inlinePlayer?.play()
-                    }
+                    onDismiss: { showingFullVideo = false }
                 )
             }
-        }
-        .onChange(of: showingFullVideo) { isShowing in
-            if isShowing { inlinePlayer?.pause() }
         }
         .alert("Error", isPresented: Binding(
             get: { errorMessage != nil },
@@ -372,7 +364,7 @@ struct RequestDetailView: View {
                     ZStack(alignment: .topTrailing) {
                         InlineVideoPlayer(
                             url: url,
-                            onPlayerReady: { player in inlinePlayer = player },
+                            isActive: Binding(get: { !showingFullVideo }, set: { _ in }),
                             isLoading: $isInlineVideoLoading
                         )
 
@@ -1206,70 +1198,98 @@ struct CreatorOfferVideoPreview: UIViewControllerRepresentable {
 // ─────────────────────────────────────────────────────────────
 
 struct InlineVideoPlayer: UIViewControllerRepresentable {
-    let url:           URL
-    let onPlayerReady: (AVPlayer) -> Void
+    let url:        URL
+    @Binding var isActive:  Bool   // caller declares play/pause — no guessing
     @Binding var isLoading: Bool
 
-    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading) }
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
-
-        let player = AVPlayer(url: url)
-        player.isMuted = false
-
         let vc = AVPlayerViewController()
-        vc.player                = player
         vc.showsPlaybackControls = false
         vc.videoGravity          = .resizeAspectFill
-
-        context.coordinator.loopObserver = NotificationCenter.default.addObserver(
-            forName:  .AVPlayerItemDidPlayToEndTime,
-            object:   player.currentItem,
-            queue:    .main
-        ) { _ in
-            player.seek(to: .zero)
-            player.play()
-        }
-
-        context.coordinator.statusObserver = player.currentItem?.observe(\.status, options: [.new, .initial]) { item, _ in
-            DispatchQueue.main.async {
-                context.coordinator.isLoading.wrappedValue = (item.status != .readyToPlay)
-            }
-        }
-        context.coordinator.rateObserver = player.observe(\.timeControlStatus, options: [.new]) { p, _ in
-            DispatchQueue.main.async {
-                if p.timeControlStatus == .playing {
-                    context.coordinator.isLoading.wrappedValue = false
-                }
-            }
-        }
-
-        player.play()
-
-        DispatchQueue.main.async { onPlayerReady(player) }
-
+        context.coordinator.load(into: vc, url: url, isActive: isActive, isLoading: $isLoading)
         return vc
     }
 
-    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {}
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {
+        if context.coordinator.loadedURL != url {
+            // The URL changed (e.g. Retake produced a new recording) —
+            // rebuild the player instead of silently keeping the old one.
+            context.coordinator.load(into: vc, url: url, isActive: isActive, isLoading: $isLoading)
+        } else {
+            context.coordinator.update(isActive: isActive, vc: vc)
+        }
+    }
 
     static func dismantleUIViewController(_ vc: AVPlayerViewController, coordinator: Coordinator) {
         vc.player?.pause()
-        if let obs = coordinator.loopObserver {
-            NotificationCenter.default.removeObserver(obs)
-        }
-        coordinator.statusObserver?.invalidate()
-        coordinator.rateObserver?.invalidate()
+        coordinator.teardown()
     }
 
-    class Coordinator {
-        var loopObserver:   NSObjectProtocol?
-        var statusObserver: NSKeyValueObservation?
-        var rateObserver:   NSKeyValueObservation?
-        let isLoading: Binding<Bool>
-        init(isLoading: Binding<Bool>) { self.isLoading = isLoading }
+    final class Coordinator {
+        private(set) var loadedURL: URL?
+        private var loopObserver:         NSObjectProtocol?
+        private var interruptionObserver: NSObjectProtocol?
+        private var statusObserver:       NSKeyValueObservation?
+        private var currentIsActive = true
+
+        func load(into vc: AVPlayerViewController, url: URL, isActive: Bool, isLoading: Binding<Bool>) {
+            teardown()
+            loadedURL     = url
+            currentIsActive = isActive
+
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try? AVAudioSession.sharedInstance().setActive(true)
+
+            let player = AVPlayer(url: url)
+            player.isMuted = false
+            vc.player = player
+
+            loopObserver = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime, object: player.currentItem, queue: .main
+            ) { [weak self] _ in
+                player.seek(to: .zero)
+                if self?.currentIsActive == true { player.play() }
+            }
+
+            interruptionObserver = NotificationCenter.default.addObserver(
+                forName: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(), queue: .main
+            ) { [weak self] note in
+                guard let self,
+                      let info = note.userInfo,
+                      let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+                      let type = AVAudioSession.InterruptionType(rawValue: typeValue),
+                      type == .ended
+                else { return }
+                try? AVAudioSession.sharedInstance().setActive(true)
+                if self.currentIsActive { player.play() }
+            }
+
+            statusObserver = player.currentItem?.observe(\.status, options: [.new, .initial]) { item, _ in
+                DispatchQueue.main.async { isLoading.wrappedValue = (item.status != .readyToPlay) }
+            }
+
+            if isActive { player.play() }
+        }
+
+        func update(isActive: Bool, vc: AVPlayerViewController) {
+            currentIsActive = isActive
+            if isActive {
+                if vc.player?.timeControlStatus == .paused { vc.player?.play() }
+            } else {
+                vc.player?.pause()
+            }
+        }
+
+        func teardown() {
+            if let obs = loopObserver         { NotificationCenter.default.removeObserver(obs) }
+            if let obs = interruptionObserver { NotificationCenter.default.removeObserver(obs) }
+            statusObserver?.invalidate()
+            loopObserver = nil
+            interruptionObserver = nil
+            statusObserver = nil
+        }
     }
 }
 
