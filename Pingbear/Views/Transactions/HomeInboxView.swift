@@ -1,14 +1,12 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFunctions
-import UserNotifications
 
 struct HomeInboxView: View {
 
     @StateObject private var vm = InboxViewModel()
     @State private var showingNewTransaction     = false
     @State private var selectedTransaction:       EnrichedContentTransaction? = nil
-    @State private var showingNotificationPrompt = false
 
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let functions     = Functions.functions()
@@ -160,22 +158,10 @@ struct HomeInboxView: View {
                     .padding(.bottom, 40)
                 }
             }
-
-            if showingNotificationPrompt {
-                NotificationPermissionPrompt(
-                    onAllow: { requestNotifications(); showingNotificationPrompt = false },
-                    onDeny: {
-                        Analytics.shared.track(event: AnalyticsEvent.notificationPermissionDenied, properties: ["screen": "home_inbox"])
-                        showingNotificationPrompt = false
-                    }
-                )
-                .zIndex(100)
-            }
         }
         .onAppear {
             Analytics.shared.trackScreen(name: "home_inbox")
             vm.start()
-            checkNotificationStatus()
         }
         .onDisappear { vm.stop() }
         .fullScreenCover(isPresented: $showingNewTransaction) {
@@ -292,28 +278,6 @@ struct HomeInboxView: View {
                     .padding(.horizontal, 40)
             }
             Spacer()
-        }
-    }
-
-    private func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                if settings.authorizationStatus == .notDetermined {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { showingNotificationPrompt = true }
-                }
-            }
-        }
-    }
-
-    private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
-            DispatchQueue.main.async {
-                if granted {
-                    UIApplication.shared.registerForRemoteNotifications()
-                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionGranted,
-                                           properties: ["screen": "home_inbox"])
-                }
-            }
         }
     }
 }
@@ -527,55 +491,6 @@ struct InboxCard: View {
         case .accepted:          return style == .urgent ? AppTheme.accent : AppTheme.secondaryText
         case .fulfilled:         return style == .urgent ? AppTheme.green  : AppTheme.secondaryText
         default:                 return AppTheme.secondaryText
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// MARK: - NotificationPermissionPrompt
-// ─────────────────────────────────────────────────────────────
-
-struct NotificationPermissionPrompt: View {
-
-    let onAllow: () -> Void
-    let onDeny:  () -> Void
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.5).ignoresSafeArea()
-            VStack(spacing: 24) {
-                ZStack {
-                    Circle().fill(AppTheme.accent.opacity(0.15)).frame(width: 80, height: 80)
-                    Image(systemName: "bell.badge.fill").font(.system(size: 36)).foregroundColor(AppTheme.accent)
-                }
-                VStack(spacing: 8) {
-                    Text("Don't miss a thing")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-                    Text("Get notified when friends respond to your requests and when videos are ready")
-                        .font(.system(size: 14))
-                        .foregroundColor(AppTheme.secondaryText)
-                        .multilineTextAlignment(.center)
-                }
-                VStack(spacing: 10) {
-                    Button(action: onAllow) {
-                        Text("Allow Notifications")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(AppTheme.accent)
-                            .cornerRadius(200)
-                    }
-                    Button(action: onDeny) {
-                        Text("Not now").font(.system(size: 15)).foregroundColor(AppTheme.secondaryText)
-                    }
-                }
-            }
-            .padding(28)
-            .background(AppTheme.pageBackground)
-            .cornerRadius(24)
-            .padding(.horizontal, 32)
         }
     }
 }

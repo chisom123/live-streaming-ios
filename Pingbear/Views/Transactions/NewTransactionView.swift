@@ -6,6 +6,7 @@ import MessageUI
 import Contacts
 import PhotosUI
 import AVFoundation
+import UserNotifications
 
 // ─────────────────────────────────────────────────────────────
 // MARK: - NewTransactionView
@@ -18,6 +19,14 @@ import AVFoundation
 struct NewTransactionView: View {
 
     let onDismiss: () -> Void
+
+    // The flow is normally Type → Content → Friends → Price. The
+    // Notifications step is spliced in between Friends and Price only
+    // when iOS notification permission is still undetermined — checked
+    // once on appear and cached, so the step count (and progress bar)
+    // stays stable for the rest of the session instead of changing
+    // shape mid-flow.
+    private enum FlowStep: Equatable { case type, content, friends, notifications, price }
 
     @State private var step:                 Int             = 1
     @State private var selectedType:         TransactionType = .request
@@ -45,6 +54,11 @@ struct NewTransactionView: View {
     @State private var walletBalance:   Double                = 0.0
     @State private var balanceListener: ListenerRegistration? = nil
 
+    // nil = not checked yet (treated as "skip the step" so we never block
+    // step 1 on this async check). Set once on appear; not re-checked
+    // mid-flow so the step list can't change shape after the user starts.
+    @State private var notificationPermissionUndetermined: Bool? = nil
+
     // Offer upload state, shown as a full-screen takeover (mirrors
     // VideoPreviewConfirmView's upload UX from the request fulfillment flow)
     @State private var offerUploadProgress: Double = 0
@@ -63,9 +77,17 @@ struct NewTransactionView: View {
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let db            = Firestore.firestore()
 
-    // Step numbering differs slightly by type but both have 4 steps total
-    // including the type picker: 1 Type, 2 Content, 3 Friends, 4 Reward
-    private let totalSteps = 4
+    // Step numbering differs slightly by type, and conditionally includes
+    // the Notifications step — see activeSteps below.
+    private var activeSteps: [FlowStep] {
+        var steps: [FlowStep] = [.type, .content, .friends]
+        if notificationPermissionUndetermined == true { steps.append(.notifications) }
+        steps.append(.price)
+        return steps
+    }
+
+    private var currentFlowStep: FlowStep { activeSteps[min(step, activeSteps.count) - 1] }
+    private var totalSteps: Int { activeSteps.count }
 
     private var totalSelected: Int {
         selectedFriendIds.count + selectedOnAppIds.count + selectedOffAppHashes.count
@@ -133,10 +155,11 @@ struct NewTransactionView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 16)
                 ZStack {
-                    if step == 1 { typeStep       .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 2 { contentStep     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 3 { friendsStep     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
-                    if step == 4 { priceStep       .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if currentFlowStep == .type          { typeStep          .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if currentFlowStep == .content        { contentStep      .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if currentFlowStep == .friends         { friendsStep     .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if currentFlowStep == .notifications  { notificationsStep.transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
+                    if currentFlowStep == .price          { priceStep        .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))) }
                 }
                 .animation(.easeInOut(duration: 0.25), value: step)
             }
@@ -155,6 +178,7 @@ struct NewTransactionView: View {
             Analytics.shared.trackScreen(name: "new_transaction_step_1")
             contactVM.fetchFriendsFromFirestore()
             startBalanceListener()
+            checkNotificationPermission()
         }
         .onDisappear { stopBalanceListener() }
         .fullScreenCover(isPresented: $showingCamera) {
@@ -208,6 +232,47 @@ struct NewTransactionView: View {
     @State private var offerSendState: OfferSendState = .idle
 
     // ─────────────────────────────────────────────────────────
+    // MARK: - Notifications step support
+    //
+    // Checked once on appear and cached in notificationPermissionUndetermined.
+    // If still undetermined, activeSteps splices the Notifications step in
+    // between Friends and Price. Its primary button fires the real system
+    // prompt and advances regardless of outcome; "Skip for now" advances
+    // without touching the OS dialog at all (so it'll be offered again
+    // next time, same as ignoring it would).
+    // ─────────────────────────────────────────────────────────
+
+    private func checkNotificationPermission() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                notificationPermissionUndetermined = (settings.authorizationStatus == .notDetermined)
+            }
+        }
+    }
+
+    private func requestNotificationsAndAdvance() {
+        Analytics.shared.trackTap(elementId: "allow_notifications", screenName: "new_transaction_notifications")
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            DispatchQueue.main.async {
+                if granted {
+                    UIApplication.shared.registerForRemoteNotifications()
+                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionGranted,
+                                           properties: ["screen": "new_transaction_notifications"])
+                } else {
+                    Analytics.shared.track(event: AnalyticsEvent.notificationPermissionDenied,
+                                           properties: ["screen": "new_transaction_notifications"])
+                }
+                advance()
+            }
+        }
+    }
+
+    private func skipNotifications() {
+        Analytics.shared.trackTap(elementId: "skip_notifications", screenName: "new_transaction_notifications")
+        advance()
+    }
+
+    // ─────────────────────────────────────────────────────────
     // MARK: - Balance listener
     // ─────────────────────────────────────────────────────────
 
@@ -247,12 +312,12 @@ struct NewTransactionView: View {
     }
 
     private var headerTitle: String {
-        switch step {
-        case 1: return "New Video"
-        case 2: return selectedType == .request ? "Your Request" : "Your Video"
-        case 3: return "Pick Friends"
-        case 4: return selectedType == .request ? "Request Reward" : "Video Price"
-        default: return ""
+        switch currentFlowStep {
+        case .type:          return "New Video"
+        case .content:       return selectedType == .request ? "Your Request" : "Your Video"
+        case .friends:       return "Pick Friends"
+        case .notifications: return "Notifications"
+        case .price:         return selectedType == .request ? "Request Reward" : "Video Price"
         }
     }
 
@@ -613,6 +678,58 @@ struct NewTransactionView: View {
     }
 
     // ─────────────────────────────────────────────────────────
+    // MARK: - Notifications (conditional — only when permission is
+    // still undetermined; see activeSteps)
+    // ─────────────────────────────────────────────────────────
+
+    private var notificationsStep: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle().fill(AppTheme.accent.opacity(0.15)).frame(width: 80, height: 80)
+                    Image(systemName: "bell.badge.fill")
+                        .font(.system(size: 36))
+                        .foregroundColor(AppTheme.accent)
+                }
+                .padding(.top, 40)
+
+                VStack(spacing: 10) {
+                    Text("Get notified when your friends respond")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(AppTheme.primaryText)
+                        .multilineTextAlignment(.center)
+                    Text(notificationsSubtext)
+                        .font(.system(size: 14))
+                        .foregroundColor(AppTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 120)
+        }
+    }
+
+    private var notificationsSubtext: String {
+        let names = selectedRecipients.map { $0.name }
+        switch (selectedType, names.count) {
+        case (.request, 1):
+            return "We'll let you know the moment \(names[0]) responds."
+        case (.request, let n) where n > 1:
+            return "We'll let you know the moment any of your \(n) friends respond."
+        case (.offer, 1):
+            return "We'll let you know the moment \(names[0]) unlocks it."
+        case (.offer, let n) where n > 1:
+            return "We'll let you know the moment any of your \(n) friends unlock it."
+        default:
+            return selectedType == .request
+                ? "We'll let you know the moment they respond."
+                : "We'll let you know the moment they unlock it."
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
     // MARK: - Step 4: Reward / Price
     // ─────────────────────────────────────────────────────────
 
@@ -760,7 +877,7 @@ struct NewTransactionView: View {
         Button(action: bottomAction) {
             HStack(spacing: 8) {
                 if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText)).scaleEffect(0.85) }
-                Text(isSending ? "Sending..." : step < totalSteps ? "Continue" : (selectedType == .request ? "Send Request" : "Send Video"))
+                Text(bottomButtonLabel)
                     .font(.system(size: 18, weight: .bold)).foregroundColor(bottomEnabled ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
@@ -772,37 +889,58 @@ struct NewTransactionView: View {
         .background(AppTheme.pageBackground.ignoresSafeArea())
     }
 
+    private var bottomButtonLabel: String {
+        if isSending { return "Sending..." }
+        switch currentFlowStep {
+        case .notifications: return "Continue"
+        case .price:          return selectedType == .request ? "Send Request" : "Send Video"
+        default:              return "Continue"
+        }
+    }
+
     private var bottomEnabled: Bool {
         if isSending { return false }
-        switch step {
-        case 1: return true
-        case 2: return step2Valid
-        case 3: return step3Valid
-        case 4: return canSend
-        default: return false
+        switch currentFlowStep {
+        case .type:          return true
+        case .content:       return step2Valid
+        case .friends:       return step3Valid
+        case .notifications: return true
+        case .price:         return canSend
+        }
+    }
+
+    private func advance() {
+        withAnimation { step += 1 }
+        Analytics.shared.trackScreen(name: screenName(for: currentFlowStep))
+    }
+
+    private func screenName(for flowStep: FlowStep) -> String {
+        switch flowStep {
+        case .type:          return "new_transaction_step_1"
+        case .content:       return "new_transaction_step_2"
+        case .friends:       return "new_transaction_step_3"
+        case .notifications: return "new_transaction_notifications"
+        case .price:         return "new_transaction_step_4"
         }
     }
 
     private func bottomAction() {
-        switch step {
-        case 1:
-            withAnimation { step = 2 }
+        switch currentFlowStep {
+        case .type:
             Analytics.shared.trackTap(
                 elementId: "transaction_type_selected",
                 screenName: "new_transaction_step_1",
                 properties: [AnalyticsProperty.transactionType: selectedType.rawValue]
             )
-            Analytics.shared.trackScreen(name: "new_transaction_step_2")
-        case 2:
-            withAnimation { step = 3 }
-            Analytics.shared.trackScreen(name: "new_transaction_step_3")
-        case 3:
-            withAnimation { step = 4 }
-            Analytics.shared.trackScreen(name: "new_transaction_step_4")
-        case 4:
+            advance()
+        case .content:
+            advance()
+        case .friends:
+            advance()
+        case .notifications:
+            requestNotificationsAndAdvance()
+        case .price:
             selectedType == .request ? sendRequest() : sendOffer()
-        default:
-            break
         }
     }
 
