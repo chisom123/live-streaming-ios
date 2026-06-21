@@ -278,9 +278,6 @@ struct NewTransactionView: View {
                     Text("What do you want to do?")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Choose how you want to interact with your friends")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppTheme.secondaryText)
                 }
 
                 typeCard(
@@ -422,9 +419,6 @@ struct NewTransactionView: View {
                     Text("Record your video")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
-                    Text("Friends pay to unlock it — make it worth it.")
-                        .font(.system(size: 15))
-                        .foregroundColor(AppTheme.secondaryText)
                 }
 
                 Button {
