@@ -284,13 +284,13 @@ struct NewTransactionView: View {
                 }
 
                 typeCard(
-                    type: .request, icon: "📸", title: "Request a Video",
+                    type: .request, icon: "clipboard-pen", title: "Request a Video",
                     subtitle: "Ask a friend to record something for you. You set the reward and they decide if it's worth it."
                 )
 
                 typeCard(
-                    type: .offer, icon: "🎁", title: "Send a Video",
-                    subtitle: "Record a mystery video and send it to friends. They pay to unlock and see what's inside."
+                    type: .offer, icon: "send", title: "Send a Video",
+                    subtitle: "Record a video and send it to friends. They pay to unlock and see what's inside."
                 )
             }
             .padding(.horizontal, 20)
@@ -304,10 +304,14 @@ struct NewTransactionView: View {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } label: {
             HStack(spacing: 16) {
-                Text(icon)
-                    .font(.system(size: 32))
+                Image(icon)
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(selectedType == type ? AppTheme.accent : AppTheme.secondaryText)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 28, height: 28)
                     .frame(width: 56, height: 56)
-                    .background(AppTheme.cardBackground)
+                    .background(.clear)
                     .cornerRadius(12)
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -328,7 +332,7 @@ struct NewTransactionView: View {
                     .foregroundColor(selectedType == type ? AppTheme.accent : AppTheme.secondaryText.opacity(0.3))
                     .animation(.spring(response: 0.25, dampingFraction: 0.7), value: selectedType)
             }
-            .padding(16)
+            .padding(20)
             .background(selectedType == type ? AppTheme.accent.opacity(0.06) : AppTheme.cardBackground)
             .cornerRadius(16)
             .overlay(
@@ -415,7 +419,7 @@ struct NewTransactionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Record your mystery video")
+                    Text("Record your video")
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                     Text("Friends pay to unlock it — make it worth it.")
