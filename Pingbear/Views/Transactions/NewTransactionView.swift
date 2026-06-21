@@ -251,7 +251,7 @@ struct NewTransactionView: View {
         case 1: return "New Video"
         case 2: return selectedType == .request ? "Your Request" : "Your Video"
         case 3: return "Pick Friends"
-        case 4: return selectedType == .request ? "Request Reward" : "Set Reward"
+        case 4: return selectedType == .request ? "Request Reward" : "Video Price"
         default: return ""
         }
     }
@@ -760,7 +760,7 @@ struct NewTransactionView: View {
         Button(action: bottomAction) {
             HStack(spacing: 8) {
                 if isSending { ProgressView().progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText)).scaleEffect(0.85) }
-                Text(isSending ? "Sending..." : step < totalSteps ? "Continue" : (selectedType == .request ? "Send Request" : "Send Offer"))
+                Text(isSending ? "Sending..." : step < totalSteps ? "Continue" : (selectedType == .request ? "Send Request" : "Send Video"))
                     .font(.system(size: 18, weight: .bold)).foregroundColor(bottomEnabled ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
