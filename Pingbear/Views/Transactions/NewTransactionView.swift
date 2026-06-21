@@ -248,7 +248,7 @@ struct NewTransactionView: View {
 
     private var headerTitle: String {
         switch step {
-        case 1: return "New"
+        case 1: return "New Video"
         case 2: return selectedType == .request ? "Your Request" : "Your Offer"
         case 3: return "Pick Friends"
         case 4: return selectedType == .request ? "Request Reward" : "Set Reward"
@@ -289,7 +289,7 @@ struct NewTransactionView: View {
                 )
 
                 typeCard(
-                    type: .offer, icon: "🎁", title: "Send a Mystery Video",
+                    type: .offer, icon: "🎁", title: "Send a Video",
                     subtitle: "Record a mystery video and send it to friends. They pay to unlock and see what's inside."
                 )
             }
