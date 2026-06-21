@@ -695,11 +695,11 @@ struct NewTransactionView: View {
 
                 VStack(spacing: 10) {
                     Text("Get notified when your friends respond")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 24, weight: .bold))
                         .foregroundColor(AppTheme.primaryText)
                         .multilineTextAlignment(.center)
                     Text(notificationsSubtext)
-                        .font(.system(size: 14))
+                        .font(.system(size: 15))
                         .foregroundColor(AppTheme.secondaryText)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -719,9 +719,9 @@ struct NewTransactionView: View {
         case (.request, let n) where n > 1:
             return "We'll let you know the moment any of your \(n) friends respond."
         case (.offer, 1):
-            return "We'll let you know the moment \(names[0]) unlocks it."
+            return "We'll let you know the moment \(names[0]) responds."
         case (.offer, let n) where n > 1:
-            return "We'll let you know the moment any of your \(n) friends unlock it."
+            return "We'll let you know the moment any of your \(n) friends respond."
         default:
             return selectedType == .request
                 ? "We'll let you know the moment they respond."
