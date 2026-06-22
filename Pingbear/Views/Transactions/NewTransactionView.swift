@@ -18,6 +18,7 @@ import UserNotifications
 
 struct NewTransactionView: View {
 
+    var isOnboarding: Bool = false
     let onDismiss: () -> Void
 
     // The flow is normally Type → Content → Friends → Price. The
@@ -174,6 +175,7 @@ struct NewTransactionView: View {
                     .ignoresSafeArea()
             }
         }
+        .navigationBarHidden(true)
         .onAppear {
             Analytics.shared.trackScreen(name: "new_transaction_step_1")
             contactVM.fetchFriendsFromFirestore()
@@ -294,12 +296,14 @@ struct NewTransactionView: View {
         HStack {
             Button {
                 if step > 1 { withAnimation { step -= 1 } }
-                else { onDismiss() }
+                else if !isOnboarding { onDismiss() }
             } label: {
                 Image(systemName: step > 1 ? "arrow.left" : "xmark")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(AppTheme.iconColor)
+                    .foregroundColor(step == 1 && isOnboarding ? .clear : AppTheme.iconColor)
             }
+            .disabled(step == 1 && isOnboarding)
+
             Spacer()
             Text(headerTitle)
                 .font(.system(size: 18, weight: .bold))
@@ -1048,7 +1052,7 @@ struct NewTransactionView: View {
                         AnalyticsProperty.amount:         priceDouble,
                         AnalyticsProperty.recipientCount: allOnAppIds.count + offAppContacts.count
                     ])
-                    isSending         = false
+                    isSending      = false
                     offerSendState = .idle
 
                     if !offAppContacts.isEmpty {
@@ -1062,9 +1066,9 @@ struct NewTransactionView: View {
                 }
             } catch {
                 await MainActor.run {
-                    isSending         = false
+                    isSending      = false
                     offerSendState = .idle
-                    errorMessage      = error.localizedDescription
+                    errorMessage   = error.localizedDescription
                 }
             }
         }

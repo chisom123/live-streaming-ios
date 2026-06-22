@@ -8,10 +8,11 @@ struct NameEntryView: View {
     let phoneNumber: String
     let fullName:    String
 
-    @State private var username:      String  = ""
-    @State private var errorMessage:  String? = nil
-    @State private var isLoading:     Bool    = false
-    @State private var showWelcomeBonus: Bool = false
+    @State private var username:         String  = ""
+    @State private var errorMessage:     String? = nil
+    @State private var isLoading:        Bool    = false
+    @State private var showWelcomeBonus: Bool    = false
+    @State private var hadInviteGroups:  Bool    = false
 
     var body: some View {
         ZStack {
@@ -66,7 +67,10 @@ struct NameEntryView: View {
                 .cornerRadius(10)
                 .padding(.horizontal, 20)
 
-                NavigationLink(destination: WelcomeBonusView(), isActive: $showWelcomeBonus) { EmptyView() }
+                NavigationLink(
+                    destination: WelcomeBonusView(hadInviteGroups: hadInviteGroups),
+                    isActive: $showWelcomeBonus
+                ) { EmptyView() }
                     .isDetailLink(false)
 
                 Spacer()
@@ -139,9 +143,10 @@ struct NameEntryView: View {
                 properties: ["user_id": userID, "username": username]
             )
 
-            self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) {
+            self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites in
                 DispatchQueue.main.async {
-                    self.isLoading = false
+                    self.hadInviteGroups = hadInvites
+                    self.isLoading       = false
                     self.showWelcomeBonus = true
                 }
             }
@@ -150,12 +155,12 @@ struct NameEntryView: View {
 
     // MARK: - Resolve invite groups
 
-    private func resolveInviteGroups(userId: String, phoneHash: String, db: Firestore, completion: @escaping () -> Void) {
+    private func resolveInviteGroups(userId: String, phoneHash: String, db: Firestore, completion: @escaping (Bool) -> Void) {
         db.collection("invite_groups")
             .whereField("memberHashes", arrayContains: phoneHash)
             .getDocuments { snapshot, error in
                 guard let docs = snapshot?.documents, !docs.isEmpty else {
-                    completion(); return
+                    completion(false); return
                 }
 
                 let group = DispatchGroup()
@@ -207,7 +212,7 @@ struct NameEntryView: View {
                     }
                 }
 
-                group.notify(queue: .main) { completion() }
+                group.notify(queue: .main) { completion(true) }
             }
     }
 

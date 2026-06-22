@@ -2,6 +2,10 @@ import SwiftUI
 
 struct WelcomeBonusView: View {
 
+    let hadInviteGroups: Bool
+
+    @State private var showNewTransaction = false
+
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -60,6 +64,12 @@ struct WelcomeBonusView: View {
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             }
+
+            NavigationLink(
+                destination: NewTransactionView(isOnboarding: true, onDismiss: { completeOnboarding() }),
+                isActive: $showNewTransaction
+            ) { EmptyView() }
+                .isDetailLink(false)
         }
         .navigationBarHidden(true)
         .onAppear {
@@ -68,6 +78,17 @@ struct WelcomeBonusView: View {
     }
 
     private func goToHome() {
+        if !hadInviteGroups {
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+            UserDefaults.standard.set(true, forKey: "isFriendActivated")
+            UserDefaults.standard.synchronize()
+            showNewTransaction = true
+        } else {
+            completeOnboarding()
+        }
+    }
+
+    private func completeOnboarding() {
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         UserDefaults.standard.set(true, forKey: "isFriendActivated")
         UserDefaults.standard.synchronize()
