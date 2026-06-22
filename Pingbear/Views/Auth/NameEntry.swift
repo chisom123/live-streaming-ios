@@ -66,13 +66,13 @@ struct NameEntryView: View {
                 .cornerRadius(10)
                 .padding(.horizontal, 20)
 
+                NavigationLink(destination: WelcomeBonusView(), isActive: $showWelcomeBonus) { EmptyView() }
+                    .isDetailLink(false)
+
                 Spacer()
             }
         }
         .navigationBarHidden(true)
-        .fullScreenCover(isPresented: $showWelcomeBonus) {
-            WelcomeBonusView()
-        }
     }
 
     // MARK: - Validate username
@@ -139,7 +139,6 @@ struct NameEntryView: View {
                 properties: ["user_id": userID, "username": username]
             )
 
-            // Resolve invite groups — auto-friends + pending transactions
             self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) {
                 DispatchQueue.main.async {
                     self.isLoading = false
@@ -169,14 +168,12 @@ struct NameEntryView: View {
                     let existingUserIds = memberUserIds.values.filter { $0 != userId }
 
                     db.runTransaction({ transaction, _ -> Any? in
-                        // Mutual friendships
                         for existingUserId in existingUserIds {
                             let newUserFriendRef      = db.collection("users").document(userId).collection("friends").document(existingUserId)
                             let existingUserFriendRef = db.collection("users").document(existingUserId).collection("friends").document(userId)
                             transaction.setData(["uid": existingUserId], forDocument: newUserFriendRef)
                             transaction.setData(["uid": userId], forDocument: existingUserFriendRef)
                         }
-                        // Add this user to memberUserIds
                         transaction.updateData(
                             ["memberUserIds.\(phoneHash)": userId],
                             forDocument: doc.reference
@@ -192,7 +189,6 @@ struct NameEntryView: View {
                             )
                         }
 
-                        // Resolve pending transactions
                         guard !pendingTxIds.isEmpty else { group.leave(); return }
 
                         let txGroup = DispatchGroup()
