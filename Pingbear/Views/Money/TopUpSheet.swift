@@ -122,6 +122,7 @@ struct TopUpSheet: View {
                                     let wholeAmount = Int(amount)
                                     displayAmount = "$\(wholeAmount)"
                                     viewModel.customAmount = "\(wholeAmount)"
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 } label: {
                                     Text("$\(Int(amount))")
                                         .font(.system(size: 16, weight: .semibold))
