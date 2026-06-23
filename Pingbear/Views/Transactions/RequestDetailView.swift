@@ -18,6 +18,7 @@ struct RequestDetailView: View {
     @State private var otherProfile:    UserProfile?
     @State private var listener:        ListenerRegistration? = nil
     @State private var isActioning      = false
+    @State private var isDeclining      = false
     @State private var isCancelling     = false
     @State private var errorMessage:    String? = nil
     @State private var showingCamera    = false
@@ -83,28 +84,17 @@ struct RequestDetailView: View {
                             if isCreator && tx.status == .pendingAcceptance {
                                 creatorAcceptDeclineButtons
                             }
-                            if isPayer && tx.status == .pendingAcceptance {
-                                waitingCard("Waiting for \(otherName) to respond")
-                            }
-                            if isPayer && tx.status == .pendingSignup {
-                                waitingCard("Waiting for \(otherName) to join SocialStar")
-                            }
                             if isCreator && tx.status == .accepted {
                                 fulfillCard
-                            }
-                            if isPayer && tx.status == .accepted {
-                                waitingCard("\(otherName) accepted — they're working on it!")
                             }
                             if isPayer && (tx.status == .fulfilled || tx.status == .completed) {
                                 viewVideoCard
                             }
                             if isCreator && tx.status == .fulfilled {
-                                creatorVideoCard
-                                waitingCard("Video sent — waiting for them to view")
+                                videoPlayerSection
                             }
                             if isCreator && tx.status == .completed {
-                                creatorVideoCard
-                                creatorCompletedCard
+                                videoPlayerSection
                             }
                             if isPayer && [.pendingSignup, .pendingAcceptance, .accepted].contains(tx.status) {
                                 cancelButton
@@ -201,7 +191,10 @@ struct RequestDetailView: View {
         case .fulfilled:
             return isCreator ? "Video sent! Waiting for them to view" : "\(otherName) sent your video — tap to see it"
         case .completed:
-            return tx.rating != nil ? "Completed · \(tx.rating!)⭐" : "Completed ✓"
+            if let rating = tx.rating {
+                return "Completed · \(rating) \(rating == 1 ? "star" : "stars")"
+            }
+            return "Completed"
         case .declined:
             return isCreator ? "You declined" : "\(otherName) declined"
         case .cancelled:
@@ -245,13 +238,21 @@ struct RequestDetailView: View {
                     Analytics.shared.trackTap(elementId: "decline_request", screenName: "transaction_detail")
                     Task { await respond(accept: false) }
                 } label: {
-                    Text("Decline")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(AppTheme.primaryText)
-                        .frame(maxWidth: .infinity).padding(.vertical, 14)
-                        .background(AppTheme.cardBackground).cornerRadius(200)
+                    HStack(spacing: 6) {
+                        if isDeclining {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText))
+                                .scaleEffect(0.85)
+                        }
+                        Text("Decline")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(isDeclining || isActioning ? AppTheme.disabledText : AppTheme.primaryText)
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                    .background(isDeclining || isActioning ? AppTheme.disabledBackground : AppTheme.cardBackground)
+                    .cornerRadius(200)
                 }
-                .disabled(isActioning)
+                .disabled(isDeclining || isActioning)
 
                 Button {
                     Analytics.shared.trackTap(elementId: "accept_request", screenName: "transaction_detail")
@@ -260,18 +261,18 @@ struct RequestDetailView: View {
                     HStack(spacing: 6) {
                         if isActioning {
                             ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.disabledText))
                                 .scaleEffect(0.85)
                         }
                         Text("Accept")
                             .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(isActioning || isDeclining ? AppTheme.disabledText : .white)
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 14)
-                    .background(isActioning ? AppTheme.disabledBackground : AppTheme.accent)
+                    .background(isActioning || isDeclining ? AppTheme.disabledBackground : AppTheme.accent)
                     .cornerRadius(200)
                 }
-                .disabled(isActioning)
+                .disabled(isActioning || isDeclining)
             }
         }
     }
@@ -298,41 +299,17 @@ struct RequestDetailView: View {
         .padding(.horizontal, 16).padding(.vertical, 16)
     }
 
-    private func waitingCard(_ message: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "clock.fill")
-                .font(.system(size: 18))
-                .foregroundColor(AppTheme.secondaryText)
-            Text(message)
-                .font(.system(size: 14))
-                .foregroundColor(AppTheme.secondaryText)
-            Spacer()
-        }
-        .padding(16)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-    }
-
     private var fulfillCard: some View {
-        VStack(spacing: 16) {
-            feeBreakdownCard
-
-            Button {
-                Analytics.shared.trackTap(elementId: "record_video", screenName: "transaction_detail")
-                showingCamera = true
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "video.fill").font(.system(size: 18))
-                    Text("Record the video").font(.system(size: 16, weight: .bold))
-                }
+        Button {
+            Analytics.shared.trackTap(elementId: "record_video", screenName: "transaction_detail")
+            showingCamera = true
+        } label: {
+            Text("Record Video")
+                .font(.system(size: 17, weight: .bold))
                 .foregroundColor(.white)
-                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                .frame(maxWidth: .infinity).padding(.vertical, 16)
                 .background(AppTheme.accent).cornerRadius(200)
-            }
         }
-        .padding(16)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
     }
 
     private var videoPlayerSection: some View {
@@ -406,38 +383,6 @@ struct RequestDetailView: View {
         }
     }
 
-    private var creatorVideoCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Your video")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(AppTheme.secondaryText)
-            videoPlayerSection
-        }
-        .padding(16)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-    }
-
-    private var creatorCompletedCard: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundColor(AppTheme.green)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Video sent & payment received")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(AppTheme.primaryText)
-                Text("+$\(String(format: "%.2f", tx.creatorPayout)) added to your wallet")
-                    .font(.system(size: 13))
-                    .foregroundColor(AppTheme.green)
-            }
-            Spacer()
-        }
-        .padding(16)
-        .background(AppTheme.green.opacity(0.08))
-        .cornerRadius(12)
-    }
-
     private var cancelButton: some View {
         Button {
             Analytics.shared.trackTap(elementId: "cancel_request", screenName: "transaction_detail")
@@ -446,16 +391,15 @@ struct RequestDetailView: View {
             HStack(spacing: 6) {
                 if isCancelling {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .red))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.secondaryText))
                         .scaleEffect(0.8)
                 }
                 Text(isCancelling ? "Cancelling..." : "Cancel Request")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.red)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(AppTheme.secondaryText)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 14)
-            .background(Color.red.opacity(0.08)).cornerRadius(200)
         }
+        .padding(.top, 8)
         .disabled(isCancelling)
     }
 
@@ -464,7 +408,7 @@ struct RequestDetailView: View {
     // ─────────────────────────────────────────────────────────
 
     private func respond(accept: Bool) async {
-        isActioning = true
+        if accept { isActioning = true } else { isDeclining = true }
         do {
             try await functions.httpsCallable("respondToTransaction").call([
                 "transactionId": tx.id,
@@ -472,14 +416,20 @@ struct RequestDetailView: View {
             ])
             await MainActor.run {
                 isActioning = false
+                isDeclining = false
                 Analytics.shared.trackRequest(
                     action: accept ? "accepted" : "declined",
                     transactionId: tx.id
                 )
+                if accept { showingCamera = true }
                 if !accept { onDismiss() }
             }
         } catch {
-            await MainActor.run { isActioning = false; errorMessage = error.localizedDescription }
+            await MainActor.run {
+                isActioning = false
+                isDeclining = false
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
