@@ -84,6 +84,11 @@
 		4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05562D993FCD002C592B /* AnalyticsService.swift */; };
 		4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */; };
 		4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */; };
+		4FDFEF762FEA7234000F9077 /* RequestDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF752FEA7234000F9077 /* RequestDetailView.swift */; };
+		4FDFEF782FEA7274000F9077 /* OfferDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF772FEA7274000F9077 /* OfferDetailView.swift */; };
+		4FDFEF7A2FEA72B7000F9077 /* VideoPlayers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF792FEA72B6000F9077 /* VideoPlayers.swift */; };
+		4FDFEF7C2FEA72D9000F9077 /* RatingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF7B2FEA72D9000F9077 /* RatingCard.swift */; };
+		4FDFEF7E2FEA72F9000F9077 /* CountdownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF7D2FEA72F9000F9077 /* CountdownView.swift */; };
 		4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */; };
 		4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */; };
 		4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */; };
@@ -163,6 +168,11 @@
 		4FDE05562D993FCD002C592B /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogAnalyticsService.swift; sourceTree = "<group>"; };
 		4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeBonusView.swift; sourceTree = "<group>"; };
+		4FDFEF752FEA7234000F9077 /* RequestDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestDetailView.swift; sourceTree = "<group>"; };
+		4FDFEF772FEA7274000F9077 /* OfferDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferDetailView.swift; sourceTree = "<group>"; };
+		4FDFEF792FEA72B6000F9077 /* VideoPlayers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayers.swift; sourceTree = "<group>"; };
+		4FDFEF7B2FEA72D9000F9077 /* RatingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingCard.swift; sourceTree = "<group>"; };
+		4FDFEF7D2FEA72F9000F9077 /* CountdownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountdownView.swift; sourceTree = "<group>"; };
 		4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationQueueManager.swift; sourceTree = "<group>"; };
 		4FE8EA792FE37B6E002F73F0 /* VideoRecordingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoRecordingViewModel.swift; sourceTree = "<group>"; };
@@ -395,6 +405,11 @@
 				4F4924422FDED13E0095A72F /* HistoryView.swift */,
 				4FE8EA7B2FE37B96002F73F0 /* RequestCameraView.swift */,
 				4FE8EA7D2FE37BAD002F73F0 /* VideoUploadManager.swift */,
+				4FDFEF752FEA7234000F9077 /* RequestDetailView.swift */,
+				4FDFEF772FEA7274000F9077 /* OfferDetailView.swift */,
+				4FDFEF792FEA72B6000F9077 /* VideoPlayers.swift */,
+				4FDFEF7B2FEA72D9000F9077 /* RatingCard.swift */,
+				4FDFEF7D2FEA72F9000F9077 /* CountdownView.swift */,
 			);
 			path = Transactions;
 			sourceTree = "<group>";
@@ -626,6 +641,7 @@
 			files = (
 				4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */,
 				4F6D1E1C2FD36FFC0014CB28 /* UserModels.swift in Sources */,
+				4FDFEF7E2FEA72F9000F9077 /* CountdownView.swift in Sources */,
 				4F2008DE2FA366B80039FBCB /* TopUpSheet.swift in Sources */,
 				4FF146422FAC97900081A477 /* AppTheme.swift in Sources */,
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
@@ -649,6 +665,7 @@
 				4F49243B2FDEAC3B0095A72F /* NewTransactionView.swift in Sources */,
 				4F9439912D7F90760068AF24 /* Welcome.swift in Sources */,
 				4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */,
+				4FDFEF762FEA7234000F9077 /* RequestDetailView.swift in Sources */,
 				4FE8EA7A2FE37B6E002F73F0 /* VideoRecordingViewModel.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
 				4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */,
@@ -656,6 +673,7 @@
 				4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */,
 				4F3E0D5C2A86FC010068F901 /* NameEntry.swift in Sources */,
 				4FF9C1A52F11F406000F045C /* WalletView.swift in Sources */,
+				4FDFEF782FEA7274000F9077 /* OfferDetailView.swift in Sources */,
 				4F49243D2FDEAC560095A72F /* TransactionDetailView.swift in Sources */,
 				4F3E0D542A86FA3A0068F901 /* PhoneEntry.swift in Sources */,
 				4F2008D82FA3660D0039FBCB /* Withdrawal.swift in Sources */,
@@ -668,8 +686,10 @@
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
+				4FDFEF7A2FEA72B7000F9077 /* VideoPlayers.swift in Sources */,
 				4FB73FB42FC78A6F005DF768 /* FriendsViewModel.swift in Sources */,
 				4F4924362FDEABAA0095A72F /* InboxViewModel.swift in Sources */,
+				4FDFEF7C2FEA72D9000F9077 /* RatingCard.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
