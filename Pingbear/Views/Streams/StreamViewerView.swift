@@ -231,13 +231,6 @@ struct StreamViewerView: View {
     // MARK: - Bottom bar
     private var bottomBar: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.72)],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 110)
-            .ignoresSafeArea()
-
             HStack(spacing: 10) {
                 // Chat input
                 HStack {
