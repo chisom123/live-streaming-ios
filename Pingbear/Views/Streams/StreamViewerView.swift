@@ -343,7 +343,6 @@ struct StreamViewerView: View {
                     .padding(.horizontal, 36)
                     .padding(.vertical, 13)
                     .background(.white.opacity(0.1))
-                    .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 0.5))
                     .clipShape(Capsule())
             }
         }
