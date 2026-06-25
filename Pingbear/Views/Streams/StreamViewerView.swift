@@ -63,10 +63,9 @@ struct StreamViewerView: View {
             .frame(width: 50, height: 50)
     }
 
-    // Add this as a separate view or struct
     struct CustomSpinner: View {
         @State private var isAnimating = false
-        
+
         var body: some View {
             Circle()
                 .trim(from: 0, to: 0.7)
@@ -92,8 +91,6 @@ struct StreamViewerView: View {
             }
             VStack(spacing: 0) {
                 Spacer()
-                // Active request banner — uses viewModel.activeRequestDescription
-                // which you expose as a simple String? so no ObservableObject issues
                 if let activeDesc = viewModel.activeRequestDescription {
                     viewerActiveBanner(activeDesc)
                         .padding(.horizontal, 12)
@@ -114,7 +111,6 @@ struct StreamViewerView: View {
     private var topBar: some View {
         ZStack(alignment: .top) {
             HStack(alignment: .center, spacing: 8) {
-                // Streamer pill
                 HStack(spacing: 8) {
                     ProfilePictureView(url: stream.streamerImageUrl, size: 30)
                     Text(stream.streamerName)
@@ -122,10 +118,9 @@ struct StreamViewerView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
                 }
-                
+
                 Spacer()
 
-                // LIVE badge
                 Text("LIVE")
                     .font(.system(size: 10, weight: .black))
                     .foregroundColor(.white)
@@ -135,8 +130,6 @@ struct StreamViewerView: View {
                     .background(AppTheme.danger)
                     .clipShape(Capsule())
 
-                // Viewer count — driven by viewModel.viewerCount which updates
-                // in real-time from the stream document Firestore listener
                 HStack(spacing: 4) {
                     Image(systemName: "eye.fill")
                         .font(.system(size: 9))
@@ -150,7 +143,6 @@ struct StreamViewerView: View {
                 .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
                 .clipShape(Capsule())
 
-                // Leave button
                 Button { showLeaveConfirm = true } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 16, weight: .bold))
@@ -198,22 +190,22 @@ struct StreamViewerView: View {
     private var chatFeed: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 5) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(viewModel.messages) { msg in
                         ChatBubbleView(message: msg)
                             .id(msg.id)
                     }
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 220)
+            .frame(maxHeight: 320)
             .mask(
                 LinearGradient(
                     gradient: Gradient(stops: [
                         .init(color: .clear, location: 0),
-                        .init(color: .black, location: 0.25)
+                        .init(color: .black, location: 0.18)
                     ]),
                     startPoint: .top, endPoint: .bottom
                 )
@@ -232,14 +224,14 @@ struct StreamViewerView: View {
     private var bottomBar: some View {
         ZStack(alignment: .bottom) {
             HStack(spacing: 10) {
-                // Chat input
+                // CHANGED: background opacity from 0.25 → 0.15 to match TikTok's darker input
                 HStack {
                     TextField(
                         "",
                         text: $viewModel.chatText,
-                        prompt: Text("Say something...").foregroundColor(.white.opacity(0.3))
+                        prompt: Text("Say something...").foregroundColor(.white)
                     )
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.white)
                     .tint(Color(hex: "#FF6B00"))
                     .focused($chatFocused)
@@ -248,11 +240,11 @@ struct StreamViewerView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 11)
                 }
-                .background(.white.opacity(0.12))
-                .overlay(Capsule().stroke(.white.opacity(0.16), lineWidth: 0.5))
+                .background(.black.opacity(0.45))
+                .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
                 .clipShape(Capsule())
 
-                // Request FAB — primary action
+                // CHANGED: removed the outer stroke ring, kept only the solid filled circle
                 Button {
                     Analytics.shared.trackTap(
                         elementId: "open_request_sheet",
@@ -265,18 +257,15 @@ struct StreamViewerView: View {
                         Circle()
                             .fill(Color(hex: "#FF6B00"))
                             .frame(width: 44, height: 44)
-                        Circle()
-                            .stroke(Color(hex: "#FF6B00").opacity(0.3), lineWidth: 4)
-                            .frame(width: 52, height: 52)
-                        Image(systemName: "dollarsign")
-                            .font(.system(size: 16, weight: .bold))
+                        Image(systemName: "gift.fill")
+                            .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }
-                .frame(width: 52, height: 52)
+                .frame(width: 44, height: 44)
             }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 42)
+            .padding(.horizontal)
+            .padding(.bottom)
         }
     }
 
@@ -388,33 +377,93 @@ struct ChatBubbleView: View {
 
     // MARK: - Chat row
     private var chatRow: some View {
-        HStack(alignment: .top, spacing: 6) {
-            ProfilePictureView(url: message.avatarUrl, size: 20)
-                .padding(.top, 1)
+        let isMultiLine = isMessageMultiLine()
+        
+        return Group {
+            if isMultiLine {
+                // Multi-line: profile picture at top
+                HStack(alignment: .top, spacing: 8) {
+                    ProfilePictureView(url: message.avatarUrl, size: 28)
+                        .padding(.top, 1)
+                    Group {
+                        Text(displayName + "  ")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                        + Text(message.text)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
+                }
+                .frame(maxWidth: 310, alignment: .leading)
+            } else {
+                // Single-line: profile picture centered with text
+                HStack(alignment: .center, spacing: 8) {
+                    ProfilePictureView(url: message.avatarUrl, size: 28)
+                    Group {
+                        Text(displayName + "  ")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.white)
+                        + Text(message.text)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.9))
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
+                }
+                .frame(maxWidth: 310, alignment: .leading)
+            }
+        }
+    }
+
+    private func isMessageMultiLine() -> Bool {
+        // If there's a newline, it's definitely multi-line
+        if message.text.contains("\n") {
+            return true
+        }
+        
+        let fullText = displayName + "  " + message.text
+        let font = UIFont.systemFont(ofSize: 15, weight: .semibold)
+        let maxWidth: CGFloat = 310 - 36
+        
+        let nsString = fullText as NSString
+        let size = nsString.boundingRect(
+            with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        )
+        
+        return size.height > 24
+    }
+    
+    // MARK: - Join row
+    private var joinRow: some View {
+        HStack(alignment: .center, spacing: 8) {  // Use .center for single line
+            ProfilePictureView(url: message.avatarUrl, size: 28)
             Group {
                 Text(displayName + "  ")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                + Text(message.text)
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.85))
+                + Text("joined")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
             }
             .fixedSize(horizontal: false, vertical: true)
-            .shadow(color: .black.opacity(0.7), radius: 3, x: 0, y: 1)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
         }
-        .frame(maxWidth: 290, alignment: .leading)
+        .frame(maxWidth: 310, alignment: .leading)
     }
 
     // MARK: - Request row
-    // message.text is stored as "description · $5.00" by sendStreamRequest cloud function.
-    // Split on " · $" to render description and price separately.
     private var requestRow: some View {
         let parts      = message.text.components(separatedBy: " · $")
         let reqDesc    = parts.first ?? message.text
         let priceLabel = parts.count > 1 ? "$\(parts[1])" : nil
 
-        return HStack(alignment: .top, spacing: 6) {
-            ProfilePictureView(url: message.avatarUrl, size: 20)
+        return HStack(alignment: .top, spacing: 8) {
+            ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, 3)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
@@ -431,7 +480,7 @@ struct ChatBubbleView: View {
                     }
                 }
                 Text(reqDesc)
-                    .font(.system(size: 12))
+                    .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.92))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -444,18 +493,7 @@ struct ChatBubbleView: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
-        .frame(maxWidth: 290, alignment: .leading)
-    }
-
-    // MARK: - Join row
-    private var joinRow: some View {
-        HStack(spacing: 4) {
-            ProfilePictureView(url: message.avatarUrl, size: 14)
-            Text(isMe ? "You joined" : "\(message.name) joined")
-                .font(.system(size: 10))
-                .foregroundColor(.white.opacity(0.32))
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: 310, alignment: .leading)
     }
 }
 
@@ -490,7 +528,6 @@ struct SendStreamRequestSheet: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 0) {
 
-                        // Drag handle
                         RoundedRectangle(cornerRadius: 3)
                             .fill(.white.opacity(0.18))
                             .frame(width: 36, height: 4)
@@ -498,20 +535,16 @@ struct SendStreamRequestSheet: View {
                             .padding(.top, 12)
                             .padding(.bottom, 20)
 
-                        // Title
                         Text("Make a request")
                             .font(.system(size: 24, weight: .black))
                             .foregroundColor(.white)
                             .padding(.horizontal, 20)
                             .padding(.bottom, 24)
 
-                        // Description section
                         sectionLabel("What should they do?")
                             .padding(.horizontal, 20)
                             .padding(.bottom, 8)
 
-                        // axis parameter removed — use the lineLimit approach instead
-                        // for broader SDK compatibility
                         ZStack(alignment: .topLeading) {
                             if description.isEmpty {
                                 Text("Describe your request...")
@@ -540,7 +573,6 @@ struct SendStreamRequestSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal, 20)
 
-                        // Preset chips
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 7) {
                                 ForEach(presetRequests, id: \.self) { preset in
@@ -576,7 +608,6 @@ struct SendStreamRequestSheet: View {
                         .padding(.top, 10)
                         .padding(.bottom, 28)
 
-                        // Price section
                         sectionLabel("Your offer")
                             .padding(.horizontal, 20)
                             .padding(.bottom, 10)
@@ -616,7 +647,6 @@ struct SendStreamRequestSheet: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 20)
 
-                        // Balance row
                         HStack {
                             Text("Balance")
                                 .font(.system(size: 13, weight: .semibold))
@@ -642,7 +672,6 @@ struct SendStreamRequestSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal, 20)
 
-                        // Top up button
                         if !hasFunds && priceValid {
                             Button {
                                 Analytics.shared.trackTap(
@@ -672,7 +701,6 @@ struct SendStreamRequestSheet: View {
                                 .padding(.top, 10)
                         }
 
-                        // Send button
                         Button(action: sendRequest) {
                             HStack(spacing: 8) {
                                 if isSending {
