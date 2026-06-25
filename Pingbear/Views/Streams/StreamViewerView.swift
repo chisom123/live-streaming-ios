@@ -467,9 +467,6 @@ struct ChatBubbleView: View {
                 .padding(.top, 3)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
-                    Circle()
-                        .fill(Color(hex: "#FF6B00"))
-                        .frame(width: 4, height: 4)
                     Text(displayName)
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(Color(hex: "#FF8C40"))
@@ -480,17 +477,13 @@ struct ChatBubbleView: View {
                     }
                 }
                 Text(reqDesc)
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.92))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(Color(hex: "#FF6B00").opacity(0.15))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color(hex: "#FF6B00").opacity(0.35), lineWidth: 0.5)
-            )
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .frame(maxWidth: 310, alignment: .leading)
