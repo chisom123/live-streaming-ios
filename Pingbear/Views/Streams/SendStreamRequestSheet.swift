@@ -46,6 +46,8 @@ private struct StreamRequestStep1View: View {
     let onContinue: () -> Void
     let onDismiss:  () -> Void
 
+    @FocusState private var isFocused: Bool
+
     private let presetRequests = [
         "Tell a joke", "Do an impression", "Show your pet",
         "Call someone live", "Do a challenge"
@@ -82,6 +84,7 @@ private struct StreamRequestStep1View: View {
                     .background(.white.opacity(0.07))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .tint(Color(hex: "#FF6B00"))
+                    .focused($isFocused)
                     .onChange(of: description) {
                         if $0.count > 120 {
                             description = String($0.prefix(120))
@@ -138,6 +141,11 @@ private struct StreamRequestStep1View: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isFocused = true
+            }
+        }
     }
 }
 
