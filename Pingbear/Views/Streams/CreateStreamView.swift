@@ -104,7 +104,7 @@ struct CreateStreamView: View {
 
     private var headerTitle: String {
         switch currentStep {
-        case .invite:        return "Invite friends"
+        case .invite:        return "Start Stream"
         case .notifications: return "Notifications"
         }
     }
