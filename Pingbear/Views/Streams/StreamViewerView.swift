@@ -92,12 +92,6 @@ struct StreamViewerView: View {
             }
             VStack(spacing: 0) {
                 Spacer()
-                if let activeDesc = viewModel.activeRequestDescription {
-                    viewerActiveBanner(activeDesc)
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 8)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
                 chatFeed
                 bottomBar
             }
@@ -158,33 +152,6 @@ struct StreamViewerView: View {
 
     private func formattedViewerCount(_ count: Int) -> String {
         count >= 1000 ? String(format: "%.1fk", Double(count) / 1000) : "\(count)"
-    }
-
-    // MARK: - Active request banner (viewer read-only)
-    private func viewerActiveBanner(_ description: String) -> some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(Color(hex: "#16A34A"))
-                .frame(width: 7, height: 7)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Now performing")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(Color(hex: "#4ade80"))
-                Text(description)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.9))
-                    .lineLimit(1)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color(hex: "#16A34A").opacity(0.15))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(hex: "#16A34A").opacity(0.4), lineWidth: 0.5)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Chat feed
