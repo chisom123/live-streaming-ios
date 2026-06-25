@@ -302,7 +302,6 @@ struct StreamViewerView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(.white.opacity(0.1))
-                            .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 0.5))
                             .clipShape(Capsule())
                     }
                     Button(action: onLeave) {
@@ -312,17 +311,12 @@ struct StreamViewerView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(.white.opacity(0.08))
-                            .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 0.5))
                             .clipShape(Capsule())
                     }
                 }
             }
             .padding(24)
             .background(Color(hex: "#141414"))
-            .overlay(
-                RoundedRectangle(cornerRadius: 22)
-                    .stroke(.white.opacity(0.1), lineWidth: 0.5)
-            )
             .clipShape(RoundedRectangle(cornerRadius: 22))
             .padding(.horizontal, 32)
         }
