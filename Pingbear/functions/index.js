@@ -3,8 +3,8 @@ const admin         = require("firebase-admin");
 const { google }    = require('googleapis');
 const logger        = require("firebase-functions/logger");
 
-const wallet  = require('./walletFunctions');
-const content = require('./contentFunctions');
+const wallet = require('./walletFunctions');
+const stream = require('./streamFunctions');
 
 admin.initializeApp();
 
@@ -75,9 +75,9 @@ exports.stripeWebhook = onRequest({
 });
 
 async function handleSuccessfulTopUp(intent) {
-  const userId      = intent.metadata.user_id;
-  const amount      = parseFloat((intent.amount / 100).toFixed(2));
-  const intentId    = intent.id;
+  const userId   = intent.metadata.user_id;
+  const amount   = parseFloat((intent.amount / 100).toFixed(2));
+  const intentId = intent.id;
 
   if (!userId) { logger.error('handleSuccessfulTopUp: no user_id in metadata'); return; }
 
@@ -94,7 +94,6 @@ async function handleSuccessfulTopUp(intent) {
       const current    = userDoc.exists ? (userDoc.data().wallet_balance ?? 0) : 0;
       const newBalance = parseFloat((current + amount).toFixed(2));
 
-      // Top-ups are always real money — bonus_balance untouched.
       t.set(userRef, { wallet_balance: admin.firestore.FieldValue.increment(amount) }, { merge: true });
       t.set(orderRef, {
         user_id: userId, amount, currency: 'USD', provider: 'stripe',
@@ -133,14 +132,13 @@ exports.rejectWithdrawal   = wallet.rejectWithdrawal;
 exports.grantWelcomeBonus  = wallet.grantWelcomeBonus;
 
 // ─────────────────────────────────────────────────────────────
-// Content Transactions
+// Streams
 // ─────────────────────────────────────────────────────────────
 
-exports.sendTransaction          = content.sendTransaction;
-exports.respondToTransaction     = content.respondToTransaction;
-exports.fulfillRequest           = content.fulfillRequest;
-exports.markTransactionViewed    = content.markTransactionViewed;
-exports.rateTransaction          = content.rateTransaction;
-exports.cancelRequest            = content.cancelRequest;
-exports.resolveInviteTransaction = content.resolveInviteTransaction;
-exports.dismissTransaction       = content.dismissTransaction;
+exports.createStream           = stream.createStream;
+exports.endStream              = stream.endStream;
+exports.joinStream             = stream.joinStream;
+exports.sendStreamRequest      = stream.sendStreamRequest;
+exports.respondToStreamRequest = stream.respondToStreamRequest;
+exports.completeStreamRequest  = stream.completeStreamRequest;
+exports.resolveInviteStream    = stream.resolveInviteStream;

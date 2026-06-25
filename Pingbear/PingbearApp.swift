@@ -37,7 +37,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         pushNotificationManager.setup()
         pushNotificationManager.processAnyPendingTokens()
-        setupDefaultCameraPosition()
 
         UNUserNotificationCenter.current().delegate = self
 
@@ -49,13 +48,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         )
 
         return true
-    }
-
-    private func setupDefaultCameraPosition() {
-        let key = "CameraPosition"
-        if UserDefaults.standard.object(forKey: key) == nil {
-            UserDefaults.standard.set(AVCaptureDevice.Position.front.rawValue, forKey: key)
-        }
     }
 
     func application(
@@ -141,6 +133,5 @@ struct PingbearApp: App {
            let window = scene.windows.first {
             window.overrideUserInterfaceStyle = .light
         }
-        AttributionManager.shared.checkAndRecord()
     }
 }

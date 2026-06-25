@@ -107,12 +107,6 @@ struct VerificationView: View {
 
             Analytics.shared.identify(userId: userID)
 
-            // ── Attribution — fire and forget ──────────────────
-            // Covers both new and returning users coming from web flow.
-            // checkAndRecord is idempotent — returns immediately if
-            // already attributed or no web rating exists on user doc.
-            AttributionManager.shared.checkAndRecord()
-
             let db = Firestore.firestore()
             db.collection("users").document(userID).getDocument { (document, error) in
                 if let document = document, document.exists {

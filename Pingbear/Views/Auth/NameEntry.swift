@@ -79,19 +79,15 @@ struct NameEntryView: View {
         .navigationBarHidden(true)
     }
 
-    // MARK: - Validate username
-
     func checkUsernameAndSave() {
         isLoading = true
         let processed = username.lowercased().replacingOccurrences(of: " ", with: "")
-
         let validation = isValidUsername(processed)
         guard validation.isValid else {
             errorMessage = validation.error
             isLoading    = false
             return
         }
-
         let db = Firestore.firestore()
         db.collection("users").whereField("username", isEqualTo: processed).getDocuments { snapshot, error in
             if let error {
@@ -108,15 +104,12 @@ struct NameEntryView: View {
         }
     }
 
-    // MARK: - Save user
-
     func saveUser(username: String) {
         guard let user = Auth.auth().currentUser else {
             isLoading    = false
             errorMessage = "Error fetching user ID"
             return
         }
-
         let userID      = user.uid
         let db          = Firestore.firestore()
         let hashedPhone = hashPhoneNumber(phoneNumber)
@@ -127,33 +120,26 @@ struct NameEntryView: View {
             "name":            fullName,
             "userId":          userID,
             "totalEarned":     0,
-            "averageRating":   0,
-            "ratingCount":     0,
-            "createdAt":       FieldValue.serverTimestamp(),
-            "lastActiveAt":    FieldValue.serverTimestamp()
+            "createdAt":       FieldValue.serverTimestamp()
         ], merge: true) { error in
             if let error {
                 self.isLoading    = false
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
                 return
             }
-
             Analytics.shared.track(
                 event: AnalyticsEvent.accountCreated,
                 properties: ["user_id": userID, "username": username]
             )
-
             self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites in
                 DispatchQueue.main.async {
-                    self.hadInviteGroups = hadInvites
-                    self.isLoading       = false
+                    self.hadInviteGroups  = hadInvites
+                    self.isLoading        = false
                     self.showWelcomeBonus = true
                 }
             }
         }
     }
-
-    // MARK: - Resolve invite groups
 
     private func resolveInviteGroups(userId: String, phoneHash: String, db: Firestore, completion: @escaping (Bool) -> Void) {
         db.collection("invite_groups")
@@ -162,14 +148,12 @@ struct NameEntryView: View {
                 guard let docs = snapshot?.documents, !docs.isEmpty else {
                     completion(false); return
                 }
-
                 let group = DispatchGroup()
-
                 for doc in docs {
                     group.enter()
                     let data            = doc.data()
                     let memberUserIds   = data["memberUserIds"] as? [String: String] ?? [:]
-                    let pendingTxIds    = data["pendingTransactionIds"] as? [String] ?? []
+                    let streamId        = data["stream_id"] as? String
                     let existingUserIds = memberUserIds.values.filter { $0 != userId }
 
                     db.runTransaction({ transaction, _ -> Any? in
@@ -185,38 +169,29 @@ struct NameEntryView: View {
                         )
                         return nil
                     }) { _, error in
-                        if let error {
-                            print("resolveInviteGroups error: \(error.localizedDescription)")
-                        } else {
+                        if let error { print("resolveInviteGroups error: \(error.localizedDescription)") }
+                        else {
                             Analytics.shared.track(
                                 event: AnalyticsEvent.inviteGroupResolved,
                                 properties: ["friends_added": existingUserIds.count]
                             )
                         }
 
-                        guard !pendingTxIds.isEmpty else { group.leave(); return }
-
-                        let txGroup = DispatchGroup()
-                        for txId in pendingTxIds {
-                            txGroup.enter()
-                            Functions.functions().httpsCallable("resolveInviteTransaction").call([
-                                "transactionId": txId
+                        // Resolve stream invite if one exists and is still live
+                        if let streamId {
+                            Functions.functions().httpsCallable("resolveInviteStream").call([
+                                "streamId": streamId
                             ]) { _, error in
-                                if let error {
-                                    print("resolveInviteTransaction error for \(txId): \(error.localizedDescription)")
-                                }
-                                txGroup.leave()
+                                if let error { print("resolveInviteStream error for \(streamId): \(error.localizedDescription)") }
                             }
                         }
-                        txGroup.notify(queue: .main) { group.leave() }
+
+                        group.leave()
                     }
                 }
-
                 group.notify(queue: .main) { completion(true) }
             }
     }
-
-    // MARK: - Helpers
 
     func hashPhoneNumber(_ phoneNumber: String) -> String {
         let cleaned = phoneNumber

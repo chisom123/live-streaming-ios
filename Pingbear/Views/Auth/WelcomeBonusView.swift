@@ -4,8 +4,6 @@ struct WelcomeBonusView: View {
 
     let hadInviteGroups: Bool
 
-    @State private var showNewTransaction = false
-
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -51,7 +49,7 @@ struct WelcomeBonusView: View {
 
                 Button(action: {
                     Analytics.shared.trackTap(elementId: "welcome_bonus_continue", screenName: "welcome_bonus")
-                    goToHome()
+                    completeOnboarding()
                 }) {
                     Text("Continue")
                         .font(.system(size: 20, weight: .bold))
@@ -64,28 +62,9 @@ struct WelcomeBonusView: View {
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
             }
-
-            NavigationLink(
-                destination: NewTransactionView(isOnboarding: true, onDismiss: { completeOnboarding() }),
-                isActive: $showNewTransaction
-            ) { EmptyView() }
-                .isDetailLink(false)
         }
         .navigationBarHidden(true)
-        .onAppear {
-            Analytics.shared.trackScreen(name: "welcome_bonus")
-        }
-    }
-
-    private func goToHome() {
-        if !hadInviteGroups {
-            UserDefaults.standard.set(true, forKey: "isLoggedIn")
-            UserDefaults.standard.set(true, forKey: "isFriendActivated")
-            UserDefaults.standard.synchronize()
-            showNewTransaction = true
-        } else {
-            completeOnboarding()
-        }
+        .onAppear { Analytics.shared.trackScreen(name: "welcome_bonus") }
     }
 
     private func completeOnboarding() {
@@ -93,6 +72,7 @@ struct WelcomeBonusView: View {
         UserDefaults.standard.set(true, forKey: "isFriendActivated")
         UserDefaults.standard.synchronize()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
-        Analytics.shared.track(event: "onboarding_completed")
+        Analytics.shared.track(event: "onboarding_completed",
+                                properties: ["had_invite_groups": hadInviteGroups])
     }
 }

@@ -15,4 +15,5 @@ struct AppTheme {
     static let green              = Color(hex: "#16A34A")
     static let disabledBackground = Color(hex: "#ebebeb")
     static let disabledText       = Color(hex: "#C7C7C7")
+    static let danger             = Color(hex: "#E24B4A")
 }

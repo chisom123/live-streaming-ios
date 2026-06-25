@@ -23,6 +23,4 @@ struct UserProfile: Identifiable {
     let username:          String
     let profilePictureUrl: String?
     let totalEarned:       Double
-    let averageRating:     Double
-    let ratingCount:       Int
 }
