@@ -239,7 +239,7 @@ struct StreamViewerView: View {
                     .submitLabel(.send)
                     .onSubmit { viewModel.sendChatMessage() }
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
+                    .padding(.vertical, 13)
                 }
                 .background(.black.opacity(0.45))
                 .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
@@ -258,7 +258,7 @@ struct StreamViewerView: View {
                         Circle()
                             .fill(Color(hex: "#FF6B00"))
                             .frame(width: 44, height: 44)
-                        Image(systemName: "gift.fill")
+                        Image(systemName: "hand.raised.fill")
                             .font(.system(size: 17, weight: .bold))
                             .foregroundColor(.white)
                     }
