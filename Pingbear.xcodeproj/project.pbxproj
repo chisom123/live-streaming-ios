@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F0452732FEDCAE000FF89AA /* SendStreamRequestSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0452722FEDCAE000FF89AA /* SendStreamRequestSheet.swift */; };
 		4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0D18262D56325600C1A236 /* ProfilePicture.swift */; };
 		4F1184122FEC425C007BC587 /* StreamModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1184112FEC425C007BC587 /* StreamModel.swift */; };
 		4F1184152FEC4287007BC587 /* HomeFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1184142FEC4287007BC587 /* HomeFeedView.swift */; };
@@ -113,6 +114,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F0452722FEDCAE000FF89AA /* SendStreamRequestSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendStreamRequestSheet.swift; sourceTree = "<group>"; };
 		4F0D18262D56325600C1A236 /* ProfilePicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePicture.swift; sourceTree = "<group>"; };
 		4F1184112FEC425C007BC587 /* StreamModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamModel.swift; sourceTree = "<group>"; };
 		4F1184142FEC4287007BC587 /* HomeFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeFeedView.swift; sourceTree = "<group>"; };
@@ -240,6 +242,7 @@
 				4F1184182FEC42B7007BC587 /* StreamViewerView.swift */,
 				4F11841A2FEC42D1007BC587 /* StreamerView.swift */,
 				4F1184252FED1DAF007BC587 /* OffAppInviteComposer.swift */,
+				4F0452722FEDCAE000FF89AA /* SendStreamRequestSheet.swift */,
 			);
 			path = Streams;
 			sourceTree = "<group>";
@@ -665,6 +668,7 @@
 				4F2008EF2FA60EA40039FBCB /* PaymentClient.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
+				4F0452732FEDCAE000FF89AA /* SendStreamRequestSheet.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,
 				4F1184172FEC429F007BC587 /* CreateStreamView.swift in Sources */,
