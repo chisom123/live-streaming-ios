@@ -136,6 +136,7 @@ exports.grantWelcomeBonus  = wallet.grantWelcomeBonus;
 // ─────────────────────────────────────────────────────────────
 
 exports.createStream           = stream.createStream;
+exports.startStreamRecording   = stream.startStreamRecording;
 exports.endStream              = stream.endStream;
 exports.joinStream             = stream.joinStream;
 exports.sendStreamRequest      = stream.sendStreamRequest;

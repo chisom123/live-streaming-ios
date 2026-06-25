@@ -3,6 +3,7 @@
  *
  * EXPORTS — index.js:
  *   exports.createStream            = stream.createStream;
+ *   exports.startStreamRecording    = stream.startStreamRecording;
  *   exports.endStream               = stream.endStream;
  *   exports.joinStream              = stream.joinStream;
  *   exports.sendStreamRequest       = stream.sendStreamRequest;
@@ -18,25 +19,33 @@
  * completeStreamRequest   → pay streamer 80%, platform 20% → status: completed
  * endStream               → sweeps all pending + accepted → full refund each → status: refunded
  *
- * Same bonus accounting as content_transactions. platform_revenue
- * records type: "stream_request" with identical bonus/real split fields.
+ * RECORDING
+ * ─────────
+ * Controlled by RECORDING_ENABLED secret (set to 'true' to enable).
+ * When enabled, createStream starts a LiveKit RoomComposite egress that
+ * records the stream to GCS as an MP4 at recordings/{streamId}.mp4.
+ * endStream stops the egress cleanly. Toggle off by setting
+ * RECORDING_ENABLED=false and redeploying — zero cost when disabled.
  */
 
 const { onCall }  = require('firebase-functions/v2/https');
 const admin  = require('firebase-admin');
 const logger = require('firebase-functions/logger');
-const { AccessToken } = require('livekit-server-sdk');
+const { AccessToken, EgressClient, EncodedFileOutput, GCPUpload } = require('livekit-server-sdk');
 const { round2, splitDebit } = require('./walletHelpers');
 
 let _db;
 const getDb = () => { if (!_db) _db = admin.firestore(); return _db; };
 
-const PLATFORM_FEE_RATE = 0.20;
-const MIN_PRICE         = 0.50;
-const MAX_PRICE         = 50.00;
+const PLATFORM_FEE_RATE  = 0.20;
+const MIN_PRICE          = 0.50;
+const MAX_PRICE          = 50.00;
 const LIVEKIT_API_KEY    = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_WS_URL     = process.env.LIVEKIT_WS_URL;
+const RECORDING_ENABLED  = process.env.RECORDING_ENABLED === 'true';
+const GCS_BUCKET         = process.env.GCS_BUCKET;
+const GCS_CREDENTIALS    = process.env.GCS_CREDENTIALS;
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -56,6 +65,10 @@ function makeLivekitToken({ identity, name, roomName, canPublish, canSubscribe }
   });
   at.addGrant({ roomJoin: true, room: roomName, canPublish, canSubscribe });
   return at.toJwt();
+}
+
+function makeEgressClient() {
+  return new EgressClient(LIVEKIT_WS_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
 }
 
 async function sendPush(db, userIds, { title, body, data = {} }) {
@@ -195,18 +208,18 @@ exports.createStream = onCall({
 
   const userId = request.auth.uid;
   const {
-    onAppInvitedIds   = [],
-    offAppPhoneHashes = [],
+    onAppInvitedIds    = [],
+    offAppPhoneHashes  = [],
     offAppInviteeNames = {}
   } = request.data;
 
-  const db         = getDb();
-  const roomName   = `stream_${Date.now()}_${userId}`;
-  const streamRef  = db.collection('streams').doc();
-  const streamerDoc = await db.collection('users').doc(userId).get();
+  const db           = getDb();
+  const roomName     = `stream_${Date.now()}_${userId}`;
+  const streamRef    = db.collection('streams').doc();
+  const streamerDoc  = await db.collection('users').doc(userId).get();
   const streamerName = streamerDoc.data()?.name ?? 'Someone';
   const streamerImageUrl = streamerDoc.data()?.profilePictureUrl ?? null;
-  const inviterHash = streamerDoc.data()?.phoneNumberHash ?? '';
+  const inviterHash  = streamerDoc.data()?.phoneNumberHash ?? '';
 
   const validOnApp  = onAppInvitedIds.filter(id => id !== userId);
   const validOffApp = [...new Set(offAppPhoneHashes)];
@@ -223,13 +236,13 @@ exports.createStream = onCall({
     invited_user_ids:   [userId, ...validOnApp],
     total_earned:       0,
     request_count:      0,
+    egress_id:          null,
     created_at:         admin.firestore.FieldValue.serverTimestamp()
   });
 
   // invite_groups for off-app contacts
   for (const phoneHash of validOffApp) {
-    const pendingName = offAppInviteeNames[phoneHash] ?? null;
-    const allHashes   = [phoneHash];
+    const allHashes = [phoneHash];
     if (inviterHash) allHashes.push(inviterHash);
     await db.collection('invite_groups').doc().set({
       memberHashes:        allHashes,
@@ -249,7 +262,6 @@ exports.createStream = onCall({
     });
   }
 
-
   const token = await makeLivekitToken({
     identity:     userId,
     name:         streamerName,
@@ -262,12 +274,14 @@ exports.createStream = onCall({
   return { success: true, streamId: streamRef.id, livekitUrl: LIVEKIT_WS_URL, token };
 });
 
-
 // ─────────────────────────────────────────────────────────────
 // endStream
 // ─────────────────────────────────────────────────────────────
 
-exports.endStream = onCall({ cors: ['*'], maxInstances: 20 }, async (request) => {
+exports.endStream = onCall({
+  cors: ['*'], maxInstances: 20,
+  secrets: ['LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'LIVEKIT_WS_URL', 'RECORDING_ENABLED']
+}, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
   const userId       = request.auth.uid;
@@ -287,6 +301,18 @@ exports.endStream = onCall({ cors: ['*'], maxInstances: 20 }, async (request) =>
     status:   'ended',
     ended_at: admin.firestore.FieldValue.serverTimestamp()
   });
+
+  // Stop recording if one was started
+  if (RECORDING_ENABLED && stream.egress_id) {
+    try {
+      const egressClient = makeEgressClient();
+      await egressClient.stopEgress(stream.egress_id);
+      logger.info(`endStream: recording stopped, egressId: ${stream.egress_id}`);
+    } catch (err) {
+      // Non-fatal — recording may have already stopped if stream room closed
+      logger.warn(`endStream: failed to stop recording: ${err.message}`);
+    }
+  }
 
   // Sweep all open requests and refund them
   const openRequests = await db.collection('stream_requests')
@@ -356,7 +382,7 @@ exports.joinStream = onCall({
     // Notify the streamer
     await sendPush(db, [stream.streamer_id], {
       title: `${userInfo.name} joined your stream`,
-      body:  'Someone just tuned in 👀',
+      body:  'Someone just tuned in',
       data:  { type: 'stream_viewer_joined', stream_id: streamId }
     });
   }
@@ -490,14 +516,14 @@ exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (re
 exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
-  const userId             = request.auth.uid;
-  const { requestId, accept } = request.data;
+  const userId                 = request.auth.uid;
+  const { requestId, accept }  = request.data;
   if (!requestId)              throw new Error('requestId is required');
   if (typeof accept !== 'boolean') throw new Error('accept must be boolean');
 
-  const db     = getDb();
-  const ref    = db.collection('stream_requests').doc(requestId);
-  const snap   = await ref.get();
+  const db   = getDb();
+  const ref  = db.collection('stream_requests').doc(requestId);
+  const snap = await ref.get();
   if (!snap.exists) throw new Error('Request not found');
 
   const req = snap.data();
@@ -511,23 +537,18 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
   }
 
   if (!accept) {
-    // Decline — refund viewer
     await refundStreamRequest(db, requestId);
-
     const { name: streamerName } = await getUserInfo(db, userId);
     await sendPush(db, [req.from_user_id], {
       title: `${streamerName} declined your request`,
       body:  'Your money has been refunded',
       data:  { type: 'stream_request_refunded', request_id: requestId, stream_id: req.stream_id }
     });
-
     logger.info(`respondToStreamRequest: ${userId} declined ${requestId}`);
     return { success: true };
   }
 
-  // Accept
   await ref.update({ status: 'accepted', accepted_at: admin.firestore.FieldValue.serverTimestamp() });
-
   const { name: streamerName } = await getUserInfo(db, userId);
   await sendPush(db, [req.from_user_id], {
     title: `${streamerName} accepted your request!`,
@@ -546,8 +567,8 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
 exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
-  const userId         = request.auth.uid;
-  const { requestId }  = request.data;
+  const userId        = request.auth.uid;
+  const { requestId } = request.data;
   if (!requestId) throw new Error('requestId is required');
 
   const db   = getDb();
@@ -573,7 +594,6 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
     realFundedAmount:   req.funded_real_amount  ?? req.price
   });
 
-  // Update stream total_earned
   await db.collection('streams').doc(req.stream_id).update({
     total_earned: admin.firestore.FieldValue.increment(req.creator_payout)
   });
@@ -589,23 +609,70 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
   return { success: true };
 });
 
+// ─────────────────────────────────────────────────────────────
+// startStreamRecording
+//
+// Called by the streamer client immediately after room.connect()
+// succeeds — at that point the LiveKit room exists and egress
+// can be started. No-ops if RECORDING_ENABLED is false.
+// ─────────────────────────────────────────────────────────────
+
+exports.startStreamRecording = onCall({
+  cors: ['*'], maxInstances: 50,
+  secrets: ['LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'LIVEKIT_WS_URL', 'RECORDING_ENABLED', 'GCS_BUCKET', 'GCS_CREDENTIALS']
+}, async (request) => {
+  if (!request.auth) throw new Error('User must be authenticated');
+
+  const userId       = request.auth.uid;
+  const { streamId } = request.data;
+  if (!streamId) throw new Error('streamId is required');
+
+  if (!RECORDING_ENABLED) {
+    return { success: true, skipped: true };
+  }
+
+  const db   = getDb();
+  const ref  = db.collection('streams').doc(streamId);
+  const snap = await ref.get();
+  if (!snap.exists) throw new Error('Stream not found');
+
+  const stream = snap.data();
+  if (stream.streamer_id !== userId) throw new Error('Not the streamer');
+  if (stream.status !== 'live')      throw new Error('Stream is not live');
+  if (stream.egress_id)              return { success: true, skipped: true }; // already recording
+
+  try {
+    const egressClient = makeEgressClient();
+    const egress = await egressClient.startRoomCompositeEgress(stream.livekit_room_name, {
+      file: new EncodedFileOutput({
+        filepath: `recordings/${streamId}.mp4`,
+        output:   {
+          case:  'gcp',
+          value: new GCPUpload({
+            credentials: GCS_CREDENTIALS,
+            bucket:      GCS_BUCKET
+          })
+        }
+      })
+    });
+    await ref.update({ egress_id: egress.egressId });
+    logger.info(`startStreamRecording: recording started for ${streamId}, egressId: ${egress.egressId}`);
+    return { success: true, skipped: false };
+  } catch (err) {
+    logger.error(`startStreamRecording: failed for ${streamId}: ${err.message}`);
+    throw new Error(`Failed to start recording: ${err.message}`);
+  }
+});
 
 // ─────────────────────────────────────────────────────────────
 // resolveInviteStream
-//
-// Called during onboarding when a new user signs up and an
-// invite_group with a stream_id is found for their phone hash.
-// Adds them to invited_user_ids on the stream doc so the home
-// feed listener picks it up automatically. No-ops silently if
-// the stream is no longer live or doesn't exist.
 // ─────────────────────────────────────────────────────────────
 
 exports.resolveInviteStream = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
 
-  const userId         = request.auth.uid;
-  const { streamId }   = request.data;
-
+  const userId       = request.auth.uid;
+  const { streamId } = request.data;
   if (!streamId) throw new Error('streamId is required');
 
   const db   = getDb();
@@ -618,8 +685,7 @@ exports.resolveInviteStream = onCall({ cors: ['*'], maxInstances: 50 }, async (r
   }
 
   const stream = snap.data();
-
-  if (!['live', 'scheduled'].includes(stream.status)) {
+  if (stream.status !== 'live') {
     logger.info(`resolveInviteStream: stream ${streamId} status is ${stream.status}, skipping`);
     return { success: true, skipped: true };
   }

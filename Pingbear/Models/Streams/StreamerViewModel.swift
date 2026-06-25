@@ -44,26 +44,18 @@ class StreamerViewModel: ObservableObject {
     func startBroadcast() async {
         startedAt = Date()
 
+        // initialToken + initialUrl are always provided from createStream
+        // so this path is the normal one. The fallback below is kept for
+        // edge cases (e.g. resuming a stream from the home feed card).
         if let token = initialToken, let url = initialUrl {
             await connectWithToken(token: token, url: url)
             return
         }
 
-        do {
-            let result = try await functions.httpsCallable("startStream").call(["streamId": streamId])
-            guard let data  = result.data as? [String: Any],
-                  let token = data["token"]      as? String,
-                  let url   = data["livekitUrl"] as? String
-            else {
-                errorMessage = "Invalid response from server"
-                isConnecting = false
-                return
-            }
-            await connectWithToken(token: token, url: url)
-        } catch {
-            errorMessage = error.localizedDescription
-            isConnecting = false
-        }
+        // Fallback: if no token was passed (resume from home feed),
+        // we don't have a startStream function anymore — just error out.
+        errorMessage = "Stream token missing. Please start a new stream."
+        isConnecting = false
     }
 
     private func connectWithToken(token: String, url: String) async {
@@ -76,7 +68,7 @@ class StreamerViewModel: ObservableObject {
             try await room.localParticipant.publish(videoTrack: camera)
             localVideoTrack = camera
 
-            // Mic is isolated -- failure must not prevent the stream going live
+            // Mic is isolated — failure must not prevent the stream going live
             do {
                 try await room.localParticipant.publish(audioTrack: mic)
             } catch {
@@ -86,6 +78,16 @@ class StreamerViewModel: ObservableObject {
             isConnecting = false
             isLive       = true
             startListeners()
+
+            // Room now exists in LiveKit — safe to start recording
+            Task {
+                do {
+                    try await functions.httpsCallable("startStreamRecording").call(["streamId": streamId])
+                    print("[StreamerViewModel] startStreamRecording succeeded")
+                } catch {
+                    print("[StreamerViewModel] startStreamRecording failed: \(error.localizedDescription)")
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
             isConnecting = false
