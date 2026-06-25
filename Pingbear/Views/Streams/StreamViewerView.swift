@@ -468,11 +468,16 @@ struct ChatBubbleView: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 5) {
                     Text(displayName)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundColor(Color(hex: "#FF8C40"))
+                    
+                    Text("·")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color(hex: "#FF8C40"))
+                    
                     if let p = priceLabel {
-                        Text("· \(p)")
-                            .font(.system(size: 10, weight: .bold))
+                        Text("\(p)")
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(Color(hex: "#FF8C40"))
                     }
                 }
