@@ -38,7 +38,7 @@ class StreamViewerViewModel: ObservableObject {
     let room = Room()
 
     init(stream: StreamModel) {
-        self.stream     = stream
+        self.stream      = stream
         self.viewerCount = stream.viewerIds.count
     }
 
@@ -58,6 +58,12 @@ class StreamViewerViewModel: ObservableObject {
         joinedAt = Date()
         await fetchCurrentUserInfo()
 
+        // Register delegate BEFORE connecting so we never miss a track event.
+        // If the delegate is added after room.connect(), a track that is already
+        // published (e.g. streamer started before the viewer joined) will never
+        // fire didSubscribeTrack, leaving the view with a permanent black screen.
+        room.add(delegate: self)
+
         do {
             let result = try await functions.httpsCallable("joinStream").call(["streamId": stream.id])
             guard let data  = result.data as? [String: Any],
@@ -67,6 +73,19 @@ class StreamViewerViewModel: ObservableObject {
 
             try await room.connect(url: url, token: token)
 
+            // After connecting, walk already-subscribed remote tracks.
+            // This handles the case where the room was already running and
+            // LiveKit delivered the track subscription before (or without)
+            // firing the delegate callback — a known edge case on re-joins
+            // and when joining a stream that has been live for a while.
+            for participant in room.remoteParticipants.values {
+                for publication in participant.trackPublications.values {
+                    if let track = publication.track as? VideoTrack {
+                        streamerTrack = track
+                    }
+                }
+            }
+
             let latencyMs = Int(Date().timeIntervalSince(joinedAt) * 1000)
             Analytics.shared.trackStreamJoined(
                 streamId:      stream.id,
@@ -75,7 +94,6 @@ class StreamViewerViewModel: ObservableObject {
             )
 
             isConnecting = false
-            observeRemoteTracks()
             startListeners()
         } catch {
             errorMessage = error.localizedDescription
@@ -159,10 +177,6 @@ class StreamViewerViewModel: ObservableObject {
                     .flatMap { StreamRequest.from($0) }?
                     .description
             }
-    }
-
-    private func observeRemoteTracks() {
-        room.add(delegate: self)
     }
 }
 
