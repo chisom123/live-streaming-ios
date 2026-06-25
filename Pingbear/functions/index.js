@@ -143,3 +143,4 @@ exports.sendStreamRequest      = stream.sendStreamRequest;
 exports.respondToStreamRequest = stream.respondToStreamRequest;
 exports.completeStreamRequest  = stream.completeStreamRequest;
 exports.resolveInviteStream    = stream.resolveInviteStream;
+exports.livekitWebhook         = stream.livekitWebhook;

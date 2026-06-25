@@ -8,20 +8,29 @@ import LiveKit
 @MainActor
 class StreamViewerViewModel: ObservableObject {
 
-    @Published var messages:      [ChatMessage] = []
-    @Published var chatText:      String        = ""
-    @Published var isConnecting   = true
-    @Published var isEnded        = false
-    @Published var errorMessage:  String?       = nil
-    @Published var streamerTrack: VideoTrack?   = nil
+    @Published var messages:                [ChatMessage] = []
+    @Published var chatText:                String        = ""
+    @Published var isConnecting             = true
+    @Published var isEnded                  = false
+    @Published var errorMessage:            String?       = nil
+    @Published var streamerTrack:           VideoTrack?   = nil
+
+    // Real-time viewer count — updated by the stream document listener
+    @Published var viewerCount:             Int           = 0
+
+    // Active accepted request description — shown as "Now performing" banner.
+    // Derived from a dedicated stream_requests listener so it updates instantly
+    // when the streamer accepts or completes a request.
+    @Published var activeRequestDescription: String?      = nil
 
     let stream: StreamModel
     private let db            = Firestore.firestore()
     private let functions     = Functions.functions()
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
-    private var chatListener:   ListenerRegistration?
-    private var streamListener: ListenerRegistration?
-    private var joinedAt:       Date = Date()
+    private var chatListener:     ListenerRegistration?
+    private var streamListener:   ListenerRegistration?
+    private var requestListener:  ListenerRegistration?
+    private var joinedAt:         Date = Date()
 
     private var currentUserName:   String  = "Someone"
     private var currentUserAvatar: String? = nil
@@ -29,17 +38,18 @@ class StreamViewerViewModel: ObservableObject {
     let room = Room()
 
     init(stream: StreamModel) {
-        self.stream = stream
+        self.stream     = stream
+        self.viewerCount = stream.viewerIds.count
     }
 
     // MARK: - Fetch current user info
     private func fetchCurrentUserInfo() async {
         guard !currentUserId.isEmpty else { return }
         do {
-            let userDoc  = try await db.collection("users").document(currentUserId).getDocument()
-            let userData = userDoc.data()
-            currentUserName   = userData?["name"]               as? String ?? "Someone"
-            currentUserAvatar = userData?["profilePictureUrl"]  as? String
+            let doc  = try await db.collection("users").document(currentUserId).getDocument()
+            let data = doc.data()
+            currentUserName   = data?["name"]              as? String ?? "Someone"
+            currentUserAvatar = data?["profilePictureUrl"] as? String
         } catch {}
     }
 
@@ -79,6 +89,7 @@ class StreamViewerViewModel: ObservableObject {
         Analytics.shared.trackStreamLeft(streamId: stream.id, watchDurationSecs: watchSecs)
         chatListener?.remove()
         streamListener?.remove()
+        requestListener?.remove()
         Task { await room.disconnect() }
     }
 
@@ -103,12 +114,15 @@ class StreamViewerViewModel: ObservableObject {
                 "created_at": FieldValue.serverTimestamp()
             ])
 
-        Analytics.shared.track(event: AnalyticsEvent.streamChatMessageSent,
-                                properties: [AnalyticsProperty.streamId: stream.id])
+        Analytics.shared.track(
+            event:      AnalyticsEvent.streamChatMessageSent,
+            properties: [AnalyticsProperty.streamId: stream.id]
+        )
     }
 
     // MARK: - Listeners
     private func startListeners() {
+        // Chat
         chatListener = db.collection("stream_chat")
             .document(stream.id)
             .collection("messages")
@@ -119,6 +133,7 @@ class StreamViewerViewModel: ObservableObject {
                 self.messages = snap?.documents.compactMap { ChatMessage.from($0) } ?? []
             }
 
+        // Stream document — real-time viewer count + ended status
         streamListener = db.collection("streams")
             .document(stream.id)
             .addSnapshotListener { [weak self] snap, _ in
@@ -126,6 +141,23 @@ class StreamViewerViewModel: ObservableObject {
                 if data["status"] as? String == "ended" {
                     self.isEnded = true
                 }
+                // viewer_ids array drives the live count
+                let ids = data["viewer_ids"] as? [String] ?? []
+                self.viewerCount = max(0, ids.count - 1)
+            }
+
+        // Active request — watch for a single accepted request on this stream.
+        // When the streamer accepts one, this fires and shows the "Now performing" banner.
+        // When they complete it (status → completed), the banner clears.
+        requestListener = db.collection("stream_requests")
+            .whereField("stream_id", isEqualTo: stream.id)
+            .whereField("status", isEqualTo: "accepted")
+            .limit(to: 1)
+            .addSnapshotListener { [weak self] snap, _ in
+                guard let self else { return }
+                self.activeRequestDescription = snap?.documents.first
+                    .flatMap { StreamRequest.from($0) }?
+                    .description
             }
     }
 
@@ -136,12 +168,14 @@ class StreamViewerViewModel: ObservableObject {
 
 // MARK: - RoomDelegate
 extension StreamViewerViewModel: RoomDelegate {
-    nonisolated func room(_ room: Room, participant: RemoteParticipant, didSubscribeTrack publication: RemoteTrackPublication) {
+    nonisolated func room(_ room: Room, participant: RemoteParticipant,
+                          didSubscribeTrack publication: RemoteTrackPublication) {
         guard let track = publication.track as? VideoTrack else { return }
         Task { @MainActor in self.streamerTrack = track }
     }
 
-    nonisolated func room(_ room: Room, participant: RemoteParticipant, didUnsubscribeTrack publication: RemoteTrackPublication) {
+    nonisolated func room(_ room: Room, participant: RemoteParticipant,
+                          didUnsubscribeTrack publication: RemoteTrackPublication) {
         Task { @MainActor in self.streamerTrack = nil }
     }
 }

@@ -10,6 +10,7 @@
  *   exports.respondToStreamRequest  = stream.respondToStreamRequest;
  *   exports.completeStreamRequest   = stream.completeStreamRequest;
  *   exports.resolveInviteStream     = stream.resolveInviteStream;
+ *   exports.livekitWebhook          = stream.livekitWebhook;
  *
  * STREAM REQUEST MONEY FLOW
  * ─────────────────────────
@@ -18,6 +19,13 @@
  *                         → decline: refund viewer (bonus/real restored) → status: declined
  * completeStreamRequest   → pay streamer 80%, platform 20% → status: completed
  * endStream               → sweeps all pending + accepted → full refund each → status: refunded
+ *
+ * VIEWER COUNT
+ * ────────────
+ * viewer_ids is managed exclusively by the livekitWebhook function.
+ * LiveKit fires participant_joined / participant_left for every connect and
+ * disconnect — including crashes and network drops — so the count is always
+ * accurate. joinStream no longer touches viewer_ids.
  *
  * RECORDING
  * ─────────
@@ -29,9 +37,10 @@
  */
 
 const { onCall }  = require('firebase-functions/v2/https');
+const { onRequest } = require('firebase-functions/v2/https');
 const admin  = require('firebase-admin');
 const logger = require('firebase-functions/logger');
-const { AccessToken, EgressClient, EncodedFileOutput, GCPUpload } = require('livekit-server-sdk');
+const { AccessToken, EgressClient, EncodedFileOutput, GCPUpload, WebhookReceiver } = require('livekit-server-sdk');
 const { round2, splitDebit } = require('./walletHelpers');
 
 let _db;
@@ -240,7 +249,6 @@ exports.createStream = onCall({
     created_at:         admin.firestore.FieldValue.serverTimestamp()
   });
 
-  // invite_groups for off-app contacts
   for (const phoneHash of validOffApp) {
     const allHashes = [phoneHash];
     if (inviterHash) allHashes.push(inviterHash);
@@ -253,7 +261,6 @@ exports.createStream = onCall({
     });
   }
 
-  // Push to on-app friends
   if (validOnApp.length > 0) {
     await sendPush(db, validOnApp, {
       title: `${streamerName} is live now!`,
@@ -298,23 +305,21 @@ exports.endStream = onCall({
   if (stream.status !== 'live')      throw new Error('Stream is not live');
 
   await ref.update({
-    status:   'ended',
-    ended_at: admin.firestore.FieldValue.serverTimestamp()
+    status:     'ended',
+    ended_at:   admin.firestore.FieldValue.serverTimestamp(),
+    viewer_ids: []   // clear viewer list on end so count reads 0
   });
 
-  // Stop recording if one was started
   if (RECORDING_ENABLED && stream.egress_id) {
     try {
       const egressClient = makeEgressClient();
       await egressClient.stopEgress(stream.egress_id);
       logger.info(`endStream: recording stopped, egressId: ${stream.egress_id}`);
     } catch (err) {
-      // Non-fatal — recording may have already stopped if stream room closed
       logger.warn(`endStream: failed to stop recording: ${err.message}`);
     }
   }
 
-  // Sweep all open requests and refund them
   const openRequests = await db.collection('stream_requests')
     .where('stream_id', '==', streamId)
     .where('status', 'in', ['pending', 'accepted'])
@@ -337,6 +342,10 @@ exports.endStream = onCall({
 
 // ─────────────────────────────────────────────────────────────
 // joinStream
+//
+// viewer_ids is now managed by livekitWebhook — this function
+// no longer touches it. It still handles auth, the join chat
+// message, push notification to the streamer, and token generation.
 // ─────────────────────────────────────────────────────────────
 
 exports.joinStream = onCall({
@@ -362,13 +371,13 @@ exports.joinStream = onCall({
                  || stream.streamer_id === userId;
   if (!isInvited) throw new Error('You are not invited to this stream');
 
-  // Add to viewer_ids if not already there
-  if (!(stream.viewer_ids ?? []).includes(userId)) {
-    await ref.update({
-      viewer_ids: admin.firestore.FieldValue.arrayUnion(userId)
-    });
+  const userInfo = await getUserInfo(db, userId);
 
-    const userInfo = await getUserInfo(db, userId);
+  // Post join chat message and notify streamer only on first join.
+  // Use a lightweight read of viewer_ids for the "first time" check —
+  // the authoritative count update happens via livekitWebhook.
+  const alreadySeen = (stream.viewer_ids ?? []).includes(userId);
+  if (!alreadySeen && stream.streamer_id !== userId) {
     await db.collection('stream_chat').doc(streamId).collection('messages').doc().set({
       user_id:    userId,
       name:       userInfo.name,
@@ -379,7 +388,6 @@ exports.joinStream = onCall({
       created_at: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Notify the streamer
     await sendPush(db, [stream.streamer_id], {
       title: `${userInfo.name} joined your stream`,
       body:  'Someone just tuned in',
@@ -387,7 +395,6 @@ exports.joinStream = onCall({
     });
   }
 
-  const userInfo = await getUserInfo(db, userId);
   const token = await makeLivekitToken({
     identity:     userId,
     name:         userInfo.name,
@@ -429,7 +436,6 @@ exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (re
   let bonusUsed = 0;
   let realUsed  = 0;
 
-  // Escrow from viewer wallet
   await db.runTransaction(async (t) => {
     const userRef  = db.collection('users').doc(userId);
     const userDoc  = await t.get(userRef);
@@ -462,7 +468,6 @@ exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (re
     });
   });
 
-  // Create the request doc
   const requestRef   = db.collection('stream_requests').doc();
   const fromUserInfo = await getUserInfo(db, userId);
 
@@ -484,10 +489,8 @@ exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (re
     completed_at:         null
   });
 
-  // Increment stream request count
   await streamRef.update({ request_count: admin.firestore.FieldValue.increment(1) });
 
-  // Write request event to chat
   await db.collection('stream_chat').doc(streamId).collection('messages').doc().set({
     user_id:    userId,
     name:       fromUserInfo.name,
@@ -498,7 +501,6 @@ exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (re
     created_at: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  // Push to streamer
   await sendPush(db, [stream.streamer_id], {
     title: `${fromUserInfo.name} wants: "${description.trim().slice(0, 50)}"`,
     body:  `$${price.toFixed(2)} — tap to respond`,
@@ -530,7 +532,6 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
   if (req.streamer_id !== userId) throw new Error('Not the streamer');
   if (req.status !== 'pending')   throw new Error(`Cannot respond to status: ${req.status}`);
 
-  // Verify stream is still live
   const streamSnap = await db.collection('streams').doc(req.stream_id).get();
   if (!streamSnap.exists || streamSnap.data().status !== 'live') {
     throw new Error('Stream is no longer live');
@@ -611,10 +612,6 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
 
 // ─────────────────────────────────────────────────────────────
 // startStreamRecording
-//
-// Called by the streamer client immediately after room.connect()
-// succeeds — at that point the LiveKit room exists and egress
-// can be started. No-ops if RECORDING_ENABLED is false.
 // ─────────────────────────────────────────────────────────────
 
 exports.startStreamRecording = onCall({
@@ -639,7 +636,7 @@ exports.startStreamRecording = onCall({
   const stream = snap.data();
   if (stream.streamer_id !== userId) throw new Error('Not the streamer');
   if (stream.status !== 'live')      throw new Error('Stream is not live');
-  if (stream.egress_id)              return { success: true, skipped: true }; // already recording
+  if (stream.egress_id)              return { success: true, skipped: true };
 
   try {
     const egressClient = makeEgressClient();
@@ -696,4 +693,135 @@ exports.resolveInviteStream = onCall({ cors: ['*'], maxInstances: 50 }, async (r
 
   logger.info(`resolveInviteStream: added ${userId} to invited_user_ids on stream ${streamId}`);
   return { success: true, skipped: false };
+});
+
+// ─────────────────────────────────────────────────────────────
+// livekitWebhook
+//
+// Receives signed participant_joined / participant_left events
+// directly from LiveKit and updates viewer_ids accordingly.
+// This is the single source of truth for viewer count — it handles
+// normal leaves, app crashes, and network drops alike.
+//
+// Setup: deploy this function, then register its URL in the
+// LiveKit dashboard under your project → Webhooks.
+// ─────────────────────────────────────────────────────────────
+
+exports.livekitWebhook = onRequest({
+  cors: false,
+  maxInstances: 50,
+  rawBody: true,
+  secrets: ['LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'RECORDING_ENABLED']
+}, async (req, res) => {
+  if (req.method !== 'POST') {
+    res.sendStatus(405);
+    return;
+  }
+
+  // LiveKit signs every webhook with LIVEKIT_API_SECRET.
+  // WebhookReceiver must receive the raw unparsed body string —
+  // Cloud Functions v2 parses req.body automatically, so we use
+  // req.rawBody (available when rawBody: true is set above).
+  const receiver = new WebhookReceiver(LIVEKIT_API_KEY, LIVEKIT_API_SECRET);
+  let event;
+  try {
+    const rawBody = req.rawBody?.toString() ?? JSON.stringify(req.body);
+    event = await receiver.receive(rawBody, req.headers['authorization']);
+  } catch (err) {
+    logger.warn(`livekitWebhook: invalid signature — ${err.message}`);
+    res.sendStatus(401);
+    return;
+  }
+
+  const eventName  = event?.event;
+  const roomName   = event?.room?.name;
+  const userId     = event?.participant?.identity;
+  const canPublish = event?.participant?.permission?.canPublish === true;
+
+  // Ignore everything except participant join/leave
+  if (!['participant_joined', 'participant_left'].includes(eventName)
+      || !roomName
+      || !userId) {
+    res.sendStatus(200);
+    return;
+  }
+
+  const db = getDb();
+
+  const streamSnap = await db.collection('streams')
+    .where('livekit_room_name', '==', roomName)
+    .where('status', '==', 'live')
+    .limit(1)
+    .get();
+
+  if (streamSnap.empty) {
+    res.sendStatus(200);
+    return;
+  }
+
+  const streamRef  = streamSnap.docs[0].ref;
+  const streamData = streamSnap.docs[0].data();
+  const streamId   = streamSnap.docs[0].id;
+
+  // ── Streamer left (canPublish) → end the stream ──────────────
+  if (canPublish && eventName === 'participant_left') {
+    await streamRef.update({
+      status:     'ended',
+      ended_at:   admin.firestore.FieldValue.serverTimestamp(),
+      viewer_ids: []
+    });
+
+    // Stop the recording egress if one was running
+    if (RECORDING_ENABLED && streamData.egress_id) {
+      try {
+        const egressClient = makeEgressClient();
+        await egressClient.stopEgress(streamData.egress_id);
+        logger.info(`livekitWebhook: stopped egress ${streamData.egress_id} for stream ${streamId}`);
+      } catch (err) {
+        // Non-fatal — LiveKit may have already stopped it when the room emptied
+        logger.warn(`livekitWebhook: failed to stop egress: ${err.message}`);
+      }
+    }
+
+    const openRequests = await db.collection('stream_requests')
+      .where('stream_id', '==', streamId)
+      .where('status', 'in', ['pending', 'accepted'])
+      .get();
+
+    await Promise.all(openRequests.docs.map(doc => refundStreamRequest(db, doc.id)));
+
+    if (openRequests.size > 0) {
+      const viewerIds = [...new Set(openRequests.docs.map(d => d.data().from_user_id))];
+      await sendPush(db, viewerIds, {
+        title: 'Your request was refunded',
+        body:  `${streamData.streamer_name} ended the stream — your money is back`,
+        data:  { type: 'stream_request_refunded', stream_id: streamId }
+      });
+    }
+
+    logger.info(`livekitWebhook: streamer left — auto-ended stream ${streamId}, refunded ${openRequests.size} requests`);
+    res.sendStatus(200);
+    return;
+  }
+
+  // ── Streamer joined → ignore (not a viewer) ──────────────────
+  if (canPublish && eventName === 'participant_joined') {
+    res.sendStatus(200);
+    return;
+  }
+
+  // ── Viewer joined / left → update viewer_ids ─────────────────
+  if (eventName === 'participant_joined') {
+    await streamRef.update({
+      viewer_ids: admin.firestore.FieldValue.arrayUnion(userId)
+    });
+    logger.info(`livekitWebhook: +1 viewer ${userId} on room ${roomName}`);
+  } else {
+    await streamRef.update({
+      viewer_ids: admin.firestore.FieldValue.arrayRemove(userId)
+    });
+    logger.info(`livekitWebhook: -1 viewer ${userId} on room ${roomName}`);
+  }
+
+  res.sendStatus(200);
 });

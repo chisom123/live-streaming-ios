@@ -44,16 +44,11 @@ class StreamerViewModel: ObservableObject {
     func startBroadcast() async {
         startedAt = Date()
 
-        // initialToken + initialUrl are always provided from createStream
-        // so this path is the normal one. The fallback below is kept for
-        // edge cases (e.g. resuming a stream from the home feed card).
         if let token = initialToken, let url = initialUrl {
             await connectWithToken(token: token, url: url)
             return
         }
 
-        // Fallback: if no token was passed (resume from home feed),
-        // we don't have a startStream function anymore — just error out.
         errorMessage = "Stream token missing. Please start a new stream."
         isConnecting = false
     }
@@ -68,18 +63,16 @@ class StreamerViewModel: ObservableObject {
             try await room.localParticipant.publish(videoTrack: camera)
             localVideoTrack = camera
 
-            // Mic is isolated — failure must not prevent the stream going live
             do {
                 try await room.localParticipant.publish(audioTrack: mic)
             } catch {
-                // Non-fatal: stream continues without mic (e.g. simulator, permissions)
+                // Non-fatal: stream continues without mic
             }
 
             isConnecting = false
             isLive       = true
             startListeners()
 
-            // Room now exists in LiveKit — safe to start recording
             Task {
                 do {
                     try await functions.httpsCallable("startStreamRecording").call(["streamId": streamId])
@@ -184,7 +177,10 @@ class StreamerViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snap, _ in
                 guard let self, let data = snap?.data() else { return }
                 self.totalEarned = data["total_earned"] as? Double ?? 0
-                self.viewerCount = (data["viewer_ids"]  as? [String] ?? []).count
+                // Subtract 1 to exclude the streamer's own LiveKit participant
+                // which always appears in viewer_ids due to their room presence
+                let ids = data["viewer_ids"] as? [String] ?? []
+                self.viewerCount = max(0, ids.count - 1)
             }
     }
 
