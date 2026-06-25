@@ -164,20 +164,22 @@ struct StreamViewerView: View {
                             .id(msg.id)
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .padding(.horizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 320)
+            .frame(maxHeight: 200)
             .mask(
                 LinearGradient(
                     gradient: Gradient(stops: [
                         .init(color: .clear, location: 0),
-                        .init(color: .black, location: 0.18)
+                        .init(color: .black, location: 0.18),
+                        .init(color: .black, location: 0.85),
+                        .init(color: .clear, location: 1)
                     ]),
                     startPoint: .top, endPoint: .bottom
                 )
             )
+            .padding(.vertical, 25)
             .onChange(of: viewModel.messages.count) { _ in
                 if let last = viewModel.messages.last {
                     withAnimation(.easeOut(duration: 0.2)) {
