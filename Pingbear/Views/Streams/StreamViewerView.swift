@@ -87,7 +87,7 @@ struct StreamViewerView: View {
     private var liveOverlay: some View {
         ZStack(alignment: .bottom) {
             VStack {
-                topGradientBar
+                topBar
                 Spacer()
             }
             VStack(spacing: 0) {
@@ -110,31 +110,20 @@ struct StreamViewerView: View {
         )
     }
 
-    // MARK: - Top gradient bar
-    private var topGradientBar: some View {
+    // MARK: - Top bar
+    private var topBar: some View {
         ZStack(alignment: .top) {
-            LinearGradient(
-                colors: [.black.opacity(0.65), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 120)
-            .ignoresSafeArea()
-
             HStack(alignment: .center, spacing: 8) {
                 // Streamer pill
-                HStack(spacing: 6) {
-                    ProfilePictureView(url: stream.streamerImageUrl, size: 28)
+                HStack(spacing: 8) {
+                    ProfilePictureView(url: stream.streamerImageUrl, size: 30)
                     Text(stream.streamerName)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
                         .lineLimit(1)
                 }
-                .padding(.leading, 4)
-                .padding(.trailing, 10)
-                .padding(.vertical, 4)
-                .background(.white.opacity(0.1))
-                .overlay(Capsule().stroke(.white.opacity(0.18), lineWidth: 0.5))
-                .clipShape(Capsule())
+                
+                Spacer()
 
                 // LIVE badge
                 Text("LIVE")
@@ -143,7 +132,7 @@ struct StreamViewerView: View {
                     .kerning(0.5)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)
-                    .background(Color(hex: "#E24B4A"))
+                    .background(AppTheme.danger)
                     .clipShape(Capsule())
 
                 // Viewer count — driven by viewModel.viewerCount which updates
@@ -161,21 +150,16 @@ struct StreamViewerView: View {
                 .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
                 .clipShape(Capsule())
 
-                Spacer()
-
                 // Leave button
                 Button { showLeaveConfirm = true } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.1))
-                        .overlay(Circle().stroke(.white.opacity(0.18), lineWidth: 0.5))
-                        .clipShape(Circle())
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
                 }
+                .padding(.leading)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 56)
+            .padding(.horizontal)
+            .padding(.top)
         }
     }
 
