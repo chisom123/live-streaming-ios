@@ -180,7 +180,7 @@ class StreamerViewModel: ObservableObject {
                 // Subtract 1 to exclude the streamer's own LiveKit participant
                 // which always appears in viewer_ids due to their room presence
                 let ids = data["viewer_ids"] as? [String] ?? []
-                self.viewerCount = max(0, ids.count - 1)
+                self.viewerCount = ids.count
             }
     }
 

@@ -161,7 +161,7 @@ class StreamViewerViewModel: ObservableObject {
                 }
                 // viewer_ids array drives the live count
                 let ids = data["viewer_ids"] as? [String] ?? []
-                self.viewerCount = max(0, ids.count - 1)
+                self.viewerCount = ids.count
             }
 
         // Active request — watch for a single accepted request on this stream.
