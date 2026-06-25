@@ -118,29 +118,29 @@ struct StreamViewerView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
                 }
-
+                
                 Spacer()
 
                 Text("LIVE")
-                    .font(.system(size: 10, weight: .black))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
                     .kerning(0.5)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)
                     .background(AppTheme.danger)
                     .clipShape(Capsule())
+    
 
                 HStack(spacing: 4) {
                     Image(systemName: "eye.fill")
-                        .font(.system(size: 9))
+                        .font(.system(size: 12))
                     Text(formattedViewerCount(viewModel.viewerCount))
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 12, weight: .bold))
                 }
                 .foregroundColor(.white.opacity(0.85))
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
                 .background(.white.opacity(0.1))
-                .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
                 .clipShape(Capsule())
 
                 Button { showLeaveConfirm = true } label: {
