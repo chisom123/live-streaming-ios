@@ -151,7 +151,7 @@ struct StreamViewerView: View {
                 .padding(.leading)
             }
             .padding(.horizontal)
-            .padding(.top)
+            .padding(.top, 10)
         }
     }
 
@@ -265,7 +265,7 @@ struct StreamViewerView: View {
                 .frame(width: 44, height: 44)
             }
             .padding(.horizontal)
-            .padding(.bottom)
+            .padding(.bottom, 10)
         }
     }
 
