@@ -259,7 +259,7 @@ struct StreamViewerView: View {
                             .fill(Color(hex: "#FF6B00"))
                             .frame(width: 44, height: 44)
                         Image(systemName: "hand.raised.fill")
-                            .font(.system(size: 17, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.white)
                     }
                 }
