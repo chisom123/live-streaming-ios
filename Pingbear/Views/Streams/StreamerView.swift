@@ -33,7 +33,8 @@ struct StreamerView: View {
                 SwiftUIVideoView(track).ignoresSafeArea()
             }
 
-            if viewModel.isConnecting {
+            // Only show connecting overlay if we're connecting AND don't have a track yet
+            if viewModel.isConnecting && viewModel.localVideoTrack == nil {
                 connectingOverlay
             } else if let err = viewModel.errorMessage {
                 errorOverlay(err)
@@ -58,11 +59,26 @@ struct StreamerView: View {
 
     // MARK: - Connecting
     private var connectingOverlay: some View {
-        VStack(spacing: 14) {
-            ProgressView().tint(.white)
-            Text("Starting your stream...")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(0.6))
+        CustomSpinner()
+            .frame(width: 50, height: 50)
+    }
+
+    struct CustomSpinner: View {
+        @State private var isAnimating = false
+
+        var body: some View {
+            Circle()
+                .trim(from: 0, to: 0.7)
+                .stroke(Color.white, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
+                .animation(
+                    Animation.linear(duration: 1)
+                        .repeatForever(autoreverses: false),
+                    value: isAnimating
+                )
+                .onAppear {
+                    isAnimating = true
+                }
         }
     }
 
