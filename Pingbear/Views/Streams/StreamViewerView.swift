@@ -332,8 +332,12 @@ struct ChatBubbleView: View {
         Group {
             switch message.type {
             case .chat:         chatRow
-            case .requestEvent: requestRow
             case .joinEvent:    joinRow
+            case .requestEvent: requestRow
+            case .requestAccepted: requestAcceptedRow
+            case .requestDeclined: requestDeclinedRow
+            case .requestCompleted: requestCompletedRow
+            default:            chatRow
             }
         }
     }
@@ -403,7 +407,7 @@ struct ChatBubbleView: View {
     
     // MARK: - Join row
     private var joinRow: some View {
-        HStack(alignment: .center, spacing: 8) {  // Use .center for single line
+        HStack(alignment: .center, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
             Group {
                 Text(displayName + "  ")
@@ -419,7 +423,7 @@ struct ChatBubbleView: View {
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Request row
+    // MARK: - Request row (Sent)
     private var requestRow: some View {
         let parts      = message.text.components(separatedBy: " · $")
         let reqDesc    = parts.first ?? message.text
@@ -455,5 +459,129 @@ struct ChatBubbleView: View {
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .frame(maxWidth: 310, alignment: .leading)
+    }
+
+    // MARK: - Request Accepted Row (Green)
+    private var requestAcceptedRow: some View {
+        HStack(alignment: .center, spacing: 8) {
+            ProfilePictureView(url: message.avatarUrl, size: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(displayName)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("accepted")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                if let requestText = extractRequestText() {
+                    Text("\"\(requestText)\"")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color(hex: "#22C55E").opacity(0.12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hex: "#22C55E").opacity(0.2), lineWidth: 0.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .frame(maxWidth: 310, alignment: .leading)
+    }
+
+    // MARK: - Request Declined Row (Red)
+    private var requestDeclinedRow: some View {
+        HStack(alignment: .center, spacing: 8) {
+            ProfilePictureView(url: message.avatarUrl, size: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(displayName)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("declined")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                if let requestText = extractRequestText() {
+                    Text("\"\(requestText)\"")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color(hex: "#EF4444").opacity(0.10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hex: "#EF4444").opacity(0.2), lineWidth: 0.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .frame(maxWidth: 310, alignment: .leading)
+    }
+
+    // MARK: - Request Completed Row (Gold/Purple)
+    private var requestCompletedRow: some View {
+        HStack(alignment: .center, spacing: 8) {
+            ProfilePictureView(url: message.avatarUrl, size: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text(displayName)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("completed")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(.white.opacity(0.7))
+                }
+                if let requestText = extractRequestText() {
+                    Text("\"\(requestText)\"")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(hex: "#F59E0B").opacity(0.12),
+                        Color(hex: "#8B5CF6").opacity(0.08)
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(hex: "#F59E0B").opacity(0.2), lineWidth: 0.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+        .frame(maxWidth: 310, alignment: .leading)
+    }
+
+    // MARK: - Helper to extract request text
+    private func extractRequestText() -> String? {
+        let text = message.text
+        let patterns = [
+            "accepted \"(.*)\"",
+            "declined request: \"(.*)\"",
+            "completed request: \"(.*)\""
+        ]
+        for pattern in patterns {
+            if let range = text.range(of: pattern, options: .regularExpression) {
+                let substring = text[range]
+                let cleaned = substring
+                    .replacingOccurrences(of: "accepted \"", with: "")
+                    .replacingOccurrences(of: "declined request: \"", with: "")
+                    .replacingOccurrences(of: "completed request: \"", with: "")
+                    .replacingOccurrences(of: "\"", with: "")
+                return cleaned.isEmpty ? nil : cleaned
+            }
+        }
+        return nil
     }
 }

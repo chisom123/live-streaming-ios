@@ -537,11 +537,24 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
     throw new Error('Stream is no longer live');
   }
 
+  const streamerInfo = await getUserInfo(db, userId);
+
   if (!accept) {
     await refundStreamRequest(db, requestId);
-    const { name: streamerName } = await getUserInfo(db, userId);
+    
+    // 🔥 ADDED: Chat message for decline
+    await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+      user_id:    userId,
+      name:       streamerInfo.name,
+      avatar_url: streamerInfo.avatarUrl,
+      text:       `declined request: "${req.description.slice(0, 60)}"`,
+      type:       'request_declined',
+      request_id: requestId,
+      created_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
     await sendPush(db, [req.from_user_id], {
-      title: `${streamerName} declined your request`,
+      title: `${streamerInfo.name} declined your request`,
       body:  'Your money has been refunded',
       data:  { type: 'stream_request_refunded', request_id: requestId, stream_id: req.stream_id }
     });
@@ -550,9 +563,20 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
   }
 
   await ref.update({ status: 'accepted', accepted_at: admin.firestore.FieldValue.serverTimestamp() });
-  const { name: streamerName } = await getUserInfo(db, userId);
+  
+  // 🔥 ADDED: Chat message for acceptance
+  await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+    user_id:    userId,
+    name:       streamerInfo.name,
+    avatar_url: streamerInfo.avatarUrl,
+    text:       `accepted "${req.description.slice(0, 60)}"`,
+    type:       'request_accepted',
+    request_id: requestId,
+    created_at: admin.firestore.FieldValue.serverTimestamp()
+  });
+
   await sendPush(db, [req.from_user_id], {
-    title: `${streamerName} accepted your request!`,
+    title: `${streamerInfo.name} accepted your request!`,
     body:  `"${req.description.slice(0, 60)}" — they're on it`,
     data:  { type: 'stream_request_accepted', request_id: requestId, stream_id: req.stream_id }
   });
@@ -599,9 +623,20 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
     total_earned: admin.firestore.FieldValue.increment(req.creator_payout)
   });
 
-  const { name: streamerName } = await getUserInfo(db, userId);
+  // 🔥 ADDED: Chat message for completion
+  const streamerInfo = await getUserInfo(db, userId);
+  await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+    user_id:    userId,
+    name:       streamerInfo.name,
+    avatar_url: streamerInfo.avatarUrl,
+    text:       `completed request: "${req.description.slice(0, 60)}" ✅`,
+    type:       'request_completed',
+    request_id: requestId,
+    created_at: admin.firestore.FieldValue.serverTimestamp()
+  });
+
   await sendPush(db, [req.from_user_id], {
-    title: `${streamerName} completed your request!`,
+    title: `${streamerInfo.name} completed your request!`,
     body:  `"${req.description.slice(0, 60)}"`,
     data:  { type: 'stream_request_completed', request_id: requestId, stream_id: req.stream_id }
   });

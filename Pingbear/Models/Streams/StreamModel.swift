@@ -136,41 +136,59 @@ struct StreamRequest: Identifiable {
 // MARK: - ChatMessage
 // ─────────────────────────────────────────────────────────────
 
-enum ChatMessageType: String {
-    case chat         = "chat"
+enum ChatMessageType: String, Codable {
+    case chat = "chat"
+    case joinEvent = "join_event"
     case requestEvent = "request_event"
-    case joinEvent    = "join_event"
+    case requestAccepted = "request_accepted"
+    case requestDeclined = "request_declined"
+    case requestCompleted = "request_completed"
 }
 
-struct ChatMessage: Identifiable {
-    let id:        String
-    let userId:    String
-    let name:      String
+struct ChatMessage: Identifiable, Codable {
+    let id: String
+    let userId: String
+    let name: String
     let avatarUrl: String?
-    let text:      String
-    let type:      ChatMessageType
+    let text: String
+    let type: ChatMessageType
     let requestId: String?
     let createdAt: Date
-
-    static func from(_ doc: DocumentSnapshot) -> ChatMessage? {
-        guard let data = doc.data() else { return nil }
-        guard
-            let userId    = data["user_id"]  as? String,
-            let name      = data["name"]     as? String,
-            let text      = data["text"]     as? String,
-            let typeRaw   = data["type"]     as? String,
-            let type      = ChatMessageType(rawValue: typeRaw),
-            let createdAt = (data["created_at"] as? Timestamp)?.dateValue()
-        else { return nil }
-
+    
+    init(id: String, userId: String, name: String, avatarUrl: String?, text: String, type: ChatMessageType, requestId: String?, createdAt: Date) {
+        self.id = id
+        self.userId = userId
+        self.name = name
+        self.avatarUrl = avatarUrl
+        self.text = text
+        self.type = type
+        self.requestId = requestId
+        self.createdAt = createdAt
+    }
+    
+    static func from(_ document: DocumentSnapshot) -> ChatMessage? {
+        guard let data = document.data() else { return nil }
+        
+        guard let userId = data["user_id"] as? String,
+              let name = data["name"] as? String,
+              let text = data["text"] as? String,
+              let typeRaw = data["type"] as? String,
+              let type = ChatMessageType(rawValue: typeRaw),
+              let createdAt = (data["created_at"] as? Timestamp)?.dateValue() else {
+            return nil
+        }
+        
+        let avatarUrl = data["avatar_url"] as? String
+        let requestId = data["request_id"] as? String
+        
         return ChatMessage(
-            id:        doc.documentID,
-            userId:    userId,
-            name:      name,
-            avatarUrl: data["avatar_url"] as? String,
-            text:      text,
-            type:      type,
-            requestId: data["request_id"] as? String,
+            id: document.documentID,
+            userId: userId,
+            name: name,
+            avatarUrl: avatarUrl,
+            text: text,
+            type: type,
+            requestId: requestId,
             createdAt: createdAt
         )
     }
