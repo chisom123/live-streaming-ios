@@ -360,13 +360,13 @@ struct ChatBubbleView: View {
 
     // MARK: - Chat row
     private var chatRow: some View {
-        let alignment: VerticalAlignment = isMultiLine(displayName + "  " + message.text) ? .top : .center
+        let alignment: VerticalAlignment = isMultiLine(displayName + " " + message.text) ? .top : .center
 
         return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, alignment == .top ? 1 : 0)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
                 + Text(message.text)
@@ -384,7 +384,7 @@ struct ChatBubbleView: View {
         HStack(alignment: .center, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
                 + Text("joined")
@@ -402,17 +402,17 @@ struct ChatBubbleView: View {
         let parts = message.text.components(separatedBy: " · $")
         let reqDesc = parts.first ?? message.text
         let priceLabel = parts.count > 1 ? " $\(parts[1])" : ""
-        let fullText = displayName + "  " + "requested\(priceLabel)  " + reqDesc
+        let fullText = displayName + " " + "\(priceLabel.isEmpty ? "" : "\(priceLabel) ")request " + reqDesc
         let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
 
         return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, alignment == .top ? 1 : 0)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                + Text("requested\(priceLabel)  ")
+                + Text("\(priceLabel.isEmpty ? "" : "\(priceLabel) ")request ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color(hex: "#FF6B00"))
                 + Text(reqDesc)
@@ -428,17 +428,17 @@ struct ChatBubbleView: View {
     // MARK: - Request Accepted Row
     private var requestAcceptedRow: some View {
         let body = extractRequestText() ?? ""
-        let fullText = displayName + "  " + "accepted  " + body
+        let fullText = displayName + " " + "accepted " + body
         let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
 
         return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, alignment == .top ? 1 : 0)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                + Text("accepted  ")
+                + Text("accepted ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color(hex: "#22C55E"))
                 + Text(body)
@@ -454,17 +454,17 @@ struct ChatBubbleView: View {
     // MARK: - Request Declined Row
     private var requestDeclinedRow: some View {
         let body = extractRequestText() ?? ""
-        let fullText = displayName + "  " + "declined  " + body
+        let fullText = displayName + " " + "declined " + body
         let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
 
         return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, alignment == .top ? 1 : 0)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                + Text("declined  ")
+                + Text("declined ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color(hex: "#EF4444"))
                 + Text(body)
@@ -480,17 +480,17 @@ struct ChatBubbleView: View {
     // MARK: - Request Completed Row
     private var requestCompletedRow: some View {
         let body = extractRequestText() ?? ""
-        let fullText = displayName + "  " + "completed  " + body
+        let fullText = displayName + " " + "completed " + body
         let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
 
         return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
                 .padding(.top, alignment == .top ? 1 : 0)
             Group {
-                Text(displayName + "  ")
+                Text(displayName + " ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                + Text("completed  ")
+                + Text("completed ")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color(hex: "#F59E0B"))
                 + Text(body)
