@@ -37,7 +37,7 @@ const getDb = () => {
 
 const MIN_WITHDRAWAL       = 5.00;
 const CURRENCY             = 'USD';
-const WELCOME_BONUS_AMOUNT = 5.00;
+const WELCOME_BONUS_AMOUNT = 1.00;
 
 // ─────────────────────────────────────────────────────────────
 // HELPER — record a wallet transaction
