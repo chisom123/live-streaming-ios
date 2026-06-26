@@ -23,7 +23,7 @@ struct WelcomeBonusView: View {
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(AppTheme.primaryText)
                             .multilineTextAlignment(.center)
-                        Text("We've added $1 to your wallet to get you started")
+                        Text("We've added $0.50 to your wallet to get you started")
                             .font(.system(size: 16))
                             .foregroundColor(AppTheme.secondaryText)
                             .multilineTextAlignment(.center)
@@ -31,7 +31,7 @@ struct WelcomeBonusView: View {
                             .lineSpacing(4)
                             .padding(.horizontal, 10)
                     }
-                    Text("+$1")
+                    Text("+$0.50")
                         .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
                         .padding(EdgeInsets(top: 10, leading: 28, bottom: 10, trailing: 28))

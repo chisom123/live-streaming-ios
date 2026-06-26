@@ -144,7 +144,7 @@ struct BalanceCard: View {
             }
 
             if !viewModel.canCashOut {
-                if viewModel.bonusBalance > 0 && viewModel.balance >= 1.00 {
+                if viewModel.bonusBalance > 0 && viewModel.balance >= 0.50 {
                     // They have $5+ total but it's locked up as bonus credit —
                     // "minimum is $5" would be misleading here since adding
                     // $0.01 more bonus still wouldn't unlock cash out.
