@@ -344,56 +344,59 @@ struct StreamerView: View {
                         Circle()
                             .fill(Color(hex: "#E24B4A").opacity(0.15))
                             .frame(width: 52, height: 52)
-                        if viewModel.isEnding {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#f87171")))
-                                .scaleEffect(0.9)
-                        } else {
-                            Image(systemName: "stop.fill")
-                                .font(.system(size: 18))
-                                .foregroundColor(Color(hex: "#f87171"))
-                        }
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(Color(hex: "#f87171"))
                     }
-                    Text(viewModel.isEnding ? "Ending stream..." : "End stream?")
+                    Text("End stream?")
                         .font(.system(size: 19, weight: .bold))
                         .foregroundColor(.white)
-                    if !viewModel.isEnding {
-                        Text("Open requests will be automatically refunded to viewers.")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.45))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 8)
-                    }
+                    Text("Open requests will be automatically refunded to viewers.")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.45))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
                 }
 
-                if !viewModel.isEnding {
-                    HStack(spacing: 10) {
-                        Button { viewModel.showEndConfirm = false } label: {
-                            Text("Cancel")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 15)
-                                .background(.white.opacity(0.08))
-                                .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 0.5))
-                                .clipShape(Capsule())
-                        }
-                        Button {
-                            Task {
-                                await viewModel.endStream()
-                                onEnd()
-                                viewModel.showEndConfirm = false
-                            }
-                        } label: {
-                            Text("End stream")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 15)
-                                .background(Color(hex: "#E24B4A"))
-                                .clipShape(Capsule())
-                        }
+                HStack(spacing: 10) {
+                    Button {
+                        guard !viewModel.isEnding else { return }
+                        viewModel.showEndConfirm = false
+                    } label: {
+                        Text("Cancel")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(viewModel.isEnding ? .white.opacity(0.2) : .white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 15)
+                            .background(viewModel.isEnding ? .white.opacity(0.03) : .white.opacity(0.08))
+                            .overlay(Capsule().stroke(viewModel.isEnding ? .white.opacity(0.05) : .white.opacity(0.15), lineWidth: 0.5))
+                            .clipShape(Capsule())
                     }
+                    .disabled(viewModel.isEnding)
+
+                    Button {
+                        Task {
+                            await viewModel.endStream()
+                            onEnd()
+                            viewModel.showEndConfirm = false
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            if viewModel.isEnding {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            }
+                            Text(viewModel.isEnding ? "Ending..." : "End stream")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(viewModel.isEnding ? Color(hex: "#E24B4A").opacity(0.5) : Color(hex: "#E24B4A"))
+                        .clipShape(Capsule())
+                    }
+                    .disabled(viewModel.isEnding)
                 }
             }
             .padding(24)
