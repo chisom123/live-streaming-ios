@@ -547,7 +547,7 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
       user_id:    userId,
       name:       streamerInfo.name,
       avatar_url: streamerInfo.avatarUrl,
-      text:       `declined request: "${req.description.slice(0, 60)}"`,
+      text:       `declined "${req.description.slice(0, 60)}"`,
       type:       'request_declined',
       request_id: requestId,
       created_at: admin.firestore.FieldValue.serverTimestamp()
@@ -629,7 +629,7 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
     user_id:    userId,
     name:       streamerInfo.name,
     avatar_url: streamerInfo.avatarUrl,
-    text:       `completed request: "${req.description.slice(0, 60)}" ✅`,
+    text:       `completed "${req.description.slice(0, 60)}"`,
     type:       'request_completed',
     request_id: requestId,
     created_at: admin.firestore.FieldValue.serverTimestamp()

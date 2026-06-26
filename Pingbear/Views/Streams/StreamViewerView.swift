@@ -331,80 +331,54 @@ struct ChatBubbleView: View {
     var body: some View {
         Group {
             switch message.type {
-            case .chat:         chatRow
-            case .joinEvent:    joinRow
-            case .requestEvent: requestRow
-            case .requestAccepted: requestAcceptedRow
-            case .requestDeclined: requestDeclinedRow
+            case .chat:             chatRow
+            case .joinEvent:        joinRow
+            case .requestEvent:     requestRow
+            case .requestAccepted:  requestAcceptedRow
+            case .requestDeclined:  requestDeclinedRow
             case .requestCompleted: requestCompletedRow
-            default:            chatRow
+            default:                chatRow
             }
         }
     }
 
-    // MARK: - Chat row
-    private var chatRow: some View {
-        let isMultiLine = isMessageMultiLine()
-        
-        return Group {
-            if isMultiLine {
-                // Multi-line: profile picture at top
-                HStack(alignment: .top, spacing: 8) {
-                    ProfilePictureView(url: message.avatarUrl, size: 28)
-                        .padding(.top, 1)
-                    Group {
-                        Text(displayName + "  ")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                        + Text(message.text)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
-                }
-                .frame(maxWidth: 310, alignment: .leading)
-            } else {
-                // Single-line: profile picture centered with text
-                HStack(alignment: .center, spacing: 8) {
-                    ProfilePictureView(url: message.avatarUrl, size: 28)
-                    Group {
-                        Text(displayName + "  ")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.white)
-                        + Text(message.text)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.9))
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
-                }
-                .frame(maxWidth: 310, alignment: .leading)
-            }
-        }
-    }
+    // MARK: - Multi-line helper
+    private func isMultiLine(_ fullText: String) -> Bool {
+        if fullText.contains("\n") { return true }
 
-    private func isMessageMultiLine() -> Bool {
-        // If there's a newline, it's definitely multi-line
-        if message.text.contains("\n") {
-            return true
-        }
-        
-        let fullText = displayName + "  " + message.text
         let font = UIFont.systemFont(ofSize: 15, weight: .semibold)
         let maxWidth: CGFloat = 310 - 36
-        
-        let nsString = fullText as NSString
-        let size = nsString.boundingRect(
+
+        let size = (fullText as NSString).boundingRect(
             with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
             options: [.usesLineFragmentOrigin, .usesFontLeading],
             attributes: [.font: font],
             context: nil
         )
-        
         return size.height > 24
     }
-    
+
+    // MARK: - Chat row
+    private var chatRow: some View {
+        let alignment: VerticalAlignment = isMultiLine(displayName + "  " + message.text) ? .top : .center
+
+        return HStack(alignment: alignment, spacing: 8) {
+            ProfilePictureView(url: message.avatarUrl, size: 28)
+                .padding(.top, alignment == .top ? 1 : 0)
+            Group {
+                Text(displayName + "  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                + Text(message.text)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
+        }
+        .frame(maxWidth: 310, alignment: .leading)
+    }
+
     // MARK: - Join row
     private var joinRow: some View {
         HStack(alignment: .center, spacing: 8) {
@@ -423,164 +397,119 @@ struct ChatBubbleView: View {
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Request row (Sent)
+    // MARK: - Request row
     private var requestRow: some View {
-        let parts      = message.text.components(separatedBy: " · $")
-        let reqDesc    = parts.first ?? message.text
-        let priceLabel = parts.count > 1 ? "$\(parts[1])" : nil
+        let parts = message.text.components(separatedBy: " · $")
+        let reqDesc = parts.first ?? message.text
+        let priceLabel = parts.count > 1 ? " $\(parts[1])" : ""
+        let fullText = displayName + "  " + "requested\(priceLabel)  " + reqDesc
+        let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
 
-        return HStack(alignment: .top, spacing: 8) {
+        return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
-                .padding(.top, 3)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Text(displayName)
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(Color(hex: "#FF8C40"))
-                    
-                    Text("·")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(Color(hex: "#FF8C40"))
-                    
-                    if let p = priceLabel {
-                        Text("\(p)")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(Color(hex: "#FF8C40"))
-                    }
-                }
-                Text(reqDesc)
-                    .font(.system(size: 14, weight: .semibold))
+                .padding(.top, alignment == .top ? 1 : 0)
+            Group {
+                Text(displayName + "  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                + Text("requested\(priceLabel)  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(Color(hex: "#FF6B00"))
+                + Text(reqDesc)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
-                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color(hex: "#FF6B00").opacity(0.15))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .fixedSize(horizontal: false, vertical: true)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
         }
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Request Accepted Row (Green)
+    // MARK: - Request Accepted Row
     private var requestAcceptedRow: some View {
-        HStack(alignment: .center, spacing: 8) {
+        let body = extractRequestText() ?? ""
+        let fullText = displayName + "  " + "accepted  " + body
+        let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
+
+        return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(displayName)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                    Text("accepted")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                if let requestText = extractRequestText() {
-                    Text("\"\(requestText)\"")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                .padding(.top, alignment == .top ? 1 : 0)
+            Group {
+                Text(displayName + "  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                + Text("accepted  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(Color(hex: "#22C55E"))
+                + Text(body)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color(hex: "#22C55E").opacity(0.12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hex: "#22C55E").opacity(0.2), lineWidth: 0.5)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .fixedSize(horizontal: false, vertical: true)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
         }
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Request Declined Row (Red)
+    // MARK: - Request Declined Row
     private var requestDeclinedRow: some View {
-        HStack(alignment: .center, spacing: 8) {
+        let body = extractRequestText() ?? ""
+        let fullText = displayName + "  " + "declined  " + body
+        let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
+
+        return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(displayName)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                    Text("declined")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                if let requestText = extractRequestText() {
-                    Text("\"\(requestText)\"")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                .padding(.top, alignment == .top ? 1 : 0)
+            Group {
+                Text(displayName + "  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                + Text("declined  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(Color(hex: "#EF4444"))
+                + Text(body)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color(hex: "#EF4444").opacity(0.10))
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hex: "#EF4444").opacity(0.2), lineWidth: 0.5)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .fixedSize(horizontal: false, vertical: true)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
         }
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Request Completed Row (Gold/Purple)
+    // MARK: - Request Completed Row
     private var requestCompletedRow: some View {
-        HStack(alignment: .center, spacing: 8) {
+        let body = extractRequestText() ?? ""
+        let fullText = displayName + "  " + "completed  " + body
+        let alignment: VerticalAlignment = isMultiLine(fullText) ? .top : .center
+
+        return HStack(alignment: alignment, spacing: 8) {
             ProfilePictureView(url: message.avatarUrl, size: 28)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(displayName)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                    Text("completed")
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                if let requestText = extractRequestText() {
-                    Text("\"\(requestText)\"")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white.opacity(0.6))
-                }
+                .padding(.top, alignment == .top ? 1 : 0)
+            Group {
+                Text(displayName + "  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.white)
+                + Text("completed  ")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(Color(hex: "#F59E0B"))
+                + Text(body)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(hex: "#F59E0B").opacity(0.12),
-                        Color(hex: "#8B5CF6").opacity(0.08)
-                    ]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(hex: "#F59E0B").opacity(0.2), lineWidth: 0.5)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .fixedSize(horizontal: false, vertical: true)
+            .shadow(color: .black.opacity(0.45), radius: 4, x: 0, y: 1)
         }
         .frame(maxWidth: 310, alignment: .leading)
     }
 
-    // MARK: - Helper to extract request text
+    // MARK: - Extract request text helper
     private func extractRequestText() -> String? {
-        let text = message.text
-        let patterns = [
-            "accepted \"(.*)\"",
-            "declined request: \"(.*)\"",
-            "completed request: \"(.*)\""
-        ]
-        for pattern in patterns {
-            if let range = text.range(of: pattern, options: .regularExpression) {
-                let substring = text[range]
-                let cleaned = substring
-                    .replacingOccurrences(of: "accepted \"", with: "")
-                    .replacingOccurrences(of: "declined request: \"", with: "")
-                    .replacingOccurrences(of: "completed request: \"", with: "")
-                    .replacingOccurrences(of: "\"", with: "")
-                return cleaned.isEmpty ? nil : cleaned
-            }
+        let pattern = "\"(.*)\""
+        if let range = message.text.range(of: pattern, options: .regularExpression) {
+            let match = String(message.text[range])
+                .replacingOccurrences(of: "\"", with: "")
+            return match.isEmpty ? nil : match
         }
         return nil
     }
