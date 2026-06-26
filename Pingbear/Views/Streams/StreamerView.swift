@@ -50,6 +50,10 @@ struct StreamerView: View {
             Task { await viewModel.startBroadcast() }
         }
         .onDisappear { viewModel.stopListening() }
+        .sheet(isPresented: $showRequestQueue) {
+            StreamerRequestSheet(viewModel: viewModel)
+                .preferredColorScheme(.dark)
+        }
     }
 
     // MARK: - Connecting
@@ -97,17 +101,14 @@ struct StreamerView: View {
     // MARK: - Live overlay
     private var liveOverlay: some View {
         ZStack(alignment: .bottom) {
-            // Top
             VStack {
                 streamerTopBar
                 Spacer()
             }
 
-            // Bottom stack
             VStack(spacing: 0) {
                 Spacer()
 
-                // Active accepted request banner
                 if let active = viewModel.acceptedRequests.first {
                     acceptedRequestBanner(active)
                         .padding(.horizontal, 12)
@@ -115,96 +116,74 @@ struct StreamerView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
 
-                // Request queue panel (slides up)
-                if showRequestQueue {
-                    requestQueuePanel
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-
                 chatFeed
                 streamerBottomBar
             }
-            .animation(.spring(response: 0.38, dampingFraction: 0.85), value: showRequestQueue)
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.acceptedRequests.first?.id ?? "")
         }
     }
 
-    // MARK: - Top bar
+    // MARK: - Top bar — matches viewer pill sizing exactly
     private var streamerTopBar: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(
-                colors: [.black.opacity(0.65), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 120)
-            .ignoresSafeArea()
-
-            HStack(alignment: .center, spacing: 8) {
-                // LIVE
-                Text("LIVE")
-                    .font(.system(size: 10, weight: .black))
-                    .foregroundColor(.white)
-                    .kerning(0.5)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(Color(hex: "#E24B4A"))
-                    .clipShape(Capsule())
-
-                // Viewer count
-                HStack(spacing: 4) {
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 9))
-                    Text(formattedViewerCount(viewModel.viewerCount))
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .foregroundColor(.white.opacity(0.85))
+        HStack(alignment: .center, spacing: 8) {
+            Text("LIVE")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white)
+                .kerning(0.5)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
-                .background(.white.opacity(0.1))
-                .overlay(Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5))
+                .background(Color(hex: "#E24B4A"))
                 .clipShape(Capsule())
 
-                Spacer()
-
-                // Earnings
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(Color(hex: "#16A34A"))
-                        .frame(width: 6, height: 6)
-                    Text("$\(String(format: "%.2f", viewModel.totalEarned))")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(.black.opacity(0.45))
-                .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 0.5))
-                .clipShape(Capsule())
-
-                // End stream
-                Button { viewModel.showEndConfirm = true } label: {
-                    Text("End")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color(hex: "#f87171"))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 6)
-                        .background(Color(hex: "#E24B4A").opacity(0.12))
-                        .overlay(
-                            Capsule().stroke(Color(hex: "#E24B4A").opacity(0.55), lineWidth: 0.5)
-                        )
-                        .clipShape(Capsule())
-                }
+            HStack(spacing: 4) {
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 12))
+                Text(formattedViewerCount(viewModel.viewerCount))
+                    .font(.system(size: 12, weight: .bold))
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 58)
+            .foregroundColor(.white.opacity(0.85))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.1))
+            .clipShape(Capsule())
+
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color(hex: "#16A34A"))
+                    .frame(width: 6, height: 6)
+                Text("$\(String(format: "%.2f", viewModel.totalEarned))")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.1))
+            .clipShape(Capsule())
+
+            Spacer()
+
+            Button { viewModel.showEndConfirm = true } label: {
+                Text("End")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(hex: "#f87171"))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 5)
+                    .background(Color(hex: "#E24B4A").opacity(0.12))
+                    .overlay(
+                        Capsule().stroke(Color(hex: "#E24B4A").opacity(0.55), lineWidth: 0.5)
+                    )
+                    .clipShape(Capsule())
+            }
         }
+        .padding(.horizontal, 16)
+        .padding(.top, 58)
     }
 
     private func formattedViewerCount(_ count: Int) -> String {
         count >= 1000 ? String(format: "%.1fk", Double(count) / 1000) : "\(count)"
     }
 
-    // MARK: - Accepted request banner (streamer actionable)
+    // MARK: - Accepted request banner
     private func acceptedRequestBanner(_ request: StreamRequest) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
@@ -226,17 +205,13 @@ struct StreamerView: View {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.completeRequest(request)
             } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("Done · $\(String(format: "%.2f", request.creatorPayout))")
-                        .font(.system(size: 12, weight: .bold))
-                }
-                .foregroundColor(.white)
-                .padding(.horizontal, 13)
-                .padding(.vertical, 9)
-                .background(Color(hex: "#16A34A"))
-                .clipShape(Capsule())
+                Text("Done · $\(String(format: "%.2f", request.creatorPayout))")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 9)
+                    .background(Color(hex: "#16A34A"))
+                    .clipShape(Capsule())
             }
         }
         .padding(.horizontal, 14)
@@ -249,95 +224,37 @@ struct StreamerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
-    // MARK: - Request queue panel
-    private var requestQueuePanel: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Requests")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(.white)
-                Spacer()
-                Text("\(viewModel.pendingRequests.count) pending")
-                    .font(.system(size: 12))
-                    .foregroundColor(.white.opacity(0.45))
-                Button { showRequestQueue = false } label: {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.45))
-                        .padding(.leading, 10)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 13)
-
-            Divider()
-                .background(.white.opacity(0.08))
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 8) {
-                    ForEach(Array(viewModel.pendingRequests.enumerated()), id: \.element.id) { index, req in
-                        StreamerRequestCard(
-                            request:   req,
-                            isTop:     index == 0,
-                            onAccept:  { viewModel.acceptRequest(req) },
-                            onDecline: { viewModel.declineRequest(req) }
-                        )
-                    }
-                    if viewModel.pendingRequests.isEmpty {
-                        VStack(spacing: 10) {
-                            Image(systemName: "tray")
-                                .font(.system(size: 24))
-                                .foregroundColor(.white.opacity(0.2))
-                            Text("No pending requests")
-                                .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.3))
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 28)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-            }
-            .frame(maxHeight: 260)
-        }
-        .background(Color(hex: "#111111").opacity(0.96))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(.white.opacity(0.1), lineWidth: 0.5)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .padding(.horizontal, 8)
-        .padding(.bottom, 4)
-    }
-
-    // MARK: - Chat feed (read-only)
+    // MARK: - Chat feed — same as StreamViewerView
     private var chatFeed: some View {
         ScrollViewReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 5) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach(viewModel.messages) { msg in
                         ChatBubbleView(message: msg)
                             .id(msg.id)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 150)
+            .frame(maxHeight: 200)
             .mask(
                 LinearGradient(
                     gradient: Gradient(stops: [
                         .init(color: .clear, location: 0),
-                        .init(color: .black, location: 0.28)
+                        .init(color: .black, location: 0.18),
+                        .init(color: .black, location: 0.85),
+                        .init(color: .clear, location: 1)
                     ]),
                     startPoint: .top, endPoint: .bottom
                 )
             )
+            .padding(.vertical, 25)
             .onChange(of: viewModel.messages.count) { _ in
                 if let last = viewModel.messages.last {
-                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
                 }
             }
         }
@@ -345,83 +262,59 @@ struct StreamerView: View {
 
     // MARK: - Bottom bar
     private var streamerBottomBar: some View {
-        ZStack(alignment: .bottom) {
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.72)],
-                startPoint: .top, endPoint: .bottom
-            )
-            .frame(height: 100)
-            .ignoresSafeArea()
-
-            HStack(spacing: 10) {
-                // Requests toggle
-                Button {
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.85)) {
-                        showRequestQueue.toggle()
+        HStack(spacing: 10) {
+            Button {
+                Analytics.shared.trackTap(
+                    elementId: "toggle_request_queue",
+                    screenName: "streamer_live",
+                    properties: [AnalyticsProperty.streamId: streamId]
+                )
+                showRequestQueue = true
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 13))
+                    Text("Requests")
+                        .font(.system(size: 13, weight: .semibold))
+                    if viewModel.pendingRequests.count > 0 {
+                        Text("\(viewModel.pendingRequests.count)")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 18, height: 18)
+                            .background(Color(hex: "#E24B4A"))
+                            .clipShape(Circle())
                     }
-                    Analytics.shared.trackTap(
-                        elementId: "toggle_request_queue",
-                        screenName: "streamer_live",
-                        properties: [AnalyticsProperty.streamId: streamId]
-                    )
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "list.bullet")
-                            .font(.system(size: 13))
-                        Text("Requests")
-                            .font(.system(size: 13, weight: .semibold))
-                        if viewModel.pendingRequests.count > 0 {
-                            Text("\(viewModel.pendingRequests.count)")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 18, height: 18)
-                                .background(Color(hex: "#E24B4A"))
-                                .clipShape(Circle())
-                        }
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        showRequestQueue
-                            ? .white.opacity(0.16)
-                            : .white.opacity(0.1)
-                    )
-                    .overlay(
-                        Capsule().stroke(
-                            showRequestQueue
-                                ? .white.opacity(0.25)
-                                : .white.opacity(0.14),
-                            lineWidth: 0.5
-                        )
-                    )
-                    .clipShape(Capsule())
                 }
-
-                // Flip camera
-                Button {
-                    Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
-                    Task {
-                        if let track = viewModel.localVideoTrack,
-                           let capturer = track.capturer as? CameraCapturer {
-                            try? await capturer.switchCameraPosition()
-                        }
-                    }
-                } label: {
-                    Image(systemName: "arrow.triangle.2.circlepath.camera")
-                        .font(.system(size: 15))
-                        .foregroundColor(.white.opacity(0.8))
-                        .frame(width: 40, height: 40)
-                        .background(.white.opacity(0.1))
-                        .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                        .clipShape(Circle())
-                }
-
-                Spacer()
+                .foregroundColor(.white)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.white.opacity(0.1))
+                .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
+                .clipShape(Capsule())
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 46)
+
+            Button {
+                Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
+                Task {
+                    if let track = viewModel.localVideoTrack,
+                       let capturer = track.capturer as? CameraCapturer {
+                        try? await capturer.switchCameraPosition()
+                    }
+                }
+            } label: {
+                Image(systemName: "arrow.triangle.2.circlepath.camera")
+                    .font(.system(size: 15))
+                    .foregroundColor(.white.opacity(0.8))
+                    .frame(width: 40, height: 40)
+                    .background(.white.opacity(0.1))
+                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+                    .clipShape(Circle())
+            }
+
+            Spacer()
         }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 46)
     }
 
     // MARK: - End confirm dialog
@@ -436,51 +329,56 @@ struct StreamerView: View {
                         Circle()
                             .fill(Color(hex: "#E24B4A").opacity(0.15))
                             .frame(width: 52, height: 52)
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 18))
-                            .foregroundColor(Color(hex: "#f87171"))
+                        if viewModel.isEnding {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#f87171")))
+                                .scaleEffect(0.9)
+                        } else {
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(Color(hex: "#f87171"))
+                        }
                     }
-                    Text("End stream?")
+                    Text(viewModel.isEnding ? "Ending stream..." : "End stream?")
                         .font(.system(size: 19, weight: .bold))
                         .foregroundColor(.white)
-                    Text("Open requests will be automatically refunded to viewers.")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.45))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 8)
+                    if !viewModel.isEnding {
+                        Text("Open requests will be automatically refunded to viewers.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.45))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                    }
                 }
 
-                HStack(spacing: 10) {
-                    Button { viewModel.showEndConfirm = false } label: {
-                        Text("Cancel")
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(.white.opacity(0.08))
-                            .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 0.5))
-                            .clipShape(Capsule())
-                    }
-                    Button {
-                        viewModel.showEndConfirm = false
-                        Task { await viewModel.endStream(); onEnd() }
-                    } label: {
-                        HStack(spacing: 6) {
-                            if viewModel.isEnding {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
+                if !viewModel.isEnding {
+                    HStack(spacing: 10) {
+                        Button { viewModel.showEndConfirm = false } label: {
+                            Text("Cancel")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 15)
+                                .background(.white.opacity(0.08))
+                                .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 0.5))
+                                .clipShape(Capsule())
+                        }
+                        Button {
+                            Task {
+                                await viewModel.endStream()
+                                onEnd()
+                                viewModel.showEndConfirm = false
                             }
+                        } label: {
                             Text("End stream")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 15)
+                                .background(Color(hex: "#E24B4A"))
+                                .clipShape(Capsule())
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(Color(hex: "#E24B4A"))
-                        .clipShape(Capsule())
                     }
-                    .disabled(viewModel.isEnding)
                 }
             }
             .padding(24)
@@ -495,6 +393,74 @@ struct StreamerView: View {
     }
 }
 
+// MARK: - StreamerRequestSheet
+struct StreamerRequestSheet: View {
+
+    @ObservedObject var viewModel: StreamerViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#111111").ignoresSafeArea()
+
+            VStack(alignment: .leading, spacing: 0) {
+
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(.white.opacity(0.18))
+                    .frame(width: 36, height: 4)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+
+                HStack {
+                    Text("Requests")
+                        .font(.system(size: 24, weight: .black))
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("\(viewModel.pendingRequests.count) pending")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+
+                Divider()
+                    .background(.white.opacity(0.08))
+
+                if viewModel.pendingRequests.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.2))
+                        Text("No pending requests")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 8) {
+                            ForEach(Array(viewModel.pendingRequests.enumerated()), id: \.element.id) { index, req in
+                                StreamerRequestCard(
+                                    request:   req,
+                                    isTop:     index == 0,
+                                    onAccept:  { viewModel.acceptRequest(req) },
+                                    onDecline: { viewModel.declineRequest(req) }
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 32)
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
 // MARK: - StreamerRequestCard
 struct StreamerRequestCard: View {
     let request:   StreamRequest
@@ -502,51 +468,102 @@ struct StreamerRequestCard: View {
     let onAccept:  () -> Void
     let onDecline: () -> Void
 
+    @State private var actionState: ActionState = .idle
+
+    enum ActionState {
+        case idle, accepting, declining
+    }
+
+    private var isActing: Bool { actionState != .idle }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 9) {
+
+            // Header: avatar + name + price block
+            HStack(alignment: .center, spacing: 9) {
                 ProfilePictureView(url: request.fromUserImageUrl, size: 28)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(request.fromUserName)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
-                }
+
+                Text(request.fromUserName)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.white)
+
                 Spacer()
-                Text("$\(String(format: "%.2f", request.price))")
-                    .font(.system(size: 17, weight: .black))
-                    .foregroundColor(Color(hex: "#FF6B00"))
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("$\(String(format: "%.2f", request.creatorPayout))")
+                        .font(.system(size: 17, weight: .black))
+                        .foregroundColor(Color(hex: "#FF6B00"))
+                    Text("$\(String(format: "%.2f", request.price)) before fees")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.35))
+                }
             }
 
+            // Description
             Text(request.description)
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.85))
                 .fixedSize(horizontal: false, vertical: true)
                 .lineLimit(3)
 
+            // Actions
             HStack(spacing: 8) {
-                Button(action: onDecline) {
-                    Text("Decline")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(.white.opacity(0.06))
-                        .overlay(Capsule().stroke(.white.opacity(0.1), lineWidth: 0.5))
-                        .clipShape(Capsule())
-                }
-                Button(action: onAccept) {
-                    HStack(spacing: 4) {
-                        Text("Accept")
-                        Text("· $\(String(format: "%.2f", request.creatorPayout))")
-                            .opacity(0.8)
+                // Decline
+                Button {
+                    guard !isActing else { return }
+                    actionState = .declining
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    onDecline()
+                } label: {
+                    HStack(spacing: 6) {
+                        if actionState == .declining {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.4)))
+                                .scaleEffect(0.75)
+                            Text("Declining...")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white.opacity(0.3))
+                        } else {
+                            Text("Decline")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(isActing ? .white.opacity(0.2) : .white.opacity(0.5))
+                        }
                     }
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(Color(hex: "#16A34A"))
+                    .background(isActing ? .white.opacity(0.03) : .white.opacity(0.06))
+                    .overlay(Capsule().stroke(.white.opacity(isActing ? 0.05 : 0.1), lineWidth: 0.5))
                     .clipShape(Capsule())
                 }
+                .disabled(isActing)
+
+                // Accept
+                Button {
+                    guard !isActing else { return }
+                    actionState = .accepting
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onAccept()
+                } label: {
+                    HStack(spacing: 6) {
+                        if actionState == .accepting {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.5)))
+                                .scaleEffect(0.75)
+                            Text("Accepting...")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white.opacity(0.5))
+                        } else {
+                            Text("Accept")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(isActing ? .white.opacity(0.4) : .white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(isActing ? Color(hex: "#16A34A").opacity(0.4) : Color(hex: "#16A34A"))
+                    .clipShape(Capsule())
+                }
+                .disabled(isActing)
             }
         }
         .padding(13)
@@ -583,7 +600,6 @@ struct StreamSummaryView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Check icon
                 ZStack {
                     Circle()
                         .fill(Color(hex: "#16A34A").opacity(0.15))
@@ -602,7 +618,6 @@ struct StreamSummaryView: View {
                     .foregroundColor(.white)
                     .padding(.bottom, 6)
 
-                // Hero earned amount
                 Text("$\(String(format: "%.2f", totalEarned))")
                     .font(.system(size: 52, weight: .black))
                     .foregroundColor(.white)
@@ -614,7 +629,6 @@ struct StreamSummaryView: View {
                     .foregroundColor(.white.opacity(0.35))
                     .padding(.bottom, 36)
 
-                // Stats card
                 VStack(spacing: 0) {
                     summaryRow(
                         icon: "checkmark.circle",
