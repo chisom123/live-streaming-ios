@@ -293,7 +293,7 @@ struct StreamerView: View {
                         if viewModel.pendingRequests.count > 0 {
                             Text("\(viewModel.pendingRequests.count)")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.black)
                                 .frame(width: 18, height: 18)
                                 .background(Color(hex: "#fff"))
                                 .clipShape(Circle())
