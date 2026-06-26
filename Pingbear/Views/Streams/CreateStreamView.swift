@@ -63,7 +63,7 @@ struct CreateStreamView: View {
             if !offAppNumbers.isEmpty {
                 OffAppInviteComposer(
                     recipients: offAppNumbers,
-                    body: "I'm live on SocialStar right now — tap to watch! join.socialstarapp.com",
+                    body: "I'm live on SocialStar right now — Come send me requests! join.socialstarapp.com",
                     onFinish: { _ in
                         showingComposer = false
                         if let id = pendingStreamId {
