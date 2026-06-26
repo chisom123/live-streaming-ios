@@ -277,59 +277,58 @@ struct StreamerView: View {
 
     // MARK: - Bottom bar
     private var streamerBottomBar: some View {
-        HStack(spacing: 10) {
-            Button {
-                Analytics.shared.trackTap(
-                    elementId: "toggle_request_queue",
-                    screenName: "streamer_live",
-                    properties: [AnalyticsProperty.streamId: streamId]
-                )
-                showRequestQueue = true
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "list.bullet")
-                        .font(.system(size: 13))
-                    Text("Requests")
-                        .font(.system(size: 13, weight: .semibold))
-                    if viewModel.pendingRequests.count > 0 {
-                        Text("\(viewModel.pendingRequests.count)")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(width: 18, height: 18)
-                            .background(Color(hex: "#E24B4A"))
-                            .clipShape(Circle())
+        ZStack(alignment: .bottom) {
+            HStack(spacing: 10) {
+                Button {
+                    Analytics.shared.trackTap(
+                        elementId: "toggle_request_queue",
+                        screenName: "streamer_live",
+                        properties: [AnalyticsProperty.streamId: streamId]
+                    )
+                    showRequestQueue = true
+                } label: {
+                    HStack(spacing: 7) {
+                        Text("Requests")
+                            .font(.system(size: 16, weight: .bold))
+                        if viewModel.pendingRequests.count > 0 {
+                            Text("\(viewModel.pendingRequests.count)")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 18, height: 18)
+                                .background(Color(hex: "#fff"))
+                                .clipShape(Circle())
+                        }
                     }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "#FF6B00"))
+                    .clipShape(Capsule())
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(.white.opacity(0.1))
-                .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                .clipShape(Capsule())
-            }
 
-            Button {
-                Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
-                Task {
-                    if let track = viewModel.localVideoTrack,
-                       let capturer = track.capturer as? CameraCapturer {
-                        try? await capturer.switchCameraPosition()
+                Button {
+                    Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
+                    Task {
+                        if let track = viewModel.localVideoTrack,
+                           let capturer = track.capturer as? CameraCapturer {
+                            try? await capturer.switchCameraPosition()
+                        }
                     }
+                } label: {
+                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                        .font(.system(size: 15))
+                        .foregroundColor(.white.opacity(0.8))
+                        .frame(width: 40, height: 40)
+                        .background(.white.opacity(0.1))
+                        .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
+                        .clipShape(Circle())
                 }
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 15))
-                    .foregroundColor(.white.opacity(0.8))
-                    .frame(width: 40, height: 40)
-                    .background(.white.opacity(0.1))
-                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                    .clipShape(Circle())
-            }
 
-            Spacer()
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 10)
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 46)
     }
 
     // MARK: - End confirm dialog
