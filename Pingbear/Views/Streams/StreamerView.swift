@@ -125,58 +125,57 @@ struct StreamerView: View {
 
     // MARK: - Top bar — matches viewer pill sizing exactly
     private var streamerTopBar: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Text("LIVE")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.white)
-                .kerning(0.5)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
-                .background(Color(hex: "#E24B4A"))
-                .clipShape(Capsule())
-
-            HStack(spacing: 4) {
-                Image(systemName: "eye.fill")
-                    .font(.system(size: 12))
-                Text(formattedViewerCount(viewModel.viewerCount))
-                    .font(.system(size: 12, weight: .bold))
-            }
-            .foregroundColor(.white.opacity(0.85))
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(.white.opacity(0.1))
-            .clipShape(Capsule())
-
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color(hex: "#16A34A"))
-                    .frame(width: 6, height: 6)
-                Text("$\(String(format: "%.2f", viewModel.totalEarned))")
+        ZStack(alignment: .top) {
+            HStack(alignment: .center, spacing: 8) {
+                Text("LIVE")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
-            }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(.white.opacity(0.1))
-            .clipShape(Capsule())
-
-            Spacer()
-
-            Button { viewModel.showEndConfirm = true } label: {
-                Text("End")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "#f87171"))
-                    .padding(.horizontal, 14)
+                    .kerning(0.5)
+                    .padding(.horizontal, 9)
                     .padding(.vertical, 5)
-                    .background(Color(hex: "#E24B4A").opacity(0.12))
-                    .overlay(
-                        Capsule().stroke(Color(hex: "#E24B4A").opacity(0.55), lineWidth: 0.5)
-                    )
+                    .background(AppTheme.danger)
                     .clipShape(Capsule())
+
+                HStack(spacing: 4) {
+                    Image(systemName: "eye.fill")
+                        .font(.system(size: 12))
+                    Text(formattedViewerCount(viewModel.viewerCount))
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(.white.opacity(0.1))
+                .clipShape(Capsule())
+
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color(hex: "#16A34A"))
+                        .frame(width: 6, height: 6)
+                    Text("$\(String(format: "%.2f", viewModel.totalEarned))")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(.white.opacity(0.1))
+                .clipShape(Capsule())
+
+                Spacer()
+
+                Button { viewModel.showEndConfirm = true } label: {
+                    Text("End")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(AppTheme.danger)
+                        .clipShape(Capsule())
+                }
             }
+            .padding(.horizontal)
+            .padding(.top, 10)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 58)
     }
 
     private func formattedViewerCount(_ count: Int) -> String {
