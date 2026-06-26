@@ -71,6 +71,7 @@ struct WelcomeBonusView: View {
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         UserDefaults.standard.set(true, forKey: "isFriendActivated")
         UserDefaults.standard.synchronize()
+        VoIPPushManager.shared.registerAndSaveToken()
         NotificationCenter.default.post(name: .authStateDidChange, object: nil)
         Analytics.shared.track(event: "onboarding_completed",
                                 properties: ["had_invite_groups": hadInviteGroups])

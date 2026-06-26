@@ -119,6 +119,7 @@ struct VerificationView: View {
                             UserDefaults.standard.set(true, forKey: "isLoggedIn")
                             UserDefaults.standard.set(true, forKey: "isFriendActivated")
                             UserDefaults.standard.synchronize()
+                            VoIPPushManager.shared.savePendingTokenIfNeeded()
                             NotificationCenter.default.post(name: .authStateDidChange, object: nil)
                         }
                         Analytics.shared.track(event: "returning_user_signed_in")

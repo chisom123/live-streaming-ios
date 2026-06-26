@@ -21,6 +21,10 @@ class StreamerViewModel: ObservableObject {
     @Published var isEnding          = false
     @Published var localVideoTrack:  LocalVideoTrack?  = nil
 
+    // True from stream start until the first viewer joins.
+    // Drives the "Calling friends to join" banner.
+    @Published var isCallingFriends: Bool = true
+
     let streamId:     String
     var initialToken: String?
     var initialUrl:   String?
@@ -43,12 +47,10 @@ class StreamerViewModel: ObservableObject {
     // MARK: - Start
     func startBroadcast() async {
         startedAt = Date()
-
         if let token = initialToken, let url = initialUrl {
             await connectWithToken(token: token, url: url)
             return
         }
-
         errorMessage = "Stream token missing. Please start a new stream."
         isConnecting = false
     }
@@ -56,30 +58,17 @@ class StreamerViewModel: ObservableObject {
     private func connectWithToken(token: String, url: String) async {
         do {
             try await room.connect(url: url, token: token)
-
             let camera = LocalVideoTrack.createCameraTrack()
             let mic    = LocalAudioTrack.createTrack()
-
             try await room.localParticipant.publish(videoTrack: camera)
             localVideoTrack = camera
-
-            do {
-                try await room.localParticipant.publish(audioTrack: mic)
-            } catch {
-                // Non-fatal: stream continues without mic
-            }
-
+            do { try await room.localParticipant.publish(audioTrack: mic) } catch {}
             isConnecting = false
             isLive       = true
             startListeners()
-
             Task {
-                do {
-                    try await functions.httpsCallable("startStreamRecording").call(["streamId": streamId])
-                    print("[StreamerViewModel] startStreamRecording succeeded")
-                } catch {
-                    print("[StreamerViewModel] startStreamRecording failed: \(error.localizedDescription)")
-                }
+                do { try await functions.httpsCallable("startStreamRecording").call(["streamId": streamId]) }
+                catch { print("[StreamerViewModel] startStreamRecording failed: \(error.localizedDescription)") }
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -177,10 +166,13 @@ class StreamerViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snap, _ in
                 guard let self, let data = snap?.data() else { return }
                 self.totalEarned = data["total_earned"] as? Double ?? 0
-                // Subtract 1 to exclude the streamer's own LiveKit participant
-                // which always appears in viewer_ids due to their room presence
-                let ids = data["viewer_ids"] as? [String] ?? []
-                self.viewerCount = ids.count
+                let viewerIds    = data["viewer_ids"] as? [String] ?? []
+                self.viewerCount = viewerIds.count
+
+                // Hide the calling banner as soon as the first viewer joins
+                if !viewerIds.isEmpty {
+                    self.isCallingFriends = false
+                }
             }
     }
 

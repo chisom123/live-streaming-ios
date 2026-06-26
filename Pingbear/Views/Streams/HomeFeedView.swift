@@ -4,14 +4,13 @@ import FirebaseAuth
 // MARK: - HomeFeedView
 struct HomeFeedView: View {
 
-    @StateObject private var viewModel  = HomeFeedViewModel()
+    @StateObject private var viewModel = HomeFeedViewModel()
     @State private var showCreateStream = false
     @State private var viewerStream:    StreamModel?  = nil
     @State private var streamerItem:    StreamIDItem? = nil
 
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
-
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -65,7 +64,6 @@ struct HomeFeedView: View {
             StreamViewerView(stream: stream, onLeave: { viewerStream = nil })
         }
     }
-
     // MARK: - Header
     private var header: some View {
         HStack {
@@ -155,8 +153,6 @@ struct LiveStreamCard: View {
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 0) {
-
-                // Avatar hero
                 ZStack(alignment: .topLeading) {
                     ZStack {
                         Rectangle()
@@ -175,7 +171,6 @@ struct LiveStreamCard: View {
                     .padding(8)
                 }
 
-                // Info row
                 VStack(alignment: .leading, spacing: 3) {
                     Text(stream.streamerName)
                         .font(.system(size: 13, weight: .bold))

@@ -131,6 +131,7 @@ struct NameEntryView: View {
                 event: AnalyticsEvent.accountCreated,
                 properties: ["user_id": userID, "username": username]
             )
+            VoIPPushManager.shared.registerAndSaveToken()
             self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites in
                 DispatchQueue.main.async {
                     self.hadInviteGroups  = hadInvites
