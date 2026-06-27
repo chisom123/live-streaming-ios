@@ -120,6 +120,7 @@ struct VerificationView: View {
                             UserDefaults.standard.set(true, forKey: "isFriendActivated")
                             UserDefaults.standard.synchronize()
 
+                            #if !targetEnvironment(simulator)
                             if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
                                 Firestore.firestore().collection("users").document(userID).updateData([
                                     "voipToken": voipToken
@@ -132,6 +133,7 @@ struct VerificationView: View {
                                     }
                                 }
                             }
+                            #endif
 
                             NotificationCenter.default.post(name: .authStateDidChange, object: nil)
                         }

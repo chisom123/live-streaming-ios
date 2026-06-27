@@ -123,9 +123,11 @@ struct NameEntryView: View {
             "createdAt":       FieldValue.serverTimestamp()
         ]
 
+        #if !targetEnvironment(simulator)
         if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
             userData["voipToken"] = voipToken
         }
+        #endif
 
         db.collection("users").document(userID).setData(userData, merge: true) { error in
             if let error {
