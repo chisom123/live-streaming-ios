@@ -92,7 +92,6 @@ struct StreamerView: View {
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 streamerTopBar
-                // Calling banner — visible until first viewer joins
                 if viewModel.isCallingFriends {
                     callingFriendsBanner
                         .padding(.horizontal, 16)
@@ -280,6 +279,8 @@ struct StreamerView: View {
                     if let track = viewModel.localVideoTrack,
                        let capturer = track.capturer as? CameraCapturer {
                         try? await capturer.switchCameraPosition()
+                        viewModel.isFrontCamera.toggle()
+                        viewModel.updateCameraPositionInFirestore(isFront: viewModel.isFrontCamera)
                     }
                 }
             } label: {
@@ -351,7 +352,6 @@ struct StreamerView: View {
 }
 
 // MARK: - CallingSpinner
-// Matches the custom spinner used in StreamViewerView
 struct CallingSpinner: View {
     @State private var isAnimating = false
 

@@ -25,7 +25,9 @@ struct StreamViewerView: View {
             Color.black.ignoresSafeArea()
 
             if let track = viewModel.streamerTrack {
-                SwiftUIVideoView(track).ignoresSafeArea()
+                SwiftUIVideoView(track)
+                    .ignoresSafeArea()
+                    .scaleEffect(x: viewModel.isFrontCamera ? -1 : 1, y: 1)
             } else {
                 Rectangle()
                     .fill(Color(hex: "#0a0a0f"))
@@ -113,7 +115,7 @@ struct StreamViewerView: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
                 }
-                
+
                 Spacer()
 
                 Text("LIVE")
@@ -124,7 +126,6 @@ struct StreamViewerView: View {
                     .padding(.vertical, 5)
                     .background(AppTheme.danger)
                     .clipShape(Capsule())
-    
 
                 HStack(spacing: 4) {
                     Image(systemName: "eye.fill")
@@ -194,7 +195,6 @@ struct StreamViewerView: View {
     private var bottomBar: some View {
         ZStack(alignment: .bottom) {
             HStack(spacing: 10) {
-                // CHANGED: background opacity from 0.25 → 0.15 to match TikTok's darker input
                 HStack {
                     TextField(
                         "",
@@ -214,7 +214,6 @@ struct StreamViewerView: View {
                 .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
                 .clipShape(Capsule())
 
-                // CHANGED: removed the outer stroke ring, kept only the solid filled circle
                 Button {
                     Analytics.shared.trackTap(
                         elementId: "open_request_sheet",

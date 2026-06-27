@@ -18,9 +18,11 @@ class StreamViewerViewModel: ObservableObject {
     // Real-time viewer count — updated by the stream document listener
     @Published var viewerCount:             Int           = 0
 
+    // Whether the streamer is currently on front camera — drives the
+    // horizontal mirror applied to the video view on the viewer side.
+    @Published var isFrontCamera:           Bool          = false
+
     // Active accepted request description — shown as "Now performing" banner.
-    // Derived from a dedicated stream_requests listener so it updates instantly
-    // when the streamer accepts or completes a request.
     @Published var activeRequestDescription: String?      = nil
 
     let stream: StreamModel
@@ -59,9 +61,6 @@ class StreamViewerViewModel: ObservableObject {
         await fetchCurrentUserInfo()
 
         // Register delegate BEFORE connecting so we never miss a track event.
-        // If the delegate is added after room.connect(), a track that is already
-        // published (e.g. streamer started before the viewer joined) will never
-        // fire didSubscribeTrack, leaving the view with a permanent black screen.
         room.add(delegate: self)
 
         do {
@@ -73,11 +72,8 @@ class StreamViewerViewModel: ObservableObject {
 
             try await room.connect(url: url, token: token)
 
-            // After connecting, walk already-subscribed remote tracks.
-            // This handles the case where the room was already running and
-            // LiveKit delivered the track subscription before (or without)
-            // firing the delegate callback — a known edge case on re-joins
-            // and when joining a stream that has been live for a while.
+            // Walk already-subscribed remote tracks to handle re-joins
+            // or streams that were live before the viewer joined.
             for participant in room.remoteParticipants.values {
                 for publication in participant.trackPublications.values {
                     if let track = publication.track as? VideoTrack {
@@ -151,7 +147,7 @@ class StreamViewerViewModel: ObservableObject {
                 self.messages = snap?.documents.compactMap { ChatMessage.from($0) } ?? []
             }
 
-        // Stream document — real-time viewer count + ended status
+        // Stream document — viewer count, ended status, and camera position
         streamListener = db.collection("streams")
             .document(stream.id)
             .addSnapshotListener { [weak self] snap, _ in
@@ -159,14 +155,12 @@ class StreamViewerViewModel: ObservableObject {
                 if data["status"] as? String == "ended" {
                     self.isEnded = true
                 }
-                // viewer_ids array drives the live count
                 let ids = data["viewer_ids"] as? [String] ?? []
                 self.viewerCount = ids.count
+                self.isFrontCamera = data["is_front_camera"] as? Bool ?? false
             }
 
         // Active request — watch for a single accepted request on this stream.
-        // When the streamer accepts one, this fires and shows the "Now performing" banner.
-        // When they complete it (status → completed), the banner clears.
         requestListener = db.collection("stream_requests")
             .whereField("stream_id", isEqualTo: stream.id)
             .whereField("status", isEqualTo: "accepted")

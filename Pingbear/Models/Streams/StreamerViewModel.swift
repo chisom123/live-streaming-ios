@@ -21,8 +21,13 @@ class StreamerViewModel: ObservableObject {
     @Published var isEnding          = false
     @Published var localVideoTrack:  LocalVideoTrack?  = nil
 
+    // Tracks whether the streamer is on front camera.
+    // Defaults true (front camera is the default on stream start).
+    // Written to Firestore whenever the streamer flips cameras so
+    // viewers can mirror the video correctly.
+    @Published var isFrontCamera: Bool = true
+
     // True from stream start until the first viewer joins.
-    // Drives the "Calling friends to join" banner.
     @Published var isCallingFriends: Bool = true
 
     let streamId:     String
@@ -65,6 +70,11 @@ class StreamerViewModel: ObservableObject {
             do { try await room.localParticipant.publish(audioTrack: mic) } catch {}
             isConnecting = false
             isLive       = true
+
+            // Write initial camera position to Firestore so viewers
+            // receive the correct mirror state from the moment they join.
+            updateCameraPositionInFirestore(isFront: true)
+
             startListeners()
             Task {
                 do { try await functions.httpsCallable("startStreamRecording").call(["streamId": streamId]) }
@@ -74,6 +84,16 @@ class StreamerViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             isConnecting = false
         }
+    }
+
+    // MARK: - Camera position
+    /// Writes the current camera facing direction to the stream document.
+    /// Called on connect (front camera default) and whenever the streamer flips.
+    /// The Firestore rule allows only this field to be updated while status == 'live'.
+    func updateCameraPositionInFirestore(isFront: Bool) {
+        db.collection("streams").document(streamId).updateData([
+            "is_front_camera": isFront
+        ])
     }
 
     // MARK: - End stream
@@ -169,7 +189,6 @@ class StreamerViewModel: ObservableObject {
                 let viewerIds    = data["viewer_ids"] as? [String] ?? []
                 self.viewerCount = viewerIds.count
 
-                // Hide the calling banner as soon as the first viewer joins
                 if !viewerIds.isEmpty {
                     self.isCallingFriends = false
                 }
