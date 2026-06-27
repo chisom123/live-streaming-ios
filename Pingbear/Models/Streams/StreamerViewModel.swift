@@ -62,8 +62,27 @@ class StreamerViewModel: ObservableObject {
 
     private func connectWithToken(token: String, url: String) async {
         do {
-            try await room.connect(url: url, token: token)
-            let camera = LocalVideoTrack.createCameraTrack()
+            let roomOptions = RoomOptions(
+                defaultVideoPublishOptions: VideoPublishOptions(
+                    encoding: VideoEncoding(
+                        maxBitrate: 3_000_000,
+                        maxFps: 30
+                    ),
+                    simulcast: true
+                ),
+                adaptiveStream: true,
+                dynacast: true
+            )
+
+            try await room.connect(url: url, token: token, roomOptions: roomOptions)
+
+            let captureOptions = CameraCaptureOptions(
+                position: .front,
+                dimensions: .h720_169,
+                fps: 30
+            )
+
+            let camera = LocalVideoTrack.createCameraTrack(options: captureOptions)
             let mic    = LocalAudioTrack.createTrack()
             try await room.localParticipant.publish(videoTrack: camera)
             localVideoTrack = camera
