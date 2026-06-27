@@ -49,7 +49,7 @@ private struct StreamRequestStep1View: View {
     @FocusState private var isFocused: Bool
 
     private let presetRequests = [
-        "Tell a joke", "Scream super loud", "Sing a song", "Go eat some food"
+        "Tell a joke", "Go make food", "Sing a song", "Go on a walk"
     ]
 
     private var descFilled: Bool {
