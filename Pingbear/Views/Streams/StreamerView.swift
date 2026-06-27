@@ -268,7 +268,7 @@ struct StreamerView: View {
                 }
                 .foregroundColor(.white)
                 .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(.white.opacity(0.1))
+                .background(AppTheme.accent)
                 .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
                 .clipShape(Capsule())
             }
