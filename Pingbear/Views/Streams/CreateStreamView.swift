@@ -70,7 +70,7 @@ struct CreateStreamView: View {
                     .foregroundColor(AppTheme.iconColor)
             }
             Spacer()
-            Text("Start Stream")
+            Text("Go Live")
                 .font(.system(size: 18, weight: .bold))
                 .foregroundColor(AppTheme.primaryText)
             Spacer()

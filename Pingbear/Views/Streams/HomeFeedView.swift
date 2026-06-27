@@ -107,7 +107,7 @@ struct HomeFeedView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "video.fill").font(.system(size: 16))
-                Text("Go live").font(.system(size: 16, weight: .bold))
+                Text("Go Live").font(.system(size: 16, weight: .bold))
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity).padding(.vertical, 14)

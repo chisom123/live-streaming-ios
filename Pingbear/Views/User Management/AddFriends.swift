@@ -420,7 +420,7 @@ struct AddFriendsView: View {
     // MARK: - Invite
 
     private var inviteMessage: String {
-        "Hey let's play SocialStar! join.socialstarapp.com"
+        "Hey add me on SocialStar! join.socialstarapp.com"
     }
 
     private func sendInvites() {
