@@ -71,7 +71,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             if Auth.auth().currentUser == nil {
                 VoIPPushManager.shared.clearToken()
             } else {
-                VoIPPushManager.shared.savePendingTokenIfNeeded()
+                VoIPPushManager.shared.syncTokenForCurrentUser()
             }
         }
 

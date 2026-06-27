@@ -46,23 +46,16 @@ final class VoIPPushManager: NSObject {
 
     func start() {
         registry.delegate         = self
+        registry.desiredPushTypes = []
         registry.desiredPushTypes = [.voIP]
     }
 
-    /// Call this after the user document has been created (new user signup).
-    /// Re-triggers PushKit registration so didUpdate pushCredentials fires
-    /// with the user now logged in, guaranteeing the token saves to Firestore.
-    /// Also flushes any already-stashed token as a belt-and-braces fallback.
-    func registerAndSaveToken() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-
-        // Flush any token that arrived before the document existed
-        if let token = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
-            persistToken(token, uid: uid)
-        }
-
-        // Re-trigger PushKit — didUpdate pushCredentials fires immediately
-        // and since the user is now logged in, saveToken → persistToken directly
+    /// Call after auth is confirmed — works for both new and returning users.
+    /// Re-setting desiredPushTypes causes didUpdate pushCredentials to fire
+    /// immediately with the current token, which then writes it to Firestore.
+    /// No UserDefaults dependency, no race conditions.
+    func syncTokenForCurrentUser() {
+        guard Auth.auth().currentUser != nil else { return }
         registry.desiredPushTypes = [.voIP]
     }
 
@@ -85,13 +78,23 @@ final class VoIPPushManager: NSObject {
 
     private func saveToken(_ tokenData: Data) {
         let token = tokenData.map { String(format: "%02x", $0) }.joined()
-        UserDefaults.standard.set(token, forKey: "pendingVoIPToken")
 
-        guard let uid = Auth.auth().currentUser?.uid else {
+        guard let user = Auth.auth().currentUser else {
+            // No user yet — stash it, syncTokenForCurrentUser will flush it after auth
+            UserDefaults.standard.set(token, forKey: "pendingVoIPToken")
             print("[VoIP] No user yet — token stashed for later")
             return
         }
-        persistToken(token, uid: uid)
+
+        // User exists — force refresh JWT so Firestore accepts the write immediately
+        user.getIDTokenForcingRefresh(true) { _, error in
+            if let error {
+                print("[VoIP] JWT refresh failed: \(error) — stashing token")
+                UserDefaults.standard.set(token, forKey: "pendingVoIPToken")
+                return
+            }
+            self.persistToken(token, uid: user.uid)
+        }
     }
 
     private func persistToken(_ token: String, uid: String) {
@@ -100,21 +103,12 @@ final class VoIPPushManager: NSObject {
             .document(uid)
             .updateData(["voipToken": token]) { err in
                 if let err {
-                    print("[VoIP] Failed to save token: \(err)")
+                    print("[VoIP] ❌ Failed to save token: \(err)")
                 } else {
-                    print("[VoIP] Token saved for \(uid)")
+                    print("[VoIP] ✅ Token saved for \(uid)")
                     UserDefaults.standard.removeObject(forKey: "pendingVoIPToken")
                 }
             }
-    }
-
-    /// Call this after login completes (returning users) to flush any
-    /// token that arrived before auth.
-    func savePendingTokenIfNeeded() {
-        guard let uid   = Auth.auth().currentUser?.uid,
-              let token = UserDefaults.standard.string(forKey: "pendingVoIPToken")
-        else { return }
-        persistToken(token, uid: uid)
     }
 
     /// Call on sign-out so stale tokens don't ring a logged-out device.

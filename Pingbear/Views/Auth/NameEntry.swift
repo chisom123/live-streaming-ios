@@ -114,24 +114,30 @@ struct NameEntryView: View {
         let db          = Firestore.firestore()
         let hashedPhone = hashPhoneNumber(phoneNumber)
 
-        db.collection("users").document(userID).setData([
+        var userData: [String: Any] = [
             "username":        username,
             "phoneNumberHash": hashedPhone,
             "name":            fullName,
             "userId":          userID,
             "totalEarned":     0,
             "createdAt":       FieldValue.serverTimestamp()
-        ], merge: true) { error in
+        ]
+
+        if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
+            userData["voipToken"] = voipToken
+        }
+
+        db.collection("users").document(userID).setData(userData, merge: true) { error in
             if let error {
                 self.isLoading    = false
                 self.errorMessage = "Error saving user: \(error.localizedDescription)"
                 return
             }
+            UserDefaults.standard.removeObject(forKey: "pendingVoIPToken")
             Analytics.shared.track(
                 event: AnalyticsEvent.accountCreated,
                 properties: ["user_id": userID, "username": username]
             )
-            VoIPPushManager.shared.registerAndSaveToken()
             self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites in
                 DispatchQueue.main.async {
                     self.hadInviteGroups  = hadInvites
@@ -178,7 +184,6 @@ struct NameEntryView: View {
                             )
                         }
 
-                        // Resolve stream invite if one exists and is still live
                         if let streamId {
                             Functions.functions().httpsCallable("resolveInviteStream").call([
                                 "streamId": streamId

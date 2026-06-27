@@ -119,7 +119,20 @@ struct VerificationView: View {
                             UserDefaults.standard.set(true, forKey: "isLoggedIn")
                             UserDefaults.standard.set(true, forKey: "isFriendActivated")
                             UserDefaults.standard.synchronize()
-                            VoIPPushManager.shared.savePendingTokenIfNeeded()
+
+                            if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
+                                Firestore.firestore().collection("users").document(userID).updateData([
+                                    "voipToken": voipToken
+                                ]) { error in
+                                    if let error {
+                                        print("[VoIP] ❌ Failed to save token: \(error)")
+                                    } else {
+                                        print("[VoIP] ✅ Token saved for returning user")
+                                        UserDefaults.standard.removeObject(forKey: "pendingVoIPToken")
+                                    }
+                                }
+                            }
+
                             NotificationCenter.default.post(name: .authStateDidChange, object: nil)
                         }
                         Analytics.shared.track(event: "returning_user_signed_in")
