@@ -129,7 +129,6 @@ class ContactViewModel: ObservableObject {
             let data: [String: Any] = [
                 "memberHashes":          allHashes,
                 "memberUserIds":         inviterHash.isEmpty ? [:] : [inviterHash: currentUser.uid],
-                "pendingTransactionIds": [],   // no pending transactions — pure friendship invite
                 "createdAt":             FieldValue.serverTimestamp()
             ]
 
