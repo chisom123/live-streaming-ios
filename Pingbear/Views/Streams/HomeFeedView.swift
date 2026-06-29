@@ -11,6 +11,7 @@ struct HomeFeedView: View {
 
     private let currentUserId = Auth.auth().currentUser?.uid ?? ""
     private let columns = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+
     var body: some View {
         ZStack {
             AppTheme.pageBackground.ignoresSafeArea()
@@ -21,17 +22,35 @@ struct HomeFeedView: View {
                     ProgressView().tint(AppTheme.primaryText)
                     Spacer()
                 } else {
-                    ScrollView {
+                    ZStack(alignment: .bottom) {
+                        ScrollView {
+                            VStack(spacing: 20) {
+                                if !viewModel.liveStreams.isEmpty {
+                                    liveSection
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                            .padding(.bottom, 100)
+                        }
+
                         VStack(spacing: 20) {
                             if viewModel.liveStreams.isEmpty {
-                                emptyState
-                            } else {
-                                liveSection
+                                BouncingArrowView()
                             }
+
                             actionButtons
                         }
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, 24)
+                        .background(
+                            LinearGradient(
+                                colors: [AppTheme.pageBackground.opacity(0), AppTheme.pageBackground],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                            .ignoresSafeArea()
+                        )
                     }
                 }
             }
@@ -64,22 +83,25 @@ struct HomeFeedView: View {
             StreamViewerView(stream: stream, onLeave: { viewerStream = nil })
         }
     }
+
     // MARK: - Header
     private var header: some View {
         HStack {
+            Color.clear.frame(width: 30, height: 30)
+            Spacer()
             Text("Live")
-                .font(.system(size: 24, weight: .black))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundColor(AppTheme.primaryText)
             Spacer()
+            Color.clear.frame(width: 30, height: 30)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Live section
     private var liveSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionLabel("Live now")
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(viewModel.liveStreams) { stream in
                     LiveStreamCard(stream: stream, isOwnStream: stream.streamerId == currentUserId) {
@@ -105,42 +127,34 @@ struct HomeFeedView: View {
             Analytics.shared.trackTap(elementId: "go_live_button", screenName: "home_feed")
             showCreateStream = true
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "video.fill").font(.system(size: 16))
-                Text("Go Live").font(.system(size: 16, weight: .bold))
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity).padding(.vertical, 14)
-            .background(AppTheme.accent).cornerRadius(200)
+            Text("GO LIVE")
+                .font(.system(size: 20, weight: .heavy))
+                .foregroundColor(.white)
+                .frame(maxWidth: 200)
+                .padding(.vertical, 20)
+                .background(AppTheme.accent)
+                .cornerRadius(200)
         }
-        .padding(.top, 8)
     }
+}
 
-    // MARK: - Empty state
-    private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "video.slash")
-                .font(.system(size: 44))
-                .foregroundColor(AppTheme.secondaryText)
-            VStack(spacing: 6) {
-                Text("No one's live right now")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(AppTheme.primaryText)
-                Text("Go live yourself, or ask a friend to stream")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppTheme.secondaryText)
-                    .multilineTextAlignment(.center)
+// MARK: - BouncingArrowView
+struct BouncingArrowView: View {
+    @State private var offset: CGFloat = 0
+
+    var body: some View {
+        Image(systemName: "arrow.down")
+            .font(.system(size: 40, weight: .heavy))
+            .foregroundColor(AppTheme.accent)
+            .offset(y: offset)
+            .onAppear {
+                withAnimation(
+                    .easeInOut(duration: 0.85)
+                    .repeatForever(autoreverses: true)
+                ) {
+                    offset = 8
+                }
             }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-    }
-
-    private func sectionLabel(_ title: String) -> some View {
-        Text(title)
-            .font(.system(size: 13, weight: .bold))
-            .foregroundColor(AppTheme.secondaryText)
-            .textCase(.uppercase)
     }
 }
 
@@ -166,7 +180,6 @@ struct LiveStreamCard: View {
                     HStack {
                         liveBadge
                         Spacer()
-                        viewerPill
                     }
                     .padding(8)
                 }
@@ -197,21 +210,6 @@ struct LiveStreamCard: View {
             .padding(.vertical, 3)
             .background(AppTheme.danger)
             .cornerRadius(200)
-    }
-
-    private var viewerPill: some View {
-        HStack(spacing: 3) {
-            Image(systemName: "eye")
-                .font(.system(size: 9))
-                .foregroundColor(.white)
-            Text("\(max(0, stream.viewerIds.count - 1))")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(.white)
-        }
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(Color.black.opacity(0.5))
-        .cornerRadius(200)
     }
 
     private var elapsedText: String {

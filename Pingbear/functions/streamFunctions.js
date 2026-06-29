@@ -120,7 +120,7 @@ function sendApnsVoipPush(deviceToken, payload) {
   return new Promise((resolve, reject) => {
     const jwt    = makeApnsJwt();
     const body   = JSON.stringify(payload);
-    const host   = 'api.sandbox.push.apple.com'; // switch to api.push.apple.com for production
+    const host   = 'api.push.apple.com'; // switch to api.push.apple.com for production
 
     const client = http2.connect(`https://${host}`);
 
