@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
 import MessageUI
+import UserNotifications
 
 struct AddFriendsView: View {
 
@@ -10,6 +11,8 @@ struct AddFriendsView: View {
     @State private var messageStatus: MessageStatus? = nil
     @State private var username: String              = ""
     @State private var showUsernameSearch            = false
+    @State private var showNotificationPrompt        = false
+    @State private var notificationPermissionUndetermined: Bool? = nil
 
     var onFriendAdded: ((String, String) -> Void)? = nil
 
@@ -251,15 +254,76 @@ struct AddFriendsView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.selectedToInvite.isEmpty)
             }
+
+            // ── Notification permission modal ────────────────────────
+            if showNotificationPrompt {
+                ZStack {
+                    Color.black.opacity(0.45).ignoresSafeArea()
+                    VStack(spacing: 24) {
+                        ZStack {
+                            Circle()
+                                .fill(AppTheme.accent.opacity(0.15))
+                                .frame(width: 80, height: 80)
+                            Image(systemName: "bell.badge.fill")
+                                .font(.system(size: 36))
+                                .foregroundColor(AppTheme.accent)
+                        }
+                        VStack(spacing: 8) {
+                            Text("Get notified when your friends join")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(AppTheme.primaryText)
+                                .multilineTextAlignment(.center)
+                            Text("We'll let you know the moment one of your invited friends signs up.")
+                                .font(.system(size: 14))
+                                .foregroundColor(AppTheme.secondaryText)
+                                .multilineTextAlignment(.center)
+                        }
+                        Button {
+                            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+                                DispatchQueue.main.async {
+                                    if granted {
+                                        UIApplication.shared.registerForRemoteNotifications()
+                                        Analytics.shared.track(
+                                            event: AnalyticsEvent.notificationPermissionGranted,
+                                            properties: ["screen": "add_friends_invite"]
+                                        )
+                                    } else {
+                                        Analytics.shared.track(
+                                            event: AnalyticsEvent.notificationPermissionDenied,
+                                            properties: ["screen": "add_friends_invite"]
+                                        )
+                                    }
+                                    showNotificationPrompt = false
+                                }
+                            }
+                        } label: {
+                            Text("OK")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 15)
+                                .background(AppTheme.accent)
+                                .cornerRadius(200)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(28)
+                    .background(AppTheme.cardBackground)
+                    .cornerRadius(20)
+                    .padding(.horizontal, 40)
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showNotificationPrompt)
+            }
         }
         .background(AppTheme.pageBackground)
         .onAppear {
             Analytics.shared.trackScreen(name: "add_friends")
             viewModel.requestContactAccess()
+            checkNotificationPermission()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             if viewModel.permissionDenied {
-                // User returned from Settings — re-check permission
                 Analytics.shared.track(event: "returned_from_settings", properties: ["screen": "add_friends"])
                 viewModel.requestContactAccess()
             }
@@ -271,6 +335,16 @@ struct AddFriendsView: View {
                 addFriendsModel: addFriendsModel,
                 onFriendAdded: onFriendAdded
             )
+        }
+    }
+
+    // MARK: - Notification permission
+
+    private func checkNotificationPermission() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                notificationPermissionUndetermined = (settings.authorizationStatus == .notDetermined)
+            }
         }
     }
 
@@ -449,7 +523,12 @@ struct AddFriendsView: View {
                     properties: ["count": numbers.count, "names": self.selectedContacts.map { $0.firstName }.joined(separator: ", ")]
                 )
                 viewModel.writePendingInvites {
-                    DispatchQueue.main.async { viewModel.selectedToInvite.removeAll() }
+                    DispatchQueue.main.async {
+                        viewModel.selectedToInvite.removeAll()
+                        if self.notificationPermissionUndetermined == true {
+                            self.showNotificationPrompt = true
+                        }
+                    }
                 }
             case .cancelled:
                 Analytics.shared.track(

@@ -83,9 +83,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         pushNotificationManager.handleDeviceToken(deviceToken)
-        if let userId = Auth.auth().currentUser?.uid {
-            self.pushNotificationManager.queueTokenUpdate(userId: userId)
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("[PushDebug] Device token received but no current user")
+            return
         }
+        print("[PushDebug] Device token received for user: \(userId)")
+        pushNotificationManager.queueTokenUpdate(userId: userId)
     }
 
     @objc private func clearNotifications() {
