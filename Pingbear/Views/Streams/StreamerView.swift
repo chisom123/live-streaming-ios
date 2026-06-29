@@ -90,19 +90,8 @@ struct StreamerView: View {
     // MARK: - Live overlay
     private var liveOverlay: some View {
         ZStack(alignment: .bottom) {
+            // Bottom content first (renders behind)
             VStack(spacing: 0) {
-                streamerTopBar
-                if viewModel.isCallingFriends {
-                    callingFriendsBanner
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-                Spacer()
-            }
-
-            VStack(spacing: 0) {
-                Spacer()
                 if let active = viewModel.acceptedRequests.first {
                     acceptedRequestBanner(active)
                         .padding(.horizontal, 12)
@@ -113,6 +102,19 @@ struct StreamerView: View {
                 streamerBottomBar
             }
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.acceptedRequests.first?.id ?? "")
+
+            // Top bar last (renders on top, receives taps first)
+            VStack(spacing: 0) {
+                streamerTopBar
+                if viewModel.isCallingFriends {
+                    callingFriendsBanner
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                Spacer()
+            }
+            .allowsHitTesting(true)
         }
         .animation(.easeInOut(duration: 0.4), value: viewModel.isCallingFriends)
     }
@@ -123,7 +125,7 @@ struct StreamerView: View {
             CallingSpinner()
                 .frame(width: 16, height: 16)
             Text("Calling friends to join")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundColor(.white.opacity(0.85))
             Spacer()
         }
@@ -134,17 +136,38 @@ struct StreamerView: View {
             Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5)
         )
         .clipShape(Capsule())
+        .padding(.top)
     }
 
     // MARK: - Top bar
     private var streamerTopBar: some View {
         HStack(alignment: .center, spacing: 8) {
+            Button {
+                Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
+                Task {
+                    if let track = viewModel.localVideoTrack,
+                       let capturer = track.capturer as? CameraCapturer {
+                        try? await capturer.switchCameraPosition()
+                        viewModel.isFrontCamera.toggle()
+                        viewModel.updateCameraPositionInFirestore(isFront: viewModel.isFrontCamera)
+                    }
+                }
+            } label: {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
             Text("LIVE")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundColor(.white)
                 .kerning(0.5)
-                .padding(.horizontal, 9).padding(.vertical, 5)
-                .background(Color(hex: "#E24B4A")).clipShape(Capsule())
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background(AppTheme.danger)
+                .clipShape(Capsule())
 
             HStack(spacing: 4) {
                 Image(systemName: "eye.fill").font(.system(size: 12))
@@ -152,31 +175,25 @@ struct StreamerView: View {
                     .font(.system(size: 12, weight: .bold))
             }
             .foregroundColor(.white.opacity(0.85))
-            .padding(.horizontal, 9).padding(.vertical, 5)
-            .background(.white.opacity(0.1)).clipShape(Capsule())
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.1))
+            .clipShape(Capsule())
 
-            HStack(spacing: 4) {
-                Circle().fill(Color(hex: "#16A34A")).frame(width: 6, height: 6)
-                Text("$\(String(format: "%.2f", viewModel.totalEarned))")
-                    .font(.system(size: 12, weight: .bold)).foregroundColor(.white)
+            Button {
+                viewModel.showEndConfirm = true
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
-            .padding(.horizontal, 9).padding(.vertical, 5)
-            .background(.white.opacity(0.1)).clipShape(Capsule())
-
-            Spacer()
-
-            Button { viewModel.showEndConfirm = true } label: {
-                Text("End")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(Color(hex: "#f87171"))
-                    .padding(.horizontal, 14).padding(.vertical, 5)
-                    .background(Color(hex: "#E24B4A").opacity(0.12))
-                    .overlay(Capsule().stroke(Color(hex: "#E24B4A").opacity(0.55), lineWidth: 0.5))
-                    .clipShape(Capsule())
-            }
+            .padding(.leading)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 58)
+        .padding(.horizontal)
+        .padding(.top, 10)
+        .background(Color.white.opacity(0.001))
     }
 
     private func formattedViewerCount(_ count: Int) -> String {
@@ -247,52 +264,31 @@ struct StreamerView: View {
 
     // MARK: - Bottom bar
     private var streamerBottomBar: some View {
-        HStack(spacing: 10) {
-            Button {
-                Analytics.shared.trackTap(
-                    elementId: "toggle_request_queue",
-                    screenName: "streamer_live",
-                    properties: [AnalyticsProperty.streamId: streamId]
-                )
-                showRequestQueue = true
-            } label: {
-                HStack(spacing: 7) {
-                    Image(systemName: "list.bullet").font(.system(size: 13))
-                    Text("Requests").font(.system(size: 13, weight: .semibold))
-                    if viewModel.pendingRequests.count > 0 {
-                        Text("\(viewModel.pendingRequests.count)")
-                            .font(.system(size: 11, weight: .bold)).foregroundColor(.white)
-                            .frame(width: 18, height: 18)
-                            .background(Color(hex: "#E24B4A")).clipShape(Circle())
-                    }
+        Button {
+            Analytics.shared.trackTap(
+                elementId: "toggle_request_queue",
+                screenName: "streamer_live",
+                properties: [AnalyticsProperty.streamId: streamId]
+            )
+            showRequestQueue = true
+        } label: {
+            HStack(spacing: 8) {
+                Spacer()
+                Text("Requests")
+                    .font(.system(size: 17, weight: .black))
+                if viewModel.pendingRequests.count > 0 {
+                    Text("\(viewModel.pendingRequests.count)")
+                        .font(.system(size: 13, weight: .bold)).foregroundColor(.white)
+                        .frame(width: 22, height: 22)
+                        .background(Color(hex: "#E24B4A")).clipShape(Circle())
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 14).padding(.vertical, 10)
-                .background(AppTheme.accent)
-                .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                .clipShape(Capsule())
+                Spacer()
             }
-
-            Button {
-                Analytics.shared.trackTap(elementId: "flip_camera", screenName: "streamer_live")
-                Task {
-                    if let track = viewModel.localVideoTrack,
-                       let capturer = track.capturer as? CameraCapturer {
-                        try? await capturer.switchCameraPosition()
-                        viewModel.isFrontCamera.toggle()
-                        viewModel.updateCameraPositionInFirestore(isFront: viewModel.isFrontCamera)
-                    }
-                }
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 15)).foregroundColor(.white.opacity(0.8))
-                    .frame(width: 40, height: 40)
-                    .background(.white.opacity(0.1))
-                    .overlay(Circle().stroke(.white.opacity(0.14), lineWidth: 0.5))
-                    .clipShape(Circle())
-            }
-
-            Spacer()
+            .foregroundColor(.white)
+            .padding(.vertical, 16)
+            .background(AppTheme.accent)
+            .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
+            .clipShape(Capsule())
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 46)
@@ -496,65 +492,5 @@ struct StreamerRequestCard: View {
                 .stroke(isTop ? Color(hex: "#FF6B00").opacity(0.28) : .white.opacity(0.09), lineWidth: 0.5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 13))
-    }
-}
-
-// MARK: - StreamSummaryView
-struct StreamSummaryView: View {
-    let streamId:     String
-    let totalEarned:  Double
-    let requestCount: Int
-    let durationSecs: Int
-    let onDismiss:    () -> Void
-
-    var body: some View {
-        ZStack {
-            Color(hex: "#0d0d0d").ignoresSafeArea()
-            VStack(spacing: 0) {
-                Spacer()
-                ZStack {
-                    Circle().fill(Color(hex: "#16A34A").opacity(0.15)).frame(width: 72, height: 72)
-                    Circle().stroke(Color(hex: "#16A34A").opacity(0.3), lineWidth: 0.5).frame(width: 72, height: 72)
-                    Image(systemName: "checkmark").font(.system(size: 26, weight: .bold)).foregroundColor(Color(hex: "#16A34A"))
-                }
-                .padding(.bottom, 20)
-                Text("Stream ended").font(.system(size: 26, weight: .black)).foregroundColor(.white).padding(.bottom, 6)
-                Text("$\(String(format: "%.2f", totalEarned))").font(.system(size: 52, weight: .black)).foregroundColor(.white).tracking(-1).padding(.bottom, 4)
-                Text("total earned").font(.system(size: 13)).foregroundColor(.white.opacity(0.35)).padding(.bottom, 36)
-                VStack(spacing: 0) {
-                    summaryRow(icon: "checkmark.circle", label: "Requests completed", value: "\(requestCount)")
-                    Divider().background(.white.opacity(0.07))
-                    summaryRow(icon: "clock", label: "Duration", value: durationFormatted)
-                }
-                .padding(.vertical, 4)
-                .background(.white.opacity(0.05))
-                .overlay(RoundedRectangle(cornerRadius: 16).stroke(.white.opacity(0.08), lineWidth: 0.5))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .padding(.horizontal, 32).padding(.bottom, 36)
-                Spacer()
-                Button(action: onDismiss) {
-                    Text("Done").font(.system(size: 17, weight: .bold)).foregroundColor(.white)
-                        .frame(maxWidth: .infinity).padding(.vertical, 17)
-                        .background(Color(hex: "#FF6B00")).clipShape(Capsule())
-                }
-                .padding(.horizontal, 32).padding(.bottom, 52)
-            }
-        }
-    }
-
-    private func summaryRow(icon: String, label: String, value: String) -> some View {
-        HStack {
-            Image(systemName: icon).font(.system(size: 14)).foregroundColor(.white.opacity(0.35)).frame(width: 20)
-            Text(label).font(.system(size: 14)).foregroundColor(.white.opacity(0.45))
-            Spacer()
-            Text(value).font(.system(size: 15, weight: .bold)).foregroundColor(.white)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-    }
-
-    private var durationFormatted: String {
-        let mins = durationSecs / 60
-        let secs = durationSecs % 60
-        return mins > 0 ? "\(mins)m \(secs)s" : "\(secs)s"
     }
 }

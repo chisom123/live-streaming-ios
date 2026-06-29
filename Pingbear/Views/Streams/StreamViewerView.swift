@@ -88,67 +88,71 @@ struct StreamViewerView: View {
     // MARK: - Live overlay
     private var liveOverlay: some View {
         ZStack(alignment: .bottom) {
-            VStack {
-                topBar
-                Spacer()
-            }
+            // Bottom content first (renders behind)
             VStack(spacing: 0) {
-                Spacer()
                 chatFeed
                 bottomBar
             }
+            .animation(
+                .spring(response: 0.35, dampingFraction: 0.85),
+                value: viewModel.activeRequestDescription != nil
+            )
+
+            // Top bar last (renders on top, receives taps first)
+            VStack(spacing: 0) {
+                topBar
+                Spacer()
+            }
+            .allowsHitTesting(true)
         }
-        .animation(
-            .spring(response: 0.35, dampingFraction: 0.85),
-            value: viewModel.activeRequestDescription != nil
-        )
     }
 
     // MARK: - Top bar
     private var topBar: some View {
-        ZStack(alignment: .top) {
-            HStack(alignment: .center, spacing: 8) {
-                HStack(spacing: 8) {
-                    ProfilePictureView(url: stream.streamerImageUrl, size: 30)
-                    Text(stream.streamerName)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                Text("LIVE")
-                    .font(.system(size: 12, weight: .bold))
+        HStack(alignment: .center, spacing: 8) {
+            HStack(spacing: 8) {
+                ProfilePictureView(url: stream.streamerImageUrl, size: 30)
+                Text(stream.streamerName)
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.white)
-                    .kerning(0.5)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 5)
-                    .background(AppTheme.danger)
-                    .clipShape(Capsule())
+                    .lineLimit(1)
+            }
 
-                HStack(spacing: 4) {
-                    Image(systemName: "eye.fill")
-                        .font(.system(size: 12))
-                    Text(formattedViewerCount(viewModel.viewerCount))
-                        .font(.system(size: 12, weight: .bold))
-                }
-                .foregroundColor(.white.opacity(0.85))
+            Spacer()
+
+            Text("LIVE")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white)
+                .kerning(0.5)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)
-                .background(.white.opacity(0.1))
+                .background(AppTheme.danger)
                 .clipShape(Capsule())
 
-                Button { showLeaveConfirm = true } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                }
-                .padding(.leading)
+            HStack(spacing: 4) {
+                Image(systemName: "eye.fill")
+                    .font(.system(size: 12))
+                Text(formattedViewerCount(viewModel.viewerCount))
+                    .font(.system(size: 12, weight: .bold))
             }
-            .padding(.horizontal)
-            .padding(.top, 10)
+            .foregroundColor(.white.opacity(0.85))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(.white.opacity(0.1))
+            .clipShape(Capsule())
+
+            Button { showLeaveConfirm = true } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .padding(.leading)
         }
+        .padding(.horizontal)
+        .padding(.top, 10)
+        .background(Color.white.opacity(0.001))
     }
 
     private func formattedViewerCount(_ count: Int) -> String {
