@@ -114,27 +114,15 @@ struct VerificationView: View {
 
                     if data["username"] != nil {
                         // ── Returning user ─────────────────────
+                        // VoIPTokenWatcher attaches the moment signIn succeeds
+                        // above. By the time we reach here it is already
+                        // listening and will detect and heal any missing or
+                        // stale voipToken automatically — no manual write needed.
                         DispatchQueue.main.async {
                             self.isLoading = false
                             UserDefaults.standard.set(true, forKey: "isLoggedIn")
                             UserDefaults.standard.set(true, forKey: "isFriendActivated")
                             UserDefaults.standard.synchronize()
-
-                            #if !targetEnvironment(simulator)
-                            if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
-                                Firestore.firestore().collection("users").document(userID).updateData([
-                                    "voipToken": voipToken
-                                ]) { error in
-                                    if let error {
-                                        print("[VoIP] ❌ Failed to save token: \(error)")
-                                    } else {
-                                        print("[VoIP] ✅ Token saved for returning user")
-                                        UserDefaults.standard.removeObject(forKey: "pendingVoIPToken")
-                                    }
-                                }
-                            }
-                            #endif
-
                             NotificationCenter.default.post(name: .authStateDidChange, object: nil)
                         }
                         Analytics.shared.track(event: "returning_user_signed_in")

@@ -37,6 +37,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             )
         }
 
+        // ── VoIP token watcher ────────────────────────────────────
+        // Three-layer reliability system for keeping voipToken accurate:
+        //   1. Real-time Firestore listener detects missing or stale tokens.
+        //   2. Foreground-resume sync catches rotations that happened while
+        //      the app was suspended.
+        //   3. Retry logic in persistToken handles transient write failures.
+        // All three layers are self-managing after this single start() call.
+        VoIPTokenWatcher.shared.start()
+
         // ── Regular FCM push setup ────────────────────────────────
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized && Auth.auth().currentUser != nil {
@@ -62,7 +71,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             object: nil
         )
 
-        // ── Sync VoIP token with auth state ───────────────────────
+        // ── VoIP token: clear on sign-out ─────────────────────────
+        // VoIPTokenWatcher owns sign-in recovery (missing/stale detection
+        // and foreground syncs). This observer handles only the sign-out
+        // case — clearing the token so a logged-out device is never rung.
         NotificationCenter.default.addObserver(
             forName: .AuthStateDidChange,
             object:  nil,
@@ -70,8 +82,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         ) { _ in
             if Auth.auth().currentUser == nil {
                 VoIPPushManager.shared.clearToken()
-            } else {
-                VoIPPushManager.shared.syncTokenForCurrentUser()
             }
         }
 

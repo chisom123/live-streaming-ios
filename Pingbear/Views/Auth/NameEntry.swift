@@ -123,6 +123,9 @@ struct NameEntryView: View {
             "createdAt":       FieldValue.serverTimestamp()
         ]
 
+        // Include any pending VoIP token captured before the user doc existed.
+        // VoIPTokenWatcher will handle token recovery going forward; this just
+        // ensures the token is written atomically with the initial document.
         #if !targetEnvironment(simulator)
         if let voipToken = UserDefaults.standard.string(forKey: "pendingVoIPToken") {
             userData["voipToken"] = voipToken

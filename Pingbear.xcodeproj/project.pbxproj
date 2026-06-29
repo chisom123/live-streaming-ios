@@ -77,6 +77,7 @@
 		4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */; };
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
+		4F620C432FF273F70000A683 /* VoIPTokenWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F620C422FF273F70000A683 /* VoIPTokenWatcher.swift */; };
 		4F6D1E1C2FD36FFC0014CB28 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
@@ -158,6 +159,7 @@
 		4F3E0DB32AB1DE5E0068F901 /* EnvironmentValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentValues.swift; sourceTree = "<group>"; };
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
+		4F620C422FF273F70000A683 /* VoIPTokenWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPTokenWatcher.swift; sourceTree = "<group>"; };
 		4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 				4F1184212FEC5E65007BC587 /* StreamViewerViewModel.swift */,
 				4F1184232FEC5ED4007BC587 /* StreamerViewModel.swift */,
 				4F0EF0402FEEEA2D00B6B702 /* VoIPPushManager.swift */,
+				4F620C422FF273F70000A683 /* VoIPTokenWatcher.swift */,
 			);
 			path = Streams;
 			sourceTree = "<group>";
@@ -678,6 +681,7 @@
 				4F1184172FEC429F007BC587 /* CreateStreamView.swift in Sources */,
 				4F11841E2FEC5DD7007BC587 /* HomeFeedViewModel.swift in Sources */,
 				4FB73FB42FC78A6F005DF768 /* FriendsViewModel.swift in Sources */,
+				4F620C432FF273F70000A683 /* VoIPTokenWatcher.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
