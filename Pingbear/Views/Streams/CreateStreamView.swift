@@ -90,12 +90,8 @@ struct CreateStreamView: View {
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                     Spacer()
-                    if viewModel.totalSelected > 0 {
-                        Text("\(viewModel.totalSelected) invited")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(AppTheme.accent)
-                    }
                 }
+                .padding(.top)
 
                 HStack {
                     Image(systemName: "magnifyingglass")
@@ -144,7 +140,7 @@ struct CreateStreamView: View {
                             showingAddFriends = true
                         } label: {
                             Text("Add Friends")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 5)
