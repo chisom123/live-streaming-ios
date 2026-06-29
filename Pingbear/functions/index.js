@@ -1,14 +1,14 @@
-const { onRequest } = require("firebase-functions/v2/https");
-const admin         = require("firebase-admin");
-const { google }    = require('googleapis');
-const logger        = require("firebase-functions/logger");
+const { onRequest, onCall } = require("firebase-functions/v2/https");
+const admin                 = require("firebase-admin");
+const { google }            = require('googleapis');
+const logger                = require("firebase-functions/logger");
 
 const wallet = require('./walletFunctions');
 const stream = require('./streamFunctions');
 
 admin.initializeApp();
 
-const auth             = new google.auth.GoogleAuth({
+const auth = new google.auth.GoogleAuth({
   scopes: ['https://www.googleapis.com/auth/firebase.messaging']
 });
 const authClientPromise = auth.getClient();
@@ -144,3 +144,53 @@ exports.respondToStreamRequest = stream.respondToStreamRequest;
 exports.completeStreamRequest  = stream.completeStreamRequest;
 exports.resolveInviteStream    = stream.resolveInviteStream;
 exports.livekitWebhook         = stream.livekitWebhook;
+
+// ─────────────────────────────────────────────────────────────
+// notifyFriendJoined
+//
+// Called from NameEntryView after resolveInviteGroups completes.
+// Sends a push to all existing members of the invite_group so
+// they know their invited friend just signed up.
+// ─────────────────────────────────────────────────────────────
+
+exports.notifyFriendJoined = onCall({ cors: ['*'], maxInstances: 50 }, async (request) => {
+  if (!request.auth) throw new Error('User must be authenticated');
+
+  const userId        = request.auth.uid;
+  const { friendUserIds } = request.data;
+  if (!friendUserIds?.length) return { success: true };
+
+  const db      = admin.firestore();
+  const userDoc = await db.collection('users').doc(userId).get();
+  const newUserName = userDoc.data()?.name ?? 'Someone';
+
+  const tokens  = [];
+  const chunks  = [];
+  for (let i = 0; i < friendUserIds.length; i += 30) {
+    chunks.push(friendUserIds.slice(i, i + 30));
+  }
+  for (const chunk of chunks) {
+    const snap = await db.collection('users')
+      .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
+      .get();
+    snap.docs.forEach(doc => {
+      const t = doc.data()?.fcmToken;
+      if (t) tokens.push(t);
+    });
+  }
+
+  await Promise.all(tokens.map(token =>
+    admin.messaging().send({
+      token,
+      notification: {
+        title: `${newUserName} joined SocialStar!`,
+        body:  'Start a stream for them to watch'
+      },
+      data:  { type: 'friend_joined', user_id: userId },
+      apns:  { payload: { aps: { sound: 'default', badge: 1 } } }
+    }).catch(err => logger.warn(`notifyFriendJoined push failed: ${err.message}`))
+  ));
+
+  logger.info(`notifyFriendJoined: notified ${tokens.length} friends that ${userId} joined`);
+  return { success: true };
+});

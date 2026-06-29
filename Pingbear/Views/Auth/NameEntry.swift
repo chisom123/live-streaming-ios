@@ -81,7 +81,7 @@ struct NameEntryView: View {
 
     func checkUsernameAndSave() {
         isLoading = true
-        let processed = username.lowercased().replacingOccurrences(of: " ", with: "")
+        let processed  = username.lowercased().replacingOccurrences(of: " ", with: "")
         let validation = isValidUsername(processed)
         guard validation.isValid else {
             errorMessage = validation.error
@@ -140,7 +140,17 @@ struct NameEntryView: View {
                 event: AnalyticsEvent.accountCreated,
                 properties: ["user_id": userID, "username": username]
             )
-            self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites in
+            self.resolveInviteGroups(userId: userID, phoneHash: hashedPhone, db: db) { hadInvites, friendIds in
+                // Fire and forget — navigation doesn't wait for this
+                if !friendIds.isEmpty {
+                    Functions.functions().httpsCallable("notifyFriendJoined").call([
+                        "friendUserIds": friendIds
+                    ]) { _, error in
+                        if let error {
+                            print("notifyFriendJoined error: \(error.localizedDescription)")
+                        }
+                    }
+                }
                 DispatchQueue.main.async {
                     self.hadInviteGroups  = hadInvites
                     self.isLoading        = false
@@ -150,39 +160,78 @@ struct NameEntryView: View {
         }
     }
 
-    private func resolveInviteGroups(userId: String, phoneHash: String, db: Firestore, completion: @escaping (Bool) -> Void) {
+    // ─────────────────────────────────────────────────────────
+    // MARK: - resolveInviteGroups
+    //
+    // Finds all invite_groups containing the new user's phone hash,
+    // adds mutual friendships for every existing member, and returns
+    // the resolved friend IDs so the caller can notify them.
+    //
+    // Friend IDs are read from inside the transaction (not from the
+    // outer getDocuments snapshot) so we always act on the freshest
+    // memberUserIds state — safe even when multiple invitees sign up
+    // concurrently against the same invite_group document.
+    // ─────────────────────────────────────────────────────────
+
+    private func resolveInviteGroups(
+        userId:     String,
+        phoneHash:  String,
+        db:         Firestore,
+        completion: @escaping (Bool, [String]) -> Void
+    ) {
         db.collection("invite_groups")
             .whereField("memberHashes", arrayContains: phoneHash)
             .getDocuments { snapshot, error in
                 guard let docs = snapshot?.documents, !docs.isEmpty else {
-                    completion(false); return
+                    completion(false, []); return
                 }
+
+                var allFriendIds: [String] = []
                 let group = DispatchGroup()
+
                 for doc in docs {
                     group.enter()
-                    let data            = doc.data()
-                    let memberUserIds   = data["memberUserIds"] as? [String: String] ?? [:]
-                    let streamId        = data["stream_id"] as? String
-                    let existingUserIds = memberUserIds.values.filter { $0 != userId }
+
+                    // stream_id is read from the outer snapshot — it never
+                    // changes after the doc is created so this is fine.
+                    let streamId = doc.data()["stream_id"] as? String
 
                     db.runTransaction({ transaction, _ -> Any? in
-                        for existingUserId in existingUserIds {
-                            let newUserFriendRef      = db.collection("users").document(userId).collection("friends").document(existingUserId)
-                            let existingUserFriendRef = db.collection("users").document(existingUserId).collection("friends").document(userId)
+                        // Read fresh inside the transaction so concurrent
+                        // sign-ups don't race on a stale memberUserIds map.
+                        let freshDoc           = try? transaction.getDocument(doc.reference)
+                        let freshMemberUserIds = freshDoc?.data()?["memberUserIds"] as? [String: String] ?? [:]
+                        let freshExistingIds   = freshMemberUserIds.values.filter { $0 != userId }
+
+                        for existingUserId in freshExistingIds {
+                            let newUserFriendRef = db
+                                .collection("users").document(userId)
+                                .collection("friends").document(existingUserId)
+                            let existingUserFriendRef = db
+                                .collection("users").document(existingUserId)
+                                .collection("friends").document(userId)
                             transaction.setData(["uid": existingUserId], forDocument: newUserFriendRef)
-                            transaction.setData(["uid": userId], forDocument: existingUserFriendRef)
+                            transaction.setData(["uid": userId],         forDocument: existingUserFriendRef)
                         }
+
                         transaction.updateData(
                             ["memberUserIds.\(phoneHash)": userId],
                             forDocument: doc.reference
                         )
-                        return nil
-                    }) { _, error in
-                        if let error { print("resolveInviteGroups error: \(error.localizedDescription)") }
-                        else {
+
+                        // Return the IDs so the completion block can use them
+                        // without a second read.
+                        return Array(freshExistingIds)
+
+                    }) { result, error in
+                        if let error {
+                            print("resolveInviteGroups error: \(error.localizedDescription)")
+                        } else {
+                            let resolvedIds = result as? [String] ?? []
+                            allFriendIds.append(contentsOf: resolvedIds)
                             Analytics.shared.track(
                                 event: AnalyticsEvent.inviteGroupResolved,
-                                properties: ["friends_added": existingUserIds.count]
+                                properties: ["friends_added": resolvedIds.count]
                             )
                         }
 
@@ -190,16 +239,27 @@ struct NameEntryView: View {
                             Functions.functions().httpsCallable("resolveInviteStream").call([
                                 "streamId": streamId
                             ]) { _, error in
-                                if let error { print("resolveInviteStream error for \(streamId): \(error.localizedDescription)") }
+                                if let error {
+                                    print("resolveInviteStream error for \(streamId): \(error.localizedDescription)")
+                                }
                             }
                         }
 
                         group.leave()
                     }
                 }
-                group.notify(queue: .main) { completion(true) }
+
+                group.notify(queue: .main) {
+                    // Deduplicate in case the user appeared in multiple
+                    // invite_group docs (e.g. invited twice by different people).
+                    completion(true, Array(Set(allFriendIds)))
+                }
             }
     }
+
+    // ─────────────────────────────────────────────────────────
+    // MARK: - Helpers
+    // ─────────────────────────────────────────────────────────
 
     func hashPhoneNumber(_ phoneNumber: String) -> String {
         let cleaned = phoneNumber
