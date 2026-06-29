@@ -168,7 +168,7 @@ struct StreamViewerView: View {
                 .padding(.horizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 200)
+            .frame(maxHeight: 250)
             .mask(
                 LinearGradient(
                     gradient: Gradient(stops: [
