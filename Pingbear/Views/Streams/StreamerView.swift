@@ -264,7 +264,9 @@ struct StreamerView: View {
 
     // MARK: - Bottom bar
     private var streamerBottomBar: some View {
-        Button {
+        let hasPending = viewModel.pendingRequests.count > 0
+        
+        return Button {
             Analytics.shared.trackTap(
                 elementId: "toggle_request_queue",
                 screenName: "streamer_live",
@@ -272,25 +274,16 @@ struct StreamerView: View {
             )
             showRequestQueue = true
         } label: {
-            HStack(spacing: 8) {
-                Spacer()
-                Text("Requests")
-                    .font(.system(size: 17, weight: .black))
-                if viewModel.pendingRequests.count > 0 {
-                    Text("\(viewModel.pendingRequests.count)")
-                        .font(.system(size: 13, weight: .bold)).foregroundColor(.white)
-                        .frame(width: 22, height: 22)
-                        .background(Color(hex: "#E24B4A")).clipShape(Circle())
-                }
-                Spacer()
-            }
-            .foregroundColor(.white)
-            .padding(.vertical, 16)
-            .background(AppTheme.accent)
-            .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 0.5))
-            .clipShape(Capsule())
+            Text(hasPending
+                ? "Requests (\(viewModel.pendingRequests.count))"
+                : "Requests")
+                .font(.system(size: 20, weight: .heavy))
+                .foregroundColor(hasPending ? .white : .white.opacity(0.45))
+                .padding(.horizontal, 50)
+                .padding(.vertical, 20)
+                .background(hasPending ? AppTheme.accent : Color(hex: "#161616"))
+                .clipShape(Capsule())
         }
-        .padding(.horizontal, 16)
         .padding(.bottom, 46)
     }
 
