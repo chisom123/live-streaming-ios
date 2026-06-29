@@ -93,18 +93,11 @@ async function getUserInfo(db, userId) {
 // APNs VoIP push — JWT / .p8 approach
 // ─────────────────────────────────────────────────────────────
 
-/**
- * Generates a signed ES256 JWT for APNs authentication.
- * Valid for 60 minutes — fine for our use case since we create
- * one per function invocation and Cloud Functions are short-lived.
- */
 function makeApnsJwt() {
   const header  = Buffer.from(JSON.stringify({ alg: 'ES256', kid: APNS_KEY_ID })).toString('base64url');
   const now     = Math.floor(Date.now() / 1000);
   const payload = Buffer.from(JSON.stringify({ iss: APNS_TEAM_ID, iat: now })).toString('base64url');
   const unsigned = `${header}.${payload}`;
-
-  // Normalise any literal \n in the env var to real newlines
   const pem  = APNS_PRIVATE_KEY.replace(/\\n/g, '\n');
   const sign = crypto.createSign('SHA256');
   sign.update(unsigned);
@@ -112,23 +105,13 @@ function makeApnsJwt() {
   return `${unsigned}.${sig}`;
 }
 
-/**
- * Sends a single APNs VoIP push using HTTP/2 (required by APNs).
- * Node's built-in http2 module is used directly — no extra packages needed.
- */
 function sendApnsVoipPush(deviceToken, payload) {
   return new Promise((resolve, reject) => {
     const jwt    = makeApnsJwt();
     const body   = JSON.stringify(payload);
-    const host   = 'api.push.apple.com'; // switch to api.push.apple.com for production
-
+    const host   = 'api.push.apple.com';
     const client = http2.connect(`https://${host}`);
-
-    client.on('error', (err) => {
-      reject(err);
-      client.destroy();
-    });
-
+    client.on('error', (err) => { reject(err); client.destroy(); });
     const req = client.request({
       ':method':         'POST',
       ':path':           `/3/device/${deviceToken}`,
@@ -142,19 +125,12 @@ function sendApnsVoipPush(deviceToken, payload) {
       'content-type':    'application/json',
       'content-length':  Buffer.byteLength(body)
     });
-
     req.write(body);
     req.end();
-
     let status;
     let data = '';
-
-    req.on('response', (headers) => {
-      status = headers[':status'];
-    });
-
+    req.on('response', (headers) => { status = headers[':status']; });
     req.on('data', (chunk) => { data += chunk; });
-
     req.on('end', () => {
       client.close();
       if (status !== 200) {
@@ -162,25 +138,15 @@ function sendApnsVoipPush(deviceToken, payload) {
       }
       resolve(status);
     });
-
-    req.on('error', (err) => {
-      client.destroy();
-      reject(err);
-    });
+    req.on('error', (err) => { client.destroy(); reject(err); });
   });
 }
 
-/**
- * Fetches voipTokens for the given user IDs and sends VoIP pushes.
- * Silently skips users with no voipToken (Android / not yet registered).
- */
 async function sendVoIPPush(db, userIds, { streamId, streamerId, streamerName }) {
   if (!userIds?.length) return;
-
   const tokenMap = {};
   const chunks   = [];
   for (let i = 0; i < userIds.length; i += 30) chunks.push(userIds.slice(i, i + 30));
-
   for (const chunk of chunks) {
     const snap = await db.collection('users')
       .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
@@ -190,21 +156,18 @@ async function sendVoIPPush(db, userIds, { streamId, streamerId, streamerName })
       if (token) tokenMap[doc.id] = token;
     });
   }
-
   const voipPayload = {
-    aps:           {},           // required by APNs even for VoIP
+    aps:           {},
     stream_id:     streamId,
     streamer_id:   streamerId,
     streamer_name: streamerName
   };
-
   await Promise.all(
     Object.values(tokenMap).map(token =>
       sendApnsVoipPush(token, voipPayload)
         .catch(err => logger.warn(`sendVoIPPush error: ${err.message}`))
     )
   );
-
   logger.info(`sendVoIPPush: sent to ${Object.keys(tokenMap).length}/${userIds.length} users for stream ${streamId}`);
 }
 
@@ -525,22 +488,46 @@ exports.respondToStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, asyn
   if (req.status !== 'pending')   throw new Error(`Cannot respond to status: ${req.status}`);
   const streamSnap = await db.collection('streams').doc(req.stream_id).get();
   if (!streamSnap.exists || streamSnap.data().status !== 'live') throw new Error('Stream is no longer live');
+
+  const streamerInfo = await getUserInfo(db, userId);
+
   if (!accept) {
     await refundStreamRequest(db, requestId);
-    const { name: streamerName } = await getUserInfo(db, userId);
+    // Chat message for decline
+    await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+      user_id:    userId,
+      name:       streamerInfo.name,
+      avatar_url: streamerInfo.avatarUrl,
+      text:       `declined "${req.description.slice(0, 60)}"`,
+      type:       'request_declined',
+      request_id: requestId,
+      created_at: admin.firestore.FieldValue.serverTimestamp()
+    });
     await sendPush(db, [req.from_user_id], {
-      title: `${streamerName} declined your request`, body: 'Your money has been refunded',
+      title: `${streamerInfo.name} declined your request`, body: 'Your money has been refunded',
       data: { type: 'stream_request_refunded', request_id: requestId, stream_id: req.stream_id }
     });
+    logger.info(`respondToStreamRequest: ${userId} declined ${requestId}`);
     return { success: true };
   }
+
   await ref.update({ status: 'accepted', accepted_at: admin.firestore.FieldValue.serverTimestamp() });
-  const { name: streamerName } = await getUserInfo(db, userId);
+  // Chat message for accept
+  await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+    user_id:    userId,
+    name:       streamerInfo.name,
+    avatar_url: streamerInfo.avatarUrl,
+    text:       `accepted "${req.description.slice(0, 60)}"`,
+    type:       'request_accepted',
+    request_id: requestId,
+    created_at: admin.firestore.FieldValue.serverTimestamp()
+  });
   await sendPush(db, [req.from_user_id], {
-    title: `${streamerName} accepted your request!`,
+    title: `${streamerInfo.name} accepted your request!`,
     body:  `"${req.description.slice(0, 60)}" — they're on it`,
     data:  { type: 'stream_request_accepted', request_id: requestId, stream_id: req.stream_id }
   });
+  logger.info(`respondToStreamRequest: ${userId} accepted ${requestId}`);
   return { success: true };
 });
 
@@ -567,12 +554,23 @@ exports.completeStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async
     realFundedAmount: req.funded_real_amount ?? req.price
   });
   await db.collection('streams').doc(req.stream_id).update({ total_earned: admin.firestore.FieldValue.increment(req.creator_payout) });
-  const { name: streamerName } = await getUserInfo(db, userId);
+  // Chat message for completion
+  const streamerInfo = await getUserInfo(db, userId);
+  await db.collection('stream_chat').doc(req.stream_id).collection('messages').doc().set({
+    user_id:    userId,
+    name:       streamerInfo.name,
+    avatar_url: streamerInfo.avatarUrl,
+    text:       `completed "${req.description.slice(0, 60)}"`,
+    type:       'request_completed',
+    request_id: requestId,
+    created_at: admin.firestore.FieldValue.serverTimestamp()
+  });
   await sendPush(db, [req.from_user_id], {
-    title: `${streamerName} completed your request!`,
+    title: `${streamerInfo.name} completed your request!`,
     body:  `"${req.description.slice(0, 60)}"`,
     data:  { type: 'stream_request_completed', request_id: requestId, stream_id: req.stream_id }
   });
+  logger.info(`completeStreamRequest: ${userId} completed ${requestId}, payout $${req.creator_payout}`);
   return { success: true };
 });
 

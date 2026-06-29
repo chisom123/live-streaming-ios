@@ -90,26 +90,22 @@ struct CreateStreamView: View {
                         .font(.system(size: 22, weight: .black))
                         .foregroundColor(AppTheme.primaryText)
                     Spacer()
-                }
-                .padding(.top)
-
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(AppTheme.secondaryText).padding(.leading, 12)
-                    TextField("Search friends", text: $viewModel.friendsSearchText)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(AppTheme.primaryText)
-                        .tint(AppTheme.accent)
-                        .padding(.vertical, 10)
-                    if !viewModel.friendsSearchText.isEmpty {
-                        Button { viewModel.friendsSearchText = "" } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundColor(AppTheme.secondaryText)
+                    if !viewModel.filteredFriends.isEmpty {
+                        Button {
+                            Analytics.shared.trackTap(elementId: "add_friends_button", screenName: "create_stream")
+                            showingAddFriends = true
+                        } label: {
+                            Text("Add Friends")
+                                .font(.system(size: 15, weight: .heavy))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 5)
+                                .background(AppTheme.accent)
+                                .cornerRadius(200)
                         }
-                        .padding(.trailing, 12)
                     }
                 }
-                .background(AppTheme.cardBackground)
-                .cornerRadius(10)
+                .padding(.top)
 
                 if viewModel.isLoadingFriends {
                     HStack {
@@ -119,35 +115,10 @@ struct CreateStreamView: View {
                     }
                     .padding(.vertical, 40)
 
-                } else if viewModel.hasNoSearchResults {
-                    VStack(spacing: 10) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 32)).foregroundColor(AppTheme.secondaryText)
-                        Text("No results for \"\(viewModel.friendsSearchText)\"")
-                            .font(.system(size: 15, weight: .semibold)).foregroundColor(AppTheme.secondaryText)
-                    }
-                    .frame(maxWidth: .infinity).padding(.vertical, 40)
-
-                } else if viewModel.filteredFriends.isEmpty && viewModel.friendsSearchText.isEmpty {
+                } else if viewModel.filteredFriends.isEmpty {
                     noFriendsEmptyState
 
-                } else if !viewModel.filteredFriends.isEmpty {
-                    HStack {
-                        sectionLabel("Friends")
-                        Spacer()
-                        Button {
-                            Analytics.shared.trackTap(elementId: "add_friends_button", screenName: "create_stream")
-                            showingAddFriends = true
-                        } label: {
-                            Text("Add Friends")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 5)
-                                .background(AppTheme.accent)
-                                .cornerRadius(200)
-                        }
-                    }
+                } else {
                     VStack(spacing: 0) {
                         ForEach(viewModel.filteredFriends) { friend in
                             let isSelected = viewModel.selectedFriendIds.contains(friend.id)
@@ -190,7 +161,7 @@ struct CreateStreamView: View {
                 Text("No friends yet")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(AppTheme.primaryText)
-                Text("Add friends so you can invite them to your stream.")
+                Text("Add friends so you can invite them to your stream")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(AppTheme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -200,7 +171,7 @@ struct CreateStreamView: View {
                 showingAddFriends = true
             } label: {
                 Text("Add Friends")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 15, weight: .heavy))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
@@ -253,7 +224,7 @@ struct CreateStreamView: View {
                         .scaleEffect(0.85)
                 }
                 Text(viewModel.isSending ? "Creating..." : "Go Live")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 18, weight: .heavy))
                     .foregroundColor(viewModel.canCreate ? .white : AppTheme.disabledText)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
@@ -276,10 +247,5 @@ struct CreateStreamView: View {
             )
             onStreamCreated(result.streamId, result.token, result.url)
         }
-    }
-
-    private func sectionLabel(_ title: String) -> some View {
-        Text(title).font(.system(size: 12, weight: .bold)).foregroundColor(AppTheme.secondaryText)
-            .textCase(.uppercase).padding(.leading, 4)
     }
 }
