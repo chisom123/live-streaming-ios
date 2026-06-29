@@ -12,6 +12,7 @@ struct StreamerView: View {
 
     @StateObject private var viewModel: StreamerViewModel
     @State private var showRequestQueue = false
+    @State private var completingRequestId: String? = nil
 
     init(streamId: String, initialToken: String? = nil, initialUrl: String? = nil, onEnd: @escaping () -> Void) {
         self.streamId     = streamId
@@ -202,30 +203,41 @@ struct StreamerView: View {
 
     // MARK: - Accepted request banner
     private func acceptedRequestBanner(_ request: StreamRequest) -> some View {
-        HStack(spacing: 12) {
+        let isCompleting = completingRequestId == request.id
+
+        return HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 5) {
-                    Circle().fill(Color(hex: "#16A34A")).frame(width: 5, height: 5)
-                    Text(request.fromUserName)
-                        .font(.system(size: 11, weight: .bold)).foregroundColor(Color(hex: "#4ade80"))
-                }
                 Text(request.description)
-                    .font(.system(size: 13, weight: .medium)).foregroundColor(.white.opacity(0.9)).lineLimit(1)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
             }
             Spacer()
             Button {
+                guard !isCompleting else { return }
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                completingRequestId = request.id
                 viewModel.completeRequest(request)
             } label: {
-                Text("Done · $\(String(format: "%.2f", request.creatorPayout))")
-                    .font(.system(size: 12, weight: .bold)).foregroundColor(.white)
-                    .padding(.horizontal, 13).padding(.vertical, 9)
-                    .background(Color(hex: "#16A34A")).clipShape(Capsule())
+                ZStack {
+                    if isCompleting {
+                        CustomSpinner(lineWidth: 5)
+                            .frame(width: 18, height: 18)
+                    } else {
+                        Text("Done")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                }
+                .frame(width: isCompleting ? 38 : nil, height: 38)
+                .padding(.horizontal, isCompleting ? 0 : 13)
+                .background(Color(hex: "#16A34A"))
+                .clipShape(Capsule())
             }
+            .disabled(isCompleting)
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(Color(hex: "#16A34A").opacity(0.14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(hex: "#16A34A").opacity(0.38), lineWidth: 0.5))
+        .background(Color(hex: "#16A34A").opacity(0.25))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
@@ -284,7 +296,7 @@ struct StreamerView: View {
                 .background(hasPending ? AppTheme.accent : Color(hex: "#161616"))
                 .clipShape(Capsule())
         }
-        .padding(.bottom, 46)
+        .padding(.bottom, 30)
     }
 
     // MARK: - End confirm dialog

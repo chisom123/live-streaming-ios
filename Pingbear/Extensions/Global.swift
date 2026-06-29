@@ -63,3 +63,17 @@ struct RoundedCorner: Shape {
         return Path(path.cgPath)
     }
 }
+
+struct CustomSpinner: View {
+    var lineWidth: CGFloat = 8  // default matches existing usage
+    @State private var isAnimating = false
+
+    var body: some View {
+        Circle()
+            .trim(from: 0, to: 0.7)
+            .stroke(Color.white, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+            .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
+            .animation(.linear(duration: 1).repeatForever(autoreverses: false), value: isAnimating)
+            .onAppear { isAnimating = true }
+    }
+}

@@ -66,25 +66,6 @@ struct StreamViewerView: View {
             .frame(width: 50, height: 50)
     }
 
-    struct CustomSpinner: View {
-        @State private var isAnimating = false
-
-        var body: some View {
-            Circle()
-                .trim(from: 0, to: 0.7)
-                .stroke(Color.white, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                .rotationEffect(Angle(degrees: isAnimating ? 360 : 0))
-                .animation(
-                    Animation.linear(duration: 1)
-                        .repeatForever(autoreverses: false),
-                    value: isAnimating
-                )
-                .onAppear {
-                    isAnimating = true
-                }
-        }
-    }
-
     // MARK: - Live overlay
     private var liveOverlay: some View {
         ZStack(alignment: .bottom) {
