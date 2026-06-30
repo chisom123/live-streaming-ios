@@ -26,6 +26,11 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
     private var isProcessingQueue = false
     private var retryCount: [String: Int] = [:]
     private let maxRetries = 5
+
+    // Tracked so FCMTokenWatcher can detect staleness, mirroring
+    // VoIPPushManager.currentTokenString. Purely additive — nothing
+    // else depends on this except FCMTokenWatcher and the writes below.
+    private(set) var currentFCMToken: String?
     
     override init() {
         super.init()
@@ -176,7 +181,11 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
                 }
             } else {
                 print("FCM token updated successfully for user \(userId)")
-                
+
+                // Keep currentFCMToken in sync so FCMTokenWatcher can
+                // correctly evaluate staleness against Firestore.
+                self.currentFCMToken = token
+
                 // Remove from queue and UserDefaults
                 self.tokenUpdateQueue.removeValue(forKey: userId)
                 self.retryCount.removeValue(forKey: userId)
@@ -217,6 +226,46 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
             self.queueTokenUpdate(userId: userId)
         }
     }
+
+    /// Writes a known token directly to Firestore without going through
+    /// Messaging.messaging().token(). Needed because that fetch can fail
+    /// with "No APNS token specified" if APNS hasn't (re-)registered yet —
+    /// in that case we still have a perfectly good token in memory and
+    /// should just persist it, mirroring VoIPPushManager.persistTokenDirectly().
+    func writeTokenDirectly(_ token: String, uid: String) {
+        print("[PushNotificationManager] 📝 writeTokenDirectly() called for user \(uid)")
+        currentFCMToken = token
+        db.collection("users").document(uid).updateData(["fcmToken": token]) { [weak self] error in
+            guard let self else { return }
+            if let error {
+                print("[PushNotificationManager] ❌ writeTokenDirectly failed: \(error.localizedDescription) — stashing for retry")
+                UserDefaults.standard.set(token, forKey: "pendingFCMToken_\(uid)")
+                self.tokenUpdateQueue[uid] = token
+                if !self.isProcessingQueue {
+                    self.processTokenUpdateQueue()
+                }
+            } else {
+                print("[PushNotificationManager] ✅ fcmToken written directly for \(uid)")
+                UserDefaults.standard.removeObject(forKey: "pendingFCMToken_\(uid)")
+            }
+        }
+    }
+
+    /// Deletes fcmToken from Firestore and clears local/queued state. Call on
+    /// sign-out so a logged-out device is never sent pushes meant for it.
+    /// Mirrors VoIPPushManager.clearToken() but is fully independent of it.
+    func clearToken() {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            print("[PushNotificationManager] clearToken() — no current user, nothing to clear")
+            return
+        }
+        print("[PushNotificationManager] 🗑 Clearing fcmToken for user \(uid)")
+        db.collection("users").document(uid).updateData(["fcmToken": FieldValue.delete()])
+        UserDefaults.standard.removeObject(forKey: "pendingFCMToken_\(uid)")
+        tokenUpdateQueue.removeValue(forKey: uid)
+        retryCount.removeValue(forKey: uid)
+        currentFCMToken = nil
+    }
     
     // Keep your existing MessagingDelegate method
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
@@ -224,6 +273,9 @@ class PushNotificationManager: NSObject, MessagingDelegate, UNUserNotificationCe
         
         // Additional code for photo sharing notifications
         if let token = fcmToken, let userId = Auth.auth().currentUser?.uid {
+            // Keep currentFCMToken in sync for FCMTokenWatcher's staleness check.
+            currentFCMToken = token
+
             // Use the queue system for token updates
             tokenUpdateQueue[userId] = token
             UserDefaults.standard.set(token, forKey: "pendingFCMToken_\(userId)")

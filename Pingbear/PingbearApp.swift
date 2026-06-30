@@ -46,6 +46,13 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // All three layers are self-managing after this single start() call.
         VoIPTokenWatcher.shared.start()
 
+        // ── FCM token watcher ──────────────────────────────────────
+        // Standalone reliability layer for fcmToken, mirroring the VoIP
+        // watcher's pattern (real-time listener + foreground resync +
+        // auth-state gating) but fully independent of it. Reuses
+        // PushNotificationManager's existing queue/retry write path.
+        FCMTokenWatcher.shared.start()
+
         // ── Regular FCM push setup ────────────────────────────────
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             if settings.authorizationStatus == .authorized && Auth.auth().currentUser != nil {
@@ -71,10 +78,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             object: nil
         )
 
-        // ── VoIP token: clear on sign-out ─────────────────────────
-        // VoIPTokenWatcher owns sign-in recovery (missing/stale detection
-        // and foreground syncs). This observer handles only the sign-out
-        // case — clearing the token so a logged-out device is never rung.
+        // ── Token cleanup on sign-out ──────────────────────────────
+        // VoIPTokenWatcher and FCMTokenWatcher each own sign-in recovery
+        // (missing/stale detection and foreground syncs). This observer
+        // handles only the sign-out case — clearing both tokens so a
+        // logged-out device is never rung or pushed to.
         NotificationCenter.default.addObserver(
             forName: .AuthStateDidChange,
             object:  nil,
@@ -82,6 +90,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         ) { _ in
             if Auth.auth().currentUser == nil {
                 VoIPPushManager.shared.clearToken()
+                PushNotificationManager.shared.clearToken()
             }
         }
 

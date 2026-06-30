@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		4F0452732FEDCAE000FF89AA /* SendStreamRequestSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0452722FEDCAE000FF89AA /* SendStreamRequestSheet.swift */; };
+		4F0A23B02FF3C02200E19D34 /* FCMTokenWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0A23AF2FF3C02200E19D34 /* FCMTokenWatcher.swift */; };
 		4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0D18262D56325600C1A236 /* ProfilePicture.swift */; };
 		4F0EF0412FEEEA2D00B6B702 /* VoIPPushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F0EF0402FEEEA2D00B6B702 /* VoIPPushManager.swift */; };
 		4F1184122FEC425C007BC587 /* StreamModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1184112FEC425C007BC587 /* StreamModel.swift */; };
@@ -117,6 +118,7 @@
 
 /* Begin PBXFileReference section */
 		4F0452722FEDCAE000FF89AA /* SendStreamRequestSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendStreamRequestSheet.swift; sourceTree = "<group>"; };
+		4F0A23AF2FF3C02200E19D34 /* FCMTokenWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FCMTokenWatcher.swift; sourceTree = "<group>"; };
 		4F0D18262D56325600C1A236 /* ProfilePicture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilePicture.swift; sourceTree = "<group>"; };
 		4F0EF0402FEEEA2D00B6B702 /* VoIPPushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPPushManager.swift; sourceTree = "<group>"; };
 		4F1184112FEC425C007BC587 /* StreamModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamModel.swift; sourceTree = "<group>"; };
@@ -424,6 +426,7 @@
 				4F34080D2D3029C400F21247 /* PushNotificationManager.swift */,
 				4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */,
 				4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */,
+				4F0A23AF2FF3C02200E19D34 /* FCMTokenWatcher.swift */,
 			);
 			path = Notifications;
 			sourceTree = "<group>";
@@ -642,6 +645,7 @@
 				4F3E0D582A86FB1D0068F901 /* Verification.swift in Sources */,
 				4F0D18272D56325600C1A236 /* ProfilePicture.swift in Sources */,
 				4FACC9E02C33EE52003BF013 /* ContactAccess.swift in Sources */,
+				4F0A23B02FF3C02200E19D34 /* FCMTokenWatcher.swift in Sources */,
 				4FA1D3B12F61BE930099E033 /* CustomTabBar.swift in Sources */,
 				4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
