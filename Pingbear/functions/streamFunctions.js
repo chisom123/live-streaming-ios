@@ -651,7 +651,17 @@ exports.livekitWebhook = onRequest({
   const roomName   = event?.room?.name;
   const userId     = event?.participant?.identity;
   const canPublish = event?.participant?.permission?.canPublish === true;
-  if (!['participant_joined', 'participant_left'].includes(eventName) || !roomName || !userId) {
+
+  // The LiveKit room-composite egress process joins the room as a hidden
+  // subscriber-only participant to render the recording. It never publishes,
+  // so the canPublish check alone doesn't exclude it — without this filter
+  // its identity ends up written into viewer_ids like a real viewer.
+  const participantKind = event?.participant?.kind;
+  const isEgressBot = participantKind === 'EGRESS'
+    || participantKind === 2
+    || (typeof userId === 'string' && userId.startsWith('EG_'));
+
+  if (!['participant_joined', 'participant_left'].includes(eventName) || !roomName || !userId || isEgressBot) {
     res.sendStatus(200); return;
   }
   const db = getDb();
