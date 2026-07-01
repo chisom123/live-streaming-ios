@@ -8,11 +8,11 @@ struct NameEntryView: View {
     let phoneNumber: String
     let fullName:    String
 
-    @State private var username:         String  = ""
-    @State private var errorMessage:     String? = nil
-    @State private var isLoading:        Bool    = false
-    @State private var showWelcomeBonus: Bool    = false
-    @State private var hadInviteGroups:  Bool    = false
+    @State private var username:          String  = ""
+    @State private var errorMessage:      String? = nil
+    @State private var isLoading:         Bool    = false
+    @State private var showWelcomeBonus:  Bool    = false
+    @State private var hasExistingFriend: Bool    = false
 
     var body: some View {
         ZStack {
@@ -68,7 +68,7 @@ struct NameEntryView: View {
                 .padding(.horizontal, 20)
 
                 NavigationLink(
-                    destination: WelcomeBonusView(hadInviteGroups: hadInviteGroups),
+                    destination: WelcomeBonusView(hasExistingFriend: hasExistingFriend),
                     isActive: $showWelcomeBonus
                 ) { EmptyView() }
                     .isDetailLink(false)
@@ -155,9 +155,14 @@ struct NameEntryView: View {
                     }
                 }
                 DispatchQueue.main.async {
-                    self.hadInviteGroups  = hadInvites
-                    self.isLoading        = false
-                    self.showWelcomeBonus = true
+                    // Gate on whether a friend was actually resolved, not
+                    // just whether an invite_groups doc existed. hadInvites
+                    // can be true with friendIds still empty — e.g. the
+                    // inviter's phoneNumberHash wasn't set yet when they
+                    // sent the invite, so memberUserIds started empty.
+                    self.hasExistingFriend = !friendIds.isEmpty
+                    self.isLoading         = false
+                    self.showWelcomeBonus  = true
                 }
             }
         }

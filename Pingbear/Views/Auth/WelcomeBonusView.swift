@@ -2,7 +2,9 @@ import SwiftUI
 
 struct WelcomeBonusView: View {
 
-    let hadInviteGroups: Bool
+    let hasExistingFriend: Bool
+
+    @State private var navigateToAddFriends = false
 
     var body: some View {
         ZStack {
@@ -49,7 +51,7 @@ struct WelcomeBonusView: View {
 
                 Button(action: {
                     Analytics.shared.trackTap(elementId: "welcome_bonus_continue", screenName: "welcome_bonus")
-                    completeOnboarding()
+                    proceed()
                 }) {
                     Text("Continue")
                         .font(.system(size: 20, weight: .bold))
@@ -61,18 +63,42 @@ struct WelcomeBonusView: View {
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)
+
+                NavigationLink(
+                    destination: WhyAddFriendsView(),
+                    isActive: $navigateToAddFriends
+                ) { EmptyView() }
+                    .isDetailLink(false)
             }
         }
         .navigationBarHidden(true)
-        .onAppear { Analytics.shared.trackScreen(name: "welcome_bonus") }
+        .onAppear {
+            Analytics.shared.trackScreen(name: "welcome_bonus")
+            Analytics.shared.track(
+                event: "onboarding_bonus_shown",
+                properties: ["has_existing_friend": hasExistingFriend]
+            )
+        }
     }
 
-    private func completeOnboarding() {
-        UserDefaults.standard.set(true, forKey: "isLoggedIn")
-        UserDefaults.standard.set(true, forKey: "isFriendActivated")
-        UserDefaults.standard.synchronize()
-        NotificationCenter.default.post(name: .authStateDidChange, object: nil)
-        Analytics.shared.track(event: "onboarding_completed",
-                                properties: ["had_invite_groups": hadInviteGroups])
+    // MARK: - Routing
+    //
+    // Users who already resolved a friend via invite_groups (they were
+    // invited by someone, or someone accepted their invite before they
+    // finished onboarding) skip the friend-adding gate entirely — they
+    // already have a functional experience waiting. Everyone else goes
+    // through the explainer + add-friends flow before the main app.
+
+    private func proceed() {
+        if hasExistingFriend {
+            UserDefaults.standard.set(true, forKey: "isLoggedIn")
+            UserDefaults.standard.set(true, forKey: "isFriendActivated")
+            UserDefaults.standard.synchronize()
+            NotificationCenter.default.post(name: .authStateDidChange, object: nil)
+            Analytics.shared.track(event: "onboarding_completed",
+                                    properties: ["had_invite_groups": hasExistingFriend])
+        } else {
+            navigateToAddFriends = true
+        }
     }
 }

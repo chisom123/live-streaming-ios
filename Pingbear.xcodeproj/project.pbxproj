@@ -97,6 +97,8 @@
 		4FF9C19F2F0FF12D000F045C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C19E2F0FF12D000F045C /* MainTabView.swift */; };
 		4FF9C1A52F11F406000F045C /* WalletView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A42F11F406000F045C /* WalletView.swift */; };
 		4FF9C1A92F11F50B000F045C /* CashOutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */; };
+		4FFA4CA32FF4F04B00B0A3BE /* WhyAddFriendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFA4CA22FF4F04B00B0A3BE /* WhyAddFriendsView.swift */; };
+		4FFA4CA52FF4F06C00B0A3BE /* AddFriendsStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FFA4CA42FF4F06C00B0A3BE /* AddFriendsStepView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -178,6 +180,8 @@
 		4FF9C19E2F0FF12D000F045C /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		4FF9C1A42F11F406000F045C /* WalletView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalletView.swift; sourceTree = "<group>"; };
 		4FF9C1A82F11F50B000F045C /* CashOutSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashOutSheet.swift; sourceTree = "<group>"; };
+		4FFA4CA22FF4F04B00B0A3BE /* WhyAddFriendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhyAddFriendsView.swift; sourceTree = "<group>"; };
+		4FFA4CA42FF4F06C00B0A3BE /* AddFriendsStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddFriendsStepView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -286,6 +290,8 @@
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
 				4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */,
+				4FFA4CA22FF4F04B00B0A3BE /* WhyAddFriendsView.swift */,
+				4FFA4CA42FF4F06C00B0A3BE /* AddFriendsStepView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -650,6 +656,7 @@
 				4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */,
 				4F3E0DA22AA782DE0068F901 /* ChangeName.swift in Sources */,
 				4F3E0D682A895AE40068F901 /* Colour.swift in Sources */,
+				4FFA4CA52FF4F06C00B0A3BE /* AddFriendsStepView.swift in Sources */,
 				4F2008DC2FA366720039FBCB /* TopUpViewModel.swift in Sources */,
 				4F1184122FEC425C007BC587 /* StreamModel.swift in Sources */,
 				4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */,
@@ -685,6 +692,7 @@
 				4F1184172FEC429F007BC587 /* CreateStreamView.swift in Sources */,
 				4F11841E2FEC5DD7007BC587 /* HomeFeedViewModel.swift in Sources */,
 				4FB73FB42FC78A6F005DF768 /* FriendsViewModel.swift in Sources */,
+				4FFA4CA32FF4F04B00B0A3BE /* WhyAddFriendsView.swift in Sources */,
 				4F620C432FF273F70000A683 /* VoIPTokenWatcher.swift in Sources */,
 				4F3E0DA02AA777240068F901 /* Settings.swift in Sources */,
 			);
