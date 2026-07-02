@@ -126,16 +126,13 @@ struct StreamerView: View {
             CallingSpinner()
                 .frame(width: 16, height: 16)
             Text("Calling friends to join")
-                .font(.system(size: 13, weight: .bold))
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white.opacity(0.85))
             Spacer()
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.white.opacity(0.08))
-        .overlay(
-            Capsule().stroke(.white.opacity(0.12), lineWidth: 0.5)
-        )
+        .background(.black.opacity(0.08))
         .clipShape(Capsule())
         .padding(.top)
     }

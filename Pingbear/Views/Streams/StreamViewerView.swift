@@ -190,13 +190,17 @@ struct StreamViewerView: View {
                 )
                 showRequestSheet = true
             } label: {
-                Text("Make a request")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(Color(hex: "#FF6B00"))
-                    .clipShape(Capsule())
+                HStack(spacing: 6) {
+                    Image(systemName: "hand.raised.fill")
+                        .imageScale(.medium)
+                    Text("Make a request")
+                }
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(.white)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Color(hex: "#FF6B00"))
+                .clipShape(Capsule())
             }
             Spacer()
         }
