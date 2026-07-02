@@ -71,7 +71,6 @@ struct StreamViewerView: View {
         ZStack(alignment: .bottom) {
             // Bottom content first (renders behind)
             VStack(spacing: 0) {
-                requestButtonRow
                 chatFeed
                 bottomBar
             }
@@ -80,9 +79,10 @@ struct StreamViewerView: View {
                 value: viewModel.activeRequestDescription != nil
             )
 
-            // Top bar last (renders on top, receives taps first)
+            // Top bar + request button last (renders on top, receives taps first)
             VStack(spacing: 0) {
                 topBar
+                requestButtonRow
                 Spacer()
             }
             .allowsHitTesting(true)
@@ -178,8 +178,8 @@ struct StreamViewerView: View {
     }
 
     // MARK: - Request button row
-    // Sits above the chat feed, left-aligned, so it reads as its own
-    // primary action rather than competing with the chat input.
+    // Sits below the top bar, left-aligned, so it reads as a persistent
+    // primary action anchored to the top of the screen.
     private var requestButtonRow: some View {
         HStack {
             Button {
@@ -205,7 +205,7 @@ struct StreamViewerView: View {
             Spacer()
         }
         .padding(.horizontal)
-        .padding(.bottom, 12)
+        .padding(.top, 12)
     }
 
     // MARK: - Bottom bar
