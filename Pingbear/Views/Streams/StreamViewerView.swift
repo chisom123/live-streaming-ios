@@ -71,6 +71,7 @@ struct StreamViewerView: View {
         ZStack(alignment: .bottom) {
             // Bottom content first (renders behind)
             VStack(spacing: 0) {
+                requestButtonRow
                 chatFeed
                 bottomBar
             }
@@ -176,46 +177,42 @@ struct StreamViewerView: View {
         }
     }
 
-    // MARK: - Bottom bar
-    // Chat and request sit side by side, equal width. Request keeps the
-    // high-contrast fill so it still reads as the lead action.
-    private var bottomBar: some View {
-        HStack(spacing: 8) {
-            chatInputRow
-            sendRequestButton
+    // MARK: - Request button row
+    // Sits above the chat feed, left-aligned, so it reads as its own
+    // primary action rather than competing with the chat input.
+    private var requestButtonRow: some View {
+        HStack {
+            Button {
+                Analytics.shared.trackTap(
+                    elementId: "open_request_sheet",
+                    screenName: "stream_viewer",
+                    properties: [AnalyticsProperty.streamId: stream.id]
+                )
+                showRequestSheet = true
+            } label: {
+                Text("Make a request")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color(hex: "#FF6B00"))
+                    .clipShape(Capsule())
+            }
+            Spacer()
         }
         .padding(.horizontal)
-        .padding(.bottom, 10)
+        .padding(.bottom, 12)
     }
 
-    private var sendRequestButton: some View {
-        Button {
-            Analytics.shared.trackTap(
-                elementId: "open_request_sheet",
-                screenName: "stream_viewer",
-                properties: [AnalyticsProperty.streamId: stream.id]
-            )
-            showRequestSheet = true
-        } label: {
-            Text("Make a request")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(Color(hex: "#FF6B00"))
-                .clipShape(Capsule())
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var chatInputRow: some View {
+    // MARK: - Bottom bar
+    private var bottomBar: some View {
         HStack {
             TextField(
                 "",
                 text: $viewModel.chatText,
-                prompt: Text("Say something...").foregroundColor(.white.opacity(0.35))
+                prompt: Text("Say something...").foregroundColor(.white)
             )
-            .font(.system(size: 13, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundColor(.white)
             .tint(Color(hex: "#FF6B00"))
             .focused($chatFocused)
@@ -227,7 +224,8 @@ struct StreamViewerView: View {
         .background(.black.opacity(0.45))
         .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
         .clipShape(Capsule())
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal)
+        .padding(.bottom, 10)
     }
 
     // MARK: - Leave confirm dialog
