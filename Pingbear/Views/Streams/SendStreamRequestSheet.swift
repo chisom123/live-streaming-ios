@@ -171,6 +171,11 @@ private struct StreamRequestStep2View: View {
     private var hasFunds:    Bool   { walletVM.balance >= priceDouble }
     private var canSend:     Bool   { priceValid && hasFunds && !isSending }
 
+    // Once a send is in flight (or has just succeeded and we're waiting on
+    // dismissal), we don't want the balance listener flipping this view over
+    // to the "Insufficient funds / Top Up" branch out from under the user.
+    private var showTopUp: Bool { !hasFunds && priceValid && !isSending }
+
     var body: some View {
         ZStack {
             Color(hex: "#111111").ignoresSafeArea()
@@ -194,6 +199,7 @@ private struct StreamRequestStep2View: View {
                             .clipShape(Circle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(isSending)
 
                     Text("Set your reward")
                         .font(.system(size: 24, weight: .black))
@@ -241,6 +247,7 @@ private struct StreamRequestStep2View: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .disabled(isSending)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -251,7 +258,7 @@ private struct StreamRequestStep2View: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.4))
                     Spacer()
-                    if !hasFunds && priceValid {
+                    if showTopUp {
                         Text("Insufficient funds")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(Color(hex: "#E24B4A"))
@@ -259,7 +266,7 @@ private struct StreamRequestStep2View: View {
                     }
                     Text("$\(String(format: "%.2f", walletVM.balance))")
                         .font(.system(size: 15, weight: .bold))
-                        .foregroundColor(hasFunds ? .white : Color(hex: "#E24B4A"))
+                        .foregroundColor(hasFunds || isSending ? .white : Color(hex: "#E24B4A"))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
@@ -277,7 +284,7 @@ private struct StreamRequestStep2View: View {
 
                 Spacer()
 
-                if !hasFunds && priceValid {
+                if showTopUp {
                     Button {
                         Analytics.shared.trackTap(
                             elementId: "top_up_from_stream_request",
@@ -337,6 +344,11 @@ private struct StreamRequestStep2View: View {
         isSending    = true
         errorMessage = nil
 
+        // Freeze the balance display for the duration of the call so the
+        // listener can't flip the UI to "Insufficient funds" the instant
+        // the server-side deduction lands, right before we dismiss.
+        walletVM.stopListening()
+
         Task {
             do {
                 let result = try await functions.httpsCallable("sendStreamRequest").call([
@@ -359,6 +371,8 @@ private struct StreamRequestStep2View: View {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isSending    = false
+                    // Resume listening since the user is staying on screen.
+                    walletVM.startListening()
                 }
             }
         }

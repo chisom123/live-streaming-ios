@@ -406,7 +406,7 @@ exports.joinStream = onCall({
 // sendStreamRequest
 // ─────────────────────────────────────────────────────────────
 
-exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100 }, async (request) => {
+exports.sendStreamRequest = onCall({ cors: ['*'], maxInstances: 100, minInstances: 1 }, async (request) => {
   if (!request.auth) throw new Error('User must be authenticated');
   const userId = request.auth.uid;
   const { streamId, description, price } = request.data;
