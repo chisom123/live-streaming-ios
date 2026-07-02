@@ -177,50 +177,57 @@ struct StreamViewerView: View {
     }
 
     // MARK: - Bottom bar
+    // Chat and request sit side by side, equal width. Request keeps the
+    // high-contrast fill so it still reads as the lead action.
     private var bottomBar: some View {
-        ZStack(alignment: .bottom) {
-            HStack(spacing: 10) {
-                HStack {
-                    TextField(
-                        "",
-                        text: $viewModel.chatText,
-                        prompt: Text("Say something...").foregroundColor(.white)
-                    )
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
-                    .tint(Color(hex: "#FF6B00"))
-                    .focused($chatFocused)
-                    .submitLabel(.send)
-                    .onSubmit { viewModel.sendChatMessage() }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 13)
-                }
-                .background(.black.opacity(0.45))
-                .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
-                .clipShape(Capsule())
-
-                Button {
-                    Analytics.shared.trackTap(
-                        elementId: "open_request_sheet",
-                        screenName: "stream_viewer",
-                        properties: [AnalyticsProperty.streamId: stream.id]
-                    )
-                    showRequestSheet = true
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color(hex: "#FF6B00"))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: "hand.raised.fill")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.white)
-                    }
-                }
-                .frame(width: 44, height: 44)
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 10)
+        HStack(spacing: 8) {
+            chatInputRow
+            sendRequestButton
         }
+        .padding(.horizontal)
+        .padding(.bottom, 10)
+    }
+
+    private var sendRequestButton: some View {
+        Button {
+            Analytics.shared.trackTap(
+                elementId: "open_request_sheet",
+                screenName: "stream_viewer",
+                properties: [AnalyticsProperty.streamId: stream.id]
+            )
+            showRequestSheet = true
+        } label: {
+            Text("Make a request")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 13)
+                .background(Color(hex: "#FF6B00"))
+                .clipShape(Capsule())
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var chatInputRow: some View {
+        HStack {
+            TextField(
+                "",
+                text: $viewModel.chatText,
+                prompt: Text("Say something...").foregroundColor(.white.opacity(0.35))
+            )
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.white)
+            .tint(Color(hex: "#FF6B00"))
+            .focused($chatFocused)
+            .submitLabel(.send)
+            .onSubmit { viewModel.sendChatMessage() }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+        }
+        .background(.black.opacity(0.45))
+        .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 0.5))
+        .clipShape(Capsule())
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Leave confirm dialog
