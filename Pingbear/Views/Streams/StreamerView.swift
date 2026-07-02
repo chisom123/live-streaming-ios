@@ -93,20 +93,19 @@ struct StreamerView: View {
         ZStack(alignment: .bottom) {
             // Bottom content first (renders behind)
             VStack(spacing: 0) {
-                if let active = viewModel.acceptedRequests.first {
-                    acceptedRequestBanner(active)
-                        .padding(.horizontal, 12)
-                        .padding(.bottom, 10)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
                 chatFeed
                 streamerBottomBar
             }
-            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.acceptedRequests.first?.id ?? "")
 
             // Top bar last (renders on top, receives taps first)
             VStack(spacing: 0) {
                 streamerTopBar
+                if let active = viewModel.acceptedRequests.first {
+                    acceptedRequestBanner(active)
+                        .padding(.horizontal, 12)
+                        .padding(.top, 10)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
                 if viewModel.isCallingFriends {
                     callingFriendsBanner
                         .padding(.horizontal, 16)
@@ -116,6 +115,7 @@ struct StreamerView: View {
                 Spacer()
             }
             .allowsHitTesting(true)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: viewModel.acceptedRequests.first?.id ?? "")
         }
         .animation(.easeInOut(duration: 0.4), value: viewModel.isCallingFriends)
     }
@@ -234,7 +234,7 @@ struct StreamerView: View {
             .disabled(isCompleting)
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(Color(hex: "#16A34A").opacity(0.25))
+        .background(Color(hex: "#000").opacity(0.25))
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
