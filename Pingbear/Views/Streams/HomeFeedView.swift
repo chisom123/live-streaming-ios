@@ -34,9 +34,9 @@ struct HomeFeedView: View {
                             .padding(.bottom, 100)
                         }
 
-                        VStack(spacing: 20) {
+                        VStack(spacing: 14) {
                             if viewModel.liveStreams.isEmpty {
-                                BouncingArrowView()
+                                EarningsTooltipView()
                             }
 
                             actionButtons
@@ -138,23 +138,54 @@ struct HomeFeedView: View {
     }
 }
 
-// MARK: - BouncingArrowView
-struct BouncingArrowView: View {
-    @State private var offset: CGFloat = 0
+// MARK: - EarningsTooltipView
+//
+// Replaces BouncingArrowView. Shown any time the live feed is empty —
+// same condition the arrow used. Keeps the arrow's directional job
+// (a tail points straight at the GO LIVE button) while adding the
+// earnings hook. Copy is deliberately identical to the onboarding
+// explainer screen's wording, not a paraphrase — repetition of the
+// same phrase builds recognition, a fresh rewrite would just be a
+// second thing to learn. Uses AppTheme.green, the same color used for
+// creator_payout / top_up / welcome_bonus in WalletView, so it
+// borrows meaning users will recognize rather than introducing a new one.
 
+struct EarningsTooltipView: View {
     var body: some View {
-        Image(systemName: "arrow.down")
-            .font(.system(size: 40, weight: .heavy))
-            .foregroundColor(AppTheme.accent)
-            .offset(y: offset)
-            .onAppear {
-                withAnimation(
-                    .easeInOut(duration: 0.85)
-                    .repeatForever(autoreverses: true)
-                ) {
-                    offset = 8
-                }
+        VStack(spacing: 0) {
+            HStack(spacing: 5) {
+                Text("$")
+                    .font(.system(size: 20, weight: .heavy))
+                    .foregroundColor(.white)
+                Text("Get Paid")
+                    .font(.system(size: 18, weight: .heavy))
+                    .foregroundColor(.white)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(AppTheme.green)
+            .cornerRadius(14)
+
+            TooltipTail()
+                .fill(AppTheme.green)
+                .frame(width: 14, height: 8)
+        }
+    }
+}
+
+// MARK: - TooltipTail
+//
+// Small downward-pointing triangle so the callout reads as anchored
+// to the GO LIVE button beneath it, rather than floating unrelated text.
+
+struct TooltipTail: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.closeSubpath()
+        return path
     }
 }
 
