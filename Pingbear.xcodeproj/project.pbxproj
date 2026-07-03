@@ -79,6 +79,7 @@
 		4F3E0DBD2AB342440068F901 /* MyFriends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBC2AB342440068F901 /* MyFriends.swift */; };
 		4F3E0DBF2AB3430C0068F901 /* MyFriendsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */; };
 		4F620C432FF273F70000A683 /* VoIPTokenWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F620C422FF273F70000A683 /* VoIPTokenWatcher.swift */; };
+		4F6BFC102FF7BA59001E2901 /* OnboardingExplainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6BFC0F2FF7BA59001E2901 /* OnboardingExplainerView.swift */; };
 		4F6D1E1C2FD36FFC0014CB28 /* UserModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */; };
 		4F9439912D7F90760068AF24 /* Welcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F9439902D7F90760068AF24 /* Welcome.swift */; };
 		4F9439942D84E85C0068AF24 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 4F9439932D84E85C0068AF24 /* Kingfisher */; };
@@ -89,7 +90,6 @@
 		4FBB91262FB623EC0055CAF8 /* LiveKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4FBB91252FB623EC0055CAF8 /* LiveKit */; };
 		4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05562D993FCD002C592B /* AnalyticsService.swift */; };
 		4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */; };
-		4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */; };
 		4FE0B3902D709EF6004BC0C2 /* PushNotificationSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */; };
 		4FE0B3922D70FD94004BC0C2 /* NotificationQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */; };
 		4FE9999C2F190A7B00B59DCC /* RealNameEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */; };
@@ -162,6 +162,7 @@
 		4F3E0DBC2AB342440068F901 /* MyFriends.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriends.swift; sourceTree = "<group>"; };
 		4F3E0DBE2AB3430C0068F901 /* MyFriendsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyFriendsModel.swift; sourceTree = "<group>"; };
 		4F620C422FF273F70000A683 /* VoIPTokenWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoIPTokenWatcher.swift; sourceTree = "<group>"; };
+		4F6BFC0F2FF7BA59001E2901 /* OnboardingExplainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingExplainerView.swift; sourceTree = "<group>"; };
 		4F6D1E1B2FD36FFC0014CB28 /* UserModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModels.swift; sourceTree = "<group>"; };
 		4F80A1B52E93C82B00F09EFB /* AdServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdServices.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks/AdServices.framework; sourceTree = DEVELOPER_DIR; };
 		4F9439902D7F90760068AF24 /* Welcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Welcome.swift; sourceTree = "<group>"; };
@@ -170,7 +171,6 @@
 		4FB73FB32FC78A6F005DF768 /* FriendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViewModel.swift; sourceTree = "<group>"; };
 		4FDE05562D993FCD002C592B /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		4FDE05582D99400B002C592B /* PostHogAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostHogAnalyticsService.swift; sourceTree = "<group>"; };
-		4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeBonusView.swift; sourceTree = "<group>"; };
 		4FE0B38F2D709EF6004BC0C2 /* PushNotificationSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationSender.swift; sourceTree = "<group>"; };
 		4FE0B3912D70FD94004BC0C2 /* NotificationQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationQueueManager.swift; sourceTree = "<group>"; };
 		4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealNameEntryView.swift; sourceTree = "<group>"; };
@@ -285,7 +285,7 @@
 				4F3E0D572A86FB1D0068F901 /* Verification.swift */,
 				4F3E0D5B2A86FC010068F901 /* NameEntry.swift */,
 				4FE9999B2F190A7B00B59DCC /* RealNameEntryView.swift */,
-				4FDFEF732FE7FF39000F9077 /* WelcomeBonusView.swift */,
+				4F6BFC0F2FF7BA59001E2901 /* OnboardingExplainerView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -659,7 +659,6 @@
 				4F1184262FED1DAF007BC587 /* OffAppInviteComposer.swift in Sources */,
 				4F9439912D7F90760068AF24 /* Welcome.swift in Sources */,
 				4F1184202FEC5E12007BC587 /* CreateStreamViewModel.swift in Sources */,
-				4FDFEF742FE7FF39000F9077 /* WelcomeBonusView.swift in Sources */,
 				4F34080E2D3029C400F21247 /* PushNotificationManager.swift in Sources */,
 				4FDE05592D99400B002C592B /* PostHogAnalyticsService.swift in Sources */,
 				4FDE05572D993FCD002C592B /* AnalyticsService.swift in Sources */,
@@ -678,6 +677,7 @@
 				4F2008EF2FA60EA40039FBCB /* PaymentClient.swift in Sources */,
 				4F3E0DA62AA8A1CF0068F901 /* AddFriendsModel.swift in Sources */,
 				4F3E0DB42AB1DE5E0068F901 /* EnvironmentValues.swift in Sources */,
+				4F6BFC102FF7BA59001E2901 /* OnboardingExplainerView.swift in Sources */,
 				4F0452732FEDCAE000FF89AA /* SendStreamRequestSheet.swift in Sources */,
 				4F3E0DA42AA89F0E0068F901 /* AddFriends.swift in Sources */,
 				4F3E0CED2A846CE80068F901 /* PingbearApp.swift in Sources */,

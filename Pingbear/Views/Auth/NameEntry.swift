@@ -8,11 +8,11 @@ struct NameEntryView: View {
     let phoneNumber: String
     let fullName:    String
 
-    @State private var username:         String  = ""
-    @State private var errorMessage:     String? = nil
-    @State private var isLoading:        Bool    = false
-    @State private var showWelcomeBonus: Bool    = false
-    @State private var hadInviteGroups:  Bool    = false
+    @State private var username:        String  = ""
+    @State private var errorMessage:    String? = nil
+    @State private var isLoading:       Bool    = false
+    @State private var showExplainer:   Bool    = false
+    @State private var hadInviteGroups: Bool    = false
 
     var body: some View {
         ZStack {
@@ -68,8 +68,8 @@ struct NameEntryView: View {
                 .padding(.horizontal, 20)
 
                 NavigationLink(
-                    destination: WelcomeBonusView(hadInviteGroups: hadInviteGroups),
-                    isActive: $showWelcomeBonus
+                    destination: OnboardingExplainerView(hadInviteGroups: hadInviteGroups),
+                    isActive: $showExplainer
                 ) { EmptyView() }
                     .isDetailLink(false)
 
@@ -155,9 +155,9 @@ struct NameEntryView: View {
                     }
                 }
                 DispatchQueue.main.async {
-                    self.hadInviteGroups  = hadInvites
-                    self.isLoading        = false
-                    self.showWelcomeBonus = true
+                    self.hadInviteGroups = hadInvites
+                    self.isLoading       = false
+                    self.showExplainer   = true
                 }
             }
         }
