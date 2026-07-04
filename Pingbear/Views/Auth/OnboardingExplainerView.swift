@@ -16,7 +16,7 @@ struct OnboardingExplainerView: View {
 
     let hadInviteGroups: Bool
 
-    private let example = ExampleRequest(fromName: "Maya", description: "Climb a tree", price: 5.00)
+    private let example = ExampleRequest(fromName: "Maya", description: "Eat a spoon of hot sauce", price: 5.00)
 
     var body: some View {
         ZStack {
@@ -30,7 +30,7 @@ struct OnboardingExplainerView: View {
                     ExampleRequestCard(example: example)
 
                     VStack(spacing: 2) {
-                        Text("Complete paid requests")
+                        Text("Paid requests")
                             .font(.system(size: 21, weight: .bold))
                             .foregroundColor(.white)
                         Text("from friends")

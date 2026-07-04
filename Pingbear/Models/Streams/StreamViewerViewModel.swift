@@ -70,7 +70,10 @@ class StreamViewerViewModel: ObservableObject {
                   let url   = data["livekitUrl"] as? String
             else { throw NSError(domain: "Stream", code: -1) }
 
+            AudioDebug.dump("join() — before room.connect")
+            await VoIPPushManager.shared.waitUntilCallKitAudioReleased()   // ← ADD THIS
             try await room.connect(url: url, token: token)
+            AudioDebug.dump("join() — after room.connect")
 
             // Walk already-subscribed remote tracks to handle re-joins
             // or streams that were live before the viewer joined.

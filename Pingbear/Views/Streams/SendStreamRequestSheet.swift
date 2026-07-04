@@ -49,8 +49,9 @@ private struct StreamRequestStep1View: View {
     @FocusState private var isFocused: Bool
 
     private let presetRequests = [
-        "Tell a joke", "Go make food", "Sing a song", "Go on a walk"
-    ]
+            "Do your best celebrity impression", "Do the worm",
+            "Eat a spoon of hot sauce", "Try to lick your elbow", "Catch a grape in your mouth"
+        ]
 
     private var descFilled: Bool {
         !description.trimmingCharacters(in: .whitespaces).isEmpty

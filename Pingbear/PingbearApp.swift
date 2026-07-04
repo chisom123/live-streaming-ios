@@ -18,6 +18,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         // ── Always first ──────────────────────────────────────────
         FirebaseApp.configure()
+        AudioDebug.shared.start()
 
         // ── Analytics ─────────────────────────────────────────────
         let POSTHOG_API_KEY = "phc_CJVEsIrEFGVZez7JKBE2g5F0jGUDuNZkRC8e7Nx7VAK"
