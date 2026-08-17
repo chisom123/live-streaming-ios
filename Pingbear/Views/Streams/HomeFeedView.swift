@@ -139,16 +139,6 @@ struct HomeFeedView: View {
 }
 
 // MARK: - EarningsTooltipView
-//
-// Replaces BouncingArrowView. Shown any time the live feed is empty —
-// same condition the arrow used. Keeps the arrow's directional job
-// (a tail points straight at the GO LIVE button) while adding the
-// earnings hook. Copy is deliberately identical to the onboarding
-// explainer screen's wording, not a paraphrase — repetition of the
-// same phrase builds recognition, a fresh rewrite would just be a
-// second thing to learn. Uses AppTheme.green, the same color used for
-// creator_payout / top_up / welcome_bonus in WalletView, so it
-// borrows meaning users will recognize rather than introducing a new one.
 
 struct EarningsTooltipView: View {
     var body: some View {
@@ -174,9 +164,6 @@ struct EarningsTooltipView: View {
 }
 
 // MARK: - TooltipTail
-//
-// Small downward-pointing triangle so the callout reads as anchored
-// to the GO LIVE button beneath it, rather than floating unrelated text.
 
 struct TooltipTail: Shape {
     func path(in rect: CGRect) -> Path {

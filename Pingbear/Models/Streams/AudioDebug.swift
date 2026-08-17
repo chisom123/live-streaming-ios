@@ -17,14 +17,6 @@ import AVFAudio
 //   • Protected data availability — a proxy for "was the device still
 //     locked at this point".
 //
-// Setup:
-//   1. Add this file to the target.
-//   2. In AppDelegate.didFinishLaunching (right after FirebaseApp.configure):
-//        AudioDebug.shared.start()
-//   3. Sprinkle AudioDebug.dump("some tag") at points of interest
-//      (already done in the updated VoIPPushManager; add two in
-//      StreamViewerViewModel.join — see notes).
-//
 // Reading the output: every line is prefixed [AudioDebug HH:mm:ss.SSS]
 // so you can reconstruct the exact ordering of CallKit events, app
 // lifecycle, LiveKit connection, and session state changes.
